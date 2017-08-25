@@ -35,4 +35,4 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## Copyright
 
-Copyright 2017, Shiguredo Inc. and Lyo Kato
+Copyright 2017, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
