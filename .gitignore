@@ -1,6 +1,3 @@
-# gradle related
-gradle.properties
-
 # Manually placed aar for libwebrtc
 libwebrtc/*.aar
 
