@@ -1,1 +1,5 @@
 /build
+
+.libwebrtc.tmp/
+libs/
+src/main/jniLibs/

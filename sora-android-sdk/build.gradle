@@ -1,4 +1,7 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'de.undercouch.download'
+
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
@@ -12,6 +15,11 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 23
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
     }
     buildTypes {
         debug {
@@ -27,6 +35,8 @@ android {
 }
 
 dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
     testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
@@ -36,8 +46,82 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.7.0'
 
     // required by "rtc" part
-    compile project(':libwebrtc')
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
     compile 'io.reactivex.rxjava2:rxjava:2.1.0'
     compile 'io.reactivex.rxjava2:rxkotlin:2.1.0'
 }
+
+// ** libwebrtc AAR dependency resolution **
+
+// TODO: version を変数にする
+// TODO: version チェックを入れる (at downloaded, current config)
+def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/60.11.0/libwebrtc.aar.zip"
+def aarTmpDir = ".libwebrtc.tmp"
+def aarName = "${aarTmpDir}/libwebrtc.aar"
+def aarZipName = "${aarName}.zip"
+
+task downloadAar() {
+    description 'Download libwebrtc AAR file if it does NOT exists'
+
+    // これは本当は doLast{} にすべき
+    // しかし、 `gradle clean cleanAar; gradle assembleRelease` すると
+    // libs/*.jar が見えないようだ。
+    // dependencies {} の libs 依存がこのダウンロードより先に評価されている可能性あり
+    // 動的な依存追加が出来れば doLast で囲んで依存追加したい。
+    if( !file(aarZipName).exists() ) {
+        download {
+            src aarZipURL
+            dest aarZipName
+        }
+    }
+}
+
+task installAar (dependsOn: downloadAar) {
+    description 'Unpack and place jni files and jar to proper places'
+
+    // これは本当は doLast{} にすべき
+    // task 定義の dependsOn は実は効いていない
+    // see also: downloadAar のコメント
+    copy {
+        from zipTree(aarZipName)
+        into file(aarTmpDir)
+    }
+    copy {
+        from zipTree(aarName)
+        into file(aarTmpDir)
+    }
+    copy {
+        from "${aarTmpDir}/jni"
+        into 'src/main/jniLibs'
+    }
+    copy {
+        from "${aarTmpDir}/classes.jar"
+        into 'libs'
+    }
+}
+
+preBuild.dependsOn installAar
+
+task cleanAar(type: Delete) {
+    description 'Clean AAR related files including tmp directory'
+    delete aarTmpDir, "src/main/jniLibs", "libs/classes.jar"
+}
+
+task aarState {
+    description 'Show entries of libwebrtc AAR releated directory'
+
+    doLast {
+        [aarTmpDir, "src/main/jniLibs", "libs"].each { dir ->
+            println ""
+            def exists = file(dir).exists()
+            println "${dir}/ : exists = ${exists}"
+            if (exists) {
+                FileTree tree = fileTree(dir: dir)
+                tree.visit {element ->
+                    println "    ${element.relativePath}"
+                }
+            }
+        }
+    }
+}
+
