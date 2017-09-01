@@ -5,7 +5,7 @@ apply plugin: 'de.undercouch.download'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
-group = 'jp.shiguredo.sora.sdk'
+group = 'com.github.shiguredo'
 
 android {
     publishNonDefault true
@@ -124,4 +124,3 @@ task aarState {
         }
     }
 }
-
