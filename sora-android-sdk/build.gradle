@@ -35,7 +35,7 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile files('libs/classes.jar')
 
     testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
@@ -63,15 +63,12 @@ def aarZipName = "${aarName}.zip"
 task downloadAar() {
     description 'Download libwebrtc AAR file if it does NOT exists'
 
-    // これは本当は doLast{} にすべき
-    // しかし、 `gradle clean cleanAar; gradle assembleRelease` すると
-    // libs/*.jar が見えないようだ。
-    // dependencies {} の libs 依存がこのダウンロードより先に評価されている可能性あり
-    // 動的な依存追加が出来れば doLast で囲んで依存追加したい。
-    if( !file(aarZipName).exists() ) {
-        download {
-            src aarZipURL
-            dest aarZipName
+    doLast {
+        if( !file(aarZipName).exists() ) {
+            download {
+                src aarZipURL
+                dest aarZipName
+            }
         }
     }
 }
@@ -79,24 +76,23 @@ task downloadAar() {
 task installAar (dependsOn: downloadAar) {
     description 'Unpack and place jni files and jar to proper places'
 
-    // これは本当は doLast{} にすべき
-    // task 定義の dependsOn は実は効いていない
-    // see also: downloadAar のコメント
-    copy {
-        from zipTree(aarZipName)
-        into file(aarTmpDir)
-    }
-    copy {
-        from zipTree(aarName)
-        into file(aarTmpDir)
-    }
-    copy {
-        from "${aarTmpDir}/jni"
-        into 'src/main/jniLibs'
-    }
-    copy {
-        from "${aarTmpDir}/classes.jar"
-        into 'libs'
+    doLast{
+        copy {
+            from zipTree(aarZipName)
+            into file(aarTmpDir)
+        }
+        copy {
+            from zipTree(aarName)
+            into file(aarTmpDir)
+        }
+        copy {
+            from "${aarTmpDir}/jni"
+            into 'src/main/jniLibs'
+        }
+        copy {
+            from "${aarTmpDir}/classes.jar"
+            into 'libs'
+        }
     }
 }
 
