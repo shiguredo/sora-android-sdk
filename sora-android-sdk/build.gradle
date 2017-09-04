@@ -53,24 +53,58 @@ dependencies {
 
 // ** libwebrtc AAR dependency resolution **
 
-// TODO: version を変数にする
-// TODO: version チェックを入れる (at downloaded, current config)
-def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/60.11.0/libwebrtc.aar.zip"
+def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
+    "${libwebrtc_version}/libwebrtc.aar.zip"
 def aarTmpDir = ".libwebrtc.tmp"
 def aarName = "${aarTmpDir}/libwebrtc.aar"
 def aarZipName = "${aarName}.zip"
+def aarVersion = "${aarName}.version"
+
+task cleanAar(type: Delete) {
+    description 'Clean AAR related files including tmp directory'
+    delete aarTmpDir, "src/main/jniLibs", "libs/classes.jar"
+}
+
+def needsDownload(aarVersion) {
+    if( !file(aarVersion).exists() ) {
+        logger.info("No libwebrtc.aar exists, it will be downloaded")
+        return true
+    }
+
+    return false
+}
 
 task downloadAar() {
     description 'Download libwebrtc AAR file if it does NOT exists'
 
     doLast {
-        if( !file(aarZipName).exists() ) {
+        if( needsDownload(aarVersion) ) {
+            def versionFile = file(aarVersion)
+            if( versionFile.exists() ) {
+                def currentVersion = file(aarVersion).text
+                if( currentVersion != "$libwebrtc_version" ) {
+                    // ダウンロード済みバージョンと設定が異なる場合、
+                    // 落として手動クリーンさせる
+                    def message = "libwebrtc.aar version differ. " +
+                        "If your setting is correct, please run cleanAar first."
+                    logger.error(message)
+                    throw new GradleException(message)
+                }
+            }
+
             download {
                 src aarZipURL
                 dest aarZipName
             }
+            def file = new File("${aarVersion}")
+            file.createNewFile()
+            file.text = "$libwebrtc_version"
         }
     }
+}
+
+if( needsDownload(aarVersion) ) {
+    downloadAar.dependsOn cleanAar
 }
 
 task installAar (dependsOn: downloadAar) {
@@ -97,11 +131,6 @@ task installAar (dependsOn: downloadAar) {
 }
 
 preBuild.dependsOn installAar
-
-task cleanAar(type: Delete) {
-    description 'Clean AAR related files including tmp directory'
-    delete aarTmpDir, "src/main/jniLibs", "libs/classes.jar"
-}
 
 task aarState {
     description 'Show entries of libwebrtc AAR releated directory'
