@@ -1,1 +1,1 @@
-include ':sora-android-sdk'
+include ':sora-android-sdk-core'
