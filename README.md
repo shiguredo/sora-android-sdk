@@ -37,12 +37,18 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 # SDK 開発者向け
 
-## ビルドの準備
+## libwebrtc への依存
 
-libwebrtc AAR を https://github.com/shiguredo/sora-webrtc-android/releases から
-ダウンロードして `libwebrtc/` 以下に配置してください。
+gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を 
+https://github.com/shiguredo/sora-webrtc-android/releases から
+ダウンロードして展開します。
+展開先は次のとおりです。
 
-## ビルド
+- `classes.jar` : `sora-android-sdk/libs/libwebrtc-classes.jar`
+- JNI libraries : `sora-android-sdk/src/main/jniLibs/`
+
+
+## ローカルでのビルド
 
 Android Studio を用いる場合、プロジェクトを Import して、gradle menu から
 `Tasks > build > assemble(Release|Debug)` を選択してビルドします。
@@ -55,7 +61,7 @@ ndk.dir=/Users/shino/Library/Android/sdk/ndk-bundle
 sdk.dir=/Users/shino/Library/Android/sdk
 ```
 
-(Android Studio で一度ビルドすると作成されます)
+(Android Studio で一度ビルドすれば作成されます)
 
 その後、gradlew からタスクを実行できます。
 
@@ -65,6 +71,27 @@ sdk.dir=/Users/shino/Library/Android/sdk
 
 ビルドされた AAR ファイルのパスは次のとおり:
 `sora-android-sdk/build/outputs/aar/sora-android-sdk-release.aar`
+
+## JitPack
+
+アプリケーションが JitPack https://jitpack.io/ 経由で
+依存できるよう、 jitpack 関連の設定が入っています。
+
+ビルドログと依存の書き方は https://jitpack.io/#shiguredo/sora-android-sdk
+で参照できます。
+JitPack にログインするとビルドを削除することもできます。
+
+JitPack のビルドは初めて参照されたときに実行されます。
+
+JitPack 上でビルドされた AAR や POM、およびログは次のようにアクセスできます。
+
+```
+% curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/sora-android-sdk-441568d7ed-release.aar
+
+% curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/sora-android-sdk-441568d7ed.pom
+
+% curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
+```
 
 # Copyright
 
