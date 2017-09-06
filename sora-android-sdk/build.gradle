@@ -51,6 +51,15 @@ dependencies {
     compile 'io.reactivex.rxjava2:rxkotlin:2.1.0'
 }
 
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+artifacts {
+    archives sourcesJar
+}
+
 // ==== libwebrtc AAR dependency resolution ====
 
 def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
