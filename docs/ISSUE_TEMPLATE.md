@@ -2,7 +2,7 @@
 Please read Guideline for Issues before submitting
 まず Issues 利用のガイドラインをご覧ください。
 
-https://github.com/shiguredo/sora-android-sdk/blob/master/CONTRIBUTING.md
+https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md
 -->
 
 ## サマリ
