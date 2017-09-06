@@ -30,14 +30,10 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## Issues について
 
-質問やバグ報告の場合は、次の開発環境のバージョンを **「メジャーバージョン、マイナーバージョン、メンテナンスバージョン」** まで含めて書いてください (2.3.3 など) 。
-これらの開発環境はメンテナンスバージョンの違いでも Sora Android SDK の挙動が変わる可能性があります。
-
-- Sora Android SDK
-- 開発環境の OS
-- Android Studio
-- Kotlin / Java
-- Android OS
+質問やバグ報告は本リポジトリの Issues でお願いします。
+その際、 [Issues 利用ガイドライン](https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md) をご覧いただき、テンプレートに従って issue 登録してください。
+テンプレートにある環境のバージョンは、 `2.3.3` など **メジャーバージョン、マイナーバージョン、メンテナンスバージョン** まで含めて書いてください。
+メンテナンスバージョンの違いでも Sora Android SDK の挙動が変わる可能性があります。
 
 # SDK 開発者向け
 
