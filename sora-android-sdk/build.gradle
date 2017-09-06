@@ -96,7 +96,7 @@ task downloadAar() {
                 src aarZipURL
                 dest aarZipName
             }
-            def file = new File("${aarVersion}")
+            def file = file("${aarVersion}")
             file.createNewFile()
             file.text = "$libwebrtc_version"
         }
