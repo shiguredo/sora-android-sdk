@@ -6,7 +6,7 @@ Sora Android SDK is open source by Apache License V2 and reports via Issues are
 welcome.
 
 Support for Sora Android SDK by Shiguredo Inc. are limited
-to *ONLY in JAPANESE* through GitHub issues and there is no guarantee such
+**ONLY in JAPANESE** through GitHub issues and there is no guarantee such
 as response time or resolution.
 
 ## はじめに
