@@ -35,7 +35,7 @@ android {
 }
 
 dependencies {
-    compile files('libs/classes.jar')
+    compile files('libs/libwebrtc-classes.jar')
 
     testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
@@ -51,7 +51,7 @@ dependencies {
     compile 'io.reactivex.rxjava2:rxkotlin:2.1.0'
 }
 
-// ** libwebrtc AAR dependency resolution **
+// ==== libwebrtc AAR dependency resolution ====
 
 def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
     "${libwebrtc_version}/libwebrtc.aar.zip"
@@ -62,7 +62,7 @@ def aarVersion = "${aarName}.version"
 
 task cleanAar(type: Delete) {
     description 'Clean AAR related files including tmp directory'
-    delete aarTmpDir, "src/main/jniLibs", "libs/classes.jar"
+    delete aarTmpDir, "src/main/jniLibs", "libs/libwebrtc-classes.jar"
 }
 
 def needsDownload(aarVersion) {
@@ -84,7 +84,7 @@ task downloadAar() {
                 def currentVersion = file(aarVersion).text
                 if( currentVersion != "$libwebrtc_version" ) {
                     // ダウンロード済みバージョンと設定が異なる場合、
-                    // 落として手動クリーンさせる
+                    // ビルドをエラーで終わらせて、手動クリーンさせる
                     def message = "libwebrtc.aar version differ. " +
                         "If your setting is correct, please run cleanAar first."
                     logger.error(message)
@@ -104,6 +104,10 @@ task downloadAar() {
 }
 
 if( needsDownload(aarVersion) ) {
+    // TODO: AAR ダウンロードするときには cleanAar を実行する。
+    // if で囲まず、downloadAar.onlyIf { needsDownload(aarVersion) } とすると
+    // downloadAar がスキップされて cleanAar が実行されることがある。
+    // depends まで含めた onlyIf があれば dependsOn は静的にしたい。
     downloadAar.dependsOn cleanAar
 }
 
@@ -126,6 +130,7 @@ task installAar (dependsOn: downloadAar) {
         copy {
             from "${aarTmpDir}/classes.jar"
             into 'libs'
+            rename { filename -> "libwebrtc-${filename}" }
         }
     }
 }
