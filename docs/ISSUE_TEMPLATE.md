@@ -1,8 +1,8 @@
 <!--
-Please read [Guideline for Issues ](https://github.com/shiguredo/sora-android-sdk/blob/master/CONTRIBUTING.md)
-before submitting. / まず
-[Issue 利用のガイドライン](https://github.com/shiguredo/sora-android-sdk/blob/master/CONTRIBUTING.md)
-をご覧ください。
+Please read Guideline for Issues before submitting
+まず Issues 利用のガイドラインをご覧ください。
+
+https://github.com/shiguredo/sora-android-sdk/blob/master/CONTRIBUTING.md
 -->
 
 ## サマリ
@@ -24,7 +24,7 @@ before submitting. / まず
 ## 期待する動作、現象
 
 <!--
-ビルドが実行され `foo.aar` ファイルが生成される、映像が画面に表示されるなど、
+ビルドが実行され foo.aar ファイルが生成される、映像が画面に表示されるなど、
 あなたが期待することを記してください。
 -->
 
