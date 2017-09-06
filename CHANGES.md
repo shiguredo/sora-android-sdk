@@ -14,28 +14,21 @@
 
 -
 
-## 1.1.0-rc3
+## 1.1.0
+
+### UPDATE
+
+- 依存ライブラリのバージョンを上げる
 
 ### ADD
 
 - sources jar を生成する
-
-## 1.1.0-rc2
-
-### FIX
-
-- jitpack ビルドに関するバグを修正する
-
-## 1.1.0-rc1
+- libwebrtc.aar ダウンロードを gradle task 化する
+- JitPack に対応する
 
 ### CHANGE
 
-- libwebrtc.aar を sora-android-sdk-release.aar に含める
-
-### ADD
-
-- libwebrtc.aar ダウンロードを gradle task 化する
-- jitpack.io の設定を追加する
+- libwebrtc.aar を sora-android-sdk の release AAR に含める
 
 ## 1.0.0
 
