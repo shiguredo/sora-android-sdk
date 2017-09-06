@@ -4,6 +4,19 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 
 使い方は [Sora Android SDK ドキュメント](https://sora.shiguredo.jp/android-sdk-doc/) を参照してください。
 
+## About Support
+
+Support for Sora Android SDK by Shiguredo Inc. are limited
+**ONLY in JAPANESE** through GitHub issues and there is no guarantee such
+as response time or resolution.
+
+## サポートについて
+
+Sora Android SDK に関する質問・要望・バグなどの報告は Issues の利用をお願いします。
+ただし、 Sora のライセンス契約の有無に関わらず、 Issue への応答時間と問題の解決を保証しませんのでご了承ください。
+
+Sora Android SDK に対する有償のサポートについては現在提供しておりません。
+
 ## システム条件
 
 - Android 4.1 以降 (シミュレーターは不可)
@@ -14,13 +27,6 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 
 - [クイックスタート](https://github.com/shiguredo/sora-android-sdk-quickstart)
 - [サンプル集](https://github.com/shiguredo/sora-android-sdk-samples)
-
-## サポートについて
-
-Sora Android SDK に関する質問・要望・バグなどの報告は Issues の利用をお願いします。
-ただし、 Sora のライセンス契約の有無に関わらず、 Issue への応答時間と問題の解決を保証しませんのでご了承ください。
-
-Sora Android SDK に対する有償のサポートについては現在提供しておりません。
 
 ## Issues について
 
