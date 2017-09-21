@@ -72,7 +72,7 @@ class SoraMediaOption {
     get() = if (downstreamIsRequired) {
             (multistreamEnabled || upstreamIsRequired)
         } else {
-            false
+            multistreamEnabled
         }
 
     internal val requiredRole: SoraChannelRole
