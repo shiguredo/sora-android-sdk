@@ -65,12 +65,10 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
     get() = audioUpstreamEnabled || (videoCapturer != null)
 
-    // 以下のケースはmultistreamフラグを立てることが要求される
-    // 1. 受信のみ(複数ストリーム)
-    // 2. 双方向通信(受信は自動的に複数ストリームとなる)
     internal val multistreamIsRequired: Boolean
-    get() = if (downstreamIsRequired) {
-            (multistreamEnabled || upstreamIsRequired)
+    get() = if (downstreamIsRequired && upstreamIsRequired) {
+            // 双方向通信の場合は multistream フラグを立てる
+            true
         } else {
             multistreamEnabled
         }
