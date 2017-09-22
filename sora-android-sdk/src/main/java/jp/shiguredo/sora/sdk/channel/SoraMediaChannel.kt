@@ -127,7 +127,7 @@ class SoraMediaChannel(
         }
 
         override fun onConnect() {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onConnected")
+            SoraLogger.d(TAG, "[channel:$role] @peer:onConnect")
             stopTimer()
             listener?.onConnect(this@SoraMediaChannel)
         }
