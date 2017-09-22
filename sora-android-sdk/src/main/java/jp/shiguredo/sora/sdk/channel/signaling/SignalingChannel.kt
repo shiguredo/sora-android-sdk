@@ -86,7 +86,7 @@ class SignalingChannelImpl(
     }
 
     override fun sendCandidate(sdp: String) {
-        SoraLogger.d(TAG, "[signaling$role] -> candidate")
+        SoraLogger.d(TAG, "[signaling:$role] -> candidate")
 
         if (closing) {
             SoraLogger.i(TAG, "signaling is closing")
@@ -156,11 +156,10 @@ class SignalingChannelImpl(
     }
 
     private fun onNotifyMessage(text: String) {
+        SoraLogger.d(TAG, "[signaling:$role] <- notify")
+
         val notification = MessageConverter.parseNotificationMessage(text)
         // TODO message validation
-
-        SoraLogger.d(TAG, "[signaling:$role] <- update")
-
         listener?.onNotificationMessage(notification)
     }
 
