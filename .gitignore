@@ -1,6 +1,10 @@
+# For developers
+/webrtc-video-effector
+/samples
+settings.gradle.all_in_one
+
 # Manually placed aar for libwebrtc
 libwebrtc/*.aar
-
 
 # Created by https://www.gitignore.io/api/androidstudio
 
@@ -26,6 +30,7 @@ out/
 .gradle
 .gradle/
 build/
+gradle.properties
 
 # Signing files
 .signing/
