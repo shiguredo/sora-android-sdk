@@ -1,7 +1,6 @@
 # Sora Android SDK
 
-[![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)]
-(https://jitpack.io/#shiguredo/sora-android-sdk)
+[![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
 
 [![CircleCI](https://circleci.com/gh/shiguredo/sora-android-sdk.svg?style=svg)](https://circleci.com/gh/shiguredo/sora-android-sdk)
 
