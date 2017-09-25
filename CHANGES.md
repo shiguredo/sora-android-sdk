@@ -12,8 +12,9 @@
 
 ## develop
 
--
+### UPDATE
 
+- Kotlin 1.1.50 に上げた
 
 ## 1.3.0
 
