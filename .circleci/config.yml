@@ -22,7 +22,7 @@ jobs:
           command: ./gradlew lint assembleRelease assembleDebug
       - store_artifacts:
           path: sora-android-sdk/build/outputs
-          destination: reports
+          destination: outputs
       - store_artifacts:
           path: app/build/reports
           destination: reports
