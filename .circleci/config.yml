@@ -1,7 +1,7 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/code
+    working_directory: ~/sora-android-sdk
     docker:
       - image: circleci/android:api-25-alpha
     environment:
@@ -24,5 +24,5 @@ jobs:
           path: sora-android-sdk/build/outputs
           destination: outputs
       - store_artifacts:
-          path: app/build/reports
+          path: sora-android-sdk/build/reports
           destination: reports
