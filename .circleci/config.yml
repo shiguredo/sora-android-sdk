@@ -23,6 +23,6 @@ jobs:
       - store_artifacts:
           path: sora-android-sdk/build/outputs
           destination: reports
-      - store_reports:
+      - store_artifacts:
           path: app/build/reports
           destination: reports
