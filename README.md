@@ -97,6 +97,34 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 % curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
 ```
 
+## sora-android-sdk-samples を multi module に押し込む方法
+
+*無理やりなのでもっとエレガントな方法が欲しい*
+
+1. symlink を貼る::
+
+     % cd path/to/sora-android-sdk
+     % ln -s path/to/sora-android-sdk-samples/samples
+     % ln -s path/to/sora-android-sdk-samples/webrtc-video-effector
+
+2. モジュール構成を書き換える::
+
+     % echo "include ':sora-android-sdk',  ':samples', ':webrtc-video-effector'" > settings.gradle
+
+3. 依存を project 依存に変更する::
+
+     dependencies {
+         [snip]
+         // Sora Android SDK
+         // compile("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version:release@aar") {
+         //     transitive = true
+         // }
+         compile project(':sora-android-sdk')
+
+4. top level か samples の build.gradle に ext の設定を足す::
+
+     ext.signaling_endpoint = "wss://sora.example.com/signaling"
+
 # Copyright
 
 Copyright 2017, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
