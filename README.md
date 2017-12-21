@@ -1,5 +1,9 @@
 # Sora Android SDK
 
+[![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
+
+[![CircleCI](https://circleci.com/gh/shiguredo/sora-android-sdk.svg?style=svg)](https://circleci.com/gh/shiguredo/sora-android-sdk)
+
 Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android クライアントアプリケーションを開発するためのライブラリです。
 
 使い方は [Sora Android SDK ドキュメント](https://sora.shiguredo.jp/android-sdk-doc/) を参照してください。
@@ -39,7 +43,7 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## libwebrtc への依存
 
-gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を 
+gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を
 https://github.com/shiguredo/sora-webrtc-android/releases から
 ダウンロードして展開します。
 展開先は次のとおりです。
@@ -92,6 +96,34 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 
 % curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
 ```
+
+## sora-android-sdk-samples を multi module に押し込む方法
+
+*無理やりなのでもっとエレガントな方法が欲しい*
+
+1. symlink を貼る::
+
+     % cd path/to/sora-android-sdk
+     % ln -s path/to/sora-android-sdk-samples/samples
+     % ln -s path/to/sora-android-sdk-samples/webrtc-video-effector
+
+2. モジュール構成を書き換える::
+
+     % echo "include ':sora-android-sdk',  ':samples', ':webrtc-video-effector'" > settings.gradle
+
+3. 依存を project 依存に変更する::
+
+     dependencies {
+         [snip]
+         // Sora Android SDK
+         // compile("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version:release@aar") {
+         //     transitive = true
+         // }
+         compile project(':sora-android-sdk')
+
+4. top level か samples の build.gradle に ext の設定を足す::
+
+     ext.signaling_endpoint = "wss://sora.example.com/signaling"
 
 # Copyright
 

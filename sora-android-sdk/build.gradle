@@ -62,11 +62,10 @@ artifacts {
 
 // ==== libwebrtc AAR dependency resolution ====
 
-def aarZipURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
-    "${libwebrtc_version}/libwebrtc.aar.zip"
+def aarURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
+    "${libwebrtc_version}/libwebrtc.aar"
 def aarTmpDir = ".libwebrtc.tmp"
 def aarName = "${aarTmpDir}/libwebrtc.aar"
-def aarZipName = "${aarName}.zip"
 def aarVersion = "${aarName}.version"
 
 task cleanAar(type: Delete) {
@@ -102,8 +101,8 @@ task downloadAar() {
             }
 
             download {
-                src aarZipURL
-                dest aarZipName
+                src aarURL
+                dest aarName
             }
             def file = file("${aarVersion}")
             file.createNewFile()
@@ -124,10 +123,6 @@ task installAar (dependsOn: downloadAar) {
     description 'Unpack and place jni files and jar to proper places'
 
     doLast{
-        copy {
-            from zipTree(aarZipName)
-            into file(aarTmpDir)
-        }
         copy {
             from zipTree(aarName)
             into file(aarTmpDir)
