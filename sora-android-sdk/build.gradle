@@ -96,7 +96,6 @@ task downloadAar() {
                     def message = "libwebrtc.aar version differ. " +
                         "If your setting is correct, please run cleanAar first."
                     logger.error(message)
-
                     throw new GradleException(message)
                 }
             }
