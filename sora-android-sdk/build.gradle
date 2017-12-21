@@ -10,7 +10,6 @@ group = 'com.github.shiguredo'
 android {
     publishNonDefault true
     compileSdkVersion 23
-    buildToolsVersion "26.0.1"
 
     defaultConfig {
         minSdkVersion 16
