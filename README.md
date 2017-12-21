@@ -43,7 +43,7 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## libwebrtc への依存
 
-gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を 
+gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を
 https://github.com/shiguredo/sora-webrtc-android/releases から
 ダウンロードして展開します。
 展開先は次のとおりです。
