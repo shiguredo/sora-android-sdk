@@ -12,9 +12,12 @@
 
 ## develop
 
+## 1.3.1
+
 ### UPDATE
 
-- Kotlin 1.1.50 に上げた
+- libwebrtc を 63.13.0 に上げた
+- Kotlin 1.1.51 に上げた
 - CircleCI でのビルドを設定した
 
 ## 1.3.0
