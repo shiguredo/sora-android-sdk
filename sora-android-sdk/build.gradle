@@ -36,8 +36,8 @@ dependencies {
     implementation files('libs/libwebrtc-classes.jar')
 
     testImplementation 'junit:junit:4.12'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:${kotlin_version}"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
     implementation 'com.google.code.gson:gson:2.8.1'
@@ -88,7 +88,7 @@ task downloadAar() {
             def versionFile = file(aarVersion)
             if( versionFile.exists() ) {
                 def currentVersion = file(aarVersion).text
-                if( currentVersion != "$libwebrtc_version" ) {
+                if( currentVersion != "${libwebrtc_version}" ) {
                     // ダウンロード済みバージョンと設定が異なる場合、
                     // ビルドをエラーで終わらせて、手動クリーンさせる
                     def message = "libwebrtc.aar version differ. " +
@@ -104,7 +104,7 @@ task downloadAar() {
             }
             def file = file("${aarVersion}")
             file.createNewFile()
-            file.text = "$libwebrtc_version"
+            file.text = "${libwebrtc_version}"
         }
     }
 }
