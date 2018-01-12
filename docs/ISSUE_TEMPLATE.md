@@ -17,7 +17,6 @@ https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md
 - Android 端末の型番: 
 - WebRTC SFU Sora バージョン: 
 - Sora Android SDK の AAR バージョン: 
-- libwebrtc の 時雨堂ビルド AAR バージョン: 
 - Android Studio バージョン: 
 - その他、関連する環境情報: 
 
