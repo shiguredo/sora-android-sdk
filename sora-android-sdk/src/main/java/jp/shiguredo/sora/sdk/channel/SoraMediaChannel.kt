@@ -44,7 +44,7 @@ class SoraMediaChannel(
         fun onClose(mediaChannel: SoraMediaChannel) {}
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
-        fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage)
+        fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
     }
 
     private var peer:      PeerChannel?      = null
