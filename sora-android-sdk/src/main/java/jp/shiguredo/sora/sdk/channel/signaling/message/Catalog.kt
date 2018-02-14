@@ -72,3 +72,5 @@ data class NotificationMessage(
        @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int,
        @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int
 )
+
+typealias PushMessage = Map<String, Any>

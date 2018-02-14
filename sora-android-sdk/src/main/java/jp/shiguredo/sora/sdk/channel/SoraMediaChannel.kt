@@ -12,6 +12,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
+import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -43,6 +44,7 @@ class SoraMediaChannel(
         fun onClose(mediaChannel: SoraMediaChannel) {}
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
+        fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage)
     }
 
     private var peer:      PeerChannel?      = null
@@ -89,6 +91,11 @@ class SoraMediaChannel(
                 else -> SoraLogger.i(TAG, "unsupported notification event type: "
                         + notification.eventType)
             }
+        }
+
+        override fun onPushMessage(push: PushMessage) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onPushMessage")
+            listener?.onPushMessage(this@SoraMediaChannel, push)
         }
 
         override fun onError(reason: SoraErrorReason) {
