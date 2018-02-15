@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 class MessageConverter {
 
@@ -75,8 +76,9 @@ class MessageConverter {
             return gson.fromJson(text, NotificationMessage::class.java)
         }
 
+        fun parsePushMessage(text: String): PushMessage {
+            return gson.fromJson(text, PushMessage::class.java)
+        }
     }
-
-
 }
 

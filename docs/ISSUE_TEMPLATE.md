@@ -17,7 +17,6 @@ https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md
 - Android 端末の型番: 
 - WebRTC SFU Sora バージョン: 
 - Sora Android SDK の AAR バージョン: 
-- libwebrtc の 時雨堂ビルド AAR バージョン: 
 - Android Studio バージョン: 
 - その他、関連する環境情報: 
 
@@ -34,6 +33,9 @@ https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md
 実際に起きたことを記してください。ビルドであれば実行コマンドとログ、
 アプリケーション実行中であればスクリーンショットや logcat 出力など。
 期待する動作にならなかった時間帯の Sora サーバ側のログも有用です。
+
+logcat 出力、SDP などで、10行程度以上の情報は
+別途 gist (https://gist.github.com/) に置き、URL での参照をお願いします。
 -->
 
 ## 再現手順
@@ -42,6 +44,14 @@ https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md
 実行したコマンドやアプリケーションの操作手順を記してください。
 ビルドスクリプト、ソースコードを含むミニマルな再現サンプルがあると
 やりとりがスムーズになります。
+
+logcat 出力、SDP などで、10行程度以上の情報は
+別途 gist (https://gist.github.com/) に置き、URL での参照をお願いします。
+
+サンプルコードが複数ファイルに渡る場合、 github repository として
+ディレクトリ構造を含めて置いてもらえますと助かります。
+もちろん公開できる範囲で、コンパイル/ビルドが出来なくても結構です。
+1 ファイルの場合は gist で結構です。
 -->
 
 ## 実現したいこと

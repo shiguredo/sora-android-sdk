@@ -5,6 +5,7 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
+import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import okhttp3.*
@@ -26,6 +27,7 @@ interface SignalingChannel {
         fun onUpdatedOffer(sdp: String)
         fun onError(reason: SoraErrorReason)
         fun onNotificationMessage(notification: NotificationMessage)
+        fun onPushMessage(push: PushMessage)
     }
 }
 
@@ -163,6 +165,13 @@ class SignalingChannelImpl(
         listener?.onNotificationMessage(notification)
     }
 
+    private fun onPushMessage(text: String) {
+        SoraLogger.d(TAG, "[signaling:$role] <- push")
+
+        val push = MessageConverter.parsePushMessage(text)
+        listener?.onPushMessage(push)
+    }
+
     private fun onPingMessage() {
         webSocket?.let {
             SoraLogger.d(TAG, "[signaling:$role] <- ping")
@@ -210,6 +219,7 @@ class SignalingChannelImpl(
                             "ping"   -> onPingMessage()
                             "update" -> onUpdateMessage(json)
                             "notify" -> onNotifyMessage(json)
+                            "push"   -> onPushMessage(json)
                             else     -> SoraLogger.i(TAG, "received unknown-type message")
                         }
 

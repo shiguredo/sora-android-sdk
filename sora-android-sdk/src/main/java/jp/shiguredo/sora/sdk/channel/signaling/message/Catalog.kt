@@ -65,10 +65,15 @@ data class CandidateMessage(
 )
 
 data class NotificationMessage(
-       @SerializedName("event_type")                     val eventType:                     String,
-       @SerializedName("role")                           val role:                          String,
-       @SerializedName("minutes")                        val connectionTime:                Long,
-       @SerializedName("channel_connections")            val numberOfConnections:           Int,
-       @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int,
-       @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int
+        @SerializedName("event_type")                     val eventType:                     String,
+        @SerializedName("role")                           val role:                          String,
+        @SerializedName("minutes")                        val connectionTime:                Long,
+        @SerializedName("channel_connections")            val numberOfConnections:           Int,
+        @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int,
+        @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int
+)
+
+data class PushMessage(
+        @SerializedName("data") var data: Any? = null,
+        @SerializedName("type") val type: String = "push"
 )
