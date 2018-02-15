@@ -74,6 +74,6 @@ data class NotificationMessage(
 )
 
 data class PushMessage(
-        @SerializedName("data") var video: Any? = null,
+        @SerializedName("data") var data: Any? = null,
         @SerializedName("type") val type:  String = "push"
 )
