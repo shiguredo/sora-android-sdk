@@ -171,6 +171,7 @@ class SignalingChannelImpl(
         val push = MessageConverter.parsePushMessage(text)
         listener?.onPushMessage(push)
     }
+
     private fun onPingMessage() {
         webSocket?.let {
             SoraLogger.d(TAG, "[signaling:$role] <- ping")
