@@ -21,7 +21,8 @@ import org.webrtc.MediaStream
 import java.util.*
 
 /**
- * this class manages a twosome dance (SignalingChannel & PeerChannel)
+ * [シグナリングチャネル][SignalingChannel] と [ピアチャネル][PeerChannel] を
+ * 管理、協調させるためのチャネル
  */
 class SoraMediaChannel(
         private val context:           Context,
@@ -36,7 +37,16 @@ class SoraMediaChannel(
 
     val role = mediaOption.requiredRole
 
+    /**
+     * [SoraMediaChannel] からコールバックイベントを受けるリスナー
+     */
     interface Listener {
+        /**
+         * ローカルストリームが追加されたときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param ms 追加されたメディアストリーム
+         */
         fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
         fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}

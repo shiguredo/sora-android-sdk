@@ -4,6 +4,7 @@ apply plugin: 'de.undercouch.download'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'org.jetbrains.dokka'
 
 group = 'com.github.shiguredo'
 
@@ -30,6 +31,11 @@ android {
             targetCompatibility JavaVersion.VERSION_1_7
         }
     }
+}
+
+dokka {
+    outputFormat = 'javadoc'
+    outputDirectory = "${buildDir}/javadoc"
 }
 
 dependencies {
