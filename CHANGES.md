@@ -12,6 +12,10 @@
 
 ## develop
 
+### UPDATE
+
+- Sora のプッシュ API のメッセージを SoraMediaChannel.Listener に伝える機能を追加した
+
 ## 1.4.1
 
 ### UPDATE
