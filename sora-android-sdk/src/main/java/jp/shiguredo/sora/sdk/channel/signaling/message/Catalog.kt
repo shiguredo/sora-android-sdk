@@ -73,4 +73,7 @@ data class NotificationMessage(
        @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int
 )
 
-typealias PushMessage = Map<String, Any>
+data class PushMessage(
+        @SerializedName("data") var video: Any? = null,
+        @SerializedName("type") val type:  String = "push"
+)
