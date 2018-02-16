@@ -26,6 +26,21 @@ import java.util.*
  *
  * Sora に接続するアプリケーションは、このクラスを利用することでシグナリングの
  * 詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます。
+ *
+ * @constructor
+ * SoraMediaChannel インスタンスを生成します。
+ *
+ * cf.
+ * - シグナリングに関しては Sora ドキュメント
+ *   [](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください
+ *
+ * @param context `android.content.Context`
+ * @param signalingEndpoint シグナリングの URL
+ * @param signalingMetadata シグナリングのメタデータ
+ * @param channelId Sora に接続するためのチャネル名
+ * @param mediaOption 映像、音声に関するオプション
+ * @param timeoutSeconds タイムアウト[秒]
+ * @param listener イベントリスナー
  */
 class SoraMediaChannel(
         private val context:           Context,

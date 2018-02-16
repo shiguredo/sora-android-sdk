@@ -4,7 +4,7 @@ apply plugin: 'de.undercouch.download'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
-apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'org.jetbrains.dokka-android'
 
 group = 'com.github.shiguredo'
 
@@ -34,19 +34,19 @@ android {
 }
 
 dokka {
-    sourceDirs = files('src/main/java')
     outputFormat = 'javadoc'
     outputDirectory = "${buildDir}/javadoc"
 
     // TODO: 設定してみたが効かない?
     linkMapping {
         // Source directory
-        dir = "src/main/java"
+        dir = "src/main/kotlin"
         // URL showing where the source code can be accessed through the web browser
         url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/java"
         // Suffix which is used to append the line number to the URL. Use #L for GitHub
         suffix = "#L"
-    }}
+    }
+}
 
 dependencies {
     implementation files('libs/libwebrtc-classes.jar')
