@@ -76,6 +76,20 @@ sdk.dir=/Users/shino/Library/Android/sdk
 ビルドされた AAR ファイルのパスは次のとおり:
 `sora-android-sdk/build/outputs/aar/sora-android-sdk-release.aar`
 
+## kdoc の生成
+
+```
+% rm -rf sora-android-sdk/build/javadoc; gr assemble dokka
+```
+
+sora-android-sdk-doc を更新
+
+```
+% rm -rf /path/to/sora-android-sdk-doc/source/extra/apidoc
+% cp -a path/to/sora-android-sdk/sora-android-sdk/build/dokka
+      /path/to/sora-android-sdk-doc/source/extra/apidoc
+```
+
 ## JitPack
 
 アプリケーションが JitPack https://jitpack.io/ 経由で
