@@ -4,6 +4,7 @@ buildscript {
     // 0.9.15 に R, BuildConfig が含まれるバグがあるので 0.9.14 を使う
     // cf. Dokka generate R and Buildconfig files in Android · Issue #224 · Kotlin/dokka
     //   https://github.com/Kotlin/dokka/issues/224
+    // TODO: 0.9.16-eap-3 でも除外されない, マルチモジュールだから?
     ext.dokka_version = '0.9.14'
 
     ext.libwebrtc_version = '63.13.0'
@@ -12,6 +13,7 @@ buildscript {
         jcenter()
         google()
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
