@@ -34,6 +34,7 @@ android {
 }
 
 dokka {
+    sourceDirs = files('src/main/java')
     outputFormat = 'javadoc'
     outputDirectory = "${buildDir}/javadoc"
 }
