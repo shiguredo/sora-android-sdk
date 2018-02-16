@@ -2,6 +2,12 @@ package jp.shiguredo.sora.sdk.util
 
 import android.util.Log
 
+/**
+ * ログ機能を提供します
+ *
+ * cf.
+ * - `android.util.Log`
+ */
 class SoraLogger {
 
     companion object {

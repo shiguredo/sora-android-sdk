@@ -21,7 +21,26 @@ import org.webrtc.MediaStream
 import java.util.*
 
 /**
- * this class manages a twosome dance (SignalingChannel & PeerChannel)
+ * [SignalingChannel] と [PeerChannel] を
+ * 管理、協調動作させるためのクラス
+ *
+ * Sora に接続するアプリケーションは、このクラスを利用することでシグナリングの
+ * 詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます。
+ *
+ * @constructor
+ * SoraMediaChannel インスタンスを生成します。
+ *
+ * cf.
+ * - シグナリングに関しては Sora ドキュメント
+ *   [](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください
+ *
+ * @param context `android.content.Context`
+ * @param signalingEndpoint シグナリングの URL
+ * @param signalingMetadata シグナリングのメタデータ
+ * @param channelId Sora に接続するためのチャネル名
+ * @param mediaOption 映像、音声に関するオプション
+ * @param timeoutSeconds タイムアウト[秒]
+ * @param listener イベントリスナー
  */
 class SoraMediaChannel(
         private val context:           Context,
@@ -36,14 +55,87 @@ class SoraMediaChannel(
 
     val role = mediaOption.requiredRole
 
+    /**
+     * [SoraMediaChannel] からコールバックイベントを受けるリスナー
+     */
     interface Listener {
+        /**
+         * ローカルストリームが追加されたときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.MediaStream`
+         * - `org.webrtc.MediaStream.vidoTracks`
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param ms 追加されたメディアストリーム
+         */
         fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
+
+        /**
+         * リモートストリームが追加されたときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.MediaStream`
+         * - `org.webrtc.MediaStream.videoTracks`
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param ms 追加されたメディアストリーム
+         */
         fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
+
+        /**
+         * リモートストリームが削除されたときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.MediaStream.label()`
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param label メディアストリームのラベル (`ms.label()`)
+         */
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}
+
+        /**
+         * Sora との接続が確立されたときに呼び出されるコールバック
+         *
+         * @see PeerChannel
+         * @param mediaChannel イベントが発生したチャネル
+         */
         fun onConnect(mediaChannel: SoraMediaChannel) {}
+
+        /**
+         * Sora との接続が切断されたときに呼び出されるコールバック
+         *
+         * @see PeerChannel
+         * @param mediaChannel イベントが発生したチャネル
+         */
         fun onClose(mediaChannel: SoraMediaChannel) {}
+
+        /**
+         * Sora との接続でエラーが発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason エラーの理由
+         */
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
+
+        /**
+         * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param attendees 配信者数と視聴者数を含むオブジェクト
+         */
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
+
+        /**
+         * Sora のプッシュ API によりメッセージを受信したときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param push プッシュ API により受信したメッセージ
+         */
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
     }
 
@@ -149,6 +241,11 @@ class SoraMediaChannel(
         }
     }
 
+    /**
+     * Sora に接続します。
+     *
+     * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
+     */
     fun connect() {
         if (closing) {
             return
@@ -244,6 +341,11 @@ class SoraMediaChannel(
         signaling!!.connect()
     }
 
+    /**
+     * Sora への接続を切断します。
+     *
+     * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います。
+     */
     fun disconnect() {
         if (closing)
             return
