@@ -41,7 +41,7 @@ dokka {
         // Source directory
         dir = "src/main/kotlin"
         // URL showing where the source code can be accessed through the web browser
-        url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/java"
+        url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
         // Suffix which is used to append the line number to the URL. Use #L for GitHub
         suffix = "#L"
     }
