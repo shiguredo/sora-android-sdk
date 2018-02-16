@@ -35,7 +35,6 @@ android {
 
 dokka {
     outputFormat = 'javadoc'
-    outputDirectory = "${buildDir}/javadoc"
 
     // TODO: 設定してみたが効かない?
     linkMapping {
