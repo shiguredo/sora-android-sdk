@@ -47,6 +47,10 @@ class SoraMediaChannel(
         /**
          * ローカルストリームが追加されたときに呼び出されるコールバック
          *
+         * cf.
+         * - `org.webrtc.MediaStream`
+         * - `org.webrtc.MediaStream.vidoTracks`
+         *
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
@@ -55,6 +59,10 @@ class SoraMediaChannel(
         /**
          * リモートストリームが追加されたときに呼び出されるコールバック
          *
+         * cf.
+         * - `org.webrtc.MediaStream`
+         * - `org.webrtc.MediaStream.videoTracks`
+         *
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
@@ -62,6 +70,9 @@ class SoraMediaChannel(
 
         /**
          * リモートストリームが削除されたときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.MediaStream.label()`
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param label メディアストリームのラベル (`ms.label()`)
@@ -215,6 +226,11 @@ class SoraMediaChannel(
         }
     }
 
+    /**
+     * Sora に接続します。
+     *
+     * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
+     */
     fun connect() {
         if (closing) {
             return
@@ -310,6 +326,11 @@ class SoraMediaChannel(
         signaling!!.connect()
     }
 
+    /**
+     * Sora への接続を切断します。
+     *
+     * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います。
+     */
     fun disconnect() {
         if (closing)
             return

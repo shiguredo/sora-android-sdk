@@ -7,10 +7,24 @@ import org.webrtc.Camera2Enumerator
 import org.webrtc.CameraEnumerator
 import org.webrtc.CameraVideoCapturer
 
+/**
+ * カメラからの映像を取得するための `CameraVideoCapturer` のファクトリクラスです。
+ *
+ * Camera1, Camera2 を統一的に扱うことが出来ます。
+ * cf:
+ * - `org.webrtc.CameraVideoCapturer`
+ */
 class CameraCapturerFactory {
 
     companion object {
 
+        /**
+         * `CameraVideoCapturer` のインスタンスを生成します。
+         *
+         * 複数のカメラがある場合はフロントのカメラを優先します。
+         *
+         * @return 生成された `CameraVideoCapturer`
+         */
         fun create(context: Context) : CameraVideoCapturer? {
             var videoCapturer: CameraVideoCapturer? = null
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
