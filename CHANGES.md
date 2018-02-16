@@ -12,9 +12,15 @@
 
 ## develop
 
+## 1.5.1
+
+### ADD
+
+- Kotlin doc comment ををいくつかの定義に追加した
+
 ## 1.5.0
 
-### UPDATE
+### ADD
 
 - Sora のプッシュ API のメッセージを SoraMediaChannel.Listener に伝える機能を追加した
 
