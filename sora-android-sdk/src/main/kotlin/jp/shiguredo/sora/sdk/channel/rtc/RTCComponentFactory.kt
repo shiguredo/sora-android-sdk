@@ -5,13 +5,10 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
 
-class RTCComponentFactory(val option: SoraMediaOption) {
+class RTCComponentFactory(private val option: SoraMediaOption) {
 
     // This method must be call in rtc-thread
-    fun createPeerConnectionFactory(appContext: Context): PeerConnectionFactory {
-
-        PeerConnectionFactory.initializeFieldTrials("")
-
+    fun createPeerConnectionFactory(): PeerConnectionFactory {
         val options = PeerConnectionFactory.Options()
         val factory = PeerConnectionFactory(options)
 

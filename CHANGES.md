@@ -12,6 +12,11 @@
 
 ## develop
 
+### UPDATE
+
+- libwebrtc を 64.5.0 に上げた
+- deprecated warning を潰した
+
 ## 1.5.1
 
 ### ADD

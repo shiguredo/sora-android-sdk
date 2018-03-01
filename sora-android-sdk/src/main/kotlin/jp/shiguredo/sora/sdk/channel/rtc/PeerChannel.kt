@@ -46,6 +46,7 @@ class PeerChannelImpl(
                         .builder(context)
                         .setEnableVideoHwAcceleration(true)
                         .setEnableInternalTracer(useTracer)
+                        .setFieldTrials("")
                         .createInitializationOptions()
                 PeerConnectionFactory.initialize(options)
                 isInitialized = true;
@@ -188,7 +189,7 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "setupInternal")
 
         PeerChannelImpl.initializeIfNeeded(appContext, useTracer)
-        factory = componentFactory.createPeerConnectionFactory(appContext)
+        factory = componentFactory.createPeerConnectionFactory()
 
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
