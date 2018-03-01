@@ -40,9 +40,14 @@ class PeerChannelImpl(
 
     companion object {
         private var isInitialized = false;
-        fun initializeIfNeeded(context: Context) {
+        fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
-                PeerConnectionFactory.initializeAndroidGlobals(context, true)
+                val options = PeerConnectionFactory.InitializationOptions
+                        .builder(context)
+                        .setEnableVideoHwAcceleration(true)
+                        .setEnableInternalTracer(useTracer)
+                        .createInitializationOptions()
+                PeerConnectionFactory.initialize(options)
                 isInitialized = true;
             }
         }
@@ -182,11 +187,7 @@ class PeerChannelImpl(
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
 
-        if (useTracer) {
-            PeerConnectionFactory.initializeInternalTracer()
-        }
-
-        PeerChannelImpl.initializeIfNeeded(appContext)
+        PeerChannelImpl.initializeIfNeeded(appContext, useTracer)
         factory = componentFactory.createPeerConnectionFactory(appContext)
 
         SoraLogger.d(TAG, "createPeerConnection")

@@ -1,7 +1,7 @@
 buildscript {
     ext.kotlin_version = '1.2.10'
     ext.dokka_version = '0.9.15'
-    ext.libwebrtc_version = '63.13.0'
+    ext.libwebrtc_version = '64.6.0'
 
     repositories {
         jcenter()
