@@ -11,6 +11,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
+import jp.shiguredo.sora.sdk.channel.signaling.message.IceServer
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
@@ -141,8 +142,9 @@ class SoraMediaChannel(
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
     }
 
-    private var peer:      PeerChannel?      = null
-    private var signaling: SignalingChannel? = null
+    private var clientOfferPeer: PeerChannel?      = null
+    private var peer:            PeerChannel?      = null
+    private var signaling:       SignalingChannel? = null
 
     private var closing = false
     private var clientId: String? = null
@@ -252,9 +254,7 @@ class SoraMediaChannel(
         if (closing) {
             return
         }
-        val offerSdp = obtainOfferSdp()
-        connectSignalingChannel(offerSdp)
-        startTimer()
+        requestClientOfferSdp()
     }
 
     private var timer: Timer? = null
@@ -332,11 +332,45 @@ class SoraMediaChannel(
         }
     }
 
-    private fun obtainOfferSdp() : SessionDescription {
-        return PeerChannelImpl.obtainOfferSdp(context)
+    private fun requestClientOfferSdp() {
+        val networkConfig = PeerNetworkConfig(
+                serverConfig = OfferConfig(
+                        iceServers = emptyList<IceServer>(),
+                        iceTransportPolicy = ""),
+                enableTcp    = true
+        )
+        val mediaOption = SoraMediaOption().apply{
+            enableVideoDownstream(null)
+            enableAudioDownstream()
+        }
+        clientOfferPeer = PeerChannelImpl(
+                appContext    = context,
+                networkConfig = networkConfig,
+                mediaOption   = mediaOption,
+                listener      = null
+        )
+        clientOfferPeer?.run {
+            val subscription = requestClientOfferSdp()
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
+                                disconnect()
+                                connectSignalingChannel(it)
+                            },
+                            onError = {
+                                SoraLogger.w(TAG,
+                                        "[channel:$role] failed request client offer SDP: ${it.message}")
+                                disconnect()
+                            }
+
+                    )
+            compositeDisposable.add(subscription)
+        }
     }
 
-    private fun connectSignalingChannel(offerSdp : SessionDescription) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
+        startTimer()
         signaling = SignalingChannelImpl(
                 endpoint    = signalingEndpoint,
                 role        = role,
@@ -344,7 +378,7 @@ class SoraMediaChannel(
                 mediaOption = mediaOption,
                 metadata    = signalingMetadata,
                 listener    = signalingListener,
-                offerSdp    = offerSdp
+                clientOfferSdp    = clientOfferSdp
         )
         signaling!!.connect()
     }
@@ -367,6 +401,9 @@ class SoraMediaChannel(
 
         signaling?.disconnect()
         signaling = null
+
+        clientOfferPeer?.disconnect()
+        clientOfferPeer = null
 
         peer?.disconnect()
         peer = null

@@ -5,8 +5,6 @@ import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.signaling.message.IceServer
-import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -17,7 +15,7 @@ interface PeerChannel {
 
     fun handleInitialRemoteOffer(offer: String): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
-    fun obtainClientOffer(): Single<SessionDescription>
+    fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
 
     interface Listener {
@@ -55,63 +53,6 @@ class PeerChannelImpl(
                 isInitialized = true;
             }
         }
-
-        fun obtainOfferSdp(context: Context) : SessionDescription {
-            val iceServers = emptyList<IceServer>()
-            val serverConfig = OfferConfig(iceServers = iceServers, iceTransportPolicy = "")
-            val networkConfig = PeerNetworkConfig(
-                    serverConfig = serverConfig,
-                    enableTcp    = true
-            )
-            val mediaOption = SoraMediaOption()
-            mediaOption.enableVideoDownstream(null)
-            mediaOption.enableAudioDownstream()
-            val peer = PeerChannelImpl(
-                    appContext    = context,
-                    networkConfig = networkConfig,
-                    mediaOption   = mediaOption,
-                    listener      = null
-            )
-            return peer.obtainClientOffer()
-
-//            val componentFactory = RTCComponentFactory(mediaOption)
-//            val peerConnectionFactory = componentFactory.createPeerConnectionFactory()
-//            val mediaConstraint = componentFactory.createSDPConstraints()
-//            val tempPeerConnectionObserver = object : PeerConnection.Observer {
-//                override fun onDataChannel(p0: DataChannel?) {}
-//                override fun onIceConnectionReceivingChange(p0: Boolean) {}
-//                override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {}
-//                override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {}
-//                override fun onAddStream(p0: MediaStream?) {}
-//                override fun onSignalingChange(p0: PeerConnection.SignalingState?) {}
-//                override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {}
-//                override fun onRemoveStream(p0: MediaStream?) {}
-//                override fun onRenegotiationNeeded() {}
-//                override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {}
-//                override fun onIceCandidate(p0: IceCandidate?) {}
-//            }
-//            val tempPeerConnection =
-//                    peerConnectionFactory.createPeerConnection(iceServers, mediaConstraint,
-//                            tempPeerConnectionObserver)
-//
-//            val sdpObserver = object : SdpObserver {
-//                override fun onSetFailure(p0: String?) {}
-//                override fun onSetSuccess() {}
-//
-//                override fun onCreateSuccess(offerSdp: SessionDescription?) {
-//                    SoraLogger.d(TAG, """onCreateSuccess: offerSdp.type=${offerSdp!!.type}""")
-//                    SoraLogger.d(TAG, "onCreateSuccess: offerSdp.description -------")
-//                    SoraLogger.d(TAG, offerSdp!!.description)
-//                    // TODO: これをだれかに渡す
-//                }
-//
-//                override fun onCreateFailure(p0: String?) {
-//                    // TODO: MUST Implement
-//                }
-//            }
-//            tempPeerConnection.createOffer(sdpObserver, mediaConstraint)
-        }
-
     }
 
     private val componentFactory = RTCComponentFactory(mediaOption)
@@ -245,16 +186,20 @@ class PeerChannelImpl(
         }
     }
 
-    override fun obtainClientOffer(): Single<SessionDescription> {
+    override fun requestClientOfferSdp(): Single<SessionDescription> {
         return setup().flatMap {
-            return@flatMap createClientOffer()
+            SoraLogger.d(TAG, "requestClientOfferSdp")
+            return@flatMap createClientOfferSdp()
         }
     }
 
-    private fun createClientOffer() : Single<SessionDescription> =
+    private fun createClientOfferSdp() : Single<SessionDescription> =
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
+                    SoraLogger.d(TAG, "client offer SDP created")
+                    SoraLogger.d(TAG, "client offer SDP type ${sdp?.type}")
+                    SoraLogger.d(TAG,  sdp?.description)
                     it.onSuccess(sdp!!)
                 }
                 override fun onCreateFailure(s: String?) {

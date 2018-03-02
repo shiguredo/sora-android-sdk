@@ -39,7 +39,7 @@ class SignalingChannelImpl(
         private val mediaOption: SoraMediaOption,
         private val metadata:    String?,
         private var listener:    SignalingChannel.Listener?,
-        private val offerSdp:    SessionDescription
+        private val clientOfferSdp:    SessionDescription
 ) : SignalingChannel {
 
     val TAG = SignalingChannelImpl::class.simpleName
@@ -128,7 +128,7 @@ class SignalingChannelImpl(
                     channelId   = channelId,
                     mediaOption = mediaOption,
                     metadata    = metadata,
-                    sdp         = offerSdp.description
+                    sdp         = clientOfferSdp.description
             )
             SoraLogger.d(TAG, msg)
             it.send(msg)

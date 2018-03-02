@@ -16,6 +16,7 @@
 
 - libwebrtc を 64.5.0 に上げた
 - deprecated warning を潰した
+- Signaling connect 時に client offer の SDP を載せた
 
 ## 1.5.1
 
