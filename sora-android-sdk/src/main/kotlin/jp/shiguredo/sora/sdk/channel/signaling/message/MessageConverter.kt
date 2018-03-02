@@ -13,17 +13,19 @@ class MessageConverter {
 
         val gson = Gson()
 
-        fun buildConnectMessage(role: SoraChannelRole,
-                                channelId:          String?,
+        fun buildConnectMessage(role:        SoraChannelRole,
+                                channelId:   String?,
                                 mediaOption: SoraMediaOption,
-                                metadata:           String?
+                                metadata:    String?,
+                                sdp:         String
         ): String {
 
             val msg = ConnectMessage(
                     role        = role.toString().toLowerCase(),
                     channelId   = channelId,
                     metadata    = metadata,
-                    multistream = mediaOption.multistreamIsRequired
+                    multistream = mediaOption.multistreamIsRequired,
+                    sdp         = sdp
             )
 
             if (mediaOption.audioIsRequired) {

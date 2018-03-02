@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel
 import android.content.Context
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
+import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
@@ -18,6 +19,7 @@ import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
+import org.webrtc.SessionDescription
 import java.util.*
 
 /**
@@ -250,7 +252,8 @@ class SoraMediaChannel(
         if (closing) {
             return
         }
-        connectSignalingChannel()
+        val offerSdp = obtainOfferSdp()
+        connectSignalingChannel(offerSdp)
         startTimer()
     }
 
@@ -329,14 +332,19 @@ class SoraMediaChannel(
         }
     }
 
-    private fun connectSignalingChannel() {
+    private fun obtainOfferSdp() : SessionDescription {
+        return PeerChannelImpl.obtainOfferSdp(context)
+    }
+
+    private fun connectSignalingChannel(offerSdp : SessionDescription) {
         signaling = SignalingChannelImpl(
                 endpoint    = signalingEndpoint,
                 role        = role,
                 channelId   = channelId,
                 mediaOption = mediaOption,
                 metadata    = signalingMetadata,
-                listener    = signalingListener
+                listener    = signalingListener,
+                offerSdp    = offerSdp
         )
         signaling!!.connect()
     }
