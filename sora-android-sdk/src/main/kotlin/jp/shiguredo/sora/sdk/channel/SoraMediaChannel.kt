@@ -142,7 +142,6 @@ class SoraMediaChannel(
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
     }
 
-    private var clientOfferPeer: PeerChannel?      = null
     private var peer:            PeerChannel?      = null
     private var signaling:       SignalingChannel? = null
 
@@ -254,6 +253,7 @@ class SoraMediaChannel(
         if (closing) {
             return
         }
+        startTimer()
         requestClientOfferSdp()
     }
 
@@ -333,23 +333,20 @@ class SoraMediaChannel(
     }
 
     private fun requestClientOfferSdp() {
-        val networkConfig = PeerNetworkConfig(
-                serverConfig = OfferConfig(
-                        iceServers = emptyList<IceServer>(),
-                        iceTransportPolicy = ""),
-                enableTcp    = true
-        )
-        val mediaOption = SoraMediaOption().apply{
-            enableVideoDownstream(null)
-            enableAudioDownstream()
-        }
-        clientOfferPeer = PeerChannelImpl(
+        val clientOfferPeer = PeerChannelImpl(
                 appContext    = context,
-                networkConfig = networkConfig,
-                mediaOption   = mediaOption,
+                networkConfig = PeerNetworkConfig(
+                        serverConfig = OfferConfig(
+                                iceServers = emptyList<IceServer>(),
+                                iceTransportPolicy = ""),
+                        enableTcp    = true),
+                mediaOption   = SoraMediaOption().apply {
+                    enableVideoDownstream(null)
+                    enableAudioDownstream()
+                },
                 listener      = null
         )
-        clientOfferPeer?.run {
+        clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
                     .observeOn(Schedulers.io())
                     .subscribeBy(
@@ -370,7 +367,6 @@ class SoraMediaChannel(
     }
 
     private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
-        startTimer()
         signaling = SignalingChannelImpl(
                 endpoint    = signalingEndpoint,
                 role        = role,
@@ -401,9 +397,6 @@ class SoraMediaChannel(
 
         signaling?.disconnect()
         signaling = null
-
-        clientOfferPeer?.disconnect()
-        clientOfferPeer = null
 
         peer?.disconnect()
         peer = null
