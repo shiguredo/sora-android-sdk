@@ -282,17 +282,14 @@ class SoraMediaChannel(
     }
 
     private fun handleInitialOffer(sdp: String, config: OfferConfig) {
-
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
-
-        val networkConfig = PeerNetworkConfig(
-                serverConfig = config,
-                enableTcp    = true
-        )
 
         peer = PeerChannelImpl(
                 appContext    = context,
-                networkConfig = networkConfig,
+                networkConfig = PeerNetworkConfig(
+                        serverConfig = config,
+                        enableTcp    = true
+                ),
                 mediaOption   = mediaOption,
                 listener      = peerListener
         )
@@ -306,7 +303,8 @@ class SoraMediaChannel(
                                 signaling?.sendAnswer(it.description)
                             },
                             onError = {
-                                SoraLogger.w(TAG, "[channel:$role] failed to start: ${it.message}")
+                                val msg = "[channel:$role] failure in handleInitialOffer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
                                 disconnect()
                             }
                     )
@@ -324,7 +322,8 @@ class SoraMediaChannel(
                                signaling?.sendUpdateAnswer(it.description)
                            },
                            onError = {
-                               SoraLogger.w(TAG, "[channel:$role] failed handle updated offer: ${it.message}")
+                               val msg = "[channel:$role] failed handle updated offer: ${it.message}"
+                               SoraLogger.w(TAG, msg)
                                disconnect()
                            }
                     )
