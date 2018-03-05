@@ -15,6 +15,7 @@ interface PeerChannel {
 
     fun handleInitialRemoteOffer(offer: String): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
+    fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
 
     interface Listener {
@@ -184,6 +185,34 @@ class PeerChannelImpl(
             return@flatMap setLocalDescription(answer)
         }
     }
+
+    override fun requestClientOfferSdp(): Single<SessionDescription> {
+        return setup().flatMap {
+            SoraLogger.d(TAG, "requestClientOfferSdp")
+            return@flatMap createClientOfferSdp()
+        }
+    }
+
+    private fun createClientOfferSdp() : Single<SessionDescription> =
+        Single.create(SingleOnSubscribe<SessionDescription> {
+            conn?.createOffer(object : SdpObserver {
+                override fun onCreateSuccess(sdp: SessionDescription?) {
+                    SoraLogger.d(TAG, "client offer SDP created")
+                    SoraLogger.d(TAG, "client offer SDP type ${sdp?.type}")
+                    SoraLogger.d(TAG,  sdp?.description)
+                    it.onSuccess(sdp!!)
+                }
+                override fun onCreateFailure(s: String?) {
+                    it.onError(Error(s))
+                }
+                override fun onSetSuccess() {
+                    it.onError(Error("must not come here"))
+                }
+                override fun onSetFailure(s: String?) {
+                    it.onError(Error("must not come here"))
+                }
+            }, sdpConstraints)
+        }).subscribeOn(Schedulers.from(executor))
 
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")

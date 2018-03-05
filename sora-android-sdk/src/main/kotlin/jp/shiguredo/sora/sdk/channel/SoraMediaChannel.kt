@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel
 import android.content.Context
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
+import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
@@ -10,6 +11,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
+import jp.shiguredo.sora.sdk.channel.signaling.message.IceServer
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
@@ -18,6 +20,7 @@ import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
+import org.webrtc.SessionDescription
 import java.util.*
 
 /**
@@ -139,8 +142,8 @@ class SoraMediaChannel(
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
     }
 
-    private var peer:      PeerChannel?      = null
-    private var signaling: SignalingChannel? = null
+    private var peer:            PeerChannel?      = null
+    private var signaling:       SignalingChannel? = null
 
     private var closing = false
     private var clientId: String? = null
@@ -250,8 +253,8 @@ class SoraMediaChannel(
         if (closing) {
             return
         }
-        connectSignalingChannel()
         startTimer()
+        requestClientOfferSdp()
     }
 
     private var timer: Timer? = null
@@ -279,17 +282,14 @@ class SoraMediaChannel(
     }
 
     private fun handleInitialOffer(sdp: String, config: OfferConfig) {
-
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
-
-        val networkConfig = PeerNetworkConfig(
-                serverConfig = config,
-                enableTcp    = true
-        )
 
         peer = PeerChannelImpl(
                 appContext    = context,
-                networkConfig = networkConfig,
+                networkConfig = PeerNetworkConfig(
+                        serverConfig = config,
+                        enableTcp    = true
+                ),
                 mediaOption   = mediaOption,
                 listener      = peerListener
         )
@@ -303,7 +303,8 @@ class SoraMediaChannel(
                                 signaling?.sendAnswer(it.description)
                             },
                             onError = {
-                                SoraLogger.w(TAG, "[channel:$role] failed to start: ${it.message}")
+                                val msg = "[channel:$role] failure in handleInitialOffer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
                                 disconnect()
                             }
                     )
@@ -321,7 +322,8 @@ class SoraMediaChannel(
                                signaling?.sendUpdateAnswer(it.description)
                            },
                            onError = {
-                               SoraLogger.w(TAG, "[channel:$role] failed handle updated offer: ${it.message}")
+                               val msg = "[channel:$role] failed handle updated offer: ${it.message}"
+                               SoraLogger.w(TAG, msg)
                                disconnect()
                            }
                     )
@@ -329,14 +331,49 @@ class SoraMediaChannel(
         }
     }
 
-    private fun connectSignalingChannel() {
+    private fun requestClientOfferSdp() {
+        val clientOfferPeer = PeerChannelImpl(
+                appContext    = context,
+                networkConfig = PeerNetworkConfig(
+                        serverConfig = OfferConfig(
+                                iceServers = emptyList<IceServer>(),
+                                iceTransportPolicy = ""),
+                        enableTcp    = true),
+                mediaOption   = SoraMediaOption().apply {
+                    enableVideoDownstream(null)
+                    enableAudioDownstream()
+                },
+                listener      = null
+        )
+        clientOfferPeer.run {
+            val subscription = requestClientOfferSdp()
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
+                                disconnect()
+                                connectSignalingChannel(it)
+                            },
+                            onError = {
+                                SoraLogger.w(TAG,
+                                        "[channel:$role] failed request client offer SDP: ${it.message}")
+                                disconnect()
+                            }
+
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
         signaling = SignalingChannelImpl(
                 endpoint    = signalingEndpoint,
                 role        = role,
                 channelId   = channelId,
                 mediaOption = mediaOption,
                 metadata    = signalingMetadata,
-                listener    = signalingListener
+                listener    = signalingListener,
+                clientOfferSdp    = clientOfferSdp
         )
         signaling!!.connect()
     }
