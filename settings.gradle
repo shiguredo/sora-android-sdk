@@ -1,5 +1,6 @@
 include ':sora-android-sdk'
 
-// For developer in debugging phase
-// include ':sora-android-quickstart:quickstart'
-// project(':sora-android-quickstart:quickstart').projectDir = new File('../sora-android-sdk-quickstart/quickstart')
+// // For developer in debugging phase
+// include ':sora-android-sdk-quickstart:quickstart'
+// project(':sora-android-sdk-quickstart:quickstart').projectDir =
+//     new File('../sora-android-sdk-quickstart/quickstart')
