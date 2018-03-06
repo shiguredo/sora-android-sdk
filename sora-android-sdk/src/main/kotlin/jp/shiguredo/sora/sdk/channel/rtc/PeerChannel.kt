@@ -280,9 +280,11 @@ class PeerChannelImpl(
                     it.onError(Error("must not come here"))
                 }
                 override fun onSetSuccess() {
+                    SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
+                    SoraLogger.d(TAG, "setLocalDescription.onSetFuilure reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)
@@ -298,11 +300,11 @@ class PeerChannelImpl(
                     it.onError(Error("must not come here"))
                 }
                 override fun onSetSuccess() {
-                    SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess")
+                    SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
-                    SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=${s}")
+                    SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)
