@@ -51,8 +51,8 @@ class SignalingChannelImpl(
     private var closing  = false
 
     override fun connect() {
-        val url = endpoint + "?channel_id=$channelId"
-        SoraLogger.i(TAG, "[signaling:$role] start to connect $url")
+        val url = "${endpoint}?channel_id=${channelId}"
+        SoraLogger.i(TAG, "[signaling:$role] start to connect ${url}")
         val request = Request.Builder().url(url).build()
         client.newWebSocket(request, webSocketListener)
     }

@@ -226,6 +226,7 @@ class PeerChannelImpl(
                 networkConfig.createConstraints(),
                 connectionObserver)
 
+        SoraLogger.d(TAG, "local managers' initTrack")
         localAudioManager.initTrack(factory!!)
         localVideoManager.initTrack(factory!!)
 

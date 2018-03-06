@@ -23,6 +23,7 @@ class RTCLocalAudioManager(
     private var track:  AudioTrack?  = null
 
     fun initTrack(factory: PeerConnectionFactory) {
+        SoraLogger.d(TAG, "initTrack")
         if (send) {
             val constraints = createSourceConstraints()
             source = factory.createAudioSource(constraints)
