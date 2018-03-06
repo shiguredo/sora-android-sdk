@@ -18,6 +18,10 @@
 - deprecated warning を潰した
 - Signaling connect 時に client offer の SDP を載せた
 
+### FIX
+
+- PeerConnectionFactory 生成を UI thread 上で行うよう修正した
+
 ## 1.5.1
 
 ### ADD

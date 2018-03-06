@@ -8,7 +8,8 @@ import org.webrtc.PeerConnectionFactory
 class RTCComponentFactory(private val option: SoraMediaOption) {
     val TAG = RTCComponentFactory::class.simpleName
 
-    // This method must be call in rtc-thread
+    // メインスレッド(UI スレッド)で呼ばれる必要がある。
+    // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(): PeerConnectionFactory {
         SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${Thread.currentThread().contextClassLoader}")
         val options = PeerConnectionFactory.Options()
