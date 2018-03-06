@@ -1,6 +1,8 @@
 package jp.shiguredo.sora.sdk.channel
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
@@ -333,17 +335,17 @@ class SoraMediaChannel(
 
     private fun requestClientOfferSdp() {
         val clientOfferPeer = PeerChannelImpl(
-                appContext    = context,
+                appContext = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = OfferConfig(
                                 iceServers = emptyList<IceServer>(),
                                 iceTransportPolicy = ""),
-                        enableTcp    = true),
-                mediaOption   = SoraMediaOption().apply {
+                        enableTcp = true),
+                mediaOption = SoraMediaOption().apply {
                     enableVideoDownstream(null)
                     enableAudioDownstream()
                 },
-                listener      = null
+                listener = null
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -352,7 +354,10 @@ class SoraMediaChannel(
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
                                 disconnect()
-                                connectSignalingChannel(it)
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.post() {
+                                    connectSignalingChannel(it)
+                                }
                             },
                             onError = {
                                 SoraLogger.w(TAG,
