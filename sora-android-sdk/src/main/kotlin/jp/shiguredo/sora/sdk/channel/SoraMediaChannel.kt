@@ -252,6 +252,19 @@ class SoraMediaChannel(
      * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
      */
     fun connect() {
+        SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamContext   = ${mediaOption.videoUpstreamContext}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled   = ${mediaOption.audioUpstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled = ${mediaOption.audioDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioCodec             = ${mediaOption.audioCodec}")
         if (closing) {
             return
         }
