@@ -12,6 +12,8 @@
 
 ## develop
 
+## 1.5.2
+
 ### UPDATE
 
 - libwebrtc を 64.5.0 に上げた
