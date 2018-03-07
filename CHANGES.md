@@ -12,6 +12,19 @@
 
 ## develop
 
+## 1.5.2
+
+### UPDATE
+
+- libwebrtc を 64.5.0 に上げた
+- deprecated warning を潰した
+- Signaling connect 時に client offer の SDP を載せた
+- Kotlin 1.2.30 に上げた
+
+### FIX
+
+- PeerConnectionFactory 生成を UI thread 上で行うよう修正した
+
 ## 1.5.1
 
 ### ADD

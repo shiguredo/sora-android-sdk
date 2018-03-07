@@ -15,6 +15,7 @@ interface PeerChannel {
 
     fun handleInitialRemoteOffer(offer: String): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
+    fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
 
     interface Listener {
@@ -40,9 +41,15 @@ class PeerChannelImpl(
 
     companion object {
         private var isInitialized = false;
-        fun initializeIfNeeded(context: Context) {
+        fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
-                PeerConnectionFactory.initializeAndroidGlobals(context, true)
+                val options = PeerConnectionFactory.InitializationOptions
+                        .builder(context)
+                        .setEnableVideoHwAcceleration(true)
+                        .setEnableInternalTracer(useTracer)
+                        .setFieldTrials("")
+                        .createInitializationOptions()
+                PeerConnectionFactory.initialize(options)
                 isInitialized = true;
             }
         }
@@ -179,15 +186,39 @@ class PeerChannelImpl(
         }
     }
 
+    override fun requestClientOfferSdp(): Single<SessionDescription> {
+        return setup().flatMap {
+            SoraLogger.d(TAG, "requestClientOfferSdp")
+            return@flatMap createClientOfferSdp()
+        }
+    }
+
+    private fun createClientOfferSdp() : Single<SessionDescription> =
+        Single.create(SingleOnSubscribe<SessionDescription> {
+            conn?.createOffer(object : SdpObserver {
+                override fun onCreateSuccess(sdp: SessionDescription?) {
+                    SoraLogger.d(TAG, "client offer SDP created")
+                    SoraLogger.d(TAG, "client offer SDP type ${sdp?.type}")
+                    SoraLogger.d(TAG,  sdp?.description)
+                    it.onSuccess(sdp!!)
+                }
+                override fun onCreateFailure(s: String?) {
+                    it.onError(Error(s))
+                }
+                override fun onSetSuccess() {
+                    it.onError(Error("must not come here"))
+                }
+                override fun onSetFailure(s: String?) {
+                    it.onError(Error("must not come here"))
+                }
+            }, sdpConstraints)
+        }).subscribeOn(Schedulers.from(executor))
+
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
 
-        if (useTracer) {
-            PeerConnectionFactory.initializeInternalTracer()
-        }
-
-        PeerChannelImpl.initializeIfNeeded(appContext)
-        factory = componentFactory.createPeerConnectionFactory(appContext)
+        PeerChannelImpl.initializeIfNeeded(appContext, useTracer)
+        factory = componentFactory.createPeerConnectionFactory()
 
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
@@ -195,12 +226,15 @@ class PeerChannelImpl(
                 networkConfig.createConstraints(),
                 connectionObserver)
 
+        SoraLogger.d(TAG, "local managers' initTrack")
         localAudioManager.initTrack(factory!!)
         localVideoManager.initTrack(factory!!)
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
         val localStream = factory!!.createLocalMediaStream(streamId)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         localAudioManager.attachTrackToStream(localStream)
         localVideoManager.attachTrackToStream(localStream)
         listener?.onAddLocalStream(localStream!!)
@@ -219,9 +253,12 @@ class PeerChannelImpl(
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
+                    SoraLogger.d(TAG, "craeteAnswer:onCreateSuccess: ${sdp!!.type}")
+                    SoraLogger.d(TAG, sdp!!.description)
                     it.onSuccess(sdp!!)
                 }
                 override fun onCreateFailure(s: String?) {
+                    SoraLogger.w(TAG, "craeteAnswer:onCreateFailure: reason=${s}")
                     it.onError(Error(s))
                 }
                 override fun onSetSuccess() {
@@ -243,9 +280,11 @@ class PeerChannelImpl(
                     it.onError(Error("must not come here"))
                 }
                 override fun onSetSuccess() {
+                    SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
+                    SoraLogger.d(TAG, "setLocalDescription.onSetFuilure reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)
@@ -261,9 +300,11 @@ class PeerChannelImpl(
                     it.onError(Error("must not come here"))
                 }
                 override fun onSetSuccess() {
+                    SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
+                    SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)

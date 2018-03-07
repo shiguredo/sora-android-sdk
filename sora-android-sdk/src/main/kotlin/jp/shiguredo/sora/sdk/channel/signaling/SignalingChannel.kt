@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import okhttp3.*
 import okio.ByteString
+import org.webrtc.SessionDescription
 import java.util.concurrent.TimeUnit
 
 interface SignalingChannel {
@@ -37,7 +38,8 @@ class SignalingChannelImpl(
         private val channelId:   String?,
         private val mediaOption: SoraMediaOption,
         private val metadata:    String?,
-        private var listener:    SignalingChannel.Listener?
+        private var listener:    SignalingChannel.Listener?,
+        private val clientOfferSdp:    SessionDescription
 ) : SignalingChannel {
 
     val TAG = SignalingChannelImpl::class.simpleName
@@ -49,8 +51,8 @@ class SignalingChannelImpl(
     private var closing  = false
 
     override fun connect() {
-        val url = endpoint + "?channel_id=$channelId"
-        SoraLogger.i(TAG, "[signaling:$role] start to connect $url")
+        val url = "${endpoint}?channel_id=${channelId}"
+        SoraLogger.i(TAG, "[signaling:$role] start to connect ${url}")
         val request = Request.Builder().url(url).build()
         client.newWebSocket(request, webSocketListener)
     }
@@ -125,7 +127,8 @@ class SignalingChannelImpl(
                     role        = role,
                     channelId   = channelId,
                     mediaOption = mediaOption,
-                    metadata    = metadata
+                    metadata    = metadata,
+                    sdp         = clientOfferSdp.description
             )
             SoraLogger.d(TAG, msg)
             it.send(msg)

@@ -3,7 +3,6 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 class MessageConverter {
 
@@ -13,17 +12,19 @@ class MessageConverter {
 
         val gson = Gson()
 
-        fun buildConnectMessage(role: SoraChannelRole,
-                                channelId:          String?,
+        fun buildConnectMessage(role:        SoraChannelRole,
+                                channelId:   String?,
                                 mediaOption: SoraMediaOption,
-                                metadata:           String?
+                                metadata:    String?,
+                                sdp:         String
         ): String {
 
             val msg = ConnectMessage(
                     role        = role.toString().toLowerCase(),
                     channelId   = channelId,
                     metadata    = metadata,
-                    multistream = mediaOption.multistreamIsRequired
+                    multistream = mediaOption.multistreamIsRequired,
+                    sdp         = sdp
             )
 
             if (mediaOption.audioIsRequired) {

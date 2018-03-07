@@ -25,7 +25,7 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 - Android 4.1 以降 (シミュレーターは不可)
 - Android Studio 2.3.3 以降
-- WebRTC SFU Sora 17.08 以降
+- WebRTC SFU Sora 18.02 以降
 
 ## サンプルコード
 
@@ -75,6 +75,20 @@ sdk.dir=/Users/shino/Library/Android/sdk
 
 ビルドされた AAR ファイルのパスは次のとおり:
 `sora-android-sdk/build/outputs/aar/sora-android-sdk-release.aar`
+
+## kdoc の生成
+
+```
+% rm -rf sora-android-sdk/build/javadoc; gr assemble dokka
+```
+
+sora-android-sdk-doc を更新
+
+```
+% rm -rf /path/to/sora-android-sdk-doc/source/extra/apidoc
+% cp -a path/to/sora-android-sdk/sora-android-sdk/build/dokka
+      /path/to/sora-android-sdk-doc/source/extra/apidoc
+```
 
 ## JitPack
 

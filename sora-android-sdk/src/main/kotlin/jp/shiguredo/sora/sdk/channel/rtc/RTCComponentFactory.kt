@@ -1,17 +1,17 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
-import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
 
-class RTCComponentFactory(val option: SoraMediaOption) {
+class RTCComponentFactory(private val option: SoraMediaOption) {
+    val TAG = RTCComponentFactory::class.simpleName
 
-    // This method must be call in rtc-thread
-    fun createPeerConnectionFactory(appContext: Context): PeerConnectionFactory {
-
-        PeerConnectionFactory.initializeFieldTrials("")
-
+    // メインスレッド(UI スレッド)で呼ばれる必要がある。
+    // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
+    fun createPeerConnectionFactory(): PeerConnectionFactory {
+        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${Thread.currentThread().contextClassLoader}")
         val options = PeerConnectionFactory.Options()
         val factory = PeerConnectionFactory(options)
 
@@ -46,6 +46,7 @@ class RTCComponentFactory(val option: SoraMediaOption) {
         val videoManager = option.videoCapturer?.let {
             RTCLocalVideoManagerImpl(it)
         } ?: RTCNullLocalVideoManager()
+        SoraLogger.d(TAG, "videoManager created: ${videoManager}")
         return videoManager
     }
 

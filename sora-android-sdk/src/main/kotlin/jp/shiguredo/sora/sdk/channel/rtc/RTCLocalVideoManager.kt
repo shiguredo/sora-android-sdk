@@ -25,7 +25,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
     var track:  VideoTrack?  = null
 
     override fun initTrack(factory: PeerConnectionFactory) {
-        SoraLogger.d(TAG, "initTask")
+        SoraLogger.d(TAG, "initTrack")
         source = factory.createVideoSource(capturer)
         val trackId = UUID.randomUUID().toString()
         track = factory.createVideoTrack(trackId, source)

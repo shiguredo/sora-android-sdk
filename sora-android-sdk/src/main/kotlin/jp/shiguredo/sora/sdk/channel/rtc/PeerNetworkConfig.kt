@@ -45,7 +45,10 @@ class PeerNetworkConfig(
             val server = it
             server.urls.forEach {
                 val url = it
-                iceServers.add(PeerConnection.IceServer(url, server.username, server.credential))
+                iceServers.add(PeerConnection.IceServer.builder(url)
+                        .setUsername(server.username)
+                        .setPassword(server.credential)
+                        .createIceServer())
             }
         }
         return iceServers

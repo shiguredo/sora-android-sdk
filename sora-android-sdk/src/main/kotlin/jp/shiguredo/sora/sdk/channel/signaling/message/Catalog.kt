@@ -18,6 +18,7 @@ data class ConnectMessage(
         @SerializedName("plan_b")      var planB:       Boolean = true,
         @SerializedName("video")       var video:       Any? = null,
         @SerializedName("audio")       var audio:       Any? = null,
+        @SerializedName("sdp")         val sdp:         String,
         @SerializedName("type")        val type:        String = "connect"
 )
 
