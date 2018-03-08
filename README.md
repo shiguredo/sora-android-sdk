@@ -137,9 +137,11 @@ sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下�
 1. settings.gradle に以下を追加する::
 
 ```
-file('../sora-android-sdk-quickstart).eachDir { dir ->
-    include dir.name
-    project(":${dir.name}").projectDir = dir
+file('../sora-android-sdk-samples').eachDir { dir ->
+    if( new File(dir, "build.gradle").exists()) {
+        include dir.name
+        project(":${dir.name}").projectDir = dir
+    }
 }
 ```
 

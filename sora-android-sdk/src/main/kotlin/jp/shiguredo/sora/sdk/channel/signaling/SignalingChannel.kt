@@ -241,10 +241,11 @@ class SignalingChannelImpl(
 
         override fun onClosed(webSocket: WebSocket?, code: Int, reason: String?) {
             try {
-                reason?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onClosed: $it")
-                } ?: SoraLogger.i(TAG, "[signaling:$role] @onClosed")
-
+                if (code == 1000) {
+                    SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = ${code}")
+                } else {
+                    SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = ${code}")
+                }
                 disconnect()
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.message)
