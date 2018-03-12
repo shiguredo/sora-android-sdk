@@ -12,6 +12,7 @@ class SoraLogger {
 
     companion object {
         var enabled = false
+        var libjingle_enabled = false
 
         fun v(tag: String?, msg: String?) {
             if (enabled) {
