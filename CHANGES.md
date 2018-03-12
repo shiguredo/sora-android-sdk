@@ -20,6 +20,8 @@
 - deprecated warning を潰した
 - Signaling connect 時に client offer の SDP を載せた
 - Kotlin 1.2.30 に上げた
+- libjingle のデバッグログ有効化フラグを追加した
+- Signaling が 1000 以外 で close した時に warning ログを出すよう変更した
 
 ### FIX
 
