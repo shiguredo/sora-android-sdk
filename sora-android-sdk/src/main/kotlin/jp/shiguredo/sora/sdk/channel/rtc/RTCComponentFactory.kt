@@ -28,17 +28,13 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         if (option.audioDownstreamEnabled) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        } else {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"))
         }
+
         if (option.videoDownstreamEnabled) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        } else {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"))
         }
+        SoraLogger.d(TAG, "createSDPConstraints: ${constraints.toString()}")
         return constraints
     }
 

@@ -8,6 +8,25 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 
 使い方は [Sora Android SDK ドキュメント](https://sora.shiguredo.jp/android-sdk-doc/) を参照してください。
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Sora Android SDK](#sora-android-sdk)
+    - [About Support](#about-support)
+    - [サポートについて](#サポートについて)
+    - [システム条件](#システム条件)
+    - [サンプルコード](#サンプルコード)
+    - [Issues について](#issues-について)
+- [SDK 開発者向け](#sdk-開発者向け)
+    - [libwebrtc への依存](#libwebrtc-への依存)
+    - [ローカルでのビルド](#ローカルでのビルド)
+    - [kdoc の生成](#kdoc-の生成)
+    - [JitPack](#jitpack)
+    - [sora-android-sdk-samples を multi module に押し込む方法](#sora-android-sdk-samples-を-multi-module-に押し込む方法)
+- [Copyright](#copyright)
+
+<!-- markdown-toc end -->
+
 ## About Support
 
 Support for Sora Android SDK by Shiguredo Inc. are limited
@@ -113,31 +132,35 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 
 ## sora-android-sdk-samples を multi module に押し込む方法
 
-*無理やりなのでもっとエレガントな方法が欲しい*
+sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下に clone されているとします。
 
-1. symlink を貼る::
+1. settings.gradle に以下を追加する::
 
-     % cd path/to/sora-android-sdk
-     % ln -s path/to/sora-android-sdk-samples/samples
-     % ln -s path/to/sora-android-sdk-samples/webrtc-video-effector
+```
+file('../sora-android-sdk-samples').eachDir { dir ->
+    if( new File(dir, "build.gradle").exists()) {
+        include dir.name
+        project(":${dir.name}").projectDir = dir
+    }
+}
+```
 
-2. モジュール構成を書き換える::
+2. webrtc-video-effector/build.gradle の SDK 依存を project に変更する::
 
-     % echo "include ':sora-android-sdk',  ':samples', ':webrtc-video-effector'" > settings.gradle
-
-3. 依存を project 依存に変更する::
-
+```
      dependencies {
          [snip]
-         // Sora Android SDK
-         // compile("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version:release@aar") {
-         //     transitive = true
+         // api("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version@aar") {
+         //    transitive = true
          // }
-         compile project(':sora-android-sdk')
+         api project(':sora-android-sdk')
+```
 
-4. top level か samples の build.gradle に ext の設定を足す::
+3. (optional) top level か samples の build.gradle に ext の設定を足す::
 
+```
      ext.signaling_endpoint = "wss://sora.example.com/signaling"
+```
 
 # Copyright
 
