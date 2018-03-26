@@ -33,9 +33,6 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         if (option.videoDownstreamEnabled) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        } else {
-//            constraints.mandatory.add(
-//                    MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"))
         }
         SoraLogger.d(TAG, "createSDPConstraints: ${constraints.toString()}")
         return constraints
