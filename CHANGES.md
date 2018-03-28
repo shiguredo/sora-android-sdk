@@ -12,6 +12,8 @@
 
 ## develop
 
+## 1.5.4
+
 ### UPDATE
 
 - PeerConnectionFactory.createPeerConnection/3 deprecated に対応した
