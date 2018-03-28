@@ -8,13 +8,6 @@ class PeerNetworkConfig(
         private val serverConfig: OfferConfig,
         private val enableTcp:    Boolean = false
 ) {
-    fun createConstraints(): MediaConstraints {
-        val constraints = MediaConstraints()
-        constraints.mandatory.add(
-                MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"))
-        return constraints
-    }
-
     fun createConfiguration(): PeerConnection.RTCConfiguration {
 
         val iceServers = gatherIceServerSetting(serverConfig)
@@ -35,6 +28,7 @@ class PeerNetworkConfig(
         else
             PeerConnection.TcpCandidatePolicy.DISABLED
 
+        conf.enableDtlsSrtp = true;
         return conf
     }
 

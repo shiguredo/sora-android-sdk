@@ -226,7 +226,6 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
                 networkConfig.createConfiguration(),
-                networkConfig.createConstraints(),
                 connectionObserver)
 
         SoraLogger.d(TAG, "local managers' initTrack")
@@ -257,8 +256,8 @@ class PeerChannelImpl(
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
                     SoraLogger.d(TAG, "craeteAnswer:onCreateSuccess: ${sdp!!.type}")
-                    SoraLogger.d(TAG, sdp!!.description)
-                    it.onSuccess(sdp!!)
+                    SoraLogger.d(TAG, sdp.description)
+                    it.onSuccess(sdp)
                 }
                 override fun onCreateFailure(s: String?) {
                     SoraLogger.w(TAG, "craeteAnswer:onCreateFailure: reason=${s}")
