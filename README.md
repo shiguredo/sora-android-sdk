@@ -60,6 +60,23 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 # SDK 開発者向け
 
+## ブランチ利用方法
+
+git-flow モデルに従います。
+
+## リリース
+
+AAR のビルドは JitPack で行われるため、手動作業は tag をプッシュするだけです。
+手順は次のとおりです。
+
+```
+git flow release start X.Y.Z
+## edit CHANGES.md
+git flow release finish X.Y.Z
+git push --tags master develop
+```
+
+
 ## libwebrtc への依存
 
 gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を
