@@ -51,7 +51,7 @@ dokka {
 dependencies {
     api "com.github.shiguredo:sora-webrtc-android:${libwebrtc_version}"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:${kotlin_version}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin_version}"
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
