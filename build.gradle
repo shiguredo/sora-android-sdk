@@ -1,6 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.2.31'
-    ext.libwebrtc_version = '66.8.1'
+    ext.libwebrtc_version = '66.8.1.1'
 
     ext.dokka_version = '0.9.15'
 
@@ -23,6 +23,7 @@ allprojects {
     repositories {
         jcenter()
         google()
+        maven { url 'https://jitpack.io' }
     }
 }
 
