@@ -12,7 +12,15 @@
 
 ## develop
 
+### UPDATE
+
 - Android Studio 3.1.1 に対応した
+
+### ADD
+
+- 時雨堂ビルドの libwebrtc AAR を jitpack.io 上にホストした
+- jitpack.io 化に伴い libwebrtc バージョンを 66.8.1.1 とした
+  - バイナリとしては 66.8.1 と同一
 
 ## 1.5.4
 
