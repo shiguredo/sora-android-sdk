@@ -79,13 +79,16 @@ git push --tags master develop
 
 ## libwebrtc への依存
 
-gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を
-https://github.com/shiguredo/sora-webrtc-android/releases から
-ダウンロードして展開します。
-展開先は次のとおりです。
+libwebrtc は、時雨堂ビルドの AAR を Jitpack.io から取得しています。
 
-- `classes.jar` : `sora-android-sdk/libs/libwebrtc-classes.jar`
-- JNI libraries : `sora-android-sdk/src/main/jniLibs/`
+時雨堂ビルドの libwebrtc については以下のサイトを参照ください。
+
+- https://github.com/shiguredo/sora-webrtc-build
+  - ビルドスクリプト、ビルド設定ファイル、およびバージョンタグ
+- https://github.com/shiguredo/sora-webrtc-android
+  - Android 用 AAR を公開するためのリポジトリ
+  - jitpack.io はこのリポジトリのタグを見ている
+- https://jitpack.io/#shiguredo/sora-webrtc-android/
 
 
 ## ローカルでのビルド
