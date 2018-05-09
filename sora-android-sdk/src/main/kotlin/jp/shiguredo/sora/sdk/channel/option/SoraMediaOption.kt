@@ -14,6 +14,21 @@ class SoraMediaOption {
     internal var audioUpstreamEnabled   = false
     internal var videoDownstreamEnabled = false
     internal var multistreamEnabled     = false
+    internal var spotlightRequired      = false
+    internal var spotlight : Int        = 0
+
+    /**
+     * スポットライト機能のアクティブな配信数を指定します
+     *
+     * cf.
+     * - Sora ドキュメントのスポットライト機能
+     *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
+     */
+    set(value) {
+        multistreamEnabled = true
+        spotlightRequired = true
+        value
+    }
 
     internal var videoCapturer:          VideoCapturer? = null
 

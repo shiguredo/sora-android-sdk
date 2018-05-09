@@ -16,6 +16,7 @@
 
 - Android Studio 3.1.2 に対応した
 - Kotlin を 1.2.41 に上げた
+- connect オプションの spotlight に対応した
 
 ### ADD
 

@@ -15,6 +15,7 @@ data class ConnectMessage(
         @SerializedName("channel_id")  val channelId:   String?,
         @SerializedName("metadata")    val metadata:    String?,
         @SerializedName("multistream") val multistream: Boolean = false,
+        @SerializedName("spotlight")   var spotlight:   Int? = null,
         @SerializedName("plan_b")      var planB:       Boolean = true,
         @SerializedName("video")       var video:       Any? = null,
         @SerializedName("audio")       var audio:       Any? = null,

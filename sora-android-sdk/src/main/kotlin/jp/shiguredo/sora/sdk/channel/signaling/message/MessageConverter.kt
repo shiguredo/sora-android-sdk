@@ -41,6 +41,10 @@ class MessageConverter {
                 msg.video = false
             }
 
+            if (mediaOption.spotlightRequired) {
+                msg.spotlight = mediaOption.spotlight
+            }
+
             return gson.toJson(msg)
         }
 
