@@ -258,6 +258,7 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamContext   = ${mediaOption.videoUpstreamContext}")
         SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")

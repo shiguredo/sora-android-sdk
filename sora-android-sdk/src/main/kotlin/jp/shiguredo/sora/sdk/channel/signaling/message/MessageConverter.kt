@@ -41,7 +41,7 @@ class MessageConverter {
                 msg.video = false
             }
 
-            if (mediaOption.spotlightRequired) {
+            if (0 < mediaOption.spotlight) {
                 msg.spotlight = mediaOption.spotlight
             }
 
