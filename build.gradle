@@ -1,3 +1,5 @@
+apply plugin: "com.github.ben-manes.versions"
+
 buildscript {
     ext.kotlin_version = '1.2.41'
     ext.libwebrtc_version = '66.8.1.1'
@@ -15,6 +17,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
 
         classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:${dokka_version}"
+        classpath "com.github.ben-manes:gradle-versions-plugin:0.17.0"
     }
 }
 
@@ -28,4 +31,17 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+dependencyUpdates.resolutionStrategy = {
+  componentSelection { rules ->
+    rules.all { ComponentSelection selection ->
+      boolean rejected = ['alpha', 'beta', 'rc'].any { qualifier ->
+        selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
+      }
+      if (rejected) {
+        selection.reject('Release candidate')
+      }
+    }
+  }
 }
