@@ -36,8 +36,6 @@ class SoraMediaOption {
     internal var videoDownstreamContext: EglBase.Context? = null
     internal var videoUpstreamContext:   EglBase.Context? = null
 
-    internal var videoUpstreamSnapshotEnabled = false
-
     var videoCodec = SoraVideoOption.Codec.VP9
     var audioCodec = SoraAudioOption.Codec.OPUS
 
@@ -89,19 +87,14 @@ class SoraMediaOption {
      * - `org.webrtc.VideoCapturer`
      * - `org.webrtc.EglBase`
      * - `org.webrtc.EglBase.Context`
-     * - Sora ドキュメントのスナップショット機能
-     *   [](https://sora.shiguredo.jp/doc/SNAPSHOT.html)
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
-     * @param snapshotEnabled スナップショットを用いるか否か
      */
     fun enableVideoUpstream(capturer:        VideoCapturer,
-                            eglContext:      EglBase.Context?,
-                            snapshotEnabled: Boolean = false) {
+                            eglContext:      EglBase.Context?) {
         videoCapturer                = capturer
         videoUpstreamContext         = eglContext
-        videoUpstreamSnapshotEnabled = snapshotEnabled
     }
 
     // Just for internal usage
