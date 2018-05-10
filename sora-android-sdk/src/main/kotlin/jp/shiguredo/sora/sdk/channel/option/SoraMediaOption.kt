@@ -14,6 +14,7 @@ class SoraMediaOption {
     internal var audioUpstreamEnabled   = false
     internal var videoDownstreamEnabled = false
     internal var multistreamEnabled     = false
+
     var spotlight : Int        = 0
 
     /**

@@ -13,7 +13,9 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
     fun createPeerConnectionFactory(): PeerConnectionFactory {
         SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${Thread.currentThread().contextClassLoader}")
         val options = PeerConnectionFactory.Options()
-        val factory = PeerConnectionFactory(options)
+        val factory = PeerConnectionFactory.builder()
+                .setOptions(options)
+                .createPeerConnectionFactory()
 
         if (option.videoIsRequired) {
             factory.setVideoHwAccelerationOptions(option.videoUpstreamContext,
