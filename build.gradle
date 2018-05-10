@@ -14,7 +14,6 @@ buildscript {
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
 
-        classpath 'de.undercouch:gradle-download-task:3.2.0'
         classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:${dokka_version}"
     }
 }
