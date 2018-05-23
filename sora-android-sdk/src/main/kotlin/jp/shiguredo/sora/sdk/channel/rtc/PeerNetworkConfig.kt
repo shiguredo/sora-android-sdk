@@ -28,7 +28,8 @@ class PeerNetworkConfig(
         else
             PeerConnection.TcpCandidatePolicy.DISABLED
 
-        conf.enableDtlsSrtp = true;
+        conf.enableDtlsSrtp = true
+        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
         return conf
     }
 

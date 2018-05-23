@@ -239,8 +239,9 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         localAudioManager.attachTrackToStream(localStream)
         localVideoManager.attachTrackToStream(localStream)
+        localStream.audioTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
+        localStream.videoTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
         listener?.onAddLocalStream(localStream!!)
-        conn!!.addStream(localStream)
     }
 
     override fun disconnect() {
