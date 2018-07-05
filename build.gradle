@@ -2,7 +2,7 @@ apply plugin: "com.github.ben-manes.versions"
 
 buildscript {
     ext.kotlin_version = '1.2.41'
-    ext.libwebrtc_version = '66.8.1.1'
+    ext.libwebrtc_version = '67.28.0'
 
     ext.dokka_version = '0.9.15'
 
@@ -12,7 +12,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath 'com.android.tools.build:gradle:3.1.3'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
 
