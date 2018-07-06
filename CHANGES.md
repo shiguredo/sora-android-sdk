@@ -15,7 +15,7 @@
 ### UPDATE
 
 - Android Studio 3.1.3 に対応した
-- Kotlin を 1.2.41 に上げた
+- Kotlin を 1.2.51 に上げた
 - connect オプションの spotlight に対応した
 - PeerConnectionFactory を builder から作るよう修正した
 - libwebrtc を 67.28.0 に上げた
