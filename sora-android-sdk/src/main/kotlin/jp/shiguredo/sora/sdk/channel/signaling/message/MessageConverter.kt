@@ -24,7 +24,8 @@ class MessageConverter {
                     channelId   = channelId,
                     metadata    = metadata,
                     multistream = mediaOption.multistreamIsRequired,
-                    sdp         = sdp
+                    sdp         = sdp,
+                    planB       = mediaOption.planB()
             )
 
             if (mediaOption.audioIsRequired) {

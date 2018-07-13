@@ -138,4 +138,9 @@ class SoraMediaOption {
      * Plan-B のみ動作確認しています
      */
     var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.PLAN_B
+
+    fun planB(): Boolean {
+        return sdpSemantics == PeerConnection.SdpSemantics.PLAN_B
+    }
+
 }
