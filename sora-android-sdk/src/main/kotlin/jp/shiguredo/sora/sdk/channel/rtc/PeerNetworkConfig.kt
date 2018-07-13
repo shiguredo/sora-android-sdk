@@ -1,11 +1,13 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
+import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnection
 
 class PeerNetworkConfig(
         private val serverConfig: OfferConfig,
+        private val mediaOption:  SoraMediaOption,
         private val enableTcp:    Boolean = false
 ) {
     fun createConfiguration(): PeerConnection.RTCConfiguration {
@@ -29,6 +31,9 @@ class PeerNetworkConfig(
             PeerConnection.TcpCandidatePolicy.DISABLED
 
         conf.enableDtlsSrtp = true;
+        conf.enableCpuOveruseDetection = mediaOption.enableCpuOveruseDetection
+        conf.sdpSemantics = mediaOption.sdpSemantics
+
         return conf
     }
 

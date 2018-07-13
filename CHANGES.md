@@ -18,8 +18,11 @@
 - Kotlin を 1.2.51 に上げた
 - connect オプションの spotlight に対応した
 - PeerConnectionFactory を builder から作るよう修正した
-- libwebrtc を 67.28.0 に上げた
+- libwebrtc を 67.28.0.1 に上げた
 - 映像の解像度の選択肢を増やした
+- SoraMediaOption に enableCpuOveruseDetection を追加した
+- SoraMediaOption に sdpSemantics を追加した
+  - ただし動作確認は Plan-B のみ
 
 ### ADD
 

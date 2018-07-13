@@ -304,6 +304,8 @@ class SoraMediaChannel(
                 appContext    = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = config,
+                        mediaOption  = mediaOption,
+                        // enableTcp を tcpCandidatePolicy に名前変更して SoraMediaOption に入れたい
                         enableTcp    = true
                 ),
                 mediaOption   = mediaOption,
@@ -348,17 +350,19 @@ class SoraMediaChannel(
     }
 
     private fun requestClientOfferSdp() {
+        val mediaOption = SoraMediaOption().apply {
+            enableVideoDownstream(null)
+            enableAudioDownstream()
+        }
         val clientOfferPeer = PeerChannelImpl(
                 appContext = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = OfferConfig(
                                 iceServers = emptyList<IceServer>(),
                                 iceTransportPolicy = ""),
+                        mediaOption = mediaOption,
                         enableTcp = true),
-                mediaOption = SoraMediaOption().apply {
-                    enableVideoDownstream(null)
-                    enableAudioDownstream()
-                },
+                mediaOption = mediaOption,
                 listener = null
         )
         clientOfferPeer.run {

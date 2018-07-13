@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import org.webrtc.EglBase
+import org.webrtc.PeerConnection
 import org.webrtc.VideoCapturer
 
 /**
@@ -124,4 +125,17 @@ class SoraMediaOption {
     internal val requiredRole: SoraChannelRole
     get() = if (upstreamIsRequired) SoraChannelRole.UPSTREAM else SoraChannelRole.DOWNSTREAM
 
+    /**
+     * enableCpuOveruseDetection
+     *
+     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です。
+     */
+    var enableCpuOveruseDetection: Boolean = true
+
+    /**
+     * SDP semantics
+     *
+     * Plan-B のみ動作確認しています
+     */
+    var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.PLAN_B
 }
