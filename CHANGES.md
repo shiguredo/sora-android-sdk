@@ -23,6 +23,7 @@
 - SoraMediaOption に enableCpuOveruseDetection を追加した
 - SoraMediaOption に sdpSemantics を追加した
   - ただし動作確認は Plan-B のみ
+- MediaStream#label() の代わりに id を使うよう変更した
 
 ### ADD
 

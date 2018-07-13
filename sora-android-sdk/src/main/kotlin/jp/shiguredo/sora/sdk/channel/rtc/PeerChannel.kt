@@ -140,7 +140,7 @@ class PeerChannelImpl(
             // When this thread's loop finished, this media-stream object is dead on JNI(C++) side.
             // but in most case, this callback is handled in UI-thread's next loop.
             // So, we need to pick up the label-string beforehand.
-            ms?.let { listener?.onRemoveRemoteStream(it.label()) }
+            ms?.let { listener?.onRemoveRemoteStream(it.id) }
         }
 
         override fun onRenegotiationNeeded() {
