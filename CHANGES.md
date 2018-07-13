@@ -19,6 +19,7 @@
 - connect オプションの spotlight に対応した
 - PeerConnectionFactory を builder から作るよう修正した
 - libwebrtc を 67.28.0 に上げた
+- 映像の解像度の選択肢を増やした
 
 ### ADD
 
