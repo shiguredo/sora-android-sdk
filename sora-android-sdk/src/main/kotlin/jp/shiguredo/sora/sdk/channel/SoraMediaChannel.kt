@@ -423,6 +423,4 @@ class SoraMediaChannel(
         peer?.disconnect()
         peer = null
     }
-
-
 }
