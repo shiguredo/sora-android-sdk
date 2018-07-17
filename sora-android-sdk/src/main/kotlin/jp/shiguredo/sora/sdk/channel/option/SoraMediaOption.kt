@@ -133,6 +133,14 @@ class SoraMediaOption {
     var enableCpuOveruseDetection: Boolean = true
 
     /**
+     * tcpCandidatePolicy
+     *
+     * TcpCandidatePolicy を設定します。
+     */
+    var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
+            PeerConnection.TcpCandidatePolicy.ENABLED
+
+    /**
      * SDP semantics
      *
      * Plan-B のみ動作確認しています

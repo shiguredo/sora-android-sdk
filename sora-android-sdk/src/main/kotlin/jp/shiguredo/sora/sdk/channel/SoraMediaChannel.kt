@@ -304,9 +304,7 @@ class SoraMediaChannel(
                 appContext    = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = config,
-                        mediaOption  = mediaOption,
-                        // enableTcp を tcpCandidatePolicy に名前変更して SoraMediaOption に入れたい
-                        enableTcp    = true
+                        mediaOption  = mediaOption
                 ),
                 mediaOption   = mediaOption,
                 listener      = peerListener
@@ -360,8 +358,7 @@ class SoraMediaChannel(
                         serverConfig = OfferConfig(
                                 iceServers = emptyList<IceServer>(),
                                 iceTransportPolicy = ""),
-                        mediaOption = mediaOption,
-                        enableTcp = true),
+                        mediaOption = mediaOption),
                 mediaOption = mediaOption,
                 listener = null
         )

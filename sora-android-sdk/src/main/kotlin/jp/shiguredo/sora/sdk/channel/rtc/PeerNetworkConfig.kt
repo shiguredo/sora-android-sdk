@@ -7,8 +7,7 @@ import org.webrtc.PeerConnection
 
 class PeerNetworkConfig(
         private val serverConfig: OfferConfig,
-        private val mediaOption:  SoraMediaOption,
-        private val enableTcp:    Boolean = false
+        private val mediaOption:  SoraMediaOption
 ) {
     fun createConfiguration(): PeerConnection.RTCConfiguration {
 
@@ -25,14 +24,11 @@ class PeerNetworkConfig(
         conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
         conf.keyType                  = PeerConnection.KeyType.ECDSA
 
-        conf.tcpCandidatePolicy = if (enableTcp)
-            PeerConnection.TcpCandidatePolicy.ENABLED
-        else
-            PeerConnection.TcpCandidatePolicy.DISABLED
-
         conf.enableDtlsSrtp = true;
-        conf.enableCpuOveruseDetection = mediaOption.enableCpuOveruseDetection
         conf.sdpSemantics = mediaOption.sdpSemantics
+
+        conf.tcpCandidatePolicy = mediaOption.tcpCandidatePolicy
+        conf.enableCpuOveruseDetection = mediaOption.enableCpuOveruseDetection
 
         return conf
     }
