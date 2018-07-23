@@ -34,10 +34,14 @@
   - もともと内部的に用いていたオプションの格上げ
   - デフォルト値はこれまでと同様に ENABLED
 - `NotificationMessage` に `audio`, `video`, `spotlightId` を追加した
-  - すべてオプショナル
+  - すべてオプション(nullable)
 
 ### CHANGE
 
+- `NotificationMessage` の `role`, `connectionTime`, `numberOfConnections`, `numberOfUpstreamConnections`,
+  `numberOfDownstreamConnections` フィールドをオプション(nullable)に変更した
+  - 型チェックとして下位互換性を壊す変更です
+  - これらのフィールドを参照しているソースコードは修正の必要があります
 - スナップショット機能を削除した
 
 ## 1.5.4

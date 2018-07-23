@@ -179,8 +179,8 @@ class SoraMediaChannel(
             when (notification.eventType) {
                 "connection.created", "connection.destroyed" -> {
                     val attendees = ChannelAttendeesCount(
-                            numberOfDownstreams = notification.numberOfDownstreamConnections,
-                            numberOfUpstreams = notification.numberOfUpstreamConnections
+                            numberOfDownstreams = notification.numberOfDownstreamConnections!!,
+                            numberOfUpstreams = notification.numberOfUpstreamConnections!!
                     )
                     listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
                 }
