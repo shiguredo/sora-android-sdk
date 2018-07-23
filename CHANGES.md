@@ -35,6 +35,7 @@
   - デフォルト値はこれまでと同様に ENABLED
 - `NotificationMessage` に `audio`, `video`, `spotlightId` を追加した
   - すべてオプション(nullable)
+- `SoraMediaChannel` にシグナリング通知機能のメッセージ受信コールバックを追加した
 
 ### CHANGE
 

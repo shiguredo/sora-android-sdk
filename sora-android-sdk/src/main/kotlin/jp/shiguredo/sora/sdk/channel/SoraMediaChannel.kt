@@ -136,6 +136,14 @@ class SoraMediaChannel(
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
 
         /**
+         * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param notification プッシュ API により受信したメッセージ
+         */
+        fun onNotificationMessage(mediaChannel: SoraMediaChannel, notification : NotificationMessage) {}
+
+        /**
          * Sora のプッシュ API によりメッセージを受信したときに呼び出されるコールバック
          *
          * @param mediaChannel イベントが発生したチャネル
@@ -184,10 +192,8 @@ class SoraMediaChannel(
                     )
                     listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
                 }
-                // XXX in future, support more varieties of notification message here
-                else -> SoraLogger.i(TAG, "unsupported notification event type: "
-                        + notification.eventType)
             }
+            listener?.onNotificationMessage(this@SoraMediaChannel, notification)
         }
 
         override fun onPushMessage(push: PushMessage) {
