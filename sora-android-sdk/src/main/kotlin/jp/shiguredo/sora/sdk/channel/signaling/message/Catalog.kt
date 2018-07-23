@@ -72,6 +72,8 @@ data class NotificationMessage(
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
         @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int?,
         @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
+        @SerializedName("metadata")                       val metadata:                      Any?,
+        @SerializedName("metadata_list")                  val metadataList:                  Any?,
         @SerializedName("audio")                          val audio:                         Boolean?,
         @SerializedName("video")                          val video:                         Boolean?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
