@@ -33,7 +33,9 @@
 - SoraMediaOption に tcpCandidatePolicy を追加した
   - もともと内部的に用いていたオプションの格上げ
   - デフォルト値はこれまでと同様に ENABLED
-- `NotificationMessage` に `audio`, `video`, `metadata`, `metadataList`, `spotlightId`,
+- `NotificationMessage` に `clientId` を追加した
+  - どちらも必須
+- `NotificationMessage` に `audio`, `video`, `metadata`, `metadataList`, `channelId`, `spotlightId`,
   `fixed` を追加した
   - すべてオプション(nullable)
 - `SoraMediaChannel` にシグナリング通知機能のメッセージ受信コールバックを追加した

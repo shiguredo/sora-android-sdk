@@ -67,6 +67,7 @@ data class CandidateMessage(
 
 data class NotificationMessage(
         @SerializedName("event_type")                     val eventType:                     String,
+        @SerializedName("client_id")                      val clientId:                      String,
         @SerializedName("role")                           val role:                          String?,
         @SerializedName("minutes")                        val connectionTime:                Long?,
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
@@ -76,6 +77,7 @@ data class NotificationMessage(
         @SerializedName("metadata_list")                  val metadataList:                  Any?,
         @SerializedName("audio")                          val audio:                         Boolean?,
         @SerializedName("video")                          val video:                         Boolean?,
+        @SerializedName("channel_id")                     val channelId:                     String?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
 )
