@@ -74,7 +74,8 @@ data class NotificationMessage(
         @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
         @SerializedName("audio")                          val audio:                         Boolean?,
         @SerializedName("video")                          val video:                         Boolean?,
-        @SerializedName("spotlight_id")                   val spotlightId:                   String?
+        @SerializedName("spotlight_id")                   val spotlightId:                   String?,
+        @SerializedName("fixed")                          val fixed:                         Boolean?
 )
 
 data class PushMessage(
