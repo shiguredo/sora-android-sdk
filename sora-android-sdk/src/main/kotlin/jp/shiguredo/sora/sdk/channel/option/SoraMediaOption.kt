@@ -14,6 +14,7 @@ class SoraMediaOption {
     internal var audioDownstreamEnabled = false
     internal var audioUpstreamEnabled   = false
     internal var videoDownstreamEnabled = false
+    internal var videoUpstreamEnabled = false
     internal var multistreamEnabled     = false
 
     var spotlight : Int        = 0
@@ -31,6 +32,11 @@ class SoraMediaOption {
         }
         field = value
     }
+
+    /**
+     * スポットライトが有効か否かを返します
+     */
+    fun isSpotlight() = spotlight > 0
 
     internal var videoCapturer:          VideoCapturer? = null
 
@@ -94,13 +100,14 @@ class SoraMediaOption {
      */
     fun enableVideoUpstream(capturer:        VideoCapturer,
                             eglContext:      EglBase.Context?) {
-        videoCapturer                = capturer
-        videoUpstreamContext         = eglContext
+        videoUpstreamEnabled = true
+        videoCapturer        = capturer
+        videoUpstreamContext = eglContext
     }
 
     // Just for internal usage
     internal val videoIsRequired: Boolean
-    get() = videoDownstreamEnabled || (videoCapturer != null)
+    get() = videoDownstreamEnabled || videoUpstreamEnabled
 
     internal val videoHwAccelerationIsRequired: Boolean
     get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
@@ -112,7 +119,7 @@ class SoraMediaOption {
     get() = audioDownstreamEnabled || videoDownstreamEnabled
 
     internal val upstreamIsRequired: Boolean
-    get() = audioUpstreamEnabled || (videoCapturer != null)
+    get() = audioUpstreamEnabled || videoUpstreamEnabled
 
     internal val multistreamIsRequired: Boolean
     get() = if (downstreamIsRequired && upstreamIsRequired) {

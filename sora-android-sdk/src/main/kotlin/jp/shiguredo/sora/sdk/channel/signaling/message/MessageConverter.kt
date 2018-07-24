@@ -28,19 +28,36 @@ class MessageConverter {
                     planB       = mediaOption.planB()
             )
 
-            if (mediaOption.audioIsRequired) {
-                msg.audio = AudioSetting(mediaOption.audioCodec.toString())
+            if (mediaOption.upstreamIsRequired) {
+                // 配信者では audio, video は配信の設定
+                if (mediaOption.audioUpstreamEnabled) {
+                    msg.audio = AudioSetting(mediaOption.audioCodec.toString())
+                } else {
+                    msg.audio = false
+                }
+                if (mediaOption.videoUpstreamEnabled) {
+                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
+                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
+                    msg.video = videoSetting
+                } else {
+                    msg.video = false
+                }
             } else {
-                msg.audio = false
+                // 視聴者では audio, video は視聴の設定
+                if (mediaOption.audioDownstreamEnabled) {
+                    msg.audio = AudioSetting(mediaOption.audioCodec.toString())
+                } else {
+                    msg.audio = false
+                }
+                if (mediaOption.videoDownstreamEnabled) {
+                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
+                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
+                    msg.video = videoSetting
+                } else {
+                    msg.video = false
+                }
             }
 
-            if (mediaOption.videoIsRequired) {
-                val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
-                mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
-                msg.video = videoSetting
-            } else {
-                msg.video = false
-            }
 
             if (0 < mediaOption.spotlight) {
                 msg.spotlight = mediaOption.spotlight
