@@ -1,6 +1,5 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'de.undercouch.download'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -9,11 +8,11 @@ apply plugin: 'org.jetbrains.dokka-android'
 group = 'com.github.shiguredo'
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 27
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 23
+        targetSdkVersion 27
     }
     sourceSets {
         main {
@@ -49,19 +48,26 @@ dokka {
 }
 
 dependencies {
-    api files('libs/libwebrtc-classes.jar')
+    api "com.github.shiguredo:sora-webrtc-android:${libwebrtc_version}"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jre7:${kotlin_version}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin_version}"
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
     implementation 'com.google.code.gson:gson:2.8.2'
-    implementation 'com.squareup.okhttp3:okhttp:3.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
 
     // required by "rtc" part
-    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.1.7'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.13'
     implementation 'io.reactivex.rxjava2:rxkotlin:2.2.0'
+}
+
+configurations.all {
+    resolutionStrategy {
+        cacheDynamicVersionsFor 0, 'seconds'
+        cacheChangingModulesFor 0, 'seconds'
+    }
 }
 
 task sourcesJar(type: Jar) {
@@ -71,103 +77,4 @@ task sourcesJar(type: Jar) {
 
 artifacts {
     archives sourcesJar
-}
-
-// ==== libwebrtc AAR dependency resolution ====
-
-def aarURL = "https://github.com/shiguredo/sora-webrtc-android/releases/download/" +
-    "${libwebrtc_version}/libwebrtc.aar"
-def aarTmpDir = ".libwebrtc.tmp"
-def aarName = "${aarTmpDir}/libwebrtc.aar"
-def aarVersion = "${aarName}.version"
-
-task cleanAar(type: Delete) {
-    description 'Clean AAR related files including tmp directory'
-    delete aarTmpDir, "src/main/jniLibs", "libs/libwebrtc-classes.jar"
-}
-
-def needsDownload(aarVersion) {
-    if( !file(aarVersion).exists() ) {
-        logger.info("No libwebrtc.aar exists, it will be downloaded")
-        return true
-    }
-
-    return false
-}
-
-task downloadAar() {
-    description 'Download libwebrtc AAR file if it does NOT exists'
-
-    doLast {
-        if( needsDownload(aarVersion) ) {
-            def versionFile = file(aarVersion)
-            if( versionFile.exists() ) {
-                def currentVersion = file(aarVersion).text
-                if( currentVersion != "${libwebrtc_version}" ) {
-                    // ダウンロード済みバージョンと設定が異なる場合、
-                    // ビルドをエラーで終わらせて、手動クリーンさせる
-                    def message = "libwebrtc.aar version differ. " +
-                        "If your setting is correct, please run cleanAar first."
-                    logger.error(message)
-                    throw new GradleException(message)
-                }
-            }
-
-            download {
-                src aarURL
-                dest aarName
-            }
-            def file = file("${aarVersion}")
-            file.createNewFile()
-            file.text = "${libwebrtc_version}"
-        }
-    }
-}
-
-if( needsDownload(aarVersion) ) {
-    // TODO: AAR ダウンロードするときには cleanAar を実行する。
-    // if で囲まず、downloadAar.onlyIf { needsDownload(aarVersion) } とすると
-    // downloadAar がスキップされて cleanAar が実行されることがある。
-    // depends まで含めた onlyIf があれば dependsOn は静的にしたい。
-    downloadAar.dependsOn cleanAar
-}
-
-task installAar (dependsOn: downloadAar) {
-    description 'Unpack and place jni files and jar to proper places'
-
-    doLast{
-        copy {
-            from zipTree(aarName)
-            into file(aarTmpDir)
-        }
-        copy {
-            from "${aarTmpDir}/jni"
-            into 'src/main/jniLibs'
-        }
-        copy {
-            from "${aarTmpDir}/classes.jar"
-            into 'libs'
-            rename { filename -> "libwebrtc-${filename}" }
-        }
-    }
-}
-
-preBuild.dependsOn installAar
-
-task aarState {
-    description 'Show entries of libwebrtc AAR releated directory'
-
-    doLast {
-        [aarTmpDir, "src/main/jniLibs", "libs"].each { dir ->
-            println ""
-            def exists = file(dir).exists()
-            println "${dir}/ : exists = ${exists}"
-            if (exists) {
-                FileTree tree = fileTree(dir: dir)
-                tree.visit {element ->
-                    println "    ${element.relativePath}"
-                }
-            }
-        }
-    }
 }

@@ -15,6 +15,7 @@ data class ConnectMessage(
         @SerializedName("channel_id")  val channelId:   String?,
         @SerializedName("metadata")    val metadata:    String?,
         @SerializedName("multistream") val multistream: Boolean = false,
+        @SerializedName("spotlight")   var spotlight:   Int? = null,
         @SerializedName("plan_b")      var planB:       Boolean = true,
         @SerializedName("video")       var video:       Any? = null,
         @SerializedName("audio")       var audio:       Any? = null,
@@ -24,8 +25,7 @@ data class ConnectMessage(
 
 data class VideoSetting(
         @SerializedName("codec_type") val codecType: String,
-        @SerializedName("bit_rate")   var bitRate:   Int?    = null,
-        @SerializedName("snapshot")   var snapshot:  Boolean = false
+        @SerializedName("bit_rate")   var bitRate:   Int?    = null
 )
 
 data class AudioSetting(
@@ -67,11 +67,19 @@ data class CandidateMessage(
 
 data class NotificationMessage(
         @SerializedName("event_type")                     val eventType:                     String,
-        @SerializedName("role")                           val role:                          String,
-        @SerializedName("minutes")                        val connectionTime:                Long,
-        @SerializedName("channel_connections")            val numberOfConnections:           Int,
-        @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int,
-        @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int
+        @SerializedName("client_id")                      val clientId:                      String,
+        @SerializedName("role")                           val role:                          String?,
+        @SerializedName("minutes")                        val connectionTime:                Long?,
+        @SerializedName("channel_connections")            val numberOfConnections:           Int?,
+        @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int?,
+        @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
+        @SerializedName("metadata")                       val metadata:                      Any?,
+        @SerializedName("metadata_list")                  val metadataList:                  Any?,
+        @SerializedName("audio")                          val audio:                         Boolean?,
+        @SerializedName("video")                          val video:                         Boolean?,
+        @SerializedName("channel_id")                     val channelId:                     String?,
+        @SerializedName("spotlight_id")                   val spotlightId:                   String?,
+        @SerializedName("fixed")                          val fixed:                         Boolean?
 )
 
 data class PushMessage(

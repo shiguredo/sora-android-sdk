@@ -12,6 +12,52 @@
 
 ## develop
 
+## 1.6.0
+
+### UPDATE
+
+- Android Studio 3.1.3 に対応した
+- Kotlin を 1.2.51 に上げた
+- PeerConnectionFactory を builder から作るよう修正した
+- libwebrtc を 67.28.0.1 に上げた
+- MediaStream#label() の代わりに id を使うよう変更した
+
+### ADD
+
+- 時雨堂ビルドの libwebrtc AAR を jitpack.io 上にホストした
+- jitpack.io 化に伴い libwebrtc バージョンを 66.8.1.1 とした
+  - バイナリとしては 66.8.1 と同一
+- connect オプションの spotlight に対応した
+- 映像の解像度の選択肢を増やした
+- SoraMediaOption に enableCpuOveruseDetection を追加した
+- SoraMediaOption に sdpSemantics を追加した
+  - ただし動作確認は Plan-B のみ
+- SoraMediaOption に tcpCandidatePolicy を追加した
+  - もともと内部的に用いていたオプションの格上げ
+  - デフォルト値はこれまでと同様に ENABLED
+- `NotificationMessage` に `clientId` を追加した
+  - どちらも必須
+- `NotificationMessage` に `audio`, `video`, `metadata`, `metadataList`, `channelId`, `spotlightId`,
+  `fixed` を追加した
+  - すべてオプション(nullable)
+- `SoraMediaChannel` にシグナリング通知機能のメッセージ受信コールバックを追加した
+
+### CHANGE
+
+- `NotificationMessage` の `role`, `connectionTime`, `numberOfConnections`, `numberOfUpstreamConnections`,
+  `numberOfDownstreamConnections` フィールドをオプション(nullable)に変更した
+  - 型チェックとして下位互換性を壊す変更です
+  - これらのフィールドを参照しているソースコードは修正の必要があります
+- スナップショット機能を削除した
+
+### FIX
+
+- 自分のストリーム判断に配信ストリームがある場合のみの条件があったが、マルチストリームの場合という
+  条件に置き換えた
+  - single stream (pub, sub) およびマルチストリームではこの変更は影響なし
+  - スポットライトのみ影響があり、視聴モードでも自分の `clientId` が MSID のストリームについて
+    `onAddRemotestream` イベントを発火させないようになる
+
 ## 1.5.4
 
 ### UPDATE

@@ -45,6 +45,12 @@ class SoraVideoOption {
                 val HD    = Point(1280, 720)
                 /** FHD   1920x1080 */
                 val FHD   = Point(1920, 1080)
+                /** Res3840x1920   3840x1920 */
+                val Res3840x1920 = Point(3840, 1920)
+                /** UHD3840x2160   3840x2160 */
+                val UHD3840x2160 = Point(3840, 2160)
+                /** UHD4096x2160   4096x2160 */
+                val UHD4096x2160 = Point(4096, 2160)
 
             }
         }
@@ -70,6 +76,12 @@ class SoraVideoOption {
                 val HD    = Point(720, 1280)
                 /** FHD   1080x1920 */
                 val FHD   = Point(1080, 1920)
+                /** Res1920x3840   1920x3840 */
+                val Res1920x3840 = Point(1920, 3840)
+                /** UHD2160x3840   2160x3840 */
+                val UHD2160x3840 = Point(2160, 3840)
+                /** UHD2160x4096   2160x4096 */
+                val UHD2160x4096 = Point(2160, 4096)
 
             }
         }

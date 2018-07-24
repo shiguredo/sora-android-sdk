@@ -60,15 +60,35 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 # SDK 開発者向け
 
+## ブランチ利用方法
+
+git-flow モデルに従います。
+
+## リリース
+
+AAR のビルドは JitPack で行われるため、手動作業は tag をプッシュするだけです。
+手順は次のとおりです。
+
+```
+git flow release start X.Y.Z
+## edit CHANGES.md
+git flow release finish X.Y.Z
+git push --tags master develop
+```
+
+
 ## libwebrtc への依存
 
-gradle でビルドする際(`preBuild` 前)に、libwebrtc AAR を
-https://github.com/shiguredo/sora-webrtc-android/releases から
-ダウンロードして展開します。
-展開先は次のとおりです。
+libwebrtc は、時雨堂ビルドの AAR を Jitpack.io から取得しています。
 
-- `classes.jar` : `sora-android-sdk/libs/libwebrtc-classes.jar`
-- JNI libraries : `sora-android-sdk/src/main/jniLibs/`
+時雨堂ビルドの libwebrtc については以下のサイトを参照ください。
+
+- https://github.com/shiguredo/sora-webrtc-build
+  - ビルドスクリプト、ビルド設定ファイル、およびバージョンタグ
+- https://github.com/shiguredo/sora-webrtc-android
+  - Android 用 AAR を公開するためのリポジトリ
+  - jitpack.io はこのリポジトリのタグを見ている
+- https://jitpack.io/#shiguredo/sora-webrtc-android/
 
 
 ## ローカルでのビルド
@@ -129,6 +149,21 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 
 % curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
 ```
+
+## 依存ライブラリの最新バージョンチェック
+
+Gradle Versions Plugin https://github.com/ben-manes/gradle-versions-plugin が有効になっています。
+次のコマンドでライブラリの最新バージョンが一覧されます。
+
+```
+./gradlew dependencyUpdates
+```
+
+最新に合わせられない原因がいつくかあります。
+
+- com.android.support 系は PermissionsDispatcher の依存に合わせる必要があるため
+  最新とは限りません
+
 
 ## sora-android-sdk-samples を multi module に押し込む方法
 

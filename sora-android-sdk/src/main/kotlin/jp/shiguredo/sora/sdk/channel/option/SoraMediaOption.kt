@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import org.webrtc.EglBase
+import org.webrtc.PeerConnection
 import org.webrtc.VideoCapturer
 
 /**
@@ -13,14 +14,34 @@ class SoraMediaOption {
     internal var audioDownstreamEnabled = false
     internal var audioUpstreamEnabled   = false
     internal var videoDownstreamEnabled = false
+    internal var videoUpstreamEnabled = false
     internal var multistreamEnabled     = false
+
+    var spotlight : Int        = 0
+
+    /**
+     * スポットライト機能のアクティブな配信数を指定します
+     *
+     * cf.
+     * - Sora ドキュメントのスポットライト機能
+     *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
+     */
+    set(value) {
+        if (0 < value) {
+            multistreamEnabled = true
+        }
+        field = value
+    }
+
+    /**
+     * スポットライトが有効か否かを返します
+     */
+    fun isSpotlight() = spotlight > 0
 
     internal var videoCapturer:          VideoCapturer? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null
     internal var videoUpstreamContext:   EglBase.Context? = null
-
-    internal var videoUpstreamSnapshotEnabled = false
 
     var videoCodec = SoraVideoOption.Codec.VP9
     var audioCodec = SoraAudioOption.Codec.OPUS
@@ -73,24 +94,20 @@ class SoraMediaOption {
      * - `org.webrtc.VideoCapturer`
      * - `org.webrtc.EglBase`
      * - `org.webrtc.EglBase.Context`
-     * - Sora ドキュメントのスナップショット機能
-     *   [](https://sora.shiguredo.jp/doc/SNAPSHOT.html)
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
-     * @param snapshotEnabled スナップショットを用いるか否か
      */
     fun enableVideoUpstream(capturer:        VideoCapturer,
-                            eglContext:      EglBase.Context?,
-                            snapshotEnabled: Boolean = false) {
-        videoCapturer                = capturer
-        videoUpstreamContext         = eglContext
-        videoUpstreamSnapshotEnabled = snapshotEnabled
+                            eglContext:      EglBase.Context?) {
+        videoUpstreamEnabled = true
+        videoCapturer        = capturer
+        videoUpstreamContext = eglContext
     }
 
     // Just for internal usage
     internal val videoIsRequired: Boolean
-    get() = videoDownstreamEnabled || (videoCapturer != null)
+    get() = videoDownstreamEnabled || videoUpstreamEnabled
 
     internal val videoHwAccelerationIsRequired: Boolean
     get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
@@ -102,7 +119,7 @@ class SoraMediaOption {
     get() = audioDownstreamEnabled || videoDownstreamEnabled
 
     internal val upstreamIsRequired: Boolean
-    get() = audioUpstreamEnabled || (videoCapturer != null)
+    get() = audioUpstreamEnabled || videoUpstreamEnabled
 
     internal val multistreamIsRequired: Boolean
     get() = if (downstreamIsRequired && upstreamIsRequired) {
@@ -114,5 +131,31 @@ class SoraMediaOption {
 
     internal val requiredRole: SoraChannelRole
     get() = if (upstreamIsRequired) SoraChannelRole.UPSTREAM else SoraChannelRole.DOWNSTREAM
+
+    /**
+     * enableCpuOveruseDetection
+     *
+     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です。
+     */
+    var enableCpuOveruseDetection: Boolean = true
+
+    /**
+     * tcpCandidatePolicy
+     *
+     * TcpCandidatePolicy を設定します。
+     */
+    var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
+            PeerConnection.TcpCandidatePolicy.ENABLED
+
+    /**
+     * SDP semantics
+     *
+     * Plan-B のみ動作確認しています
+     */
+    var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.PLAN_B
+
+    fun planB(): Boolean {
+        return sdpSemantics == PeerConnection.SdpSemantics.PLAN_B
+    }
 
 }

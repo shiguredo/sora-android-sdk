@@ -136,6 +136,14 @@ class SoraMediaChannel(
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
 
         /**
+         * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param notification プッシュ API により受信したメッセージ
+         */
+        fun onNotificationMessage(mediaChannel: SoraMediaChannel, notification : NotificationMessage) {}
+
+        /**
          * Sora のプッシュ API によりメッセージを受信したときに呼び出されるコールバック
          *
          * @param mediaChannel イベントが発生したチャネル
@@ -179,15 +187,13 @@ class SoraMediaChannel(
             when (notification.eventType) {
                 "connection.created", "connection.destroyed" -> {
                     val attendees = ChannelAttendeesCount(
-                            numberOfDownstreams = notification.numberOfDownstreamConnections,
-                            numberOfUpstreams = notification.numberOfUpstreamConnections
+                            numberOfDownstreams = notification.numberOfDownstreamConnections!!,
+                            numberOfUpstreams = notification.numberOfUpstreamConnections!!
                     )
                     listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
                 }
-                // XXX in future, support more varieties of notification message here
-                else -> SoraLogger.i(TAG, "unsupported notification event type: "
-                        + notification.eventType)
             }
+            listener?.onNotificationMessage(this@SoraMediaChannel, notification)
         }
 
         override fun onPushMessage(push: PushMessage) {
@@ -217,9 +223,9 @@ class SoraMediaChannel(
         }
 
         override fun onAddRemoteStream(ms: MediaStream) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.label()}")
-            if (mediaOption.upstreamIsRequired && clientId != null && ms.label() == clientId) {
-                SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.label()}")
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.id}, clientId=${clientId}")
+            if (mediaOption.multistreamEnabled && clientId != null && ms.id == clientId) {
+                SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
             listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
@@ -255,16 +261,16 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamContext   = ${mediaOption.videoUpstreamContext}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled   = ${mediaOption.audioUpstreamEnabled}")
         SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled = ${mediaOption.audioDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.audioCodec             = ${mediaOption.audioCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled   = ${mediaOption.videoUpstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
+        SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
         if (closing) {
             return
         }
@@ -303,7 +309,7 @@ class SoraMediaChannel(
                 appContext    = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = config,
-                        enableTcp    = true
+                        mediaOption  = mediaOption
                 ),
                 mediaOption   = mediaOption,
                 listener      = peerListener
@@ -347,17 +353,18 @@ class SoraMediaChannel(
     }
 
     private fun requestClientOfferSdp() {
+        val mediaOption = SoraMediaOption().apply {
+            enableVideoDownstream(null)
+            enableAudioDownstream()
+        }
         val clientOfferPeer = PeerChannelImpl(
                 appContext = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = OfferConfig(
                                 iceServers = emptyList<IceServer>(),
                                 iceTransportPolicy = ""),
-                        enableTcp = true),
-                mediaOption = SoraMediaOption().apply {
-                    enableVideoDownstream(null)
-                    enableAudioDownstream()
-                },
+                        mediaOption = mediaOption),
+                mediaOption = mediaOption,
                 listener = null
         )
         clientOfferPeer.run {
@@ -418,6 +425,4 @@ class SoraMediaChannel(
         peer?.disconnect()
         peer = null
     }
-
-
 }
