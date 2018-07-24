@@ -223,8 +223,8 @@ class SoraMediaChannel(
         }
 
         override fun onAddRemoteStream(ms: MediaStream) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.id}")
-            if (mediaOption.upstreamIsRequired && clientId != null && ms.id == clientId) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.id}, clientId=${clientId}")
+            if (mediaOption.multistreamEnabled && clientId != null && ms.id == clientId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
