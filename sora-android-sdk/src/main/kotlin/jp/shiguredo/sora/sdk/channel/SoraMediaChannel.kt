@@ -261,17 +261,16 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamContext   = ${mediaOption.videoUpstreamContext}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled   = ${mediaOption.audioUpstreamEnabled}")
         SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled = ${mediaOption.audioDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.audioCodec             = ${mediaOption.audioCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled   = ${mediaOption.videoUpstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
+        SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
         if (closing) {
             return
         }
