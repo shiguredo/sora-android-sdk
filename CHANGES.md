@@ -12,6 +12,8 @@
 
 ## develop
 
+## 1.6.0
+
 ### UPDATE
 
 - Android Studio 3.1.3 に対応した
