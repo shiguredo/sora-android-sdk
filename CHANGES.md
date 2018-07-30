@@ -16,6 +16,10 @@
 
 - libwebrtc を 68.10.1.1 に上げた
 
+### ADD
+
+- webrtc-buildのバージョンと webrtc git のハッシュのログを追加した
+
 ## 1.6.0
 
 ### UPDATE

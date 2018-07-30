@@ -261,11 +261,11 @@ class SoraMediaChannel(
     fun connect() {
         val webrtcBuildVersion = listOf(
                 WebrtcBuildVersion.webrtc_branch,
-                WebrtcBuildVersion.webrtc_revision,
+                WebrtcBuildVersion.webrtc_commit,
                 WebrtcBuildVersion.maint_version)
                 .joinToString(separator = ".")
         SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
-        SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${WebrtcBuildVersion.webrtc_commit}")
+        SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${WebrtcBuildVersion.webrtc_revision}")
         SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
