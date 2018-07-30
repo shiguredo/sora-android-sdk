@@ -20,6 +20,11 @@
 
 - webrtc-buildのバージョンと webrtc git のハッシュのログを追加した
 
+### CHANGE
+
+- SoraSerivceUtil.isRunning を削除した
+  - Oreo で `ActivityManager#getRunningSerivces` が deprecated になったため
+
 ## 1.6.0
 
 ### UPDATE
