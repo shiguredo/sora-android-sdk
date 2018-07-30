@@ -355,7 +355,7 @@ class SoraMediaChannel(
                     .observeOn(Schedulers.io())
                     .subscribeBy(
                             onSuccess = {
-                                SoraLogger.d(TAG, "[channel:$role] @peer:answer")
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send updated answer")
                                 signaling?.sendUpdateAnswer(it.description)
                             },
                             onError = {
@@ -374,7 +374,7 @@ class SoraMediaChannel(
                     .observeOn(Schedulers.io())
                     .subscribeBy(
                             onSuccess = {
-                                SoraLogger.d(TAG, "[channel:$role] @peer:answer")
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send re-answer")
                                 signaling?.sendReAnswer(it.description)
                             },
                             onError = {
