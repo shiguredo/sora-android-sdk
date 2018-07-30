@@ -185,6 +185,11 @@ class SoraMediaChannel(
             handleUpdateOffer(sdp)
         }
 
+        override fun onReOffer(sdp: String) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onReOffer")
+            handleReOffer(sdp)
+        }
+
         override fun onNotificationMessage(notification: NotificationMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onNotificationMessage")
             when (notification.eventType) {
@@ -349,15 +354,34 @@ class SoraMediaChannel(
             val subscription = handleUpdatedRemoteOffer(sdp)
                     .observeOn(Schedulers.io())
                     .subscribeBy(
-                           onSuccess = {
-                               SoraLogger.d(TAG, "[channel:$role] @peer:answer")
-                               signaling?.sendUpdateAnswer(it.description)
-                           },
-                           onError = {
-                               val msg = "[channel:$role] failed handle updated offer: ${it.message}"
-                               SoraLogger.w(TAG, msg)
-                               disconnect()
-                           }
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:answer")
+                                signaling?.sendUpdateAnswer(it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle updated offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleReOffer(sdp: String) {
+        peer?.run {
+            val subscription = handleUpdatedRemoteOffer(sdp)
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:answer")
+                                signaling?.sendReAnswer(it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle re-offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
                     )
             compositeDisposable.add(subscription)
         }

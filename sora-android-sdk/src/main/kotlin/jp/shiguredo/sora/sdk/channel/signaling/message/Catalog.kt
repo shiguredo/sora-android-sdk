@@ -55,6 +55,16 @@ data class UpdateMessage(
         @SerializedName("type") val type: String = "update"
 )
 
+data class ReOfferMessage(
+        @SerializedName("sdp")  val sdp:  String,
+        @SerializedName("type") val type: String = "re-offer"
+)
+
+data class ReAnswerMessage(
+        @SerializedName("sdp")  val sdp:  String,
+        @SerializedName("type") val type: String = "re-answer"
+)
+
 data class AnswerMessage(
         @SerializedName("sdp")  val sdp:  String,
         @SerializedName("type") val type: String = "answer"

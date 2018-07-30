@@ -74,6 +74,10 @@ class MessageConverter {
             return gson.toJson(UpdateMessage(sdp))
         }
 
+        fun buildReAnswerMessage(sdp: String): String {
+            return gson.toJson(ReAnswerMessage(sdp))
+        }
+
         fun buildAnswerMessage(sdp: String): String {
             return gson.toJson(AnswerMessage(sdp))
         }
@@ -93,6 +97,10 @@ class MessageConverter {
 
         fun parseUpdateMessage(text: String): UpdateMessage {
             return gson.fromJson(text, UpdateMessage::class.java)
+        }
+
+        fun parseReOfferMessage(text: String): ReOfferMessage {
+            return gson.fromJson(text, ReOfferMessage::class.java)
         }
 
         fun parseNotificationMessage(text: String): NotificationMessage {
