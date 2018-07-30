@@ -9,14 +9,15 @@ class RTCLocalAudioManager(
         private val levelControl: Boolean = false,
         private val processing:   Boolean = false
 ) {
-    val TAG = RTCLocalAudioManager::class.simpleName
 
     companion object {
-        const private val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
-        const private val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
-        const private val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
-        const private val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
-        const private val LEVEL_CONTROL_CONSTRAINT     = "levelControl"
+        private val TAG = RTCLocalAudioManager::class.simpleName
+
+        private const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
+        private const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
+        private const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
+        private const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
+        private const val LEVEL_CONTROL_CONSTRAINT     = "levelControl"
     }
 
     private var source: AudioSource? = null

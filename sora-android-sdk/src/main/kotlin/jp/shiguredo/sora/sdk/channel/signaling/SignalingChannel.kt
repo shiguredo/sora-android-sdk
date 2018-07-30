@@ -42,7 +42,9 @@ class SignalingChannelImpl(
         private val clientOfferSdp:    SessionDescription
 ) : SignalingChannel {
 
-    val TAG = SignalingChannelImpl::class.simpleName
+    companion object {
+        private val TAG = SignalingChannelImpl::class.simpleName
+    }
 
     private val client =
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()

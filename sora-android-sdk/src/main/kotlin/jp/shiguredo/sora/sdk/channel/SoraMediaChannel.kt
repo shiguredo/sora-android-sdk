@@ -57,7 +57,9 @@ class SoraMediaChannel(
         private val timeoutSeconds:    Long = 10,
         private var listener:          Listener?
 ) {
-    val TAG = SoraMediaChannel::class.simpleName
+    companion object {
+        private val TAG = SoraMediaChannel::class.simpleName
+    }
 
     val role = mediaOption.requiredRole
 
