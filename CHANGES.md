@@ -14,6 +14,7 @@
 
 ### UPDATE
 
+- Android Studio 3.1.4 に対応した
 - libwebrtc を 68.10.1.1 に上げた
 
 ### ADD
