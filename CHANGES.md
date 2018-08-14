@@ -17,6 +17,11 @@
 - dokka を 0.9.17 に上げた
   - 不要な generated クラスの HTML が出力されなくなった
   - sora-android-sdk-doc の api doc はすでに 0.9.17 生成版で更新済み
+- Kotoin を 1.2.60 に上げた
+- `com.google.code.gson:gson` を 2.8.5 に上げた
+- `com.squareup.okhttp3:okhttp` を 3.11.0 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.0 に上げた
+- `io.reactivex.rxjava2:rxkotlin` を 2.3.0 に上げた
 
 ## 1.7.0
 
