@@ -12,6 +12,22 @@
 
 ## develop
 
+## 1.7.0
+
+### UPDATE
+
+- Android Studio 3.1.4 に対応した
+- libwebrtc を 68.10.1.1 に上げた
+
+### ADD
+
+- webrtc-buildのバージョンと webrtc git のハッシュのログを追加した
+
+### CHANGE
+
+- SoraSerivceUtil.isRunning を削除した
+  - Oreo で `ActivityManager#getRunningSerivces` が deprecated になったため
+
 ## 1.6.0
 
 ### UPDATE
@@ -20,7 +36,6 @@
 - Kotlin を 1.2.51 に上げた
 - PeerConnectionFactory を builder から作るよう修正した
 - libwebrtc を 67.28.0.1 に上げた
-- MediaStream#label() の代わりに id を使うよう変更した
 
 ### ADD
 
@@ -44,6 +59,7 @@
 
 ### CHANGE
 
+- MediaStream#label() の代わりに id を使うよう変更した
 - `NotificationMessage` の `role`, `connectionTime`, `numberOfConnections`, `numberOfUpstreamConnections`,
   `numberOfDownstreamConnections` フィールドをオプション(nullable)に変更した
   - 型チェックとして下位互換性を壊す変更です

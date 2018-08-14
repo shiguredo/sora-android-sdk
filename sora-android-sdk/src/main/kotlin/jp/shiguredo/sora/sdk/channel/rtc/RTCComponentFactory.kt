@@ -6,7 +6,9 @@ import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
 
 class RTCComponentFactory(private val option: SoraMediaOption) {
-    val TAG = RTCComponentFactory::class.simpleName
+    companion object {
+        private val TAG = RTCComponentFactory::class.simpleName
+    }
 
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。

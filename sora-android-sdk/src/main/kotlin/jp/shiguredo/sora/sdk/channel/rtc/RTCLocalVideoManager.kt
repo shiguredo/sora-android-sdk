@@ -19,7 +19,9 @@ class RTCNullLocalVideoManager: RTCLocalVideoManager {
 
 class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVideoManager {
 
-    val TAG = RTCLocalVideoManagerImpl::class.simpleName
+    companion object {
+        private val TAG = RTCLocalVideoManagerImpl::class.simpleName
+    }
 
     var source: VideoSource? = null
     var track:  VideoTrack?  = null

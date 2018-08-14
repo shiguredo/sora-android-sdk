@@ -118,7 +118,7 @@ sdk.dir=/Users/shino/Library/Android/sdk
 ## kdoc の生成
 
 ```
-% rm -rf sora-android-sdk/build/javadoc; gr assemble dokka
+% rm -rf sora-android-sdk/build/dokka; gr assemble dokka
 ```
 
 sora-android-sdk-doc を更新

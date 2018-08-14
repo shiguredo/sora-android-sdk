@@ -23,6 +23,7 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.SessionDescription
+import org.webrtc.WebrtcBuildVersion
 import java.util.*
 
 /**
@@ -56,7 +57,9 @@ class SoraMediaChannel(
         private val timeoutSeconds:    Long = 10,
         private var listener:          Listener?
 ) {
-    val TAG = SoraMediaChannel::class.simpleName
+    companion object {
+        private val TAG = SoraMediaChannel::class.simpleName
+    }
 
     val role = mediaOption.requiredRole
 
@@ -182,6 +185,11 @@ class SoraMediaChannel(
             handleUpdateOffer(sdp)
         }
 
+        override fun onReOffer(sdp: String) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onReOffer")
+            handleReOffer(sdp)
+        }
+
         override fun onNotificationMessage(notification: NotificationMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onNotificationMessage")
             when (notification.eventType) {
@@ -258,6 +266,13 @@ class SoraMediaChannel(
      * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
      */
     fun connect() {
+        val webrtcBuildVersion = listOf(
+                WebrtcBuildVersion.webrtc_branch,
+                WebrtcBuildVersion.webrtc_commit,
+                WebrtcBuildVersion.maint_version)
+                .joinToString(separator = ".")
+        SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
+        SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${WebrtcBuildVersion.webrtc_revision}")
         SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
@@ -271,6 +286,7 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
+
         if (closing) {
             return
         }
@@ -338,15 +354,34 @@ class SoraMediaChannel(
             val subscription = handleUpdatedRemoteOffer(sdp)
                     .observeOn(Schedulers.io())
                     .subscribeBy(
-                           onSuccess = {
-                               SoraLogger.d(TAG, "[channel:$role] @peer:answer")
-                               signaling?.sendUpdateAnswer(it.description)
-                           },
-                           onError = {
-                               val msg = "[channel:$role] failed handle updated offer: ${it.message}"
-                               SoraLogger.w(TAG, msg)
-                               disconnect()
-                           }
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send updated answer")
+                                signaling?.sendUpdateAnswer(it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle updated offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleReOffer(sdp: String) {
+        peer?.run {
+            val subscription = handleUpdatedRemoteOffer(sdp)
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send re-answer")
+                                signaling?.sendReAnswer(it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle re-offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
                     )
             compositeDisposable.add(subscription)
         }

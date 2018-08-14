@@ -18,6 +18,7 @@ interface SignalingChannel {
     fun connect()
     fun sendAnswer(sdp: String)
     fun sendUpdateAnswer(sdp: String)
+    fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
     fun disconnect()
 
@@ -26,6 +27,7 @@ interface SignalingChannel {
         fun onDisconnect()
         fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig)
         fun onUpdatedOffer(sdp: String)
+        fun onReOffer(sdp: String)
         fun onError(reason: SoraErrorReason)
         fun onNotificationMessage(notification: NotificationMessage)
         fun onPushMessage(push: PushMessage)
@@ -42,7 +44,9 @@ class SignalingChannelImpl(
         private val clientOfferSdp:    SessionDescription
 ) : SignalingChannel {
 
-    val TAG = SignalingChannelImpl::class.simpleName
+    companion object {
+        private val TAG = SignalingChannelImpl::class.simpleName
+    }
 
     private val client =
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
@@ -85,6 +89,22 @@ class SignalingChannelImpl(
 
         webSocket?.let {
             val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
+            it.send(msg)
+        }
+    }
+
+    override fun sendReAnswer(sdp: String) {
+        SoraLogger.d(TAG, "[signaling:$role] -> re-answer")
+
+        if (closing) {
+            SoraLogger.i(TAG, "signaling is closing")
+            return
+        }
+
+        SoraLogger.d(TAG, sdp)
+
+        webSocket?.let {
+            val msg = MessageConverter.buildReAnswerMessage(sdp)
             it.send(msg)
         }
     }
@@ -160,6 +180,16 @@ class SignalingChannelImpl(
         listener?.onUpdatedOffer(update.sdp)
     }
 
+    private fun onReOfferMessage(text: String) {
+        val update = MessageConverter.parseReOfferMessage(text)
+        // TODO message validation
+
+        SoraLogger.d(TAG, "[signaling:$role] <- update")
+
+        SoraLogger.d(TAG, update.sdp)
+        listener?.onReOffer(update.sdp)
+    }
+
     private fun onNotifyMessage(text: String) {
         SoraLogger.d(TAG, "[signaling:$role] <- notify")
 
@@ -218,12 +248,13 @@ class SignalingChannelImpl(
                     val json = it
                     MessageConverter.parseType(json)?.let {
                         when (it) {
-                            "offer"  -> onOfferMessage(json)
-                            "ping"   -> onPingMessage()
-                            "update" -> onUpdateMessage(json)
-                            "notify" -> onNotifyMessage(json)
-                            "push"   -> onPushMessage(json)
-                            else     -> SoraLogger.i(TAG, "received unknown-type message")
+                            "offer"    -> onOfferMessage(json)
+                            "ping"     -> onPingMessage()
+                            "update"   -> onUpdateMessage(json)
+                            "re-offer" -> onReOfferMessage(json)
+                            "notify"   -> onNotifyMessage(json)
+                            "push"     -> onPushMessage(json)
+                            else       -> SoraLogger.i(TAG, "received unknown-type message")
                         }
 
                     } ?: closeWithError("failed to parse 'type' from message")

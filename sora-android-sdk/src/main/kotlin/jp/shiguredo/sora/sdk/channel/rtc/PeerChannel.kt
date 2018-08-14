@@ -37,9 +37,9 @@ class PeerChannelImpl(
         private var useTracer:     Boolean = false
 ): PeerChannel {
 
-    val TAG = PeerChannelImpl::class.simpleName
-
     companion object {
+        private val TAG = PeerChannelImpl::class.simpleName
+
         private var isInitialized = false;
         fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
