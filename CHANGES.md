@@ -12,6 +12,12 @@
 
 ## develop
 
+### UPDATE
+
+- dokka を 0.9.17 に上げた
+  - 不要な generated クラスの HTML が出力されなくなった
+  - sora-android-sdk-doc の api doc はすでに 0.9.17 生成版で更新済み
+
 ## 1.7.0
 
 ### UPDATE
