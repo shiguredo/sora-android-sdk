@@ -1,8 +1,8 @@
 apply plugin: "com.github.ben-manes.versions"
 
 buildscript {
-    ext.kotlin_version = '1.2.60'
-    ext.libwebrtc_version = '68.10.1.1'
+    ext.kotlin_version = '1.2.71'
+    ext.libwebrtc_version = '69.7.0'
 
     ext.dokka_version = '0.9.17'
 
