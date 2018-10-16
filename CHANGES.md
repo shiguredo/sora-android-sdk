@@ -23,6 +23,7 @@
 - `io.reactivex.rxjava2:rxjava` を 2.2.0 に上げた
 - `io.reactivex.rxjava2:rxkotlin` を 2.3.0 に上げた
 - Android Studio 3.2.0 に対応した
+- libwebrtc を 70.14.0 に上げた
 
 ## 1.7.0
 
