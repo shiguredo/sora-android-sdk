@@ -45,7 +45,6 @@ class PeerChannelImpl(
             if (!isInitialized) {
                 val options = PeerConnectionFactory.InitializationOptions
                         .builder(context)
-                        .setEnableVideoHwAcceleration(true)
                         .setEnableInternalTracer(useTracer)
                         .setFieldTrials("")
                         .createInitializationOptions()
@@ -230,7 +229,7 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "local managers' initTrack")
         localAudioManager.initTrack(factory!!)
-        localVideoManager.initTrack(factory!!)
+        localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
