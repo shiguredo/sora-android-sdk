@@ -13,7 +13,8 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(): PeerConnectionFactory {
-        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${Thread.currentThread().contextClassLoader}")
+        val cl = Thread.currentThread().contextClassLoader
+        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${cl}")
         val options = PeerConnectionFactory.Options()
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)

@@ -239,7 +239,12 @@ class PeerChannelImpl(
         localAudioManager.attachTrackToStream(localStream)
         localVideoManager.attachTrackToStream(localStream)
         listener?.onAddLocalStream(localStream!!)
-        conn!!.addStream(localStream)
+        if (mediaOption.planB()) {
+            conn!!.addStream(localStream)
+        } else {
+            localStream.audioTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
+            localStream.videoTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
+        }
     }
 
     override fun disconnect() {
