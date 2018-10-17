@@ -234,10 +234,10 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
         val localStream = factory!!.createLocalMediaStream(streamId)
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         localAudioManager.attachTrackToStream(localStream)
         localVideoManager.attachTrackToStream(localStream)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
         if (mediaOption.planB()) {
             conn!!.addStream(localStream)
