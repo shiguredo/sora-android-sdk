@@ -12,6 +12,31 @@
 
 ## develop
 
+
+## 1.7.1
+
+### UPDATE
+
+- dokka を 0.9.17 に上げた
+  - 不要な generated クラスの HTML が出力されなくなった
+  - sora-android-sdk-doc の api doc はすでに 0.9.17 生成版で更新済み
+- Kotoin を 1.2.71 に上げた
+- `com.google.code.gson:gson` を 2.8.5 に上げた
+- `com.squareup.okhttp3:okhttp` を 3.11.0 に上げた
+- `io.reactivex.rxjava2:rxandroid` を 2.1.0 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.2 に上げた
+- `io.reactivex.rxjava2:rxkotlin` を 2.3.0 に上げた
+- Android Studio 3.2.1 に対応した
+- libwebrtc を 70.14.0 に上げた
+
+### ADD
+
+- Unified Plan に試験的に対応した
+
+### FIX
+
+- Sora サーバで turn が無効の場合にシグナリングに失敗する問題を修正した
+
 ## 1.7.0
 
 ### UPDATE

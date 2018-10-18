@@ -129,6 +129,12 @@ sora-android-sdk-doc を更新
       /path/to/sora-android-sdk-doc/source/extra/apidoc
 ```
 
+sdk, doc を `~/g/` 以下にクローンしている場合のワンライナー
+
+```
+rm -rf sora-android-sdk/build/dokka && gr assemble dokka && rm -rf ~/g/sora-android-sdk-doc/source/extra/apidoc && cp -a ~/g/sora-android-sdk/sora-android-sdk/build/dokka  ~/g/sora-android-sdk-doc/source/extra/apidoc
+```
+
 ## JitPack
 
 アプリケーションが JitPack https://jitpack.io/ 経由で

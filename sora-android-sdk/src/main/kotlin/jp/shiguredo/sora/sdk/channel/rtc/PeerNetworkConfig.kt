@@ -6,7 +6,7 @@ import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnection
 
 class PeerNetworkConfig(
-        private val serverConfig: OfferConfig,
+        private val serverConfig: OfferConfig?,
         private val mediaOption:  SoraMediaOption
 ) {
     fun createConfiguration(): PeerConnection.RTCConfiguration {
@@ -15,7 +15,7 @@ class PeerNetworkConfig(
 
         val conf = PeerConnection.RTCConfiguration(iceServers)
 
-        if (serverConfig.iceTransportPolicy == "relay") {
+        if (serverConfig?.iceTransportPolicy == "relay") {
             conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY
         }
 
@@ -33,10 +33,9 @@ class PeerNetworkConfig(
         return conf
     }
 
-    private fun gatherIceServerSetting(
-            serverConfig: OfferConfig): List<PeerConnection.IceServer> {
+    private fun gatherIceServerSetting(serverConfig: OfferConfig?): List<PeerConnection.IceServer> {
         val iceServers = mutableListOf<PeerConnection.IceServer>()
-        serverConfig.iceServers.forEach {
+        serverConfig?.let { it.iceServers.forEach {
             val server = it
             server.urls.forEach {
                 val url = it
@@ -45,6 +44,7 @@ class PeerNetworkConfig(
                         .setPassword(server.credential)
                         .createIceServer())
             }
+        }
         }
         return iceServers
     }

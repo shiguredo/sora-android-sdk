@@ -2,8 +2,8 @@ package jp.shiguredo.sora.sdk.channel.rtc
 
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.MediaConstraints
-import org.webrtc.PeerConnectionFactory
+import org.webrtc.*
+
 
 class RTCComponentFactory(private val option: SoraMediaOption) {
     companion object {
@@ -13,18 +13,26 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(): PeerConnectionFactory {
-        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${Thread.currentThread().contextClassLoader}")
+        val cl = Thread.currentThread().contextClassLoader
+        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${cl}")
         val options = PeerConnectionFactory.Options()
-        val factory = PeerConnectionFactory.builder()
+        val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
-                .createPeerConnectionFactory()
 
         if (option.videoIsRequired) {
-            factory.setVideoHwAccelerationOptions(option.videoUpstreamContext,
-                    option.videoDownstreamContext)
+            val encoderFactory = option.videoUpstreamContext?.let {
+                DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                        true /* enableIntelVp8Encoder */,
+                        false /* enableH264HighProfile */)
+            } ?: SoftwareVideoEncoderFactory()
+            val decoderFactory = option.videoDownstreamContext?.let {
+                DefaultVideoDecoderFactory(option.videoDownstreamContext)
+            } ?: SoftwareVideoDecoderFactory()
+            factoryBuilder.setVideoEncoderFactory(encoderFactory)
+                    .setVideoDecoderFactory(decoderFactory)
         }
 
-        return factory
+        return factoryBuilder.createPeerConnectionFactory()
     }
 
     fun createSDPConstraints(): MediaConstraints {

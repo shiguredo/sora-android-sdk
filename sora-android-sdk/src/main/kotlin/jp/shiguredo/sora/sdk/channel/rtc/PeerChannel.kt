@@ -45,7 +45,6 @@ class PeerChannelImpl(
             if (!isInitialized) {
                 val options = PeerConnectionFactory.InitializationOptions
                         .builder(context)
-                        .setEnableVideoHwAcceleration(true)
                         .setEnableInternalTracer(useTracer)
                         .setFieldTrials("")
                         .createInitializationOptions()
@@ -230,17 +229,23 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "local managers' initTrack")
         localAudioManager.initTrack(factory!!)
-        localVideoManager.initTrack(factory!!)
+        localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
         val localStream = factory!!.createLocalMediaStream(streamId)
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         localAudioManager.attachTrackToStream(localStream)
         localVideoManager.attachTrackToStream(localStream)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
-        conn!!.addStream(localStream)
+        if (mediaOption.planB()) {
+            conn!!.addStream(localStream)
+        } else {
+            val mediaStreamLabels = listOf(localStream.id)
+            localStream.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            localStream.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+        }
     }
 
     override fun disconnect() {

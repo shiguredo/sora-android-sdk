@@ -174,7 +174,7 @@ class SoraMediaChannel(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
         }
 
-        override fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig) {
+        override fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig?) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
             this@SoraMediaChannel.clientId = clientId
             handleInitialOffer(sdp, config)
@@ -286,6 +286,7 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
+        SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics           = ${mediaOption.sdpSemantics}")
 
         if (closing) {
             return
@@ -318,7 +319,7 @@ class SoraMediaChannel(
         disconnect()
     }
 
-    private fun handleInitialOffer(sdp: String, config: OfferConfig) {
+    private fun handleInitialOffer(sdp: String, config: OfferConfig?) {
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
         peer = PeerChannelImpl(
