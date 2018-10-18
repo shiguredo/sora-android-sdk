@@ -174,7 +174,7 @@ class SoraMediaChannel(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
         }
 
-        override fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig) {
+        override fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig?) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
             this@SoraMediaChannel.clientId = clientId
             handleInitialOffer(sdp, config)
@@ -319,7 +319,7 @@ class SoraMediaChannel(
         disconnect()
     }
 
-    private fun handleInitialOffer(sdp: String, config: OfferConfig) {
+    private fun handleInitialOffer(sdp: String, config: OfferConfig?) {
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
         peer = PeerChannelImpl(

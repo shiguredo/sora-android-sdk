@@ -46,7 +46,7 @@ data class OfferConfig(
 data class OfferMessage(
         @SerializedName("sdp")       val sdp:      String,
         @SerializedName("client_id") val clientId: String,
-        @SerializedName("config")    val config:   OfferConfig,
+        @SerializedName("config")    val config:   OfferConfig? = null,
         @SerializedName("type")      val type:     String = "offer"
 )
 
