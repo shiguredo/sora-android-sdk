@@ -242,8 +242,9 @@ class PeerChannelImpl(
         if (mediaOption.planB()) {
             conn!!.addStream(localStream)
         } else {
-            localStream.audioTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
-            localStream.videoTracks.forEach { conn!!.addTrack(it, mutableListOf(localStream.id)) }
+            val mediaStreamLabels = listOf(localStream.id)
+            localStream.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            localStream.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
         }
     }
 
