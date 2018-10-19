@@ -98,6 +98,13 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "[rtc] @onAddTrack")
         }
 
+        override  fun onTrack(transceiver: RtpTransceiver) {
+            SoraLogger.d(TAG, "[rtc] @onTrack transceiver.direction=${transceiver.direction}")
+            SoraLogger.d(TAG, "[rtc] @onTrack transceiver.currentDirection=${transceiver.currentDirection}")
+            // TODO(shino): Unified plan に onRemoveTrack が来たらこっちで対応する。
+            // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
+        }
+
         override fun onDataChannel(channel: DataChannel?) {
             SoraLogger.d(TAG, "[rtc] @onDataChannel")
         }
