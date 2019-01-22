@@ -12,6 +12,9 @@
 
 ## develop
 
+### UPDATE
+
+- libwebrtc を 71.16.0 に上げた
 
 ## 1.7.1
 
