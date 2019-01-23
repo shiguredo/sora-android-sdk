@@ -291,8 +291,8 @@ class SignalingChannelImpl(
         override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) {
             try {
                 response?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message()}")
-                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure")
+                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message()}, $t")
+                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect()
