@@ -40,7 +40,7 @@ class PeerChannelImpl(
     companion object {
         private val TAG = PeerChannelImpl::class.simpleName
 
-        private var isInitialized = false;
+        private var isInitialized = false
         fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
                 val options = PeerConnectionFactory.InitializationOptions
@@ -52,7 +52,7 @@ class PeerChannelImpl(
                 if(SoraLogger.libjingle_enabled) {
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
-                isInitialized = true;
+                isInitialized = true
             }
         }
     }
@@ -269,12 +269,12 @@ class PeerChannelImpl(
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "craeteAnswer:onCreateSuccess: ${sdp!!.type}")
+                    SoraLogger.d(TAG, "createAnswer:onCreateSuccess: ${sdp!!.type}")
                     SoraLogger.d(TAG, sdp.description)
                     it.onSuccess(sdp)
                 }
                 override fun onCreateFailure(s: String?) {
-                    SoraLogger.w(TAG, "craeteAnswer:onCreateFailure: reason=${s}")
+                    SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=${s}")
                     it.onError(Error(s))
                 }
                 override fun onSetSuccess() {
@@ -300,7 +300,7 @@ class PeerChannelImpl(
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
-                    SoraLogger.d(TAG, "setLocalDescription.onSetFuilure reason=${s} ${this@PeerChannelImpl}")
+                    SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)
@@ -348,4 +348,3 @@ class PeerChannelImpl(
         }
     }
 }
-
