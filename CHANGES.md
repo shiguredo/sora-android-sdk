@@ -15,6 +15,7 @@
 ### UPDATE
 
 - libwebrtc を 71.16.0 に上げた
+- SDP semantics のデフォルトを Unified Plan に変更した
 
 ## 1.7.1
 
