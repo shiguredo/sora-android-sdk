@@ -23,7 +23,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.SessionDescription
-import org.webrtc.WebrtcBuildVersion
 import java.util.*
 
 /**
@@ -266,13 +265,19 @@ class SoraMediaChannel(
      * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
      */
     fun connect() {
-        val webrtcBuildVersion = listOf(
-                WebrtcBuildVersion.webrtc_branch,
-                WebrtcBuildVersion.webrtc_commit,
-                WebrtcBuildVersion.maint_version)
-                .joinToString(separator = ".")
-        SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
-        SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${WebrtcBuildVersion.webrtc_revision}")
+        try {
+            val kClass = Class.forName("org.webrtc.WebrtcBuildVersion")
+            val webrtcBranch = kClass.getField("webrtc_branch").get(null)
+            val webrtcCommit = kClass.getField("webrtc_commit").get(null)
+            val maintVersion = kClass.getField("maint_version").get(null)
+            val webrtcRevision = kClass.getField("webrtc_revision").get(null)
+            val webrtcBuildVersion = listOf(webrtcBranch, webrtcCommit, maintVersion)
+                    .joinToString(separator = ".")
+            SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
+            SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${webrtcRevision}")
+        } catch (e : ClassNotFoundException) {
+            SoraLogger.d(TAG, "connect: webrtc library other than shiguredo build is used")
+        }
         SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
         SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
