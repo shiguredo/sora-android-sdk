@@ -206,6 +206,13 @@ class PeerChannelImpl(
 
     private fun createClientOfferSdp() : Single<SessionDescription> =
         Single.create(SingleOnSubscribe<SessionDescription> {
+
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
+                    RtpTransceiver.RtpTransceiverInit(
+                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
+                    RtpTransceiver.RtpTransceiverInit(
+                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
                     SoraLogger.d(TAG, "client offer SDP created")

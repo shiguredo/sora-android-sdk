@@ -37,16 +37,7 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
 
     fun createSDPConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
-        if (option.audioDownstreamEnabled) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        }
-
-        if (option.videoDownstreamEnabled) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        }
-        SoraLogger.d(TAG, "createSDPConstraints: ${constraints.toString()}")
+        SoraLogger.d(TAG, "createSDPConstraints: ${constraints}")
         return constraints
     }
 
