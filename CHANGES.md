@@ -17,6 +17,9 @@
 - libwebrtc を 71.16.0 に上げた
 - SDP semantics のデフォルトを Unified Plan に変更した
 - Kotlin を 1.3.20 に上げた
+- libwebrtc の M72 をスキップした
+  - バグによりビルドは出来るが動作しないため
+  - M73 branch では修正済み: https://webrtc-review.googlesource.com/c/112283
 
 ## 1.7.1
 
