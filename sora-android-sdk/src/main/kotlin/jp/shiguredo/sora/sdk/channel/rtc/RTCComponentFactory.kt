@@ -19,18 +19,16 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
 
-        if (option.videoIsRequired) {
-            val encoderFactory = option.videoUpstreamContext?.let {
-                DefaultVideoEncoderFactory(option.videoUpstreamContext,
-                        true /* enableIntelVp8Encoder */,
-                        false /* enableH264HighProfile */)
-            } ?: SoftwareVideoEncoderFactory()
-            val decoderFactory = option.videoDownstreamContext?.let {
-                DefaultVideoDecoderFactory(option.videoDownstreamContext)
-            } ?: SoftwareVideoDecoderFactory()
-            factoryBuilder.setVideoEncoderFactory(encoderFactory)
-                    .setVideoDecoderFactory(decoderFactory)
-        }
+        val encoderFactory = option.videoUpstreamContext?.let {
+            DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                    true /* enableIntelVp8Encoder */,
+                    false /* enableH264HighProfile */)
+        } ?: SoftwareVideoEncoderFactory()
+        val decoderFactory = option.videoDownstreamContext?.let {
+            DefaultVideoDecoderFactory(option.videoDownstreamContext)
+        } ?: SoftwareVideoDecoderFactory()
+        factoryBuilder.setVideoEncoderFactory(encoderFactory)
+                .setVideoDecoderFactory(decoderFactory)
 
         return factoryBuilder.createPeerConnectionFactory()
     }
