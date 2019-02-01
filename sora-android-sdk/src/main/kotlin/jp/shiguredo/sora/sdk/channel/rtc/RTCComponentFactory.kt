@@ -19,34 +19,23 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
 
-        if (option.videoIsRequired) {
-            val encoderFactory = option.videoUpstreamContext?.let {
-                DefaultVideoEncoderFactory(option.videoUpstreamContext,
-                        true /* enableIntelVp8Encoder */,
-                        false /* enableH264HighProfile */)
-            } ?: SoftwareVideoEncoderFactory()
-            val decoderFactory = option.videoDownstreamContext?.let {
-                DefaultVideoDecoderFactory(option.videoDownstreamContext)
-            } ?: SoftwareVideoDecoderFactory()
-            factoryBuilder.setVideoEncoderFactory(encoderFactory)
-                    .setVideoDecoderFactory(decoderFactory)
-        }
+        val encoderFactory = option.videoUpstreamContext?.let {
+            DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                    true /* enableIntelVp8Encoder */,
+                    false /* enableH264HighProfile */)
+        } ?: SoftwareVideoEncoderFactory()
+        val decoderFactory = option.videoDownstreamContext?.let {
+            DefaultVideoDecoderFactory(option.videoDownstreamContext)
+        } ?: SoftwareVideoDecoderFactory()
+        factoryBuilder.setVideoEncoderFactory(encoderFactory)
+                .setVideoDecoderFactory(decoderFactory)
 
         return factoryBuilder.createPeerConnectionFactory()
     }
 
     fun createSDPConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
-        if (option.audioDownstreamEnabled) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        }
-
-        if (option.videoDownstreamEnabled) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        }
-        SoraLogger.d(TAG, "createSDPConstraints: ${constraints.toString()}")
+        SoraLogger.d(TAG, "createSDPConstraints: ${constraints}")
         return constraints
     }
 

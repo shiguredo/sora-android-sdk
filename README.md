@@ -189,12 +189,12 @@ file('../sora-android-sdk-samples').eachDir { dir ->
 2. webrtc-video-effector/build.gradle の SDK 依存を project に変更する::
 
 ```
-     dependencies {
-         [snip]
-         // api("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version@aar") {
-         //    transitive = true
-         // }
-         api project(':sora-android-sdk')
+dependencies {
+    [snip]
+    // api("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version@aar") {
+    //    transitive = true
+    // }
+    api project(':sora-android-sdk')
 ```
 
 3. (optional) top level か samples の build.gradle に ext の設定を足す::

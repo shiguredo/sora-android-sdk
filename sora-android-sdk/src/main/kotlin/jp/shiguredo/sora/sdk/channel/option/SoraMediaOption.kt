@@ -150,9 +150,9 @@ class SoraMediaOption {
     /**
      * SDP semantics
      *
-     * Plan-B のみ動作確認しています
+     * Unified Plan のみ動作確認しています
      */
-    var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.PLAN_B
+    var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
     fun planB(): Boolean {
         return sdpSemantics == PeerConnection.SdpSemantics.PLAN_B

@@ -40,7 +40,7 @@ class PeerChannelImpl(
     companion object {
         private val TAG = PeerChannelImpl::class.simpleName
 
-        private var isInitialized = false;
+        private var isInitialized = false
         fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
                 val options = PeerConnectionFactory.InitializationOptions
@@ -52,7 +52,7 @@ class PeerChannelImpl(
                 if(SoraLogger.libjingle_enabled) {
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
-                isInitialized = true;
+                isInitialized = true
             }
         }
     }
@@ -96,6 +96,15 @@ class PeerChannelImpl(
 
         override fun onAddTrack(receiver: RtpReceiver?, ms: Array<out MediaStream>?) {
             SoraLogger.d(TAG, "[rtc] @onAddTrack")
+        }
+
+        override  fun onTrack(transceiver: RtpTransceiver) {
+            SoraLogger.d(TAG, "[rtc] @onTrack direction=${transceiver.direction}")
+            SoraLogger.d(TAG, "[rtc] @onTrack currentDirection=${transceiver.currentDirection}")
+            SoraLogger.d(TAG, "[rtc] @onTrack sender.track=${transceiver.sender.track()}")
+            SoraLogger.d(TAG, "[rtc] @onTrack receiver.track=${transceiver.receiver.track()}")
+            // TODO(shino): Unified plan に onRemoveTrack が来たらこっちで対応する。
+            // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
         }
 
         override fun onDataChannel(channel: DataChannel?) {
@@ -197,6 +206,13 @@ class PeerChannelImpl(
 
     private fun createClientOfferSdp() : Single<SessionDescription> =
         Single.create(SingleOnSubscribe<SessionDescription> {
+
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
+                    RtpTransceiver.RtpTransceiverInit(
+                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
+                    RtpTransceiver.RtpTransceiverInit(
+                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
                     SoraLogger.d(TAG, "client offer SDP created")
@@ -260,12 +276,12 @@ class PeerChannelImpl(
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "craeteAnswer:onCreateSuccess: ${sdp!!.type}")
+                    SoraLogger.d(TAG, "createAnswer:onCreateSuccess: ${sdp!!.type}")
                     SoraLogger.d(TAG, sdp.description)
                     it.onSuccess(sdp)
                 }
                 override fun onCreateFailure(s: String?) {
-                    SoraLogger.w(TAG, "craeteAnswer:onCreateFailure: reason=${s}")
+                    SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=${s}")
                     it.onError(Error(s))
                 }
                 override fun onSetSuccess() {
@@ -291,7 +307,7 @@ class PeerChannelImpl(
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
-                    SoraLogger.d(TAG, "setLocalDescription.onSetFuilure reason=${s} ${this@PeerChannelImpl}")
+                    SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=${s} ${this@PeerChannelImpl}")
                     it.onError(Error(s))
                 }
             }, sdp)
@@ -339,4 +355,3 @@ class PeerChannelImpl(
         }
     }
 }
-

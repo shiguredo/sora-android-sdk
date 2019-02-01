@@ -78,7 +78,7 @@ class SignalingChannelImpl(
     }
 
     override fun sendUpdateAnswer(sdp: String) {
-        SoraLogger.d(TAG, "[signaling:$role] -> update-answer")
+        SoraLogger.d(TAG, "[signaling:$role] -> re-answer(update)")
 
         if (closing) {
             SoraLogger.i(TAG, "signaling is closing")
@@ -174,7 +174,7 @@ class SignalingChannelImpl(
         val update = MessageConverter.parseUpdateMessage(text)
         // TODO message validation
 
-        SoraLogger.d(TAG, "[signaling:$role] <- update")
+        SoraLogger.d(TAG, "[signaling:$role] <- re-offer(update)")
 
         SoraLogger.d(TAG, update.sdp)
         listener?.onUpdatedOffer(update.sdp)
@@ -184,7 +184,7 @@ class SignalingChannelImpl(
         val update = MessageConverter.parseReOfferMessage(text)
         // TODO message validation
 
-        SoraLogger.d(TAG, "[signaling:$role] <- update")
+        SoraLogger.d(TAG, "[signaling:$role] <- re-offer")
 
         SoraLogger.d(TAG, update.sdp)
         listener?.onReOffer(update.sdp)
@@ -291,8 +291,8 @@ class SignalingChannelImpl(
         override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) {
             try {
                 response?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message()}")
-                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure")
+                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message()}, $t")
+                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect()

@@ -12,6 +12,31 @@
 
 ## develop
 
+## 1.8.0
+
+### UPDATE
+
+- libwebrtc を 71.16.0 に上げた
+- Kotlin を 1.3.20 に上げた
+- libwebrtc の M72 をスキップした
+  - バグによりビルドは出来るが動作しないため
+  - そのバグは M73 branch では修正済み: https://webrtc-review.googlesource.com/c/112283
+- `com.squareup.okhttp3:okhttp` を 3.12.1 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.6 に上げた
+- Android Studio 3.3 に対応した
+- `com.github.dcendents:android-maven-gradle-plugin` を 2.1 に上げた
+- WebRTC 1.0 spec に一部追従した
+  - offerToReceiveAudio/offerToReceiveVideo から Transceiver API に変更した。
+  - onTrack, onRemoveTrack は libwebrtc android sdk で対応されていないため見送った。
+
+### CHANGE
+
+- SDP semantics のデフォルト値を Unified Plan に変更した
+  - upstream のシグナリングで audio や video が false の場合でも、他の配信者の
+    audio や video のトラックを受信する SDP が Sora から offer されるように変更される。
+  - Plan B のときには audio false のときには audio track が SDP に含まれず、
+    video が false のときには video のトラックが含まれていなかった。
+    これは Plan B の制限による挙動であった。
 
 ## 1.7.1
 
@@ -20,7 +45,7 @@
 - dokka を 0.9.17 に上げた
   - 不要な generated クラスの HTML が出力されなくなった
   - sora-android-sdk-doc の api doc はすでに 0.9.17 生成版で更新済み
-- Kotoin を 1.2.71 に上げた
+- Kotlin を 1.2.71 に上げた
 - `com.google.code.gson:gson` を 2.8.5 に上げた
 - `com.squareup.okhttp3:okhttp` を 3.11.0 に上げた
 - `io.reactivex.rxjava2:rxandroid` を 2.1.0 に上げた
