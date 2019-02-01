@@ -18,20 +18,23 @@
 - Kotlin を 1.3.20 に上げた
 - libwebrtc の M72 をスキップした
   - バグによりビルドは出来るが動作しないため
-  - M73 branch では修正済み: https://webrtc-review.googlesource.com/c/112283
+  - そのバグは M73 branch では修正済み: https://webrtc-review.googlesource.com/c/112283
 - `com.squareup.okhttp3:okhttp` を 3.12.1 に上げた
 - `io.reactivex.rxjava2:rxjava` を 2.2.6 に上げた
 - Android Studio 3.3 に対応した
 - `com.github.dcendents:android-maven-gradle-plugin` を 2.1 に上げた
+- WebRTC 1.0 spec に一部追従した
+  - offerToReceiveAudio/offerToReceiveVideo から Transceiver API に変更した。
+  - onTrack, onRemoveTrack は libwebrtc android sdk で対応されていないため見送った。
 
 ### CHANGE
 
 - SDP semantics のデフォルト値を Unified Plan に変更した
   - upstream のシグナリングで audio や video が false の場合でも、他の配信者の
-    audio や video のトラックを受信する SDP が Sora から offer されるように変わります。
+    audio や video のトラックを受信する SDP が Sora から offer されるように変更される。
   - Plan B のときには audio false のときには audio track が SDP に含まれず、
-    video が false のときには video のトラックが含まれませんでした。
-    これは Plan B の制限による挙動でした。
+    video が false のときには video のトラックが含まれていなかった。
+    これは Plan B の制限による挙動であった。
 
 ## 1.7.1
 
