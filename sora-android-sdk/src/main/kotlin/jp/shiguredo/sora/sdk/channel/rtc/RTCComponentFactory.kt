@@ -27,6 +27,12 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         val decoderFactory = option.videoDownstreamContext?.let {
             DefaultVideoDecoderFactory(option.videoDownstreamContext)
         } ?: SoftwareVideoDecoderFactory()
+//        decoderFactory.supportedCodecs.forEach {
+//            SoraLogger.d(TAG, "decoderFactory supported codec: ${it.name} ${it.params}")
+//        }
+//        encoderFactory.supportedCodecs.forEach {
+//            SoraLogger.d(TAG, "encoderFactory supported codec: ${it.name} ${it.params}")
+//        }
         factoryBuilder.setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
 
