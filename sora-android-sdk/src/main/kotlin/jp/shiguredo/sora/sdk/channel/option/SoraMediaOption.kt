@@ -1,8 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import org.webrtc.EglBase
-import org.webrtc.PeerConnection
-import org.webrtc.VideoCapturer
+import org.webrtc.*
 
 /**
  * Sora への接続オプションを表すクラスです
@@ -37,6 +35,20 @@ class SoraMediaOption {
      * スポットライトが有効か否かを返します
      */
     fun isSpotlight() = spotlight > 0
+
+    /**
+     * 利用する VideoEncoderFactory を指定します
+     *
+     * 実験的な機能です。注意して利用してください。
+     */
+    var videoEncoderFactory: VideoEncoderFactory? = null
+
+    /**
+     * 利用する VideoDecoderFactory を指定します
+     *
+     * 実験的な機能です。注意して利用してください。
+     */
+    var videoDecoderFactory: VideoDecoderFactory? = null
 
     internal var videoCapturer:          VideoCapturer? = null
 
