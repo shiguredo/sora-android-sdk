@@ -19,23 +19,25 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
 
-        val encoderFactory = option.videoEncoderFactory
-                ?:
-                when (option.videoUpstreamContext) {
-                    is EglBase.Context ->
-                        DefaultVideoEncoderFactory(option.videoUpstreamContext,
-                                true /* enableIntelVp8Encoder */,
-                                false /* enableH264HighProfile */)
-                    else -> SoftwareVideoEncoderFactory()
-                }
+        val encoderFactory = when {
+            option.videoEncoderFactory != null ->
+                option.videoEncoderFactory!!
+            option.videoUpstreamContext != null ->
+                DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                        true /* enableIntelVp8Encoder */,
+                        false /* enableH264HighProfile */)
+            else ->
+                SoftwareVideoEncoderFactory()
+        }
 
-        val decoderFactory = option.videoDecoderFactory
-                ?:
-                when (option.videoDownstreamContext) {
-                    is EglBase.Context ->
-                        DefaultVideoDecoderFactory(option.videoDownstreamContext)
-                    else -> SoftwareVideoDecoderFactory()
-                }
+        val decoderFactory = when {
+            option.videoDecoderFactory != null ->
+                option.videoDecoderFactory!!
+            option.videoDownstreamContext != null ->
+                DefaultVideoDecoderFactory(option.videoDownstreamContext)
+            else ->
+                SoftwareVideoDecoderFactory()
+        }
 
         decoderFactory.supportedCodecs.forEach {
             SoraLogger.d(TAG, "decoderFactory supported codec: ${it.name} ${it.params}")
