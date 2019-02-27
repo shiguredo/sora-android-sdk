@@ -12,6 +12,11 @@
 
 ## develop
 
+### UPDATE
+
+- libwebrtc を 73.10.1 に上げた
+
+
 ## 1.8.0
 
 ### UPDATE
