@@ -15,7 +15,10 @@
 ### UPDATE
 
 - libwebrtc を 73.10.1 に上げた
-
+- encoder/decoder の対応コーデックのログ出力コメントを追加した
+- Android Studio 3.3.2 に対応した
+- `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
+  - [プレビュー版]
 
 ## 1.8.0
 
