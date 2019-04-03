@@ -292,6 +292,7 @@ class SoraMediaChannel(
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics           = ${mediaOption.sdpSemantics}")
+        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata     = ${this.signalingMetadata}")
         if (mediaOption.planB()) {
             SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
         }
