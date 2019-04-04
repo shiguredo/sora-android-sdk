@@ -20,6 +20,11 @@
 - `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
   - [プレビュー版]
 
+### CHANGE
+
+- `kotlin-stdlib-jdk7` 依存を `kotlin-stdlib` に変更した
+  - `minSdkVersion` が 16 であるため
+
 ## 1.8.0
 
 ### UPDATE
