@@ -1,3 +1,5 @@
+package jp.shiguredo.sora.sdk
+
 import org.junit.Test
 import kotlin.test.assertTrue
 
