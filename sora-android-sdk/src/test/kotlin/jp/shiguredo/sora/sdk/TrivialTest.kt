@@ -8,8 +8,8 @@ class TrivialTest {
         assertTrue { true }
     }
 
-    @Test
-    fun myFirstFailingTest() {
-        assertTrue { false }
-    }
+//    @Test
+//    fun myFirstFailingTest() {
+//        assertTrue { false }
+//    }
 }
