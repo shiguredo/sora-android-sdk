@@ -13,7 +13,7 @@ data class PongMessage(
 data class ConnectMessage(
         @SerializedName("role")        val role:        String,
         @SerializedName("channel_id")  val channelId:   String?,
-        @SerializedName("metadata")    val metadata:    String?,
+        @SerializedName("metadata")    val metadata:    Any?,
         @SerializedName("multistream") val multistream: Boolean = false,
         @SerializedName("spotlight")   var spotlight:   Int? = null,
         @SerializedName("plan_b")      var planB:       Boolean = true,

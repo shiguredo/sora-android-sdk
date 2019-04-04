@@ -19,6 +19,9 @@
 - Android Studio 3.3.2 に対応した
 - `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
   - [プレビュー版]
+- シグナリング connect メッセージの metadata を文字列だけでなく任意の型を受け付けるよう変更した
+  - 値は gson で変換できる必要がある
+  - 文字列化された JSON を受け取った場合には、1.8.0 までと同様に、そのまま文字列値として取扱う
 
 ### CHANGE
 
