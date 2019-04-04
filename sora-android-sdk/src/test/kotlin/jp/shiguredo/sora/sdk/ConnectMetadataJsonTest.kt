@@ -17,7 +17,7 @@ class ConnectMetadataJsonTest {
         assertEquals(message.metadata, null)
     }
 
-    private fun roundtrip(metadata: Any?) : ConnectMessage {
+    private fun roundtrip(metadata: String?) : ConnectMessage {
         val original = ConnectMessage(
                 role = "upstream",
                 channelId = "sora",
