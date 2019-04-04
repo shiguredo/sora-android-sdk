@@ -17,7 +17,6 @@ android {
     sourceSets {
         main {
             java.srcDirs += 'src/main/kotlin'
-            jniLibs.srcDirs = ['src/main/jniLibs']
         }
     }
     buildTypes {
@@ -50,7 +49,7 @@ dokka {
 dependencies {
     api "com.github.shiguredo:sora-webrtc-android:${libwebrtc_version}"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin_version}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
