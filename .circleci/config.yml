@@ -19,7 +19,7 @@ jobs:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum  "sora-android-sdk/build.gradle" }}
       - run:
           name: Run lint & build
-          command: ./gradlew lint assembleRelease assembleDebug
+          command: ./gradlew lint testDebug assembleRelease assembleDebug
       - store_artifacts:
           path: sora-android-sdk/build/outputs
           destination: outputs
