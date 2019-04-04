@@ -78,7 +78,7 @@ class ConnectMetadataJsonTest {
         }
         val metadata = message.metadata as List<*>
         assertEquals(3, metadata.size)
-        assertEquals(listOf(1,2,3), metadata)
+        assertEquals(listOf(1.0, 2.0, 3.0), metadata)
     }
 
 
