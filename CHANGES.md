@@ -22,6 +22,9 @@
 - シグナリング connect メッセージの metadata を文字列だけでなく任意の型を受け付けるよう変更した
   - 値は gson で変換できる必要がある
   - 文字列化された JSON を受け取った場合には、1.8.0 までと同様に、そのまま文字列値として取扱う
+- シグナリングパラメータのフィールド、型を Sora 19.04 に合わせ更新した
+  - 型定義は https://sora.shiguredo.jp/doc/SIGNALING_TYPE.html を参照
+- シグナリング connect メッセージに `client_id` フィールドを追加した
 
 ### CHANGE
 

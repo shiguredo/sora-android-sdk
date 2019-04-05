@@ -11,16 +11,21 @@ data class PongMessage(
 )
 
 data class ConnectMessage(
-        @SerializedName("role")        val role:        String,
-        @SerializedName("channel_id")  val channelId:   String?,
-        @SerializedName("metadata")    val metadata:    Any?,
-        @SerializedName("multistream") val multistream: Boolean = false,
-        @SerializedName("spotlight")   var spotlight:   Int? = null,
-        @SerializedName("plan_b")      var planB:       Boolean = true,
-        @SerializedName("video")       var video:       Any? = null,
-        @SerializedName("audio")       var audio:       Any? = null,
-        @SerializedName("sdp")         val sdp:         String,
-        @SerializedName("type")        val type:        String = "connect"
+        @SerializedName("type")        val type:                    String = "connect",
+        @SerializedName("role")        val role:                    String,
+        @SerializedName("channel_id")  val channelId:               String?,
+        @SerializedName("client_id")   val clientId:                String?,
+        @SerializedName("metadata")    val metadata:                Any?,
+        @SerializedName("signaling_notify_metadata")
+                                       val signalingNotifyMetadata: Any?,
+        @SerializedName("multistream") val multistream:             Boolean = false,
+        @SerializedName("plan_b")      var planB:                   Boolean = true,
+        @SerializedName("spotlight")   var spotlight:               Int? = null,
+        // Android SDK は未だ対応してない
+        // @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("video")       var video:                   Any? = null,
+        @SerializedName("audio")       var audio:                   Any? = null,
+        @SerializedName("sdp")         val sdp:                     String
 )
 
 data class VideoSetting(
@@ -44,40 +49,49 @@ data class OfferConfig(
 )
 
 data class OfferMessage(
-        @SerializedName("sdp")       val sdp:      String,
-        @SerializedName("client_id") val clientId: String,
-        @SerializedName("config")    val config:   OfferConfig? = null,
-        @SerializedName("type")      val type:     String = "offer"
+        @SerializedName("type")          val type:         String = "offer",
+        @SerializedName("sdp")           val sdp:          String,
+        @SerializedName("client_id")     val clientId:     String,
+        @SerializedName("connection_id") val connectionId: String,
+        @SerializedName("metadata")      val metadata:     Any?,
+        @SerializedName("config")        val config:       OfferConfig? = null
 )
 
 data class UpdateMessage(
-        @SerializedName("sdp")  val sdp:  String,
-        @SerializedName("type") val type: String = "update"
+        @SerializedName("type") val type: String = "update",
+        @SerializedName("sdp")  val sdp:  String
 )
 
 data class ReOfferMessage(
-        @SerializedName("sdp")  val sdp:  String,
-        @SerializedName("type") val type: String = "re-offer"
+        @SerializedName("type") val type: String = "re-offer",
+        @SerializedName("sdp")  val sdp:  String
 )
 
 data class ReAnswerMessage(
-        @SerializedName("sdp")  val sdp:  String,
-        @SerializedName("type") val type: String = "re-answer"
+        @SerializedName("type") val type: String = "re-answer",
+        @SerializedName("sdp")  val sdp:  String
 )
 
 data class AnswerMessage(
-        @SerializedName("sdp")  val sdp:  String,
-        @SerializedName("type") val type: String = "answer"
+        @SerializedName("type") val type: String = "answer",
+        @SerializedName("sdp")  val sdp:  String
 )
 
 data class CandidateMessage(
-        @SerializedName("candidate") val candidate: String,
-        @SerializedName("type")      val type:      String = "candidate"
+        @SerializedName("type")      val type:      String = "candidate",
+        @SerializedName("candidate") val candidate: String
+)
+
+data class PushMessage(
+        @SerializedName("type") val type: String = "push",
+        @SerializedName("data") var data: Any?   = null
 )
 
 data class NotificationMessage(
+        @SerializedName("type")                           val type:                          String = "notify",
         @SerializedName("event_type")                     val eventType:                     String,
         @SerializedName("client_id")                      val clientId:                      String,
+        @SerializedName("connection_id")                  val connectionId:                  String?,
         @SerializedName("role")                           val role:                          String?,
         @SerializedName("minutes")                        val connectionTime:                Long?,
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
@@ -90,9 +104,4 @@ data class NotificationMessage(
         @SerializedName("channel_id")                     val channelId:                     String?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
-)
-
-data class PushMessage(
-        @SerializedName("data") var data: Any? = null,
-        @SerializedName("type") val type: String = "push"
 )
