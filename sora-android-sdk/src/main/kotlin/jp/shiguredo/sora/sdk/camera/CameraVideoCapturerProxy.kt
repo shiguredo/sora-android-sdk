@@ -6,7 +6,7 @@ import org.webrtc.CapturerObserver
 import org.webrtc.SurfaceTextureHelper
 
 class CameraVideoCapturerProxy(private val capturer: CameraVideoCapturer,
-                               private val isScreencast: Boolean = false): CameraVideoCapturer {
+                               private val fixedResolution: Boolean = false): CameraVideoCapturer {
     override fun startCapture(width: Int, height: Int, framerate: Int) {
         capturer.startCapture(width, height, framerate)
     }
@@ -24,7 +24,7 @@ class CameraVideoCapturerProxy(private val capturer: CameraVideoCapturer,
     }
 
     override fun isScreencast(): Boolean {
-        return isScreencast
+        return fixedResolution
     }
 
     override fun initialize(surfaceTextureHelper: SurfaceTextureHelper?, context: Context?,
