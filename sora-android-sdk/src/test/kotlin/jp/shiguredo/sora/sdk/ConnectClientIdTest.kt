@@ -13,7 +13,7 @@ class ConnectClientIdTest {
     val gson = Gson()
 
     // JSON としては client_id は入ってはいけない。
-    // 入ると sora 18.04 より前ではコケる。
+    // 入ると sora 19.04 より前ではコケる。
     @Test
     fun serializeNullClientIdShouldNotContainTheField() {
         val message = roundtrip(null)
