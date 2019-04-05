@@ -25,6 +25,8 @@
 - シグナリングパラメータのフィールド、型を Sora 19.04 に合わせ更新した
   - 型定義は https://sora.shiguredo.jp/doc/SIGNALING_TYPE.html を参照
 - シグナリング connect メッセージに `client_id` フィールドを追加した
+  - Sora 19.04 より前のバージョンでは、このフィールドを文字列に設定するとエラーになる
+
 
 ### CHANGE
 
