@@ -1,7 +1,5 @@
 # For developers
-/webrtc-video-effector
-/samples
-settings.gradle.all_in_one
+include_app_dir.txt
 
 # Manually placed aar for libwebrtc
 libwebrtc/*.aar
