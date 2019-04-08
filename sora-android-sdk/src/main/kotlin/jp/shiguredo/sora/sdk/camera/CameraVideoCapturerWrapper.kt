@@ -5,8 +5,8 @@ import org.webrtc.CameraVideoCapturer
 import org.webrtc.CapturerObserver
 import org.webrtc.SurfaceTextureHelper
 
-class CameraVideoCapturerProxy(private val capturer: CameraVideoCapturer,
-                               private val fixedResolution: Boolean = false): CameraVideoCapturer {
+class CameraVideoCapturerWrapper(private val capturer: CameraVideoCapturer,
+                                 private val fixedResolution: Boolean = false): CameraVideoCapturer {
     override fun startCapture(width: Int, height: Int, framerate: Int) {
         capturer.startCapture(width, height, framerate)
     }

@@ -18,9 +18,19 @@ public class CameraCapturerFactoryTest {
 
     // 1.8.0 まではオーバーロードされていなかったパターン
     @Test
-    public void overloadedMethod1() {
+    public void overloadedCreateCall1() {
         try {
             CameraCapturerFactory.Companion.create(context);
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
+    // 1.8.1 でオーバーロードされたパターン
+    @Test
+    public void overloadedCreateCall2() {
+        try {
+            CameraCapturerFactory.Companion.create(context, true);
         } catch (Exception e) {
             fail(e.toString());
         }

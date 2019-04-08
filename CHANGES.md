@@ -33,6 +33,10 @@
 - `kotlin-stdlib-jdk7` 依存を `kotlin-stdlib` に変更した
   - `minSdkVersion` が 16 であるため
 
+### ADD
+
+- `CameraCapturerFactory` に解像度維持を優先するオプションを追加した
+
 ## 1.8.0
 
 ### UPDATE
