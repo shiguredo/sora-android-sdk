@@ -41,7 +41,7 @@ import java.util.*
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
- * @param connectMetadata connect メッセージに含める `metadata`
+ * @param signalingMetadata connect メッセージに含める `metadata`
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト[秒]
@@ -53,7 +53,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val context:                 Context,
         private val signalingEndpoint:       String,
         private val channelId:               String?,
-        private val connectMetadata:         Any?             = "",
+        private val signalingMetadata:       Any?             = "",
         private val mediaOption:             SoraMediaOption,
         private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
         private var listener:                Listener?,
@@ -298,7 +298,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.connectMetadata         = ${this.connectMetadata}")
+        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata         = ${this.signalingMetadata}")
         SoraLogger.d(TAG, "connect: mediaChannel.clientId                = ${this.clientId}")
         SoraLogger.d(TAG, "connect: mediaChannel.signalingNotifyMetadata = ${this.signalingNotifyMetadata}")
         if (mediaOption.planB()) {
@@ -381,7 +381,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 role                    = role,
                 channelId               = channelId,
                 mediaOption             = mediaOption,
-                connectMetadata         = connectMetadata,
+                connectMetadata         = signalingMetadata,
                 listener                = signalingListener,
                 clientOfferSdp          = clientOfferSdp,
                 clientId                = clientId,

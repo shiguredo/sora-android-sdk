@@ -25,7 +25,6 @@
 - シグナリング connect メッセージの metadata を文字列だけでなく任意の型を受け付けるよう変更した
   - 値は gson で変換できる必要がある
   - 文字列化された JSON を受け取った場合には、1.8.0 までと同様に、そのまま文字列値として取扱う
-- `SoraMediaChannel` の引数パラメータ名を `signalingMetadata` から `connectMetadata` に変更した
 - シグナリング connect メッセージに `client_id` フィールドを追加した
   - Sora 19.04 より前のバージョンでは、このフィールドを文字列に設定するとエラーになる
 - シグナリング connect メッセージの `signaling_notify_metadata` を `SoraMediaChannel` コンストラクタから
