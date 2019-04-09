@@ -34,14 +34,15 @@ interface SignalingChannel {
     }
 }
 
-class SignalingChannelImpl(
-        private val endpoint:        String,
-        private val role:            SoraChannelRole,
-        private val channelId:       String?,
-        private val mediaOption:     SoraMediaOption,
-        private val connectMetadata: Any?,
-        private var listener:        SignalingChannel.Listener?,
-        private val clientOfferSdp:  SessionDescription
+class SignalingChannelImpl @JvmOverloads constructor(
+        private val endpoint:                String,
+        private val role:                    SoraChannelRole,
+        private val channelId:               String?,
+        private val mediaOption:             SoraMediaOption,
+        private val connectMetadata:         Any?,
+        private var listener:                SignalingChannel.Listener?,
+        private val clientOfferSdp:          SessionDescription,
+        private val signalingNotifyMetadata: Any?                        = null
 ) : SignalingChannel {
 
     companion object {
@@ -144,11 +145,12 @@ class SignalingChannelImpl(
         webSocket?.let {
             SoraLogger.d(TAG, "[signaling:$role] -> connect")
             val msg = MessageConverter.buildConnectMessage(
-                    role        = role,
-                    channelId   = channelId,
-                    mediaOption = mediaOption,
-                    metadata    = connectMetadata,
-                    sdp         = clientOfferSdp.description
+                    role                    = role,
+                    channelId               = channelId,
+                    mediaOption             = mediaOption,
+                    metadata                = connectMetadata,
+                    sdp                     = clientOfferSdp.description,
+                    signalingNotifyMetadata = signalingNotifyMetadata
             )
             SoraLogger.d(TAG, msg)
             it.send(msg)

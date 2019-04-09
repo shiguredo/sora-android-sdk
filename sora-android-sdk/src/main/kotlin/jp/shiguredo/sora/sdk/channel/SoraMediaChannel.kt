@@ -36,28 +36,32 @@ import java.util.*
  * SoraMediaChannel インスタンスを生成します。
  *
  * cf.
- * - シグナリングに関しては Sora ドキュメント
+ * - シグナリングの手順とデータに関しては Sora のドキュメント
  *   [](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
- * @param connectMetadata シグナリングのメタデータ
- * @param channelId Sora に接続するためのチャネル名
+ * @param connectMetadata connect メッセージに含める `metadata`
+ * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
- * @param timeoutSeconds タイムアウト[秒]
+ * @param timeoutSeconds WebSocket の接続タイムアウト[秒]
  * @param listener イベントリスナー
+ * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
  */
 class SoraMediaChannel @JvmOverloads constructor(
-        private val context:           Context,
-        private val signalingEndpoint: String,
-        private val channelId:         String?,
-        private val connectMetadata:   Any? = null,
-        private val mediaOption:       SoraMediaOption,
-        private val timeoutSeconds:    Long = 10,
-        private var listener:          Listener?
+        private val context:                 Context,
+        private val signalingEndpoint:       String,
+        private val channelId:               String?,
+        private val connectMetadata:         Any?             = null,
+        private val mediaOption:             SoraMediaOption,
+        private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
+        private var listener:                Listener?,
+        private val signalingNotifyMetadata: Any?             = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
+
+        const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
     val role = mediaOption.requiredRole
@@ -71,7 +75,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * cf.
          * - `org.webrtc.MediaStream`
-         * - `org.webrtc.MediaStream.vidoTracks`
+         * - `org.webrtc.MediaStream.videoTracks`
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
@@ -328,6 +332,59 @@ class SoraMediaChannel @JvmOverloads constructor(
         disconnect()
     }
 
+
+    private fun requestClientOfferSdp() {
+        val mediaOption = SoraMediaOption().apply {
+            enableVideoDownstream(null)
+            enableAudioDownstream()
+        }
+        val clientOfferPeer = PeerChannelImpl(
+                appContext = context,
+                networkConfig = PeerNetworkConfig(
+                        serverConfig = OfferConfig(
+                                iceServers = emptyList<IceServer>(),
+                                iceTransportPolicy = ""),
+                        mediaOption = mediaOption),
+                mediaOption = mediaOption,
+                listener = null
+        )
+        clientOfferPeer.run {
+            val subscription = requestClientOfferSdp()
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
+                                disconnect()
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.post() {
+                                    connectSignalingChannel(it)
+                                }
+                            },
+                            onError = {
+                                SoraLogger.w(TAG,
+                                        "[channel:$role] failed request client offer SDP: ${it.message}")
+                                disconnect()
+                            }
+
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
+        signaling = SignalingChannelImpl(
+                endpoint                = signalingEndpoint,
+                role                    = role,
+                channelId               = channelId,
+                mediaOption             = mediaOption,
+                connectMetadata         = connectMetadata,
+                listener                = signalingListener,
+                clientOfferSdp          = clientOfferSdp,
+                signalingNotifyMetadata = signalingNotifyMetadata
+        )
+        signaling!!.connect()
+    }
+
     private fun handleInitialOffer(sdp: String, config: OfferConfig?) {
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
@@ -395,57 +452,6 @@ class SoraMediaChannel @JvmOverloads constructor(
                     )
             compositeDisposable.add(subscription)
         }
-    }
-
-    private fun requestClientOfferSdp() {
-        val mediaOption = SoraMediaOption().apply {
-            enableVideoDownstream(null)
-            enableAudioDownstream()
-        }
-        val clientOfferPeer = PeerChannelImpl(
-                appContext = context,
-                networkConfig = PeerNetworkConfig(
-                        serverConfig = OfferConfig(
-                                iceServers = emptyList<IceServer>(),
-                                iceTransportPolicy = ""),
-                        mediaOption = mediaOption),
-                mediaOption = mediaOption,
-                listener = null
-        )
-        clientOfferPeer.run {
-            val subscription = requestClientOfferSdp()
-                    .observeOn(Schedulers.io())
-                    .subscribeBy(
-                            onSuccess = {
-                                SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
-                                disconnect()
-                                val handler = Handler(Looper.getMainLooper())
-                                handler.post() {
-                                    connectSignalingChannel(it)
-                                }
-                            },
-                            onError = {
-                                SoraLogger.w(TAG,
-                                        "[channel:$role] failed request client offer SDP: ${it.message}")
-                                disconnect()
-                            }
-
-                    )
-            compositeDisposable.add(subscription)
-        }
-    }
-
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
-        signaling = SignalingChannelImpl(
-                endpoint        = signalingEndpoint,
-                role            = role,
-                channelId       = channelId,
-                mediaOption     = mediaOption,
-                connectMetadata = connectMetadata,
-                listener        = signalingListener,
-                clientOfferSdp  = clientOfferSdp
-        )
-        signaling!!.connect()
     }
 
     /**

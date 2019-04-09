@@ -12,20 +12,23 @@ class MessageConverter {
 
         val gson = Gson()
 
-        fun buildConnectMessage(role:        SoraChannelRole,
-                                channelId:   String?,
-                                mediaOption: SoraMediaOption,
-                                metadata:    Any?,
-                                sdp:         String
+        @JvmOverloads
+        fun buildConnectMessage(role:                    SoraChannelRole,
+                                channelId:               String?,
+                                mediaOption:             SoraMediaOption,
+                                metadata:                Any?,
+                                sdp:                     String,
+                                signalingNotifyMetadata: Any?             = null
         ): String {
 
             val msg = ConnectMessage(
-                    role        = role.toString().toLowerCase(),
-                    channelId   = channelId,
-                    metadata    = metadata,
-                    multistream = mediaOption.multistreamIsRequired,
-                    sdp         = sdp,
-                    planB       = mediaOption.planB()
+                    role                    = role.toString().toLowerCase(),
+                    channelId               = channelId,
+                    metadata                = metadata,
+                    multistream             = mediaOption.multistreamIsRequired,
+                    sdp                     = sdp,
+                    planB                   = mediaOption.planB(),
+                    signalingNotifyMetadata = signalingNotifyMetadata
             )
 
             if (mediaOption.upstreamIsRequired) {
