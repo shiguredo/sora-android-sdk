@@ -38,6 +38,8 @@
 - シグナリングパラメータのフィールド、型を Sora 19.04 に合わせ更新した
   - 型定義は https://sora.shiguredo.jp/doc/SIGNALING_TYPE.html を参照
 - `gradle.properties.example` に Robolectric の設定 `android.enableUnitTestBinaryResources=true` を追加した
+- Sora 19.04.0 での `connection_id` 導入に伴い、ローカルトラック判定を `connection_id` で行うよう変更する
+  - 以前のバージョンでも動作するよう、offer に `connection_id` がない場合はこれまでどおり `client_id` を使う
 
 ### CHANGE
 
