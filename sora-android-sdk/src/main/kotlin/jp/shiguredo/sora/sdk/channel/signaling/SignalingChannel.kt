@@ -42,6 +42,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         private val connectMetadata:         Any?,
         private var listener:                SignalingChannel.Listener?,
         private val clientOfferSdp:          SessionDescription,
+        private val clientId:                String?                     = null,
         private val signalingNotifyMetadata: Any?                        = null
 ) : SignalingChannel {
 
@@ -150,6 +151,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     mediaOption             = mediaOption,
                     metadata                = connectMetadata,
                     sdp                     = clientOfferSdp.description,
+                    clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
             SoraLogger.d(TAG, msg)

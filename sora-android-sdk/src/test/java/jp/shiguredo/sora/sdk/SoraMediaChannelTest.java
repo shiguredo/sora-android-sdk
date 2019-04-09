@@ -77,20 +77,41 @@ public class SoraMediaChannelTest {
         }
     }
 
-    // 1.8.1 で追加されれたオプション引数 signalingNotifyMetadata を渡すテスト。
+    // 1.8.1 で追加されれたオプション引数 clientId を渡すテスト。
     // 最後に追加された引数のため、これを指定するときには timeoutSeconds は省略できない。
     // ここでは static field の定数を渡す。
+    @Test
+    public void constructorCallFrom181WithClientId() {
+        try {
+            // 文字列
+            new SoraMediaChannel(context, signalingEndpoint, channelId,
+                    connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
+                    listener, clientId);
+            // マップ
+            new SoraMediaChannel(context, signalingEndpoint, channelId,
+                    connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
+                    listener, clientId);
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
+    // 1.8.1 で追加されれたオプション引数 signalingNotifyMetadata を渡すテスト。
+    // 最後に追加された引数のため、これを Java で指定するときには clientId と timeoutSeconds は
+    // 省略できない。
+    // clientId を指定したくない場合は null を渡せば gson がフィールドを落としてくれる。
+    // timeoutSeconds は static field の定数を渡す。
     @Test
     public void constructorCallFrom181WithSignanligNotifyMetadata() {
         try {
             // 文字列
             new SoraMediaChannel(context, signalingEndpoint, channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
-                    listener, signalingNotifyMetadataString);
+                    listener, clientId, signalingNotifyMetadataString);
             // マップ
             new SoraMediaChannel(context, signalingEndpoint, channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
-                    listener, signalingNotifyMetadataMap);
+                    listener, /* clientId */ null, signalingNotifyMetadataMap);
         } catch (Exception e) {
             fail(e.toString());
         }

@@ -46,6 +46,7 @@ import java.util.*
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト[秒]
  * @param listener イベントリスナー
+ * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
  */
 class SoraMediaChannel @JvmOverloads constructor(
@@ -56,8 +57,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val mediaOption:             SoraMediaOption,
         private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
         private var listener:                Listener?,
+        private val clientId:                String?          = null,
         private val signalingNotifyMetadata: Any?             = null
-) {
+        ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
@@ -162,7 +164,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling:       SignalingChannel? = null
 
     private var closing = false
-    private var clientId: String? = null
+    private var connectionId: String? = null
 
     private val compositeDisposable = ReusableCompositeDisposable()
 
@@ -177,9 +179,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
         }
 
-        override fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig?) {
+        override fun onInitialOffer(connectionId: String, sdp: String, config: OfferConfig?) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
-            this@SoraMediaChannel.clientId = clientId
+            this@SoraMediaChannel.connectionId = connectionId
             handleInitialOffer(sdp, config)
         }
 
@@ -226,7 +228,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onRemoveRemoteStream(label: String) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveRemoteStream:$label")
-            if (clientId != null && label == clientId) {
+            if (connectionId != null && label == connectionId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore")
                 return
             }
@@ -234,8 +236,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onAddRemoteStream(ms: MediaStream) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.id}, clientId=${clientId}")
-            if (mediaOption.multistreamEnabled && clientId != null && ms.id == clientId) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream:${ms.id}, connectionId=${connectionId}")
+            if (mediaOption.multistreamEnabled && connectionId != null && ms.id == connectionId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
@@ -280,23 +282,25 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
             SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${webrtcRevision}")
         } catch (e : ClassNotFoundException) {
-            SoraLogger.d(TAG, "connect: webrtc library other than shiguredo build is used")
+            SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
         }
-        SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired     = ${mediaOption.upstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired   = ${mediaOption.downstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled     = ${mediaOption.multistreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired        = ${mediaOption.audioIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled   = ${mediaOption.audioUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled = ${mediaOption.audioDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioCodec             = ${mediaOption.audioCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired        = ${mediaOption.videoIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled   = ${mediaOption.videoUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled = ${mediaOption.videoDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCodec             = ${mediaOption.videoCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
-        SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
-        SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics           = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.connectMetadata       = ${this.connectMetadata}")
+        SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired       = ${mediaOption.upstreamIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired     = ${mediaOption.downstreamIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled       = ${mediaOption.multistreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired          = ${mediaOption.audioIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled     = ${mediaOption.audioUpstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled   = ${mediaOption.audioDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.audioCodec               = ${mediaOption.audioCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired          = ${mediaOption.videoIsRequired}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled     = ${mediaOption.videoUpstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled   = ${mediaOption.videoDownstreamEnabled}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCodec               = ${mediaOption.videoCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
+        SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
+        SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")
+        SoraLogger.d(TAG, "connect: mediaChannel.connectMetadata         = ${this.connectMetadata}")
+        SoraLogger.d(TAG, "connect: mediaChannel.clientId                = ${this.clientId}")
+        SoraLogger.d(TAG, "connect: mediaChannel.signalingNotifyMetadata = ${this.signalingNotifyMetadata}")
         if (mediaOption.planB()) {
             SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
         }
@@ -380,6 +384,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 connectMetadata         = connectMetadata,
                 listener                = signalingListener,
                 clientOfferSdp          = clientOfferSdp,
+                clientId                = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata
         )
         signaling!!.connect()
