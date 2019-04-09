@@ -102,7 +102,7 @@ public class SoraMediaChannelTest {
     // clientId を指定したくない場合は null を渡せば gson がフィールドを落としてくれる。
     // timeoutSeconds は static field の定数を渡す。
     @Test
-    public void constructorCallFrom181WithSignanligNotifyMetadata() {
+    public void constructorCallFrom181WithSignalingNotifyMetadata() {
         try {
             // 文字列
             new SoraMediaChannel(context, signalingEndpoint, channelId,
