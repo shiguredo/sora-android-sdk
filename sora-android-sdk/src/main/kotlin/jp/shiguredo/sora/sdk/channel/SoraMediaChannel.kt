@@ -47,7 +47,7 @@ import java.util.*
  * @param timeoutSeconds タイムアウト[秒]
  * @param listener イベントリスナー
  */
-class SoraMediaChannel(
+class SoraMediaChannel @JvmOverloads constructor(
         private val context:           Context,
         private val signalingEndpoint: String,
         private val channelId:         String?,

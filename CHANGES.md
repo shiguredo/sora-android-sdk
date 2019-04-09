@@ -19,6 +19,9 @@
 - Android Studio 3.3.2 に対応した
 - `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
   - [プレビュー版]
+- `SoraMediaChannel` のコンストラクタに `@JvmOverloads` を追加し、Java からオーバーロードされて見えるよう
+  変更した
+  - これにより第 6 引数のタイムアウト値を省略したコンストラクタを呼び出せるようになった
 - シグナリング connect メッセージの metadata を文字列だけでなく任意の型を受け付けるよう変更した
   - 値は gson で変換できる必要がある
   - 文字列化された JSON を受け取った場合には、1.8.0 までと同様に、そのまま文字列値として取扱う
@@ -26,7 +29,7 @@
   - 型定義は https://sora.shiguredo.jp/doc/SIGNALING_TYPE.html を参照
 - シグナリング connect メッセージに `client_id` フィールドを追加した
   - Sora 19.04 より前のバージョンでは、このフィールドを文字列に設定するとエラーになる
-
+- `gradle.properties.example` に Robolectric の設定 `android.enableUnitTestBinaryResources=true` を追加した
 
 ### CHANGE
 
