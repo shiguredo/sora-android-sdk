@@ -279,8 +279,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             val webrtcRevision = kClass.getField("webrtc_revision").get(null)
             val webrtcBuildVersion = listOf(webrtcBranch, webrtcCommit, maintVersion)
                     .joinToString(separator = ".")
-            SoraLogger.d(TAG, "connect: webrtc-build config version        = ${webrtcBuildVersion}")
-            SoraLogger.d(TAG, "connect: webrtc-build commit hash           = ${webrtcRevision}")
+            SoraLogger.d(TAG, "connect: webrtc-build config version          = ${webrtcBuildVersion}")
+            SoraLogger.d(TAG, "connect: webrtc-build commit hash             = ${webrtcRevision}")
         } catch (e : ClassNotFoundException) {
             SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
         }
@@ -298,7 +298,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata         = ${this.signalingMetadata}")
+        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata       = ${this.signalingMetadata}")
         SoraLogger.d(TAG, "connect: mediaChannel.clientId                = ${this.clientId}")
         SoraLogger.d(TAG, "connect: mediaChannel.signalingNotifyMetadata = ${this.signalingNotifyMetadata}")
         if (mediaOption.planB()) {
