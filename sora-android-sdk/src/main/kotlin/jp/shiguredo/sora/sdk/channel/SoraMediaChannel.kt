@@ -52,7 +52,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val context:                 Context,
         private val signalingEndpoint:       String,
         private val channelId:               String?,
-        private val connectMetadata:         Any?             = null,
+        private val connectMetadata:         Any?             = "",
         private val mediaOption:             SoraMediaOption,
         private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
         private var listener:                Listener?,
