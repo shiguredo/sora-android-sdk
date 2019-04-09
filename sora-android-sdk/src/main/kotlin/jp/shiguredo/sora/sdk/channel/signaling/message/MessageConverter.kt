@@ -15,7 +15,7 @@ class MessageConverter {
         fun buildConnectMessage(role:        SoraChannelRole,
                                 channelId:   String?,
                                 mediaOption: SoraMediaOption,
-                                metadata:    String?,
+                                metadata:    Any?,
                                 sdp:         String
         ): String {
 

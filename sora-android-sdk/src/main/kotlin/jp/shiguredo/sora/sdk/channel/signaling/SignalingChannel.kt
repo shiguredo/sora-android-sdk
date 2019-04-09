@@ -35,13 +35,13 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl(
-        private val endpoint:    String,
-        private val role:        SoraChannelRole,
-        private val channelId:   String?,
-        private val mediaOption: SoraMediaOption,
-        private val metadata:    String?,
-        private var listener:    SignalingChannel.Listener?,
-        private val clientOfferSdp:    SessionDescription
+        private val endpoint:        String,
+        private val role:            SoraChannelRole,
+        private val channelId:       String?,
+        private val mediaOption:     SoraMediaOption,
+        private val connectMetadata: Any?,
+        private var listener:        SignalingChannel.Listener?,
+        private val clientOfferSdp:  SessionDescription
 ) : SignalingChannel {
 
     companion object {
@@ -147,7 +147,7 @@ class SignalingChannelImpl(
                     role        = role,
                     channelId   = channelId,
                     mediaOption = mediaOption,
-                    metadata    = metadata,
+                    metadata    = connectMetadata,
                     sdp         = clientOfferSdp.description
             )
             SoraLogger.d(TAG, msg)

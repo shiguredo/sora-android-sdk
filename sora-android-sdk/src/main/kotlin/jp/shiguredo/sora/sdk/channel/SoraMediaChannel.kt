@@ -41,7 +41,7 @@ import java.util.*
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
- * @param signalingMetadata シグナリングのメタデータ
+ * @param connectMetadata シグナリングのメタデータ
  * @param channelId Sora に接続するためのチャネル名
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds タイムアウト[秒]
@@ -51,7 +51,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val context:           Context,
         private val signalingEndpoint: String,
         private val channelId:         String?,
-        private val signalingMetadata: String = "",
+        private val connectMetadata:   Any? = null,
         private val mediaOption:       SoraMediaOption,
         private val timeoutSeconds:    Long = 10,
         private var listener:          Listener?
@@ -292,7 +292,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer          = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight              = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics           = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata     = ${this.signalingMetadata}")
+        SoraLogger.d(TAG, "connect: mediaChannel.connectMetadata       = ${this.connectMetadata}")
         if (mediaOption.planB()) {
             SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
         }
@@ -437,13 +437,13 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
         signaling = SignalingChannelImpl(
-                endpoint    = signalingEndpoint,
-                role        = role,
-                channelId   = channelId,
-                mediaOption = mediaOption,
-                metadata    = signalingMetadata,
-                listener    = signalingListener,
-                clientOfferSdp    = clientOfferSdp
+                endpoint        = signalingEndpoint,
+                role            = role,
+                channelId       = channelId,
+                mediaOption     = mediaOption,
+                connectMetadata = connectMetadata,
+                listener        = signalingListener,
+                clientOfferSdp  = clientOfferSdp
         )
         signaling!!.connect()
     }

@@ -32,8 +32,12 @@ public class SoraMediaChannelTest {
     // 1.8.0 まではオーバーロードされていなかったパターン。
     // また signalingMetadata は String? のみ OK だった。
     @Test
-    public void overloadedCreateCall1() {
+    public void constructorCallUntil180() {
         try {
+            // connectMetadata が null のパターン
+            new SoraMediaChannel(context, signalingEndpoint, channelId,
+                    null, mediaOption, timeoutSeconds, listener);
+            // connectMetadata が String のパターン
             new SoraMediaChannel(context, signalingEndpoint, channelId,
                     signalingMetadataString, mediaOption, timeoutSeconds, listener);
         } catch (Exception e) {
@@ -44,10 +48,26 @@ public class SoraMediaChannelTest {
     // 1.8.1 でオーバーロードされたパターン。
     // timeoutSeconds がデフォルト引数のため省略可能になる。
     @Test
-    public void overloadedCreateCall2() {
+    public void constructorCallFrom181WithoutTimeoutSeconds() {
         try {
             new SoraMediaChannel(context, signalingEndpoint, channelId,
                     signalingMetadataString, mediaOption, listener);
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
+    // 1.8.1 で connectMetadata は Any? になった。
+    // Map を渡すテスト。
+    @Test
+    public void constructorCallFrom181WithMetadataMap() {
+        try {
+            // timeoutSeconds あり
+            new SoraMediaChannel(context, signalingEndpoint, channelId,
+                    signalingMetadataMap, mediaOption, timeoutSeconds, listener);
+            // timeoutSeconds なし
+            new SoraMediaChannel(context, signalingEndpoint, channelId,
+                    signalingMetadataMap, mediaOption, listener);
         } catch (Exception e) {
             fail(e.toString());
         }
