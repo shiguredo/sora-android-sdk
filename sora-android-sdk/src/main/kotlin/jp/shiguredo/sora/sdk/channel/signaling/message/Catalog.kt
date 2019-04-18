@@ -101,6 +101,7 @@ data class NotificationMessage(
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
         @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int?,
         @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
+        @SerializedName("unstable_level")                 val unstableLevel:                 Int?,
         @SerializedName("channel_id")                     val channelId:                     String?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
