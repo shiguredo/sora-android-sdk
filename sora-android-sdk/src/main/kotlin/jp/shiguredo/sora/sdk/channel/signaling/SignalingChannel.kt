@@ -145,7 +145,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         webSocket?.let {
             SoraLogger.d(TAG, "[signaling:$role] -> connect")
-            val msg = MessageConverter.buildConnectMessage(
+            val message = MessageConverter.buildConnectMessage(
                     role                    = role,
                     channelId               = channelId,
                     mediaOption             = mediaOption,
@@ -154,8 +154,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
-            SoraLogger.d(TAG, msg)
-            it.send(msg)
+            SoraLogger.d(TAG, "connect message: $message")
+            it.send(message)
         }
     }
 

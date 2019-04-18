@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.camera
 
 import android.content.Context
 import android.os.Build
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.Camera1Enumerator
 import org.webrtc.Camera2Enumerator
 import org.webrtc.CameraEnumerator
@@ -17,6 +18,7 @@ import org.webrtc.CameraVideoCapturer
 class CameraCapturerFactory {
 
     companion object {
+        val TAG = CameraCapturerFactory::class.simpleName
 
         /**
          * `CameraVideoCapturer` のインスタンスを生成します。
@@ -43,14 +45,15 @@ class CameraCapturerFactory {
             if (videoCapturer == null) {
                 return null
             }
-            val underlyingFixedResolution = videoCapturer.isScreencast
-            when (underlyingFixedResolution) {
-                fixedResolution ->
-                    return videoCapturer
-                else ->
-                    return CameraVideoCapturerWrapper(videoCapturer, fixedResolution)
+            return when (videoCapturer.isScreencast) {
+                fixedResolution -> {
+                    videoCapturer
+                }
+                else -> {
+                    SoraLogger.d(TAG, "Wrap capturer: original.isScreencast=${videoCapturer.isScreencast}, fixedResolution=${fixedResolution}")
+                    CameraVideoCapturerWrapper(videoCapturer, fixedResolution)
+                }
             }
-
         }
 
         private fun createCapturer(enumerator: CameraEnumerator): CameraVideoCapturer? {
