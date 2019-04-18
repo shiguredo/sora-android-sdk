@@ -90,7 +90,7 @@ class PeerChannelImpl(
         }
 
         override fun onAddStream(ms: MediaStream?) {
-            SoraLogger.d(TAG, "[rtc] @onAddStream")
+            SoraLogger.d(TAG, "[rtc] @onAddStream msid=${ms?.id}")
             ms?.let { listener?.onAddRemoteStream(ms) }
         }
 

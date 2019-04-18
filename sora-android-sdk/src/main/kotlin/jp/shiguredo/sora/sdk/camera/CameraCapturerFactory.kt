@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.camera
 
 import android.content.Context
 import android.os.Build
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.Camera1Enumerator
 import org.webrtc.Camera2Enumerator
 import org.webrtc.CameraEnumerator
@@ -17,15 +18,20 @@ import org.webrtc.CameraVideoCapturer
 class CameraCapturerFactory {
 
     companion object {
+        val TAG = CameraCapturerFactory::class.simpleName
 
         /**
          * `CameraVideoCapturer` のインスタンスを生成します。
          *
          * 複数のカメラがある場合はフロントのカメラを優先します。
          *
+         * @param context application context
+         * @param fixedResolution true の場合は解像度維持を優先、false の場合は
+         * フレームレート維持を優先する。デフォルト値は false 。
          * @return 生成された `CameraVideoCapturer`
          */
-        fun create(context: Context) : CameraVideoCapturer? {
+        @JvmOverloads
+        fun create(context: Context, fixedResolution: Boolean = false) : CameraVideoCapturer? {
             var videoCapturer: CameraVideoCapturer? = null
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 if (Camera2Enumerator.isSupported(context)) {
@@ -35,7 +41,19 @@ class CameraCapturerFactory {
             if (videoCapturer == null) {
                 videoCapturer = createCapturer(Camera1Enumerator(true))
             }
-            return videoCapturer
+
+            if (videoCapturer == null) {
+                return null
+            }
+            return when (videoCapturer.isScreencast) {
+                fixedResolution -> {
+                    videoCapturer
+                }
+                else -> {
+                    SoraLogger.d(TAG, "Wrap capturer: original.isScreencast=${videoCapturer.isScreencast}, fixedResolution=${fixedResolution}")
+                    CameraVideoCapturerWrapper(videoCapturer, fixedResolution)
+                }
+            }
         }
 
         private fun createCapturer(enumerator: CameraEnumerator): CameraVideoCapturer? {

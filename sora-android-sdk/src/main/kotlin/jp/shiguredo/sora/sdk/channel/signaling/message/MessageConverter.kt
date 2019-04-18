@@ -12,20 +12,25 @@ class MessageConverter {
 
         val gson = Gson()
 
-        fun buildConnectMessage(role:        SoraChannelRole,
-                                channelId:   String?,
-                                mediaOption: SoraMediaOption,
-                                metadata:    String?,
-                                sdp:         String
+        @JvmOverloads
+        fun buildConnectMessage(role:                    SoraChannelRole,
+                                channelId:               String?,
+                                mediaOption:             SoraMediaOption,
+                                metadata:                Any?,
+                                sdp:                     String,
+                                clientId:                String?          = null,
+                                signalingNotifyMetadata: Any?             = null
         ): String {
 
             val msg = ConnectMessage(
-                    role        = role.toString().toLowerCase(),
-                    channelId   = channelId,
-                    metadata    = metadata,
-                    multistream = mediaOption.multistreamIsRequired,
-                    sdp         = sdp,
-                    planB       = mediaOption.planB()
+                    role                    = role.toString().toLowerCase(),
+                    channelId               = channelId,
+                    metadata                = metadata,
+                    multistream             = mediaOption.multistreamIsRequired,
+                    sdp                     = sdp,
+                    planB                   = mediaOption.planB(),
+                    clientId                = clientId,
+                    signalingNotifyMetadata = signalingNotifyMetadata
             )
 
             if (mediaOption.upstreamIsRequired) {
@@ -71,19 +76,19 @@ class MessageConverter {
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
-            return gson.toJson(UpdateMessage(sdp))
+            return gson.toJson(UpdateMessage(sdp = sdp))
         }
 
         fun buildReAnswerMessage(sdp: String): String {
-            return gson.toJson(ReAnswerMessage(sdp))
+            return gson.toJson(ReAnswerMessage(sdp = sdp))
         }
 
         fun buildAnswerMessage(sdp: String): String {
-            return gson.toJson(AnswerMessage(sdp))
+            return gson.toJson(AnswerMessage(sdp = sdp))
         }
 
         fun buildCandidateMessage(sdp: String): String {
-            return gson.toJson(CandidateMessage(sdp))
+            return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
         fun parseType(text: String): String? {

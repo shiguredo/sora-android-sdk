@@ -12,6 +12,50 @@
 
 ## develop
 
+## 1.8.1
+
+### UPDATE
+
+- libwebrtc を 73.10.1 に上げた
+- encoder/decoder の対応コーデックのログ出力コメントを追加した
+- Kotlin を 1.3.30 に上げた
+- Android Studio 3.4.0 に対応した
+- `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
+  - [プレビュー版]
+- `SoraMediaChannel` のコンストラクタに `@JvmOverloads` を追加し、Java からオーバーロードされて見えるよう
+  変更した
+  - これにより第 6 引数のタイムアウト値を省略したコンストラクタを呼び出せるようになった
+- シグナリング connect メッセージの metadata を文字列だけでなく任意の型を受け付けるよう変更した
+  - 値は gson で変換できる必要がある
+  - 文字列化された JSON を受け取った場合には、1.8.0 までと同様に、そのまま文字列値として取扱う
+- シグナリング connect メッセージに `client_id` フィールドを追加した
+  - Sora 19.04 より前のバージョンでは、このフィールドを文字列に設定するとエラーになる
+- シグナリング connect メッセージの `signaling_notify_metadata` を `SoraMediaChannel` コンストラクタから
+  指定できるようにした
+  - 値は gson で変換できる必要がある
+  - オプション引数のため、これまでのコードでは指定なしで動作する
+  - Java で書かれたアプリケーションでは `SoraMediaChannel` のコンストラクタで `signalingNotifyMetadata` を
+    を指定するには `clientId` を渡す必要がある。アプリケーションとして指定しない場合には null を渡すことで
+    シグナリング connect メッセージには `client_id` が含まれない。
+- シグナリングパラメータのフィールド、型を Sora 19.04 に合わせ更新した
+  - 型定義は https://sora.shiguredo.jp/doc/SIGNALING_TYPE.html を参照
+- `gradle.properties.example` に Robolectric の設定 `android.enableUnitTestBinaryResources=true` を追加した
+- Sora 19.04.0 での `connection_id` 導入に伴い、ローカルトラック判定を `connection_id` で行うよう変更する
+  - 以前のバージョンでも動作するよう、offer に `connection_id` がない場合はこれまでどおり `client_id` を使う
+- シグナリング通知機能の network.status に対応した
+- `com.squareup.okhttp3:okhttp` を 3.14.1 に上げた
+- `io.reactivex.rxjava2:rxandroid` を 2.1.1 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.8 に上げた
+
+### CHANGE
+
+- `kotlin-stdlib-jdk7` 依存を `kotlin-stdlib` に変更した
+  - `minSdkVersion` が 16 であるため
+
+### ADD
+
+- `CameraCapturerFactory` に解像度維持を優先するオプションを追加した
+
 ## 1.8.0
 
 ### UPDATE
