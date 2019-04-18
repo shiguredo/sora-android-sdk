@@ -16,7 +16,8 @@
 
 - libwebrtc を 73.10.1 に上げた
 - encoder/decoder の対応コーデックのログ出力コメントを追加した
-- Android Studio 3.3.2 に対応した
+- Kotlin を 1.3.30 に上げた
+- Android Studio 3.4.0 に対応した
 - `SoraMediaOption` に `VideoEncoderFactory`、`VideoDecoderFactory` を指定するオプションを追加した
   - [プレビュー版]
 - `SoraMediaChannel` のコンストラクタに `@JvmOverloads` を追加し、Java からオーバーロードされて見えるよう
@@ -40,6 +41,9 @@
 - Sora 19.04.0 での `connection_id` 導入に伴い、ローカルトラック判定を `connection_id` で行うよう変更する
   - 以前のバージョンでも動作するよう、offer に `connection_id` がない場合はこれまでどおり `client_id` を使う
 - シグナリング通知機能の network.status に対応した
+- `com.squareup.okhttp3:okhttp` を 3.14.1 に上げた
+- `io.reactivex.rxjava2:rxandroid` を 2.1.1 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.8 に上げた
 
 ### CHANGE
 
