@@ -18,10 +18,13 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
     - [サンプルコード](#サンプルコード)
     - [Issues について](#issues-について)
 - [SDK 開発者向け](#sdk-開発者向け)
+    - [ブランチ利用方法](#ブランチ利用方法)
+    - [リリース](#リリース)
     - [libwebrtc への依存](#libwebrtc-への依存)
     - [ローカルでのビルド](#ローカルでのビルド)
     - [kdoc の生成](#kdoc-の生成)
     - [JitPack](#jitpack)
+    - [依存ライブラリの最新バージョンチェック](#依存ライブラリの最新バージョンチェック)
     - [sora-android-sdk-samples を multi module に押し込む方法](#sora-android-sdk-samples-を-multi-module-に押し込む方法)
 - [Copyright](#copyright)
 
@@ -175,29 +178,13 @@ Gradle Versions Plugin https://github.com/ben-manes/gradle-versions-plugin が�
 
 sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下に clone されているとします。
 
-1. settings.gradle に以下を追加する::
+1.  `include_app_dir.txt` に sora-android-sdk-samples のディレクトリパスを書く
 
 ```
-file('../sora-android-sdk-samples').eachDir { dir ->
-    if( new File(dir, "build.gradle").exists()) {
-        include dir.name
-        project(":${dir.name}").projectDir = dir
-    }
-}
+$ echo '../sora-android-sdk-samples' > include_app_dir.txt
 ```
 
-2. webrtc-video-effector/build.gradle の SDK 依存を project に変更する::
-
-```
-dependencies {
-    [snip]
-    // api("com.github.shiguredo:sora-android-sdk:$sora_android_sdk_version@aar") {
-    //    transitive = true
-    // }
-    api project(':sora-android-sdk')
-```
-
-3. (optional) top level か samples の build.gradle に ext の設定を足す::
+2. (optional) top level か samples の build.gradle に ext の設定を足す::
 
 ```
      ext.signaling_endpoint = "wss://sora.example.com/signaling"
