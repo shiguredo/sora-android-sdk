@@ -25,7 +25,7 @@ interface SignalingChannel {
     interface Listener {
         fun onConnect()
         fun onDisconnect()
-        fun onInitialOffer(clientId: String, sdp: String, config: OfferConfig?)
+        fun onInitialOffer(connectionId: String, sdp: String, config: OfferConfig?)
         fun onUpdatedOffer(sdp: String)
         fun onReOffer(sdp: String)
         fun onError(reason: SoraErrorReason)
