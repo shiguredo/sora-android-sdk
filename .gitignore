@@ -1,5 +1,6 @@
 # For developers
 include_app_dir.txt
+keystore.properties
 
 # Manually placed aar for libwebrtc
 libwebrtc/*.aar
