@@ -12,6 +12,10 @@
 
 ## develop
 
+### UPDATE
+
+- Android Studio 3.4.1 に対応した
+
 ## 1.8.1
 
 ### UPDATE
