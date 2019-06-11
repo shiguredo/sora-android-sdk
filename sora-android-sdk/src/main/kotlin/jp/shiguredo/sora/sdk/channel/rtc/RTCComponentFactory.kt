@@ -6,6 +6,7 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
+import java.lang.RuntimeException
 
 
 class RTCComponentFactory(private val option: SoraMediaOption) {
@@ -116,8 +117,10 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
 
         return JavaAudioDeviceModule.builder(appContext)
                 // TODO(shino): 設定値を検討する
-                .setUseHardwareAcousticEchoCanceler(false)
-                .setUseHardwareNoiseSuppressor(false)
+                // .setUseHardwareAcousticEchoCanceler(false)
+                // .setUseHardwareNoiseSuppressor(false)
+                .setSamplesReadyCallback {
+                    sample -> SoraLogger.d(TAG, "samplesReadyCallback called: ${sample}") }
                 // TODO(shino): application までエラーを上げる
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
@@ -126,6 +129,7 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
 
     private fun reportError(errorMessage: String) {
         // TODO: Implement
+        throw RuntimeException(errorMessage)
     }
 
 }
