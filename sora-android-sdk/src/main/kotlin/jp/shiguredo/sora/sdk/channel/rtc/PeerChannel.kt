@@ -235,8 +235,8 @@ class PeerChannelImpl(
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
 
-        PeerChannelImpl.initializeIfNeeded(appContext, useTracer)
-        factory = componentFactory.createPeerConnectionFactory()
+        initializeIfNeeded(appContext, useTracer)
+        factory = componentFactory.createPeerConnectionFactory(appContext)
 
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
