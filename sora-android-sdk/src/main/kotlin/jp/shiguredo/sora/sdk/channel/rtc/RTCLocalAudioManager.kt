@@ -4,6 +4,7 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.util.*
 
+
 class RTCLocalAudioManager(
         private val send:         Boolean,
         private val levelControl: Boolean = false,
