@@ -115,12 +115,16 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
             }
         }
 
+        SoraLogger.d(TAG, "BuiltInAcousticEchoCancelerSupported: " +
+                "${JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported()}")
+        SoraLogger.d(TAG, "BuiltInNoiseSuppressorSupported: " +
+                "${JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported()}")
         return JavaAudioDeviceModule.builder(appContext)
                 // TODO(shino): 設定値を検討する
-                // .setUseHardwareAcousticEchoCanceler(false)
-                // .setUseHardwareNoiseSuppressor(false)
-                .setSamplesReadyCallback {
-                    sample -> SoraLogger.d(TAG, "samplesReadyCallback called: ${sample}") }
+                .setUseHardwareAcousticEchoCanceler(true)
+                .setUseHardwareNoiseSuppressor(true)
+                // .setSamplesReadyCallback {
+                //     sample -> SoraLogger.d(TAG, "samplesReadyCallback called: ${sample}") }
                 // TODO(shino): application までエラーを上げる
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
