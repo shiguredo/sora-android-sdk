@@ -21,8 +21,9 @@ data class ConnectMessage(
         @SerializedName("multistream") val multistream:             Boolean = false,
         @SerializedName("plan_b")      var planB:                   Boolean = true,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
-        // Android SDK は未だ対応してない
-        // @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("simulcast_rid")
+                                       var simulcast_rid:           Boolean = false,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sdp")         val sdp:                     String

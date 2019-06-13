@@ -7,13 +7,16 @@ import org.webrtc.*
  */
 class SoraMediaOption {
 
-    val TAG = SoraMediaOption::class.simpleName
+    companion object {
+        val TAG = SoraMediaOption::class.simpleName
+    }
 
     internal var audioDownstreamEnabled = false
     internal var audioUpstreamEnabled   = false
     internal var videoDownstreamEnabled = false
-    internal var videoUpstreamEnabled = false
+    internal var videoUpstreamEnabled   = false
     internal var multistreamEnabled     = false
+    internal var simulcastEnabled       = false
 
     var spotlight : Int        = 0
 
@@ -117,6 +120,12 @@ class SoraMediaOption {
         videoUpstreamContext = eglContext
     }
 
+    /**
+     * サイマルキャストを有効にします
+     */
+    fun enableSimulcast() {
+        simulcastEnabled = true
+    }
     // Just for internal usage
     internal val videoIsRequired: Boolean
     get() = videoDownstreamEnabled || videoUpstreamEnabled

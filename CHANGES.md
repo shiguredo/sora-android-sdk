@@ -17,6 +17,10 @@
 - libwebrtc を 75.16.0 に上げた
 - Android Studio 3.4.1 に対応した
 
+### ADD
+
+- rid base simulcast に対応した
+
 ### CHANGE
 
 - `PeerConnectionFactory` に明示的に `JavaAudioDeviceModule` を渡すように変更した

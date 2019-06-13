@@ -68,6 +68,11 @@ class MessageConverter {
                 msg.spotlight = mediaOption.spotlight
             }
 
+            if (mediaOption.simulcastEnabled) {
+                msg.simulcast = true
+                msg.simulcast_rid = true
+            }
+
             return gson.toJson(msg)
         }
 
