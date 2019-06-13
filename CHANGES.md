@@ -17,6 +17,13 @@
 - libwebrtc を 75.16.0 に上げた
 - Android Studio 3.4.1 に対応した
 
+### CHANGE
+
+- `PeerConnectionFactory` に明示的に `JavaAudioDeviceModule` を渡すように変更した
+- `JavaAudioDeviceModule` の `HardwareAcousticEchoCanceler`, `HardwareNoiseSuppressor` を
+  有効にした
+- audio source 作成時の `MediaConstraint` で、audio processing の無効化をなくした
+
 ## 1.8.1
 
 ### UPDATE
