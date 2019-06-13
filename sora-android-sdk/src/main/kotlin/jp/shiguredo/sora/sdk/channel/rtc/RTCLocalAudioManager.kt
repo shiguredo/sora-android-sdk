@@ -8,7 +8,7 @@ import java.util.*
 class RTCLocalAudioManager(
         private val send:         Boolean,
         private val levelControl: Boolean = false,
-        private val processing:   Boolean = false
+        private val processing:   Boolean = true
 ) {
 
     companion object {
