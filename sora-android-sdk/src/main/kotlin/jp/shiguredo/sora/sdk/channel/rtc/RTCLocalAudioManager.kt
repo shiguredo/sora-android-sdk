@@ -40,9 +40,11 @@ class RTCLocalAudioManager(
     private fun createSourceConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
         if (levelControl) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(LEVEL_CONTROL_CONSTRAINT, "true"))
+            // Deprecated by libwebrtc, たぶん使われない
+//            constraints.mandatory.add(
+//                    MediaConstraints.KeyValuePair(LEVEL_CONTROL_CONSTRAINT, "true"))
         }
+
         if (!processing) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(ECHO_CANCELLATION_CONSTRAINT, "false"))
