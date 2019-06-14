@@ -5,6 +5,7 @@ import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -13,7 +14,7 @@ import java.util.concurrent.Executors
 
 interface PeerChannel {
 
-    fun handleInitialRemoteOffer(offer: String): Single<SessionDescription>
+    fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
     fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
@@ -182,7 +183,7 @@ class PeerChannelImpl(
         }
     }
 
-    override fun handleInitialRemoteOffer(offer: String): Single<SessionDescription> {
+    override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP =
                 SessionDescription(SessionDescription.Type.OFFER, offer)
@@ -191,9 +192,10 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "setRemoteDescription")
             return@flatMap setRemoteDescription(offerSDP)
         }.flatMap {
-            SoraLogger.d(TAG, "createAnswer")
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
-                val transceiver = conn?.transceivers?.firstOrNull {
+            SoraLogger.d(TAG, "Modify sender.parameters")
+            // TODO(shino): simulcast かつ offerEncodings が null はエラーにする
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
+                val transceiver = conn!!.transceivers!!.first {
                     SoraLogger.d(TAG, "transceiver after sRD: ${it.mid}, direction=${it.direction}, " +
                             "currentDirection=${it.currentDirection}, mediaType=${it.mediaType}")
                     // setRD のあとの direction は recv only になる。
@@ -202,15 +204,40 @@ class PeerChannelImpl(
                     // 自分が send すべき transceiver と決め打ちする。
                     it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
                 }
-                // TODO(shino): null はありえない、エラーにすべきか
-                if(transceiver != null) {
-                    val videoTrack = localStream!!.videoTracks[0]
-                    SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
-                    val sender = transceiver.sender
-                    SoraLogger.d(TAG, "Simulcast: sender before setTrack = ${sender}")
-                    transceiver.sender.setTrack(videoTrack, /* takeOwnership */ false)
+
+                transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                val videoTrack = localStream!!.videoTracks[0]
+                SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
+                val sender = transceiver.sender
+                SoraLogger.d(TAG, "Simulcast: sender before setTrack = ${sender}")
+                sender.setTrack(videoTrack, /* takeOwnership */ false)
+
+                sender.parameters.encodings.forEach { senderEncoding ->
+                    val rid = senderEncoding.rid
+                    with (senderEncoding) {
+                        SoraLogger.d(TAG, "Simulcast: original encoding rid=$rid, "
+                                + "ssrc=$ssrc, active=$active, "
+                                + "scaleResolutionDownBy=$scaleResolutionDownBy, "
+                                + "maxBitrateBps=$maxBitrateBps, "
+                                + "maxFramerate=$maxFramerate")
+                    }
+                    val offerEncoding = encodings.first { encoding ->
+                        encoding.rid == rid
+                    }
+                    offerEncoding.maxBitrate.let { senderEncoding.maxBitrateBps = it }
+                    offerEncoding.maxFramerate.let { senderEncoding.maxFramerate = it}
+                    offerEncoding.scaleResolutionDownBy.let { senderEncoding.scaleResolutionDownBy = it }
+
+                    with (senderEncoding) {
+                        SoraLogger.d(TAG, "Simulcast: modified encoding rid=$rid, "
+                                + "ssrc=$ssrc, active=$active, "
+                                + "scaleResolutionDownBy=$scaleResolutionDownBy, "
+                                + "maxBitrateBps=$maxBitrateBps, "
+                                + "maxFramerate=$maxFramerate")
+                    }
                 }
             }
+            SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
         }.flatMap {
             answer ->

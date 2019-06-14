@@ -13,10 +13,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
-import jp.shiguredo.sora.sdk.channel.signaling.message.IceServer
-import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
-import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
-import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -179,10 +176,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
         }
 
-        override fun onInitialOffer(connectionId: String, sdp: String, config: OfferConfig?) {
+        override fun onInitialOffer(offerMessage: OfferMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
-            this@SoraMediaChannel.connectionId = connectionId
-            handleInitialOffer(sdp, config)
+            this@SoraMediaChannel.connectionId = offerMessage.connectionId
+            handleInitialOffer(offerMessage)
         }
 
         override fun onUpdatedOffer(sdp: String) {
@@ -391,13 +388,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         signaling!!.connect()
     }
 
-    private fun handleInitialOffer(sdp: String, config: OfferConfig?) {
+    private fun handleInitialOffer(offerMessage: OfferMessage) {
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
         peer = PeerChannelImpl(
                 appContext    = context,
                 networkConfig = PeerNetworkConfig(
-                        serverConfig = config,
+                        serverConfig = offerMessage.config,
                         mediaOption  = mediaOption
                 ),
                 mediaOption   = mediaOption,
@@ -405,7 +402,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         )
 
         peer?.run {
-            val subscription = handleInitialRemoteOffer(sdp)
+            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.encodings)
                     .observeOn(Schedulers.io())
                     .subscribeBy(
                             onSuccess = {

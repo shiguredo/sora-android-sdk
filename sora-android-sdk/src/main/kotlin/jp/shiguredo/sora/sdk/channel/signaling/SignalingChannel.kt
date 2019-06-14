@@ -2,10 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling
 
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
-import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
-import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
-import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import okhttp3.*
@@ -25,7 +22,7 @@ interface SignalingChannel {
     interface Listener {
         fun onConnect()
         fun onDisconnect()
-        fun onInitialOffer(connectionId: String, sdp: String, config: OfferConfig?)
+        fun onInitialOffer(offerMessage: OfferMessage)
         fun onUpdatedOffer(sdp: String)
         fun onReOffer(sdp: String)
         fun onError(reason: SoraErrorReason)
@@ -165,21 +162,21 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private fun onOfferMessage(text: String) {
-        val offer = MessageConverter.parseOfferMessage(text)
+        val offerMessage = MessageConverter.parseOfferMessage(text)
         // TODO message validation
 
         SoraLogger.d(TAG, "[signaling:$role] <- offer")
-        SoraLogger.d(TAG, offer.sdp)
+        SoraLogger.d(TAG, offerMessage.sdp)
 
         // connectionId は Sora 19.04.0 から返ってくるため、ない場合は clientId を使う
         val connectionId = when {
-            offer.connectionId != null ->
-                offer.connectionId
+            offerMessage.connectionId != null ->
+                offerMessage.connectionId
             else ->
-                offer.clientId
+                offerMessage.clientId
         }
 
-        listener?.onInitialOffer(connectionId, offer.sdp, offer.config)
+        listener?.onInitialOffer(offerMessage)
     }
 
     private fun onUpdateMessage(text: String) {
