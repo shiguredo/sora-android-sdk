@@ -295,6 +295,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled     = ${mediaOption.videoUpstreamEnabled}")
         SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled   = ${mediaOption.videoDownstreamEnabled}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCodec               = ${mediaOption.videoCodec}")
+        SoraLogger.d(TAG, "connect: mediaOption.simulcastEnabled         = ${mediaOption.simulcastEnabled}")
         SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
         SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
         SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")

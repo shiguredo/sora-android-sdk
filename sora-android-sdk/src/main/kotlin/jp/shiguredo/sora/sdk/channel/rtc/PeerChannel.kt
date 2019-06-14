@@ -68,6 +68,9 @@ class PeerChannelImpl(
     private val localAudioManager = componentFactory.createAudioManager()
     private val localVideoManager = componentFactory.createVideoManager()
 
+    private var localStream: MediaStream? = null
+    private var mediaStreamLabels: List<String>? = null
+
     private var closing = false
 
     private val connectionObserver = object : PeerConnection.Observer {
@@ -189,6 +192,25 @@ class PeerChannelImpl(
             return@flatMap setRemoteDescription(offerSDP)
         }.flatMap {
             SoraLogger.d(TAG, "createAnswer")
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                val transceiver = conn?.transceivers?.firstOrNull {
+                    SoraLogger.d(TAG, "transceiver after sRD: ${it.mid}, direction=${it.direction}, " +
+                            "currentDirection=${it.currentDirection}, mediaType=${it.mediaType}")
+                    // setRD のあとの direction は recv only になる。
+                    // 現状 sender.track.streamIds を取れないので connection ID との比較もできない。
+                    // video upstream 持っているときは、ひとつめの video type transceiver を
+                    // 自分が send すべき transceiver と決め打ちする。
+                    it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
+                }
+                // TODO(shino): null はありえない、エラーにすべきか
+                if(transceiver != null) {
+                    val videoTrack = localStream!!.videoTracks[0]
+                    SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
+                    val sender = transceiver.sender
+                    SoraLogger.d(TAG, "Simulcast: sender before setTrack = ${sender}")
+                    transceiver.sender.setTrack(videoTrack, /* takeOwnership */ false)
+                }
+            }
             return@flatMap createAnswer()
         }.flatMap {
             answer ->
@@ -249,18 +271,28 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
-        val localStream = factory!!.createLocalMediaStream(streamId)
-        localAudioManager.attachTrackToStream(localStream)
-        localVideoManager.attachTrackToStream(localStream)
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
+        localStream = factory!!.createLocalMediaStream(streamId)
+
+        localAudioManager.attachTrackToStream(localStream!!)
+        localVideoManager.attachTrackToStream(localStream!!)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
+        val mediaStreamLabels = listOf(localStream!!.id)
         if (mediaOption.planB()) {
-            conn!!.addStream(localStream)
+            conn!!.addStream(localStream!!)
         } else {
-            val mediaStreamLabels = listOf(localStream.id)
-            localStream.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-            localStream.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+
+            if (mediaOption.simulcastEnabled) {
+                // nop: ホントはココで video も addTrack したいがまだ libwebrtc が動かないので後で
+                // replaceTrack する
+                // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
+                // is called after addTrack
+                // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+            } else {
+                localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            }
         }
     }
 
