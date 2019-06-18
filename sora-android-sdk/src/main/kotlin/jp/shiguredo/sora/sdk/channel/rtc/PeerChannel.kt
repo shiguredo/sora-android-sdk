@@ -224,9 +224,9 @@ class PeerChannelImpl(
                     val offerEncoding = encodings.first { encoding ->
                         encoding.rid == rid
                     }
-                    offerEncoding.maxBitrate.let { senderEncoding.maxBitrateBps = it }
-                    offerEncoding.maxFramerate.let { senderEncoding.maxFramerate = it}
-                    offerEncoding.scaleResolutionDownBy.let { senderEncoding.scaleResolutionDownBy = it }
+                    offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
+                    offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+                    offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
 
                     with (senderEncoding) {
                         SoraLogger.d(TAG, "Simulcast: modified encoding rid=$rid, "
