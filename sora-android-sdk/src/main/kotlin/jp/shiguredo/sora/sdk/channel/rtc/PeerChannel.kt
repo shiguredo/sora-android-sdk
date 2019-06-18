@@ -205,12 +205,7 @@ class PeerChannelImpl(
                     it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
                 }
 
-                transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                val videoTrack = localStream!!.videoTracks[0]
-                SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
                 val sender = transceiver.sender
-                SoraLogger.d(TAG, "Simulcast: sender before setTrack = ${sender}")
-                sender.setTrack(videoTrack, /* takeOwnership */ false)
 
                 sender.parameters.encodings.forEach { senderEncoding ->
                     val rid = senderEncoding.rid
@@ -236,6 +231,14 @@ class PeerChannelImpl(
                                 + "maxFramerate=$maxFramerate")
                     }
                 }
+                // TODO(shino): 必要?
+                sender.parameters = sender.parameters
+
+                val videoTrack = localStream!!.videoTracks[0]
+                SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
+                // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                // sender.setTrack(videoTrack, /* takeOwnership */ false)
+                conn?.addTrack(videoTrack, mediaStreamLabels)
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -305,7 +308,7 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
-        val mediaStreamLabels = listOf(localStream!!.id)
+        mediaStreamLabels = listOf(localStream!!.id)
         if (mediaOption.planB()) {
             conn!!.addStream(localStream!!)
         } else {
