@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.util.SoraLogger
 
 class MessageConverter {
 
@@ -68,6 +69,12 @@ class MessageConverter {
                 msg.spotlight = mediaOption.spotlight
             }
 
+            if (mediaOption.simulcastEnabled) {
+                msg.simulcast = true
+                msg.simulcast_rid = true
+            }
+
+            SoraLogger.d(TAG, "$msg")
             return gson.toJson(msg)
         }
 

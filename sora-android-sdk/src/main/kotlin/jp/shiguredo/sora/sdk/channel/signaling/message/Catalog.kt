@@ -21,8 +21,9 @@ data class ConnectMessage(
         @SerializedName("multistream") val multistream:             Boolean = false,
         @SerializedName("plan_b")      var planB:                   Boolean = true,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
-        // Android SDK は未だ対応してない
-        // @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("simulcast_rid")
+                                       var simulcast_rid:           Boolean = false,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sdp")         val sdp:                     String
@@ -48,13 +49,21 @@ data class OfferConfig(
         @SerializedName("iceTransportPolicy") val iceTransportPolicy: String
 )
 
+data class Encoding(
+        @SerializedName("rid")                   val rid:                   String?,
+        @SerializedName("maxBitrate")            val maxBitrate:            Int?,
+        @SerializedName("maxFramerate")          val maxFramerate:          Int?,
+        @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
+)
+
 data class OfferMessage(
         @SerializedName("type")          val type:         String = "offer",
         @SerializedName("sdp")           val sdp:          String,
         @SerializedName("client_id")     val clientId:     String,
         @SerializedName("connection_id") val connectionId: String?,
         @SerializedName("metadata")      val metadata:     Any?,
-        @SerializedName("config")        val config:       OfferConfig? = null
+        @SerializedName("config")        val config:       OfferConfig? = null,
+        @SerializedName("encodings")     val encodings:    List<Encoding>?
 )
 
 data class UpdateMessage(
