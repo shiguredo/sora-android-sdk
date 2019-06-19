@@ -232,6 +232,8 @@ class PeerChannelImpl(
                     }
                 }
                 // TODO(shino): 必要?
+                // RtpSender#setParameters() で nativeGetParameters(nativeRtpSender) 呼んでいるので
+                // 必要そうな気がする。それにしてもこの一行は字面が酷い。
                 sender.parameters = sender.parameters
 
                 val videoTrack = localStream!!.videoTracks[0]
