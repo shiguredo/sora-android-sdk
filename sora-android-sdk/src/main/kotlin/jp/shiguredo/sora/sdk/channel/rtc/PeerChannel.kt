@@ -310,6 +310,9 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
+
+        // TODO(shino): simulcast のときでも setRD -> addTrack で動作するので、
+        //  simulcast 有無によらず、audio/video そっちにまとめたほうがシンプルかも (動けば)
         mediaStreamLabels = listOf(localStream!!.id)
         if (mediaOption.planB()) {
             conn!!.addStream(localStream!!)
@@ -317,8 +320,9 @@ class PeerChannelImpl(
             localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
 
             if (mediaOption.simulcastEnabled) {
-                // nop: ホントはココで video も addTrack したいがまだ libwebrtc が動かないので後で
-                // replaceTrack する
+                // nop
+                // TODO(shino): ココで video も addTrack したいがまだ libwebrtc が動かないので後で
+                //  addTrack する
                 // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
                 // is called after addTrack
                 // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
