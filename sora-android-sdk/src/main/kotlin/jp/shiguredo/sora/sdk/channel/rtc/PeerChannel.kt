@@ -240,6 +240,8 @@ class PeerChannelImpl(
                              |maxFramerate=$maxFramerate""".trimMargin())
                     }
                 }
+                // ここまでの Java オブジェクト参照先を変更したのみ。
+                // RtpSender#setParameters() により native に変換して C++ 層を呼び出す。
                 sender.parameters = parameters
             }
             SoraLogger.d(TAG, "createAnswer")

@@ -19,7 +19,9 @@
 
 ### ADD
 
-- rid base simulcast に対応した
+- rid-based simulcast に対応した
+  - 実験的機能
+  - 現状では、ソフトウェアエンコーダのみでしか動作せず、VP8 のみの対応
 
 ### CHANGE
 
