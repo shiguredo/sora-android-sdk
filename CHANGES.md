@@ -22,6 +22,7 @@
 - rid-based simulcast に対応した
   - 実験的機能
   - 現状では、ソフトウェアエンコーダのみでしか動作せず、VP8 のみの対応
+  - fixed resolution と一緒に使うとクラッシュ(SEGV)する
 
 ### CHANGE
 
