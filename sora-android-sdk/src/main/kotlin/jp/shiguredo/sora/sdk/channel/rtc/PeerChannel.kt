@@ -70,7 +70,6 @@ class PeerChannelImpl(
     private val localVideoManager = componentFactory.createVideoManager()
 
     private var localStream: MediaStream? = null
-    private var mediaStreamLabels: List<String>? = null
 
     private var closing = false
 
@@ -192,10 +191,25 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "setRemoteDescription")
             return@flatMap setRemoteDescription(offerSDP)
         }.flatMap {
+            // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
+            // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
+            // is called after addTrack
+            // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+            val mediaStreamLabels = listOf(localStream!!.id)
+            if (mediaOption.planB()) {
+                conn!!.addStream(localStream!!)
+            } else {
+                localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+                localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            }
+            // simulcast も addTrack で動作するので set direction + replaceTrack は使わない。
+            // しかし、ときどき動作が不安なときにこっちも試すのでコメントで残しておく。
+            // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+            // sender.setTrack(videoTrack, /* takeOwnership */ false)
+
             SoraLogger.d(TAG, "Modify sender.parameters")
-            // TODO(shino): simulcast かつ offerEncodings が null はエラーにする
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
-                val transceiver = conn!!.transceivers!!.first {
+                val upstreamVideoTransceiver = conn!!.transceivers!!.first {
                     SoraLogger.d(TAG, "transceiver after sRD: ${it.mid}, direction=${it.direction}, " +
                             "currentDirection=${it.currentDirection}, mediaType=${it.mediaType}")
                     // setRD のあとの direction は recv only になる。
@@ -205,17 +219,12 @@ class PeerChannelImpl(
                     it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
                 }
 
-                val sender = transceiver.sender
-
-                sender.parameters.encodings.forEach { senderEncoding ->
+                val sender = upstreamVideoTransceiver.sender
+                // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
+                // 変換するのでここで参照を保持しておく。
+                val parameters = sender.parameters
+                parameters.encodings.forEach { senderEncoding ->
                     val rid = senderEncoding.rid
-                    with (senderEncoding) {
-                        SoraLogger.d(TAG, "Simulcast: original encoding rid=$rid, "
-                                + "ssrc=$ssrc, active=$active, "
-                                + "scaleResolutionDownBy=$scaleResolutionDownBy, "
-                                + "maxBitrateBps=$maxBitrateBps, "
-                                + "maxFramerate=$maxFramerate")
-                    }
                     val offerEncoding = encodings.first { encoding ->
                         encoding.rid == rid
                     }
@@ -224,23 +233,14 @@ class PeerChannelImpl(
                     offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
 
                     with (senderEncoding) {
-                        SoraLogger.d(TAG, "Simulcast: modified encoding rid=$rid, "
-                                + "ssrc=$ssrc, active=$active, "
-                                + "scaleResolutionDownBy=$scaleResolutionDownBy, "
-                                + "maxBitrateBps=$maxBitrateBps, "
-                                + "maxFramerate=$maxFramerate")
+                        SoraLogger.d(TAG, """Simulcast: modified encoding rid=$rid,
+                             |ssrc=$ssrc, active=$active,
+                             |scaleResolutionDownBy=$scaleResolutionDownBy,
+                             |maxBitrateBps=$maxBitrateBps,
+                             |maxFramerate=$maxFramerate""".trimMargin())
                     }
                 }
-                // TODO(shino): 必要?
-                // RtpSender#setParameters() で nativeGetParameters(nativeRtpSender) 呼んでいるので
-                // 必要そうな気がする。それにしてもこの一行は字面が酷い。
-                sender.parameters = sender.parameters
-
-                val videoTrack = localStream!!.videoTracks[0]
-                SoraLogger.d("TAG", "Simulcast: upstream videoTrack = ${videoTrack}")
-                // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                // sender.setTrack(videoTrack, /* takeOwnership */ false)
-                conn?.addTrack(videoTrack, mediaStreamLabels)
+                sender.parameters = parameters
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -261,21 +261,18 @@ class PeerChannelImpl(
     private fun createClientOfferSdp() : Single<SessionDescription> =
         Single.create(SingleOnSubscribe<SessionDescription> {
 
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
-                    RtpTransceiver.RtpTransceiverInit(
-                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
-                    RtpTransceiver.RtpTransceiverInit(
-                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+            val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
+                    RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "client offer SDP created")
-                    SoraLogger.d(TAG, "client offer SDP type ${sdp?.type}")
-                    SoraLogger.d(TAG,  sdp?.description)
+                    SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
                     it.onSuccess(sdp!!)
                 }
-                override fun onCreateFailure(s: String?) {
-                    it.onError(Error(s))
+                override fun onCreateFailure(error: String?) {
+                    it.onError(Error(error))
                 }
                 override fun onSetSuccess() {
                     it.onError(Error("must not come here"))
@@ -310,26 +307,6 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
-
-        // TODO(shino): simulcast のときでも setRD -> addTrack で動作するので、
-        //  simulcast 有無によらず、audio/video そっちにまとめたほうがシンプルかも (動けば)
-        mediaStreamLabels = listOf(localStream!!.id)
-        if (mediaOption.planB()) {
-            conn!!.addStream(localStream!!)
-        } else {
-            localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-
-            if (mediaOption.simulcastEnabled) {
-                // nop
-                // TODO(shino): ココで video も addTrack したいがまだ libwebrtc が動かないので後で
-                //  addTrack する
-                // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
-                // is called after addTrack
-                // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
-            } else {
-                localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-            }
-        }
     }
 
     override fun disconnect() {
@@ -344,8 +321,8 @@ class PeerChannelImpl(
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "createAnswer:onCreateSuccess: ${sdp!!.type}")
-                    SoraLogger.d(TAG, sdp.description)
+                    SoraLogger.d(TAG, """createAnswer:onCreateSuccess: ${sdp!!.type}
+                        |${sdp.description}""".trimMargin())
                     it.onSuccess(sdp)
                 }
                 override fun onCreateFailure(s: String?) {

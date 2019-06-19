@@ -276,29 +276,30 @@ class SoraMediaChannel @JvmOverloads constructor(
             val webrtcRevision = kClass.getField("webrtc_revision").get(null)
             val webrtcBuildVersion = listOf(webrtcBranch, webrtcCommit, maintVersion)
                     .joinToString(separator = ".")
-            SoraLogger.d(TAG, "connect: webrtc-build config version          = ${webrtcBuildVersion}")
-            SoraLogger.d(TAG, "connect: webrtc-build commit hash             = ${webrtcRevision}")
+            SoraLogger.d(TAG, "libwebrtc version = ${webrtcBuildVersion} @ ${webrtcRevision}")
         } catch (e : ClassNotFoundException) {
             SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
         }
-        SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired       = ${mediaOption.upstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired     = ${mediaOption.downstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled       = ${mediaOption.multistreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired          = ${mediaOption.audioIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled     = ${mediaOption.audioUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled   = ${mediaOption.audioDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioCodec               = ${mediaOption.audioCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired          = ${mediaOption.videoIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled     = ${mediaOption.videoUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled   = ${mediaOption.videoDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCodec               = ${mediaOption.videoCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.simulcastEnabled         = ${mediaOption.simulcastEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
-        SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
-        SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata       = ${this.signalingMetadata}")
-        SoraLogger.d(TAG, "connect: mediaChannel.clientId                = ${this.clientId}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingNotifyMetadata = ${this.signalingNotifyMetadata}")
+
+        SoraLogger.d(TAG, """connect: SoraMediaOption
+            |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
+            |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
+            |multistreamEnabled      = ${mediaOption.multistreamEnabled}
+            |audioIsRequired         = ${mediaOption.audioIsRequired}
+            |audioUpstreamEnabled    = ${mediaOption.audioUpstreamEnabled}
+            |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
+            |audioCodec              = ${mediaOption.audioCodec}
+            |videoIsRequired         = ${mediaOption.videoIsRequired}
+            |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
+            |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
+            |videoCodec              = ${mediaOption.videoCodec}
+            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
+            |videoCapturer           = ${mediaOption.videoCapturer}
+            |spotlight               = ${mediaOption.spotlight}
+            |sdpSemantics            = ${mediaOption.sdpSemantics}
+            |signalingMetadata       = ${this.signalingMetadata}
+            |clientId                = ${this.clientId}
+            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())
         if (mediaOption.planB()) {
             SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
         }

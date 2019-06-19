@@ -68,8 +68,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
             return
         }
 
-        SoraLogger.d(TAG, sdp)
-
         webSocket?.let {
             val msg = MessageConverter.buildAnswerMessage(sdp)
             it.send(msg)
@@ -151,7 +149,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
-            SoraLogger.d(TAG, "connect message: $message")
             it.send(message)
         }
     }
@@ -165,8 +162,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         val offerMessage = MessageConverter.parseOfferMessage(text)
         // TODO message validation
 
-        SoraLogger.d(TAG, "[signaling:$role] <- offer")
-        SoraLogger.d(TAG, offerMessage.sdp)
+        SoraLogger.d(TAG, """[signaling:$role] <- offer
+            |${offerMessage.sdp}""".trimMargin())
 
         // connectionId は Sora 19.04.0 から返ってくるため、ない場合は clientId を使う
         val connectionId = when {
