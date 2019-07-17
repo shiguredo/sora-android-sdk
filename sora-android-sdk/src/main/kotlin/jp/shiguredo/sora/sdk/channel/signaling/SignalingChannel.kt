@@ -160,18 +160,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onOfferMessage(text: String) {
         val offerMessage = MessageConverter.parseOfferMessage(text)
-        // TODO message validation
-
         SoraLogger.d(TAG, """[signaling:$role] <- offer
             |${offerMessage.sdp}""".trimMargin())
-
-        // connectionId は Sora 19.04.0 から返ってくるため、ない場合は clientId を使う
-        val connectionId = when {
-            offerMessage.connectionId != null ->
-                offerMessage.connectionId
-            else ->
-                offerMessage.clientId
-        }
+        // TODO message validation
 
         listener?.onInitialOffer(offerMessage)
     }
