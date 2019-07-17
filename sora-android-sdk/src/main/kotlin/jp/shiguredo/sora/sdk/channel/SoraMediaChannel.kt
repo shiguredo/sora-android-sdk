@@ -7,6 +7,7 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
+import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
@@ -17,10 +18,9 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.IceCandidate
-import org.webrtc.MediaStream
-import org.webrtc.SessionDescription
+import org.webrtc.*
 import java.util.*
+import kotlin.concurrent.schedule
 
 /**
  * [SignalingChannel] と [PeerChannel] を
@@ -50,12 +50,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val context:                 Context,
         private val signalingEndpoint:       String,
         private val channelId:               String?,
-        private val signalingMetadata:       Any?             = "",
+        private val signalingMetadata:       Any?                 = "",
         private val mediaOption:             SoraMediaOption,
-        private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
+        private val timeoutSeconds:          Long                 = DEFAULT_TIMEOUT_SECONDS,
         private var listener:                Listener?,
-        private val clientId:                String?          = null,
-        private val signalingNotifyMetadata: Any?             = null
+        private val clientId:                String?              = null,
+        private val signalingNotifyMetadata: Any?                 = null,
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
         ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -64,6 +65,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     val role = mediaOption.requiredRole
+    var getStatsTimer: Timer? = null
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -155,6 +157,18 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param push プッシュ API により受信したメッセージ
          */
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
+
+        /**
+         * PeerConnection の getStats() 統計情報を取得したときに呼び出されるコールバック
+         *
+         * cf.
+         * - https://w3c.github.io/webrtc-stats/
+         * - https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getStats
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param statsReports 統計レポート
+         */
+        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
     }
 
     private var peer:            PeerChannel?      = null
@@ -402,6 +416,14 @@ class SoraMediaChannel @JvmOverloads constructor(
                 listener      = peerListener
         )
 
+        if (0 < peerConnectionOption.getStatsIntervalMSec) {
+            getStatsTimer = Timer()
+            getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
+                peer?.getStats(RTCStatsCollectorCallback {
+                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
+                })
+            }
+        }
         peer?.run {
             val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.encodings)
                     .observeOn(Schedulers.io())
@@ -476,6 +498,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         signaling?.disconnect()
         signaling = null
+
+        getStatsTimer?.cancel()
+        getStatsTimer = null
 
         peer?.disconnect()
         peer = null
