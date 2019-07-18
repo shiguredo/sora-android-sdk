@@ -418,6 +418,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         if (0 < peerConnectionOption.getStatsIntervalMSec) {
             getStatsTimer = Timer()
+            SoraLogger.d(TAG, "Schedule getStats with inteval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
             getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
                 peer?.getStats(RTCStatsCollectorCallback {
                     listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
