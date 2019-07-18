@@ -1,14 +1,13 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 /**
- * 音声に関するオプションをまとめるクラスです
+ * PeerConnection に関するオプションをまとめるクラスです
  */
 class PeerConnectionOption {
 
     /**
      * PeerConnection の getStats() 統計情報を取得するインターバルのミリ秒
-     *
-     *
+      *
      * 0 の場合、統計情報を取得しません。
      *
      * cf.
