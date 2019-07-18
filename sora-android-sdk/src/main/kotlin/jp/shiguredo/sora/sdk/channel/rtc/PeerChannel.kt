@@ -19,6 +19,8 @@ interface PeerChannel {
     fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
 
+    fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
+
     interface Listener {
         fun onRemoveRemoteStream(label: String)
         fun onAddRemoteStream(ms: MediaStream)
@@ -400,5 +402,9 @@ class PeerChannelImpl(
             PeerConnectionFactory.stopInternalTracingCapture()
             PeerConnectionFactory.shutdownInternalTracer()
         }
+    }
+
+    override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
+        conn?.getStats(statsCollectorCallback)
     }
 }
