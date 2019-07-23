@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.util.*
@@ -7,7 +8,6 @@ import java.util.*
 
 class RTCLocalAudioManager(
         private val send:         Boolean,
-        private val levelControl: Boolean = false,
         private val processing:   Boolean = true
 ) {
 
@@ -18,13 +18,12 @@ class RTCLocalAudioManager(
         private const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
         private const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
         private const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
-        private const val LEVEL_CONTROL_CONSTRAINT     = "levelControl"
     }
 
     private var source: AudioSource? = null
     private var track:  AudioTrack?  = null
 
-    fun initTrack(factory: PeerConnectionFactory) {
+    fun initTrack(factory: PeerConnectionFactory, audioOption: SoraAudioOption) {
         SoraLogger.d(TAG, "initTrack")
         if (send) {
             val constraints = createSourceConstraints()
@@ -39,10 +38,6 @@ class RTCLocalAudioManager(
 
     private fun createSourceConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
-        if (levelControl) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(LEVEL_CONTROL_CONSTRAINT, "true"))
-        }
         if (!processing) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(ECHO_CANCELLATION_CONSTRAINT, "false"))
