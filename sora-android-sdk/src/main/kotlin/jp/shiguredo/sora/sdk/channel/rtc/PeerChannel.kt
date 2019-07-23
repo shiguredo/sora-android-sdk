@@ -29,6 +29,7 @@ interface PeerChannel {
         fun onConnect()
         fun onDisconnect()
         fun onError(reason: SoraErrorReason)
+        fun onError(reason: SoraErrorReason, message: String)
     }
 }
 
@@ -60,7 +61,7 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption)
+    private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
     private var conn:    PeerConnection?        = null
     private var factory: PeerConnectionFactory? = null

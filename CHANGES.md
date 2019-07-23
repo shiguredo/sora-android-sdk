@@ -21,18 +21,28 @@
 
 ### ADD
 
-- rid-based simulcast に対応した
+- `SoraErrorReason` に音声の録音(audio record)、音声トラック(audio track)のエラーを追加した
+- `SoraMediaChannel.Lister` のコールバックに `onError(SoraErrorReason, String)` を追加した
+  - デフォルトで何もしない実装のため、ソースコード上の変更は不要
+  - このバージョンでは `JavaAudioDeviceModule` の audio record, audio track 関連のエラーが
+    このコールバックを通して通知される
+- rid-based simulcast に部分的に対応した
   - 実験的機能
   - 現状では、ソフトウェアエンコーダのみでしか動作せず、VP8 のみの対応
   - fixed resolution と一緒に使うとクラッシュ(SEGV)する
 - getStats を定期的に実行し統計を取得する API を追加した
+- `SoraMediaOption` に `SoraAudioOption` を追加した
+- `SoraAudioOption` に設定を追加した
+  - AudioDeviceModule インスタンスの設定、デフォルトは null で `JavaAudioDeviceModule` を内部で生成する
+  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトは利用する
+  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトは利用する
 
 ### CHANGE
 
 - `PeerConnectionFactory` に明示的に `JavaAudioDeviceModule` を渡すように変更した
 - `JavaAudioDeviceModule` の `HardwareAcousticEchoCanceler`, `HardwareNoiseSuppressor` を
   有効にした
-- audio source 作成時の `MediaConstraint` で、audio processing の無効化をなくした
+- audio source 作成時のデフォルト `MediaConstraint` で、audio processing の無効化をなくした
 
 ## 1.8.1
 

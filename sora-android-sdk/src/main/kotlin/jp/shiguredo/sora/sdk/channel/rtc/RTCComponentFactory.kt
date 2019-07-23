@@ -1,14 +1,17 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 
 
-class RTCComponentFactory(private val option: SoraMediaOption) {
+class RTCComponentFactory(private val option: SoraMediaOption,
+                          private val listener: PeerChannel.Listener?) {
     companion object {
         private val TAG = RTCComponentFactory::class.simpleName
     }
@@ -48,7 +51,12 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         encoderFactory.supportedCodecs.forEach {
             SoraLogger.d(TAG, "encoderFactory supported codec: ${it.name} ${it.params}")
         }
-        val audioDeviceModule = createJavaAudioDevice(appContext)
+        val audioDeviceModule = when {
+            option.audioOption.audioDeviceModule != null ->
+                option.audioOption.audioDeviceModule!!
+            else ->
+                createJavaAudioDevice(appContext)
+        }
         factoryBuilder
                 .setAudioDeviceModule(audioDeviceModule)
                 .setVideoEncoderFactory(encoderFactory)
@@ -81,51 +89,48 @@ class RTCComponentFactory(private val option: SoraMediaOption) {
         val audioRecordErrorCallback = object : JavaAudioDeviceModule.AudioRecordErrorCallback {
             override fun onWebRtcAudioRecordInitError(errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioRecordInitError: $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_RECORD_INIT_ERROR, errorMessage)
             }
 
             override fun onWebRtcAudioRecordStartError(
                     errorCode: JavaAudioDeviceModule.AudioRecordStartErrorCode, errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioRecordStartError: $errorCode. $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_RECORD_START_ERROR, "$errorMessage [$errorCode]")
             }
 
             override fun onWebRtcAudioRecordError(errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioRecordError: $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_RECORD_ERROR, errorMessage)
             }
         }
 
         val audioTrackErrorCallback = object : JavaAudioDeviceModule.AudioTrackErrorCallback {
             override fun onWebRtcAudioTrackInitError(errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioTrackInitError: $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_TRACK_INIT_ERROR, errorMessage)
             }
 
             override fun onWebRtcAudioTrackStartError(
                     errorCode: JavaAudioDeviceModule.AudioTrackStartErrorCode, errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioTrackStartError: $errorCode. $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_TRACK_START_ERROR, "$errorMessage [$errorCode]")
             }
 
             override fun onWebRtcAudioTrackError(errorMessage: String) {
                 SoraLogger.e(TAG, "onWebRtcAudioTrackError: $errorMessage")
-                reportError(errorMessage)
+                reportError(SoraErrorReason.AUDIO_TRACK_ERROR, errorMessage)
             }
         }
 
         return JavaAudioDeviceModule.builder(appContext)
-                // TODO(shino): 設定値を検討する
                 .setUseHardwareAcousticEchoCanceler(true)
                 .setUseHardwareNoiseSuppressor(true)
-                // TODO(shino): application までエラーを上げる
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .createAudioDeviceModule()
     }
 
-    private fun reportError(errorMessage: String) {
-        // TODO: Implement
+    private fun reportError(errorReason: SoraErrorReason, errorMessage: String) {
+        listener?.onError(errorReason, errorMessage)
     }
-
 }
