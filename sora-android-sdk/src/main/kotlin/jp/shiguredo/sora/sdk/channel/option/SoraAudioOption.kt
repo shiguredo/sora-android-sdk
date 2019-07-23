@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import org.webrtc.MediaConstraints
+import org.webrtc.audio.AudioDeviceModule
 
 /**
  * 音声に関するオプションをまとめるクラスです
@@ -28,14 +29,24 @@ class SoraAudioOption {
      *
      * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareAcousticEchoCanceler()`
      */
-    var useHardwareAcousticEchoCanceler = true
+    var useHardwareAcousticEchoCanceler: Boolean = true
 
     /**
      * 端末組み込みの noise suppressor を使うかどうかの設定
      *
      * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareNoiseSuppressor()`
      */
-    var useHardwareNoiseSuppressor = true
+    var useHardwareNoiseSuppressor: Boolean = true
+
+    /**
+     * 利用する AudioDeviceModule を指定します
+     *
+     * null でない場合、 [useHardwareAcousticEchoCanceler] と [useHardwareNoiseSuppressor] の
+     * 設定は無視されます。
+     *
+     * cf `org.webrtc.AudioDeviceModule`
+     */
+    var audioDeviceModule: AudioDeviceModule? = null
 
     /**
      * 音声入力の処理を行うかどうかの設定
@@ -45,11 +56,13 @@ class SoraAudioOption {
      * - `googAutoGainControl` : false
      * - `googHighpassFilter` : false
      * - `googNoiseSuppression` : false
+     *
+     * この設定による動作はバージョンが変わると変わる可能性があります。
      */
-    var audioProcessing = true
+    var audioProcessing: Boolean = true
 
     /**
-     * 音声の `org.webrtc.MediaConstraints` を設定します。
+     * 音声の `org.webrtc.MediaConstraints` を設定します
      *
      * null でない場合、 [audioProcessing] 設定は無視されます。
      */

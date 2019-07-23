@@ -41,15 +41,11 @@ class SoraMediaOption {
 
     /**
      * 利用する VideoEncoderFactory を指定します
-     *
-     * 実験的な機能です。注意して利用してください。
      */
     var videoEncoderFactory: VideoEncoderFactory? = null
 
     /**
      * 利用する VideoDecoderFactory を指定します
-     *
-     * 実験的な機能です。注意して利用してください。
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
@@ -59,34 +55,8 @@ class SoraMediaOption {
     internal var videoUpstreamContext:   EglBase.Context? = null
 
     var videoCodec = SoraVideoOption.Codec.VP9
-    var audioCodec = SoraAudioOption.Codec.OPUS
 
     var videoBitrate: Int? = null
-
-    /**
-     * 音声の視聴を有効にします
-     */
-    fun enableAudioDownstream() {
-        audioDownstreamEnabled = true
-    }
-
-    /**
-     * 音声の配信を有効にします
-     */
-    fun enableAudioUpstream() {
-        audioUpstreamEnabled = true
-    }
-
-    /**
-     * マルチストリームを有効にします
-     *
-     * cf.
-     * - Sora ドキュメントのマルチストリーム
-     *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
-     */
-    fun enableMultistream() {
-        multistreamEnabled = true
-    }
 
     /**
      * 映像の視聴を有効にします
@@ -126,6 +96,39 @@ class SoraMediaOption {
     fun enableSimulcast() {
         simulcastEnabled = true
     }
+
+    /**
+     * 音声のオプション設定を指定します
+     */
+    var audioOption: SoraAudioOption = SoraAudioOption()
+
+    /**
+     * 音声の視聴を有効にします
+     */
+    fun enableAudioDownstream() {
+        audioDownstreamEnabled = true
+    }
+
+    /**
+     * 音声の配信を有効にします
+     */
+    fun enableAudioUpstream() {
+        audioUpstreamEnabled = true
+    }
+
+    var audioCodec = SoraAudioOption.Codec.OPUS
+
+    /**
+     * マルチストリームを有効にします
+     *
+     * cf.
+     * - Sora ドキュメントのマルチストリーム
+     *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
+     */
+    fun enableMultistream() {
+        multistreamEnabled = true
+    }
+
     // Just for internal usage
     internal val videoIsRequired: Boolean
     get() = videoDownstreamEnabled || videoUpstreamEnabled
