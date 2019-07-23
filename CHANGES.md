@@ -16,6 +16,8 @@
 
 - libwebrtc を 75.16.0 に上げた
 - Android Studio 3.4.2 に対応した
+- Kotlin を 1.3.41 に上げた
+
 
 ### ADD
 
