@@ -34,8 +34,10 @@
 - `SoraMediaOption` に `SoraAudioOption` を追加した
 - `SoraAudioOption` に設定を追加した
   - AudioDeviceModule インスタンスの設定、デフォルトは null で `JavaAudioDeviceModule` を内部で生成する
-  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトは利用する
-  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトは利用する
+  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトは利用
+  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトは利用
+  - googEchoCancellation, googAutoGainControl, googHighpassFilter, googNoiseSuppression の無効化設定、
+    デフォルトは有効
 
 ### CHANGE
 

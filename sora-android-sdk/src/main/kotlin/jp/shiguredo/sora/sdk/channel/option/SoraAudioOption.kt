@@ -61,6 +61,11 @@ class SoraAudioOption {
      */
     var audioProcessing: Boolean = true
 
+    var audioProcessingEC: Boolean = true
+    var audioProcessingAGC: Boolean = true
+    var audioProcessingHPFilter: Boolean = true
+    var audioProcessingNS: Boolean = true
+
     /**
      * 音声の `org.webrtc.MediaConstraints` を設定します
      *
