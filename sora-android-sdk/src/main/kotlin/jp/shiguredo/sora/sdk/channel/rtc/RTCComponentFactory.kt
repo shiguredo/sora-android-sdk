@@ -123,8 +123,8 @@ class RTCComponentFactory(private val option: SoraMediaOption,
         }
 
         return JavaAudioDeviceModule.builder(appContext)
-                .setUseHardwareAcousticEchoCanceler(true)
-                .setUseHardwareNoiseSuppressor(true)
+                .setUseHardwareAcousticEchoCanceler(option.audioOption.useHardwareAcousticEchoCanceler)
+                .setUseHardwareNoiseSuppressor(option.audioOption.useHardwareNoiseSuppressor)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .createAudioDeviceModule()

@@ -7,17 +7,11 @@ import java.util.*
 
 
 class RTCLocalAudioManager(
-        private val send:         Boolean,
-        private val processing:   Boolean = true
+        private val send:         Boolean
 ) {
 
     companion object {
         private val TAG = RTCLocalAudioManager::class.simpleName
-
-        private const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
-        private const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
-        private const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
-        private const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
     }
 
     private var source: AudioSource? = null
@@ -26,7 +20,7 @@ class RTCLocalAudioManager(
     fun initTrack(factory: PeerConnectionFactory, audioOption: SoraAudioOption) {
         SoraLogger.d(TAG, "initTrack")
         if (send) {
-            val constraints = createSourceConstraints()
+            val constraints = createSourceConstraints(audioOption)
             source = factory.createAudioSource(constraints)
             SoraLogger.d(TAG, "audio source created: ${source}")
             val trackId = UUID.randomUUID().toString()
@@ -36,17 +30,16 @@ class RTCLocalAudioManager(
         }
     }
 
-    private fun createSourceConstraints(): MediaConstraints {
+    private fun createSourceConstraints(audioOption: SoraAudioOption): MediaConstraints {
         val constraints = MediaConstraints()
-        if (!processing) {
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(ECHO_CANCELLATION_CONSTRAINT, "false"))
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(AUTO_GAIN_CONTROL_CONSTRAINT, "false"))
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(HIGH_PASS_FILTER_CONSTRAINT, "false"))
-            constraints.mandatory.add(
-                    MediaConstraints.KeyValuePair(NOISE_SUPPRESSION_CONSTRAINT, "false"))
+        if (!audioOption.audioProcessing) {
+            listOf( SoraAudioOption.ECHO_CANCELLATION_CONSTRAINT,
+                    SoraAudioOption.AUTO_GAIN_CONTROL_CONSTRAINT,
+                    SoraAudioOption.HIGH_PASS_FILTER_CONSTRAINT,
+                    SoraAudioOption.NOISE_SUPPRESSION_CONSTRAINT).forEach { constraintKey ->
+                constraints.mandatory.add(
+                        MediaConstraints.KeyValuePair(constraintKey, "false"))
+            }
         }
         return constraints
     }

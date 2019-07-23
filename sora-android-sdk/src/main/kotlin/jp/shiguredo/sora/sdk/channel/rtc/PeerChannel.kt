@@ -300,7 +300,7 @@ class PeerChannelImpl(
                 connectionObserver)
 
         SoraLogger.d(TAG, "local managers' initTrack")
-        localAudioManager.initTrack(factory!!)
+        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
