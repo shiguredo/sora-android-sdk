@@ -49,21 +49,35 @@ class SoraAudioOption {
     var audioDeviceModule: AudioDeviceModule? = null
 
     /**
-     * 音声入力の処理を行うかどうかの設定
+     * 入力音声のエコーキャンセル処理の有無の設定
      *
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googEchoCancellation` : false
-     * - `googAutoGainControl` : false
-     * - `googHighpassFilter` : false
-     * - `googNoiseSuppression` : false
-     *
-     * この設定による動作はバージョンが変わると変わる可能性があります。
      */
-    var audioProcessing: Boolean = true
-
     var audioProcessingEC: Boolean = true
+
+    /**
+     * 入力音声の自動ゲイン調整処理の有無の設定
+     *
+     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
+     * - `googAutoGainControl` : false
+     */
     var audioProcessingAGC: Boolean = true
+
+    /**
+     * 入力音声のハイパスフィルタ処理の有無の設定
+     *
+     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
+     * - `googHighpassFilter` : false
+     */
     var audioProcessingHPFilter: Boolean = true
+
+    /**
+     * 入力音声のノイズ抑制処理の有無の設定
+     *
+     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
+     * - `googNoiseSuppression` : false
+     */
     var audioProcessingNS: Boolean = true
 
     /**
