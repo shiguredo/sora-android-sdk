@@ -54,7 +54,7 @@ class SoraAudioOption {
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googEchoCancellation` : false
      */
-    var audioProcessingEC: Boolean = true
+    var audioProcessingEchoCancellation: Boolean = true
 
     /**
      * 入力音声の自動ゲイン調整処理の有無の設定
@@ -62,7 +62,7 @@ class SoraAudioOption {
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googAutoGainControl` : false
      */
-    var audioProcessingAGC: Boolean = true
+    var audioProcessingAutoGainControl: Boolean = true
 
     /**
      * 入力音声のハイパスフィルタ処理の有無の設定
@@ -70,7 +70,7 @@ class SoraAudioOption {
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googHighpassFilter` : false
      */
-    var audioProcessingHPFilter: Boolean = true
+    var audioProcessingHighpassFilter: Boolean = true
 
     /**
      * 入力音声のノイズ抑制処理の有無の設定
@@ -78,7 +78,7 @@ class SoraAudioOption {
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googNoiseSuppression` : false
      */
-    var audioProcessingNS: Boolean = true
+    var audioProcessingNoiseSuppression: Boolean = true
 
     /**
      * 音声の `org.webrtc.MediaConstraints` を設定します

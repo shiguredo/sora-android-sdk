@@ -32,19 +32,19 @@ class RTCLocalAudioManager(
 
     private fun createSourceConstraints(audioOption: SoraAudioOption): MediaConstraints {
         val constraints = MediaConstraints()
-        if (!audioOption.audioProcessingEC) {
+        if (!audioOption.audioProcessingEchoCancellation) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(SoraAudioOption.ECHO_CANCELLATION_CONSTRAINT, "false"))
         }
-        if(!audioOption.audioProcessingAGC) {
+        if(!audioOption.audioProcessingAutoGainControl) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(SoraAudioOption.AUTO_GAIN_CONTROL_CONSTRAINT, "false"))
         }
-        if (!audioOption.audioProcessingHPFilter) {
+        if (!audioOption.audioProcessingHighpassFilter) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(SoraAudioOption.HIGH_PASS_FILTER_CONSTRAINT, "false"))
         }
-        if (!audioOption.audioProcessingNS) {
+        if (!audioOption.audioProcessingNoiseSuppression) {
             constraints.mandatory.add(
                     MediaConstraints.KeyValuePair(SoraAudioOption.NOISE_SUPPRESSION_CONSTRAINT, "false"))
         }
