@@ -61,7 +61,11 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                 .setAudioDeviceModule(audioDeviceModule)
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
-        audioDeviceModule.release()
+        // option で渡ってきた場合の所有権はアプリケーションにある。
+        // ここで生成した場合だけ解放する。
+        if (option.audioOption.audioDeviceModule == null) {
+            audioDeviceModule.release()
+        }
 
         return factoryBuilder.createPeerConnectionFactory()
     }
