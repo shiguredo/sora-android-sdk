@@ -320,10 +320,12 @@ class SoraMediaChannel @JvmOverloads constructor(
             |audioUpstreamEnabled    = ${mediaOption.audioUpstreamEnabled}
             |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
             |audioCodec              = ${mediaOption.audioCodec}
+            |audioBitRate            = ${mediaOption.audioBitrate}
             |videoIsRequired         = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
             |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
             |videoCodec              = ${mediaOption.videoCodec}
+            |videoBitRate            = ${mediaOption.videoBitrate}
             |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |videoCapturer           = ${mediaOption.videoCapturer}
             |spotlight               = ${mediaOption.spotlight}
