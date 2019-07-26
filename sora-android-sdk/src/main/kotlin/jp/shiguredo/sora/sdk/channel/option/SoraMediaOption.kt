@@ -56,6 +56,7 @@ class SoraMediaOption {
 
     var videoCodec = SoraVideoOption.Codec.VP9
 
+    // videoBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     var videoBitrate: Int? = null
 
     /**
@@ -117,6 +118,9 @@ class SoraMediaOption {
     }
 
     var audioCodec = SoraAudioOption.Codec.OPUS
+
+    // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
+    var audioBitrate: Int? = null
 
     /**
      * マルチストリームを有効にします

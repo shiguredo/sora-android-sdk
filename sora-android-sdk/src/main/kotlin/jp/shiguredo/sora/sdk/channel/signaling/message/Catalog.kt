@@ -35,7 +35,8 @@ data class VideoSetting(
 )
 
 data class AudioSetting(
-        @SerializedName("codec_type") val codecType: String?
+        @SerializedName("codec_type") val codecType: String?,
+        @SerializedName("bit_rate")   var bitRate:   Int?    = null
 )
 
 data class IceServer(

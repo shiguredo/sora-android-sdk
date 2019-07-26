@@ -24,6 +24,7 @@
 
 ### ADD
 
+- `SoraMediaOption` に `audioBitrate` 設定を追加した
 - `SoraMediaOption` に `SoraAudioOption` を追加した
 - libwebrtc 独自の音声処理設定のキーを `SoraAudioOption` に定義した
   - `ECHO_CANCELLATION_CONSTRAINT`: `"googEchoCancellation"` 設定のキー
