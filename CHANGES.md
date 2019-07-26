@@ -17,7 +17,10 @@
 - libwebrtc を 75.16.0 に上げた
 - Android Studio 3.4.2 に対応した
 - Kotlin を 1.3.41 に上げた
-
+- `com.squareup.okhttp3:okhttp` を 3.14.2 に上げた
+- `io.reactivex.rxjava2:rxjava` を 2.2.10 に上げた
+- `androidx.test:core` を 1.2.0 に上げた
+- `org.robolectric:robolectric` を 4.3 に上げた
 
 ### ADD
 
