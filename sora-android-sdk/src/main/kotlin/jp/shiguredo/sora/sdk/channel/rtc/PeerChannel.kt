@@ -29,6 +29,7 @@ interface PeerChannel {
         fun onConnect()
         fun onDisconnect()
         fun onError(reason: SoraErrorReason)
+        fun onError(reason: SoraErrorReason, message: String)
     }
 }
 
@@ -60,7 +61,7 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption)
+    private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
     private var conn:    PeerConnection?        = null
     private var factory: PeerConnectionFactory? = null
@@ -299,7 +300,7 @@ class PeerChannelImpl(
                 connectionObserver)
 
         SoraLogger.d(TAG, "local managers' initTrack")
-        localAudioManager.initTrack(factory!!)
+        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
