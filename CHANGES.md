@@ -25,33 +25,48 @@
 ### ADD
 
 - `SoraMediaOption` に `audioBitrate` 設定を追加した
-- `SoraMediaOption` に `SoraAudioOption` を追加した
-- libwebrtc 独自の音声処理設定のキーを `SoraAudioOption` に定義した
+- `SoraMediaOption` に `audioOption: SoraAudioOption` を追加した
+- `SoraAudioOption` に libwebrtc 独自の音声処理設定のキーを追加した
+  - media constraints キーとの対応は以下の通り:
   - `ECHO_CANCELLATION_CONSTRAINT`: `"googEchoCancellation"` 設定のキー
   - `AUTO_GAIN_CONTROL_CONSTRAINT`: `"googAutoGainControl"` 設定のキー
   - `HIGH_PASS_FILTER_CONSTRAINT`:  `"googHighpassFilter"` 設定のキー
   - `NOISE_SUPPRESSION_CONSTRAINT`: `"googNoiseSuppression""` 設定のキー
-- `SoraAudioOption` に以下の設定切り替えインターフェースをを追加した
+- `SoraAudioOption` に音声処理に関するインターフェースをを追加した
   - AudioDeviceModule インスタンスの設定、デフォルトは null で `JavaAudioDeviceModule` を内部で生成する
-  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトは利用
-  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトは利用
+  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトでは利用する
+  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトでは利用する
   - libwebrtc 独自の音声処理の無効化設定、デフォルトは有効
+  - これらの設定の組み合わせ方によっては、端末依存でマイクからの音声が取れないことがあるため、
+    設定を決める際には実端末での動作確認が必要
 - `SoraErrorReason` に音声の録音(audio record)、音声トラック(audio track)のエラーを追加した
 - `SoraMediaChannel.Lister` のコールバックに `onError(SoraErrorReason, String)` を追加した
   - デフォルトで何もしない実装のため、ソースコード上の変更は不要
   - このバージョンでは `JavaAudioDeviceModule` の audio record, audio track 関連のエラーが
     このコールバックを通して通知される
 - rid-based simulcast に部分的に対応した
-  - 現状では、ソフトウェアエンコーダのみでしか動作せず、VP8 のみの対応
+  - 現状では、ソフトウェアエンコーダのみで動作する
+  - 映像コーデックは VP8 のみの対応する
   - fixed resolution と一緒に使うとクラッシュ(SEGV)することが分かっている
+    - 関連してそうな issue: 10713 - Transceiver/encodings based simulcast does not work in desktop sharing
+      - https://bugs.chromium.org/p/webrtc/issues/detail?id=10713
+      - closed になっているため、libwebrtc の最新版では修正されている可能性あり
 - getStats を定期的に実行し統計を取得する API を追加した
 
 ### CHANGE
 
 - `org.webrtc.PeerConnectionFactory` に明示的に `JavaAudioDeviceModule` を渡すように変更した
+  - libwebrtc にて `org.webrtc.LegacyAudioDeviceModule` が無くなり、明示的に audio device module を
+    指定するよう変更されたため
+  - 7452 - Move Android audio code to webrtc/sdk/android - webrtc - Monorail
+    - https://bugs.chromium.org/p/webrtc/issues/detail?id=7452
+  - Use JavaAudioDeviceModule as default (Ib99adc50) · Gerrit Code Review
+    - https://webrtc-review.googlesource.com/c/src/+/123887
 - `org.webrtc.audio.JavaAudioDeviceModule` の `HardwareAcousticEchoCanceler`,
   `HardwareNoiseSuppressor` をデフォルトで有効にした
+  - 無効化したい場合には、個別に `SoraAudioOption` で設定し `SoraMediaOption` 経由で渡せる
 - audio source 作成時のデフォルト `MediaConstraint` で、audio processing の無効化をなくした
+  - 無効化したい場合には、個別に `SoraAudioOption` で設定し `SoraMediaOption` 経由で渡せる
 
 
 ## 1.8.1
