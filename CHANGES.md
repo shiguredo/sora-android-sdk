@@ -34,8 +34,8 @@
   - `NOISE_SUPPRESSION_CONSTRAINT`: `"googNoiseSuppression""` 設定のキー
 - `SoraAudioOption` に音声処理に関するインターフェースをを追加した
   - AudioDeviceModule インスタンスの設定、デフォルトは null で `JavaAudioDeviceModule` を内部で生成する
-  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトでは利用する
-  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトでは利用する
+  - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトでは可能な場合利用する
+  - ハードウェアの NS (noise suppressor) の利用有無、デフォルトでは可能な場合利用する
   - libwebrtc 独自の音声処理の無効化設定、デフォルトは有効
   - これらの設定の組み合わせ方によっては、端末依存でマイクからの音声が取れないことがあるため、
     設定を決める際には実端末での動作確認が必要
