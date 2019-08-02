@@ -5,6 +5,7 @@ import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -13,10 +14,12 @@ import java.util.concurrent.Executors
 
 interface PeerChannel {
 
-    fun handleInitialRemoteOffer(offer: String): Single<SessionDescription>
+    fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
     fun requestClientOfferSdp(): Single<SessionDescription>
     fun disconnect()
+
+    fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -26,6 +29,7 @@ interface PeerChannel {
         fun onConnect()
         fun onDisconnect()
         fun onError(reason: SoraErrorReason)
+        fun onError(reason: SoraErrorReason, message: String)
     }
 }
 
@@ -57,7 +61,7 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption)
+    private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
     private var conn:    PeerConnection?        = null
     private var factory: PeerConnectionFactory? = null
@@ -67,6 +71,8 @@ class PeerChannelImpl(
     private val sdpConstraints    = componentFactory.createSDPConstraints()
     private val localAudioManager = componentFactory.createAudioManager()
     private val localVideoManager = componentFactory.createVideoManager()
+
+    private var localStream: MediaStream? = null
 
     private var closing = false
 
@@ -179,7 +185,7 @@ class PeerChannelImpl(
         }
     }
 
-    override fun handleInitialRemoteOffer(offer: String): Single<SessionDescription> {
+    override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP =
                 SessionDescription(SessionDescription.Type.OFFER, offer)
@@ -188,6 +194,59 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "setRemoteDescription")
             return@flatMap setRemoteDescription(offerSDP)
         }.flatMap {
+            // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
+            // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
+            // is called after addTrack
+            // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+            val mediaStreamLabels = listOf(localStream!!.id)
+            if (mediaOption.planB()) {
+                conn!!.addStream(localStream!!)
+            } else {
+                localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+                localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            }
+            // simulcast も addTrack で動作するので set direction + replaceTrack は使わない。
+            // しかし、ときどき動作が不安なときにこっちも試すのでコメントで残しておく。
+            // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+            // sender.setTrack(videoTrack, /* takeOwnership */ false)
+
+            SoraLogger.d(TAG, "Modify sender.parameters")
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
+                val upstreamVideoTransceiver = conn!!.transceivers!!.first {
+                    SoraLogger.d(TAG, "transceiver after sRD: ${it.mid}, direction=${it.direction}, " +
+                            "currentDirection=${it.currentDirection}, mediaType=${it.mediaType}")
+                    // setRD のあとの direction は recv only になる。
+                    // 現状 sender.track.streamIds を取れないので connection ID との比較もできない。
+                    // video upstream 持っているときは、ひとつめの video type transceiver を
+                    // 自分が send すべき transceiver と決め打ちする。
+                    it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
+                }
+
+                val sender = upstreamVideoTransceiver.sender
+                // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
+                // 変換するのでここで参照を保持しておく。
+                val parameters = sender.parameters
+                parameters.encodings.forEach { senderEncoding ->
+                    val rid = senderEncoding.rid
+                    val offerEncoding = encodings.first { encoding ->
+                        encoding.rid == rid
+                    }
+                    offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
+                    offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+                    offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+
+                    with (senderEncoding) {
+                        SoraLogger.d(TAG, """Simulcast: modified encoding rid=$rid,
+                             |ssrc=$ssrc, active=$active,
+                             |scaleResolutionDownBy=$scaleResolutionDownBy,
+                             |maxBitrateBps=$maxBitrateBps,
+                             |maxFramerate=$maxFramerate""".trimMargin())
+                    }
+                }
+                // ここまでの Java オブジェクト参照先を変更したのみ。
+                // RtpSender#setParameters() により native に変換して C++ 層を呼び出す。
+                sender.parameters = parameters
+            }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
         }.flatMap {
@@ -207,21 +266,18 @@ class PeerChannelImpl(
     private fun createClientOfferSdp() : Single<SessionDescription> =
         Single.create(SingleOnSubscribe<SessionDescription> {
 
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO,
-                    RtpTransceiver.RtpTransceiverInit(
-                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
-                    RtpTransceiver.RtpTransceiverInit(
-                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY))
+            val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
+                    RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
+            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "client offer SDP created")
-                    SoraLogger.d(TAG, "client offer SDP type ${sdp?.type}")
-                    SoraLogger.d(TAG,  sdp?.description)
+                    SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
                     it.onSuccess(sdp!!)
                 }
-                override fun onCreateFailure(s: String?) {
-                    it.onError(Error(s))
+                override fun onCreateFailure(error: String?) {
+                    it.onError(Error(error))
                 }
                 override fun onSetSuccess() {
                     it.onError(Error("must not come here"))
@@ -235,8 +291,8 @@ class PeerChannelImpl(
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
 
-        PeerChannelImpl.initializeIfNeeded(appContext, useTracer)
-        factory = componentFactory.createPeerConnectionFactory()
+        initializeIfNeeded(appContext, useTracer)
+        factory = componentFactory.createPeerConnectionFactory(appContext)
 
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
@@ -244,24 +300,18 @@ class PeerChannelImpl(
                 connectionObserver)
 
         SoraLogger.d(TAG, "local managers' initTrack")
-        localAudioManager.initTrack(factory!!)
+        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
-        val localStream = factory!!.createLocalMediaStream(streamId)
-        localAudioManager.attachTrackToStream(localStream)
-        localVideoManager.attachTrackToStream(localStream)
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
+        localStream = factory!!.createLocalMediaStream(streamId)
+
+        localAudioManager.attachTrackToStream(localStream!!)
+        localVideoManager.attachTrackToStream(localStream!!)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
-        if (mediaOption.planB()) {
-            conn!!.addStream(localStream)
-        } else {
-            val mediaStreamLabels = listOf(localStream.id)
-            localStream.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-            localStream.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-        }
     }
 
     override fun disconnect() {
@@ -276,8 +326,8 @@ class PeerChannelImpl(
         Single.create(SingleOnSubscribe<SessionDescription> {
             conn?.createAnswer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "createAnswer:onCreateSuccess: ${sdp!!.type}")
-                    SoraLogger.d(TAG, sdp.description)
+                    SoraLogger.d(TAG, """createAnswer:onCreateSuccess: ${sdp!!.type}
+                        |${sdp.description}""".trimMargin())
                     it.onSuccess(sdp)
                 }
                 override fun onCreateFailure(s: String?) {
@@ -353,5 +403,9 @@ class PeerChannelImpl(
             PeerConnectionFactory.stopInternalTracingCapture()
             PeerConnectionFactory.shutdownInternalTracer()
         }
+    }
+
+    override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
+        conn?.getStats(statsCollectorCallback)
     }
 }

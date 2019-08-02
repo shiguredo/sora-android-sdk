@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.util.SoraLogger
 
 class MessageConverter {
 
@@ -36,7 +37,9 @@ class MessageConverter {
             if (mediaOption.upstreamIsRequired) {
                 // 配信者では audio, video は配信の設定
                 if (mediaOption.audioUpstreamEnabled) {
-                    msg.audio = AudioSetting(mediaOption.audioCodec.toString())
+                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
+                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
+                    msg.audio = audioSetting
                 } else {
                     msg.audio = false
                 }
@@ -50,12 +53,16 @@ class MessageConverter {
             } else {
                 // 視聴者では audio, video は視聴の設定
                 if (mediaOption.audioDownstreamEnabled) {
-                    msg.audio = AudioSetting(mediaOption.audioCodec.toString())
+                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
+                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
+                    msg.audio = audioSetting
                 } else {
                     msg.audio = false
                 }
                 if (mediaOption.videoDownstreamEnabled) {
                     val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
+                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
                     mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
                     msg.video = videoSetting
                 } else {
@@ -68,6 +75,12 @@ class MessageConverter {
                 msg.spotlight = mediaOption.spotlight
             }
 
+            if (mediaOption.simulcastEnabled) {
+                msg.simulcast = true
+                msg.simulcast_rid = true
+            }
+
+            SoraLogger.d(TAG, "$msg")
             return gson.toJson(msg)
         }
 

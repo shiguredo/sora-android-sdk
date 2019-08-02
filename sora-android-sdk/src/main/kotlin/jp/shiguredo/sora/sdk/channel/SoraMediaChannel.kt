@@ -7,23 +7,20 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
+import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
-import jp.shiguredo.sora.sdk.channel.signaling.message.IceServer
-import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
-import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
-import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.IceCandidate
-import org.webrtc.MediaStream
-import org.webrtc.SessionDescription
+import org.webrtc.*
 import java.util.*
+import kotlin.concurrent.schedule
 
 /**
  * [SignalingChannel] と [PeerChannel] を
@@ -53,12 +50,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val context:                 Context,
         private val signalingEndpoint:       String,
         private val channelId:               String?,
-        private val signalingMetadata:       Any?             = "",
+        private val signalingMetadata:       Any?                 = "",
         private val mediaOption:             SoraMediaOption,
-        private val timeoutSeconds:          Long             = DEFAULT_TIMEOUT_SECONDS,
+        private val timeoutSeconds:          Long                 = DEFAULT_TIMEOUT_SECONDS,
         private var listener:                Listener?,
-        private val clientId:                String?          = null,
-        private val signalingNotifyMetadata: Any?             = null
+        private val clientId:                String?              = null,
+        private val signalingNotifyMetadata: Any?                 = null,
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
         ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -67,6 +65,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     val role = mediaOption.requiredRole
+    var getStatsTimer: Timer? = null
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -124,7 +123,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
-         * Sora との接続でエラーが発生したときに呼び出されるコールバック
+         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック
          *
          * cf.
          * - `org.webrtc.PeerConnection`
@@ -134,6 +133,19 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param reason エラーの理由
          */
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
+
+        /**
+         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason エラーの理由
+         * @param message エラーの情報
+         */
+        fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
 
         /**
          * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック
@@ -158,6 +170,18 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param push プッシュ API により受信したメッセージ
          */
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
+
+        /**
+         * PeerConnection の getStats() 統計情報を取得したときに呼び出されるコールバック
+         *
+         * cf.
+         * - https://w3c.github.io/webrtc-stats/
+         * - https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getStats
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param statsReports 統計レポート
+         */
+        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
     }
 
     private var peer:            PeerChannel?      = null
@@ -179,10 +203,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
         }
 
-        override fun onInitialOffer(connectionId: String, sdp: String, config: OfferConfig?) {
+        override fun onInitialOffer(offerMessage: OfferMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
-            this@SoraMediaChannel.connectionId = connectionId
-            handleInitialOffer(sdp, config)
+            this@SoraMediaChannel.connectionId = offerMessage.connectionId
+            handleInitialOffer(offerMessage)
         }
 
         override fun onUpdatedOffer(sdp: String) {
@@ -259,6 +283,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onError(this@SoraMediaChannel, reason)
         }
 
+        override fun onError(reason: SoraErrorReason, message: String) {
+            listener?.onError(this@SoraMediaChannel, reason, message)
+        }
+
         override fun onDisconnect() {
             SoraLogger.d(TAG, "[channel:$role] @peer:onClose")
             disconnect()
@@ -279,28 +307,32 @@ class SoraMediaChannel @JvmOverloads constructor(
             val webrtcRevision = kClass.getField("webrtc_revision").get(null)
             val webrtcBuildVersion = listOf(webrtcBranch, webrtcCommit, maintVersion)
                     .joinToString(separator = ".")
-            SoraLogger.d(TAG, "connect: webrtc-build config version          = ${webrtcBuildVersion}")
-            SoraLogger.d(TAG, "connect: webrtc-build commit hash             = ${webrtcRevision}")
+            SoraLogger.d(TAG, "libwebrtc version = ${webrtcBuildVersion} @ ${webrtcRevision}")
         } catch (e : ClassNotFoundException) {
             SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
         }
-        SoraLogger.d(TAG, "connect: mediaOption.upstreamIsRequired       = ${mediaOption.upstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.downstreamIsRequired     = ${mediaOption.downstreamIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.multistreamEnabled       = ${mediaOption.multistreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioIsRequired          = ${mediaOption.audioIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioUpstreamEnabled     = ${mediaOption.audioUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioDownstreamEnabled   = ${mediaOption.audioDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.audioCodec               = ${mediaOption.audioCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoIsRequired          = ${mediaOption.videoIsRequired}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoUpstreamEnabled     = ${mediaOption.videoUpstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoDownstreamEnabled   = ${mediaOption.videoDownstreamEnabled}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCodec               = ${mediaOption.videoCodec}")
-        SoraLogger.d(TAG, "connect: mediaOption.videoCapturer            = ${mediaOption.videoCapturer}")
-        SoraLogger.d(TAG, "connect: mediaOption.spotlight                = ${mediaOption.spotlight}")
-        SoraLogger.d(TAG, "connect: mediaOption.sdpSemantics             = ${mediaOption.sdpSemantics}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingMetadata       = ${this.signalingMetadata}")
-        SoraLogger.d(TAG, "connect: mediaChannel.clientId                = ${this.clientId}")
-        SoraLogger.d(TAG, "connect: mediaChannel.signalingNotifyMetadata = ${this.signalingNotifyMetadata}")
+
+        SoraLogger.d(TAG, """connect: SoraMediaOption
+            |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
+            |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
+            |multistreamEnabled      = ${mediaOption.multistreamEnabled}
+            |audioIsRequired         = ${mediaOption.audioIsRequired}
+            |audioUpstreamEnabled    = ${mediaOption.audioUpstreamEnabled}
+            |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
+            |audioCodec              = ${mediaOption.audioCodec}
+            |audioBitRate            = ${mediaOption.audioBitrate}
+            |videoIsRequired         = ${mediaOption.videoIsRequired}
+            |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
+            |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
+            |videoCodec              = ${mediaOption.videoCodec}
+            |videoBitRate            = ${mediaOption.videoBitrate}
+            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
+            |videoCapturer           = ${mediaOption.videoCapturer}
+            |spotlight               = ${mediaOption.spotlight}
+            |sdpSemantics            = ${mediaOption.sdpSemantics}
+            |signalingMetadata       = ${this.signalingMetadata}
+            |clientId                = ${this.clientId}
+            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())
         if (mediaOption.planB()) {
             SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
         }
@@ -390,21 +422,30 @@ class SoraMediaChannel @JvmOverloads constructor(
         signaling!!.connect()
     }
 
-    private fun handleInitialOffer(sdp: String, config: OfferConfig?) {
+    private fun handleInitialOffer(offerMessage: OfferMessage) {
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
         peer = PeerChannelImpl(
                 appContext    = context,
                 networkConfig = PeerNetworkConfig(
-                        serverConfig = config,
+                        serverConfig = offerMessage.config,
                         mediaOption  = mediaOption
                 ),
                 mediaOption   = mediaOption,
                 listener      = peerListener
         )
 
+        if (0 < peerConnectionOption.getStatsIntervalMSec) {
+            getStatsTimer = Timer()
+            SoraLogger.d(TAG, "Schedule getStats with inteval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
+            getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
+                peer?.getStats(RTCStatsCollectorCallback {
+                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
+                })
+            }
+        }
         peer?.run {
-            val subscription = handleInitialRemoteOffer(sdp)
+            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.encodings)
                     .observeOn(Schedulers.io())
                     .subscribeBy(
                             onSuccess = {
@@ -477,6 +518,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         signaling?.disconnect()
         signaling = null
+
+        getStatsTimer?.cancel()
+        getStatsTimer = null
 
         peer?.disconnect()
         peer = null
