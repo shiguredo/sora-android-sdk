@@ -12,6 +12,8 @@
 
 ## develop
 
+## 1.9.0
+
 ### UPDATE
 
 - libwebrtc を 75.16.0 に上げた
@@ -36,7 +38,11 @@
   - AudioDeviceModule インスタンスの設定、デフォルトは null で `JavaAudioDeviceModule` を内部で生成する
   - ハードウェアの AEC (acoustic echo canceler) の利用有無、デフォルトでは可能な場合利用する
   - ハードウェアの NS (noise suppressor) の利用有無、デフォルトでは可能な場合利用する
-  - libwebrtc 独自の音声処理の無効化設定、デフォルトは有効
+  - libwebrtc 独自の音声処理の無効化設定、デフォルトはすべて有効。
+    - `audioProcessingEchoCancellation`: `"googEchoCancellation"` に対応
+    - `audioProcessingAutoGainControl`: `"googAutoGainControl"` に対応
+    - `audioProcessingHighpassFilter`:  `"googHighpassFilter"` に対応
+    - `audioProcessingNoiseSuppression`: `"googNoiseSuppression""` に対応
   - これらの設定の組み合わせ方によっては、端末依存でマイクからの音声が取れないことがあるため、
     設定を決める際には実端末での動作確認が必要
 - `SoraErrorReason` に音声の録音(audio record)、音声トラック(audio track)のエラーを追加した
