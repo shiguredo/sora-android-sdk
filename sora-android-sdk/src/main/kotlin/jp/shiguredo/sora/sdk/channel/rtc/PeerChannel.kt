@@ -44,9 +44,22 @@ class PeerChannelImpl(
     companion object {
         private val TAG = PeerChannelImpl::class.simpleName
 
+        // PeerConnectionFactory.java のコメントより
+        //   * Loads and initializes WebRTC. This must be called at least once before creating a
+        //   * PeerConnectionFactory. Replaces all the old initialization methods. Must not be called while
+        //   * a PeerConnectionFactory is alive.
+        // ライブラリとしてインスタンスの生存と初期化のタイミングは制御できないので、いまは
+        // 最初の一回だけ初期化するようにしておく。
+        // (ほんとはロック取る必要があるがそこまでは今はやっていない)
+        //
+        // TODO(shino): tracer の初期化は PeerConnectionFactory 初期化でのみ実行できる。
+        //              2つ目以降の PeerChannel で tracer を有効化したいときにどうするか悩ましい。
+        //              ひとつの回避策としては、stopTracer と shutdownTracer を個別にインターフェース
+        //              提供することか。
         private var isInitialized = false
         fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
+                SoraLogger.d(TAG, "Initialize PeerConnectionFactory with useTracer=$useTracer, thread=${Thread.currentThread()}")
                 val options = PeerConnectionFactory.InitializationOptions
                         .builder(context)
                         .setEnableInternalTracer(useTracer)
@@ -395,14 +408,10 @@ class PeerChannelImpl(
         conn = null
         localAudioManager.dispose()
         localVideoManager.dispose()
+
         SoraLogger.d(TAG, "factory.dispose")
         factory?.dispose()
         factory = null
-
-        if (useTracer) {
-            PeerConnectionFactory.stopInternalTracingCapture()
-            PeerConnectionFactory.shutdownInternalTracer()
-        }
     }
 
     override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {

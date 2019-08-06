@@ -62,6 +62,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+
+        fun startTracer(filePath: String) {
+            SoraLogger.i(TAG, "Start libwebrtc internal tracer: output=$filePath on thread=${Thread.currentThread()}")
+            val startSucceeded = PeerConnectionFactory.startInternalTracingCapture(filePath)
+            SoraLogger.d(TAG, "internal trace start succeeded: $startSucceeded")
+        }
+
+        fun stopTracer() {
+            SoraLogger.i(TAG, "Stop libwebrtc internal tracer on thread=${Thread.currentThread()}")
+            PeerConnectionFactory.stopInternalTracingCapture();
+            PeerConnectionFactory.shutdownInternalTracer();
+        }
     }
 
     val role = mediaOption.requiredRole
