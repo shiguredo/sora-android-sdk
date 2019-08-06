@@ -12,6 +12,11 @@
 
 ## develop
 
+### ADD
+
+- libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
+
+
 ## 1.9.0
 
 ### UPDATE
