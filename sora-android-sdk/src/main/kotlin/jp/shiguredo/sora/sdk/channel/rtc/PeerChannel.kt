@@ -4,6 +4,7 @@ import android.content.Context
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
+import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
@@ -38,7 +39,7 @@ class PeerChannelImpl(
         private val networkConfig: PeerNetworkConfig,
         private val mediaOption:   SoraMediaOption,
         private var listener:      PeerChannel.Listener?,
-        private var useTracer:     Boolean = false
+        private val peerConnectionOption: PeerConnectionOption
 ): PeerChannel {
 
     companion object {
@@ -304,7 +305,7 @@ class PeerChannelImpl(
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
 
-        initializeIfNeeded(appContext, useTracer)
+        initializeIfNeeded(appContext, peerConnectionOption.useLibwebrtcInternalTracer)
         factory = componentFactory.createPeerConnectionFactory(appContext)
 
         SoraLogger.d(TAG, "createPeerConnection")

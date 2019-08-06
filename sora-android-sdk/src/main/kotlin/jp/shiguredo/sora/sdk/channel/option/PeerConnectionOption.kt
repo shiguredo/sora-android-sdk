@@ -15,4 +15,14 @@ class PeerConnectionOption {
      * - https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getStats
      */
     var getStatsIntervalMSec: Long = 0
+
+    /**
+     * libwebrtc internal tracer を使うかどうかのフラグ
+     *
+     * このフラグはプロセス内で最初の SoraMediaChannel 生成時のみ意味を持ちます。
+     * 二度目以降では無視されます。
+     *
+     * デフォルトは false です。
+     */
+    var useLibwebrtcInternalTracer = false
 }

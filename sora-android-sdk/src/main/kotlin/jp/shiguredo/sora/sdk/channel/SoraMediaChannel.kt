@@ -394,7 +394,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                                 iceTransportPolicy = ""),
                         mediaOption = mediaOption),
                 mediaOption = mediaOption,
-                listener = null
+                listener = null,
+                peerConnectionOption = peerConnectionOption
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -438,18 +439,19 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "[channel:$role] @peer:start")
 
         peer = PeerChannelImpl(
-                appContext    = context,
+                appContext = context,
                 networkConfig = PeerNetworkConfig(
                         serverConfig = offerMessage.config,
                         mediaOption  = mediaOption
                 ),
-                mediaOption   = mediaOption,
-                listener      = peerListener
+                mediaOption = mediaOption,
+                listener = peerListener,
+                peerConnectionOption = peerConnectionOption
         )
 
         if (0 < peerConnectionOption.getStatsIntervalMSec) {
             getStatsTimer = Timer()
-            SoraLogger.d(TAG, "Schedule getStats with inteval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
+            SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
             getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
                 peer?.getStats(RTCStatsCollectorCallback {
                     listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
