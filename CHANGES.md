@@ -12,6 +12,17 @@
 
 ## develop
 
+### ADD
+
+- libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
+
+### CHANGE
+
+- 時雨堂ビルドの libwebrtc ライブラリ名称を変更した
+  - 旧: `sora-webrtc-android` 、 新: `shiguredo-webrtc-android`
+  - `transitive = true` で `sora-android-sdk` に依存している場合はアプリ側の変更は不要
+
+
 ## 1.9.0
 
 ### UPDATE
