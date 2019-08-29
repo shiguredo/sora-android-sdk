@@ -10,11 +10,18 @@
     - バグ修正
 
 
-## develop
+## feature/event-tracing
 
 ### ADD
 
 - libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
+
+
+## develop
+
+### UPDATE
+
+- Android Studio 3.5.0 に対応した
 
 ### CHANGE
 
