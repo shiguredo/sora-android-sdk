@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
+import android.os.Build
 import com.google.gson.annotations.SerializedName
 
 data class MessageCommonPart(
@@ -25,6 +26,9 @@ data class ConnectMessage(
                                        var simulcast_rid:           Boolean = false,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
+        @SerializedName("sdk_type")    val sdkType:                 String = "Android",
+        @SerializedName("sdk_version") val sdkVersion:              String = "NOT-YET-IMPLEMENTED",
+        @SerializedName("user_agent")  val userAgent:               String = deviceInfo(),
         @SerializedName("sdp")         val sdp:                     String
 )
 
@@ -115,3 +119,15 @@ data class NotificationMessage(
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
 )
+
+private fun deviceInfo() : String {
+    return "Android-SDK: " + Build.VERSION.SDK_INT + ", " +
+            "Release: " + Build.VERSION.RELEASE + ", " +
+            "Id: " + Build.ID + ", " +
+            "Device: " + Build.DEVICE + ", " +
+            "Hardware: " + Build.HARDWARE + ", " +
+            "Brand: " + Build.BRAND + ", " +
+            "Manufacturer: " + Build.MANUFACTURER + ", " +
+            "Model: " + Build.MODEL + ", " +
+            "Product: " + Build.PRODUCT
+}

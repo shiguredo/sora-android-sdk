@@ -15,7 +15,7 @@
 ### ADD
 
 - libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
-
+- シグナリング connect メッセージに `sdk_type` と `user_agent` を追加した
 
 ## develop
 
