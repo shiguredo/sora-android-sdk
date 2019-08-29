@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import android.os.Build
 import com.google.gson.annotations.SerializedName
+import jp.shiguredo.sora.sdk.BuildConfig
 
 data class MessageCommonPart(
         @SerializedName("type") val type: String?
@@ -27,7 +28,7 @@ data class ConnectMessage(
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sdk_type")    val sdkType:                 String = "Android",
-        @SerializedName("sdk_version") val sdkVersion:              String = "NOT-YET-IMPLEMENTED",
+        @SerializedName("sdk_version") val sdkVersion:              String = BuildConfig.GIT_DESCTIPTION,
         @SerializedName("user_agent")  val userAgent:               String = deviceInfo(),
         @SerializedName("sdp")         val sdp:                     String
 )
