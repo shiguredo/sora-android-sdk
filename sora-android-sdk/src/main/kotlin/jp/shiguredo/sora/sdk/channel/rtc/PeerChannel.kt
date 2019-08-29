@@ -199,12 +199,10 @@ class PeerChannelImpl(
             // is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
-            if (mediaOption.planB()) {
-                conn!!.addStream(localStream!!)
-            } else {
-                localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-                localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-            }
+
+            localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+
             // simulcast も addTrack で動作するので set direction + replaceTrack は使わない。
             // しかし、ときどき動作が不安なときにこっちも試すのでコメントで残しておく。
             // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY

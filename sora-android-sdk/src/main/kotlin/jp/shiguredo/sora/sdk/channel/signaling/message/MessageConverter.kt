@@ -29,7 +29,6 @@ class MessageConverter {
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
                     sdp                     = sdp,
-                    planB                   = mediaOption.planB(),
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
