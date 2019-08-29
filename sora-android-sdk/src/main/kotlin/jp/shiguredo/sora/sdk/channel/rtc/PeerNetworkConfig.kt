@@ -25,7 +25,7 @@ class PeerNetworkConfig(
         conf.keyType                  = PeerConnection.KeyType.ECDSA
 
         conf.enableDtlsSrtp = true;
-        conf.sdpSemantics = mediaOption.sdpSemantics
+        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
         conf.tcpCandidatePolicy = mediaOption.tcpCandidatePolicy
         conf.enableCpuOveruseDetection = mediaOption.enableCpuOveruseDetection

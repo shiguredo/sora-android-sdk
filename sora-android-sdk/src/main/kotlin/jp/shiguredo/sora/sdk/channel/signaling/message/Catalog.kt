@@ -19,7 +19,6 @@ data class ConnectMessage(
         @SerializedName("signaling_notify_metadata")
                                        val signalingNotifyMetadata: Any? = null,
         @SerializedName("multistream") val multistream:             Boolean = false,
-        @SerializedName("plan_b")      var planB:                   Boolean = true,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
         @SerializedName("simulcast")   var simulcast:               Any? = null,
         @SerializedName("simulcast_rid")
