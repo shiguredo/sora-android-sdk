@@ -19,7 +19,6 @@ buildscript {
 
         classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:${dokka_version}"
         classpath "com.github.ben-manes:gradle-versions-plugin:0.21.0"
-        classpath "com.github.ben-manes:gradle-versions-plugin:0.21.0"
         classpath 'org.ajoberstar.grgit:grgit-gradle:3.1.1'
     }
 }
