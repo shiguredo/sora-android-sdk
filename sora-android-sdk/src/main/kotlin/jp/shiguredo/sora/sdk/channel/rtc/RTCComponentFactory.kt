@@ -135,6 +135,9 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                                 && option.audioOption.useHardwareNoiseSuppressor)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
+                .setAudioSource(option.audioOption.audioSource)
+                .setUseStereoInput(option.audioOption.useStereoInput)
+                .setUseStereoOutput(option.audioOption.useStereoOutput)
                 .createAudioDeviceModule()
     }
 

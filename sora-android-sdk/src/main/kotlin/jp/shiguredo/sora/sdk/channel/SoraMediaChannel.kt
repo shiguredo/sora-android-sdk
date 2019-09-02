@@ -321,6 +321,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
             |audioCodec              = ${mediaOption.audioCodec}
             |audioBitRate            = ${mediaOption.audioBitrate}
+            |audioSource             = ${mediaOption.audioOption.audioSource}
+            |useStereoInput          = ${mediaOption.audioOption.useStereoInput}
+            |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
             |videoIsRequired         = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
             |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}

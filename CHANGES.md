@@ -22,6 +22,10 @@
 ### UPDATE
 
 - Android Studio 3.5.0 に対応した
+- AudioDeviceManager 生成時のパラメータをオプション `SoraAudioOption` に追加した
+  - `audioSource`: `android.media.MediaRecorder.AudioSource` のいずれか
+  - `useStereoInput`: boolean
+  - `useStereoOutput`: boolean
 
 ### CHANGE
 
