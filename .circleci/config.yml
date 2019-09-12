@@ -26,3 +26,6 @@ jobs:
       - store_artifacts:
           path: sora-android-sdk/build/reports
           destination: reports
+    branches:
+      ignore:
+        - feature/simulcast-encoder
