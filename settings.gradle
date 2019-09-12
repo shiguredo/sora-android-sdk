@@ -1,4 +1,4 @@
-include ':sora-android-sdk'
+include ':sora-android-sdk', ':libwebrtc'
 
 def dirFile = file('./include_app_dir.txt')
 if(dirFile.exists()) {
