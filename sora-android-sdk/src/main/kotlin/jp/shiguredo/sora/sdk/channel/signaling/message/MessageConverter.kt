@@ -38,7 +38,13 @@ class MessageConverter {
                 if (mediaOption.audioUpstreamEnabled) {
                     val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
                     mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
+
+                    if (mediaOption.audioOption?.opusParams != null) {
+                        audioSetting.opusParams = mediaOption.audioOption?.opusParams
+                    }
+
                     msg.audio = audioSetting
+
                 } else {
                     msg.audio = false
                 }

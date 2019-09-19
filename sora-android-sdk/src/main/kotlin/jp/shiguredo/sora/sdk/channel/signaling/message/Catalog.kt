@@ -39,8 +39,21 @@ data class VideoSetting(
 )
 
 data class AudioSetting(
-        @SerializedName("codec_type") val codecType: String?,
-        @SerializedName("bit_rate")   var bitRate:   Int?    = null
+        @SerializedName("codec_type")  val codecType:  String?,
+        @SerializedName("bit_rate")    var bitRate:    Int?    = null,
+        @SerializedName("opus_params") var opusParams: OpusParams? = null
+)
+
+data class OpusParams(
+        @SerializedName("channels")        var channels:        Int? = null,
+        @SerializedName("clock_rate")      var clockRate:       Int? = null,
+        @SerializedName("maxplaybackrate") var maxplaybackrate: Int? = null,
+        @SerializedName("stereo")          var stereo:          Boolean? = null,
+        @SerializedName("sprop_stereo")    var spropStereo:     Int? = null,
+        @SerializedName("minptime")        var minptime:        Int? = null,
+        @SerializedName("ptime")           var ptime:           Int? = null,
+        @SerializedName("useinbandfec")    var useinbandfec:    Boolean? = null,
+        @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )
 
 data class IceServer(

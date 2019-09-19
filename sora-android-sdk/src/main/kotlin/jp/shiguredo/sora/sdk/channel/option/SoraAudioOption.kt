@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import android.media.MediaRecorder
+import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
 import org.webrtc.MediaConstraints
 import org.webrtc.audio.AudioDeviceModule
 
@@ -112,4 +113,9 @@ class SoraAudioOption {
      * デフォルト値は false (モノラル) です。
      */
     var useStereoOutput: Boolean = false
+
+    /**
+     * opus_params
+     */
+    var opusParams: OpusParams? = null
 }
