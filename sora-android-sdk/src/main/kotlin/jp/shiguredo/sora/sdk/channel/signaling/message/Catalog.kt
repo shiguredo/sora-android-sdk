@@ -49,7 +49,7 @@ data class OpusParams(
         @SerializedName("clock_rate")      var clockRate:       Int? = null,
         @SerializedName("maxplaybackrate") var maxplaybackrate: Int? = null,
         @SerializedName("stereo")          var stereo:          Boolean? = null,
-        @SerializedName("sprop_stereo")    var spropStereo:     Int? = null,
+        @SerializedName("sprop_stereo")    var spropStereo:     Boolean? = null,
         @SerializedName("minptime")        var minptime:        Int? = null,
         @SerializedName("ptime")           var ptime:           Int? = null,
         @SerializedName("useinbandfec")    var useinbandfec:    Boolean? = null,
