@@ -86,13 +86,12 @@ libwebrtc は、時雨堂ビルドの AAR を Jitpack.io から取得してい�
 
 時雨堂ビルドの libwebrtc については以下のサイトを参照ください。
 
-- https://github.com/shiguredo/sora-webrtc-build
+- https://github.com/shiguredo/shiguredo-webrtc-build
   - ビルドスクリプト、ビルド設定ファイル、およびバージョンタグ
-- https://github.com/shiguredo/sora-webrtc-android
+- https://github.com/shiguredo/shiguredo-webrtc-android
   - Android 用 AAR を公開するためのリポジトリ
   - jitpack.io はこのリポジトリのタグを見ている
-- https://jitpack.io/#shiguredo/sora-webrtc-android/
-
+- https://jitpack.io/#shiguredo/shiguredo-webrtc-android/
 
 ## ローカルでのビルド
 
