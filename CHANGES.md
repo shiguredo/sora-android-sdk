@@ -18,6 +18,10 @@
 - シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
 - シグナリング connect メッセージに `audio.opus_params` を追加した
 
+### CHANGE
+
+- シグナリング connect メッセージから `simulcast_rid` を削除した
+
 ## develop
 
 ### UPDATE

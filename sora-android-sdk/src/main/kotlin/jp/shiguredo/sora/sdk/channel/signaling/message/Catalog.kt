@@ -23,8 +23,6 @@ data class ConnectMessage(
         @SerializedName("multistream") val multistream:             Boolean = false,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
         @SerializedName("simulcast")   var simulcast:               Any? = null,
-        @SerializedName("simulcast_rid")
-                                       var simulcast_rid:           Boolean = false,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sdk_type")    val sdkType:                 String = "Android",
@@ -51,7 +49,6 @@ data class OpusParams(
         @SerializedName("stereo")          var stereo:          Boolean? = null,
         @SerializedName("sprop_stereo")    var spropStereo:     Boolean? = null,
         @SerializedName("minptime")        var minptime:        Int? = null,
-        @SerializedName("ptime")           var ptime:           Int? = null,
         @SerializedName("useinbandfec")    var useinbandfec:    Boolean? = null,
         @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )

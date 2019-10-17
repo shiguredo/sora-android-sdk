@@ -82,11 +82,11 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = true
-                msg.simulcast_rid = true
             }
 
-            SoraLogger.d(TAG, "$msg")
-            return gson.toJson(msg)
+            val jsonMsg = gson.toJson(msg)
+            SoraLogger.d(TAG, "connect: message=$jsonMsg")
+            return jsonMsg
         }
 
         fun buildPongMessage(): String {
