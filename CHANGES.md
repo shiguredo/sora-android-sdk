@@ -17,6 +17,7 @@
 - libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
 - シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
 - シグナリング connect メッセージに `audio.opus_params` を追加した
+- 1:N サイマルキャストの視聴に対応した
 
 ### CHANGE
 
@@ -78,7 +79,7 @@
   - このバージョンでは `JavaAudioDeviceModule` の audio record, audio track 関連のエラーが
     このコールバックを通して通知される
 - rid-based simulcast に部分的に対応した
-  - 現状では、ソフトウェアエンコーダのみで動作する
+  - 現状では、ソフトウェアエンコーダの配信のみで動作する
   - 映像コーデックは VP8 のみの対応する
   - fixed resolution と一緒に使うとクラッシュ(SEGV)することが分かっている
     - 関連してそうな issue: 10713 - Transceiver/encodings based simulcast does not work in desktop sharing
