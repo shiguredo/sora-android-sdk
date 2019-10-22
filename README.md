@@ -166,7 +166,7 @@ Gradle Versions Plugin https://github.com/ben-manes/gradle-versions-plugin が�
 ./gradlew dependencyUpdates
 ```
 
-最新に合わせられない原因がいつくかあります。
+最新に合わせられない原因がいくつかあります。
 
 - com.android.support 系は PermissionsDispatcher の依存に合わせる必要があるため
   最新とは限りません
