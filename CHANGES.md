@@ -10,16 +10,6 @@
     - バグ修正
 
 
-## feature/event-tracing
-
-### ADD
-
-- libwebrtc の internal tracer 利用有無を `PeerConnectionOption` で指定可能にした
-- シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
-- シグナリング connect メッセージに `audio.opus_params` を追加した
-- 1:N サイマルキャストの視聴に対応した
-
-
 ## develop
 
 ### UPDATE
@@ -29,6 +19,12 @@
   - `audioSource`: `android.media.MediaRecorder.AudioSource` のいずれか
   - `useStereoInput`: boolean
   - `useStereoOutput`: boolean
+
+### ADD
+
+- シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
+ - シグナリング connect メッセージに `audio.opus_params` を追加した
+- 1:N サイマルキャストの視聴に対応した
 
 ### CHANGE
 
