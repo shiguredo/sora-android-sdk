@@ -32,9 +32,8 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 
 ## About Support
 
-Support for Sora Android SDK by Shiguredo Inc. are limited
-**ONLY in JAPANESE** through GitHub issues and there is no guarantee such
-as response time or resolution.
+We check PRs or Issues only when written in JAPANESE.
+In other languages, we won't be able to deal with them. Thank you for your understanding.
 
 ## サポートについて
 
