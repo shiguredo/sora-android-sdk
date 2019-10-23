@@ -19,9 +19,6 @@
 - シグナリング connect メッセージに `audio.opus_params` を追加した
 - 1:N サイマルキャストの視聴に対応した
 
-### CHANGE
-
-- シグナリング connect メッセージから `simulcast_rid` を削除した
 
 ## develop
 
@@ -38,6 +35,7 @@
 - 時雨堂ビルドの libwebrtc ライブラリ名称を変更した
   - 旧: `sora-webrtc-android` 、 新: `shiguredo-webrtc-android`
   - `transitive = true` で `sora-android-sdk` に依存している場合はアプリ側の変更は不要
+- シグナリング connect メッセージから `simulcast_rid` を削除した
 
 
 ## 1.9.0
