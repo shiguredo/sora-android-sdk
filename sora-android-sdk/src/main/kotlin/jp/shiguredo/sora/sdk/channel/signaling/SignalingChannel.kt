@@ -125,7 +125,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     override fun disconnect() {
         if (!closing) {
             closing = true
-            client.dispatcher().executorService().shutdown()
+            client.dispatcher.executorService.shutdown()
             webSocket?.close(1000, null)
             listener?.onDisconnect()
             listener = null
