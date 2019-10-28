@@ -190,4 +190,4 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 
 # Copyright
 
-Copyright 2017, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
+Copyright 2017-2019, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
