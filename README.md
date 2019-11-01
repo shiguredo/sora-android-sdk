@@ -44,9 +44,9 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## システム条件
 
-- Android 4.1 以降 (シミュレーターは不可)
-- Android Studio 2.3.3 以降
-- WebRTC SFU Sora 18.02 以降
+- Android 5 以降 (シミュレーターは不可)
+- Android Studio 3.5.1 以降
+- WebRTC SFU Sora 19.04 以降
 
 ## サンプルコード
 
@@ -157,21 +157,6 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 % curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
 ```
 
-## 依存ライブラリの最新バージョンチェック
-
-Gradle Versions Plugin https://github.com/ben-manes/gradle-versions-plugin が有効になっています。
-次のコマンドでライブラリの最新バージョンが一覧されます。
-
-```
-./gradlew dependencyUpdates
-```
-
-最新に合わせられない原因がいつくかあります。
-
-- com.android.support 系は PermissionsDispatcher の依存に合わせる必要があるため
-  最新とは限りません
-
-
 ## sora-android-sdk-samples を multi module に押し込む方法
 
 sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下に clone されているとします。
@@ -190,4 +175,4 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 
 # Copyright
 
-Copyright 2017, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
+Copyright 2017-2019, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>

@@ -3,7 +3,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
-apply plugin: 'org.jetbrains.dokka-android'
+apply plugin: 'org.jetbrains.dokka'
 
 group = 'com.github.shiguredo'
 
@@ -11,7 +11,7 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 28
 
         buildConfigField("String", "GIT_DESCTIPTION", "\"${grgit.describe()}\"")
@@ -44,14 +44,14 @@ android {
 dokka {
     outputFormat = 'javadoc'
 
-    // TODO: 設定してみたが効かない?
-    linkMapping {
-        // Source directory
-        dir = "src/main/kotlin"
-        // URL showing where the source code can be accessed through the web browser
-        url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
-        // Suffix which is used to append the line number to the URL. Use #L for GitHub
-        suffix = "#L"
+    configuration {
+        moduleName = 'sora'
+
+        sourceLink {
+            path = "sora-android-sdk/src/main/kotlin"
+            url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
+            lineSuffix = "#L"
+        }
     }
 }
 
@@ -62,8 +62,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
-    implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'com.squareup.okhttp3:okhttp:3.14.2'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.squareup.okhttp3:okhttp:4.2.2'
 
     // required by "rtc" part
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
@@ -72,7 +72,7 @@ dependencies {
 
     testImplementation "junit:junit:4.12"
     testImplementation 'androidx.test:core:1.2.0'
-    testImplementation "org.robolectric:robolectric:4.3"
+    testImplementation 'org.robolectric:robolectric:4.3.1'
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
 }
 
