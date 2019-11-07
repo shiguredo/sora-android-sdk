@@ -14,7 +14,16 @@
 
 ### UPDATE
 
-- Android Studio 3.5.0 に対応した
+- `minSdkVersion` を 21 に上げた
+  - `com.squareup.okhttp3:okhttp` 4.2.2 が `minSdkVersion` 21 以上にのみ対応するため
+- libwebrtc を 78.8.0 に上げた
+- Android Studio 3.5.1 に対応した
+- Kotlin を 1.3.50 に上げた
+- Dokka を 0.10.0 に上げた
+- `com.android.tools.build:gradle` を 3.5.1 に上げた
+- `com.squareup.okhttp3:okhttp` を 4.2.2 に上げた
+- `com.google.code.gson:gson` を 2.8.6 に上げた
+- `org.robolectric:robolectric` を 4.3.1 に上げた
 - AudioDeviceManager 生成時のパラメータをオプション `SoraAudioOption` に追加した
   - `audioSource`: `android.media.MediaRecorder.AudioSource` のいずれか
   - `useStereoInput`: boolean
