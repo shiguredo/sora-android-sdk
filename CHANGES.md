@@ -20,7 +20,7 @@
 - Android Studio 3.5.1 に対応した
 - Kotlin を 1.3.50 に上げた
 - Dokka を 0.10.0 に上げた
-- `com.android.tools.build:gradle` を 3.5.1 に上げた
+- `com.android.tools.build:gradle` を 3.5.2 に上げた
 - `com.squareup.okhttp3:okhttp` を 4.2.2 に上げた
 - `com.google.code.gson:gson` を 2.8.6 に上げた
 - `org.robolectric:robolectric` を 4.3.1 に上げた
