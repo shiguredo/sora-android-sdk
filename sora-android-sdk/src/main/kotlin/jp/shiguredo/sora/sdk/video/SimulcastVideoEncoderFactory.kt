@@ -38,7 +38,7 @@ class SimulcastVideoEncoder (
         val TAG = SimulcastVideoEncoderFactory::class.simpleName!!
     }
 
-    val encoders: MutableList<SingleStreamVideoEncoder> = encodings.map {
+    val encoders: List<SingleStreamVideoEncoder> = encodings.map {
         // TODO(shino): インデックス付き map (forEach?) が欲しい
         val spatialIndex = when (it.rid) {
             "low" -> 0
@@ -47,7 +47,7 @@ class SimulcastVideoEncoder (
             else -> throw IllegalArgumentException("rid=${it.rid}")
         }
         SingleStreamVideoEncoder(encoderFactory.createEncoder(videoCodecInfo)!!, it, spatialIndex)
-    }.toMutableList()
+    }
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
         // TODO(shino): ひとまず low に渡す
@@ -57,11 +57,11 @@ class SimulcastVideoEncoder (
     override fun initEncode(originalSettings: VideoEncoder.Settings, encodeCallback: VideoEncoder.Callback): VideoCodecStatus {
         SoraLogger.i(TAG, "resolution=${originalSettings.width}x${originalSettings.height}, " +
                 "maxFrameRate=${originalSettings.maxFramerate}, capabilities=${originalSettings.capabilities}")
-        encoders.map {
+        val statusList = encoders.map {
             var width = originalSettings.width
             var height = originalSettings.height
             if (it.encoding.scaleResolutionDownBy != null) {
-                val scale = it.encoding.scaleResolutionDownBy as Int
+                val scale = it.encoding.scaleResolutionDownBy.toInt()
                 // TODO(shino): へんな数字になるとコケるかも。エンコーダの capability と比較する必要あり
                 width = width / scale
                 height = height / scale
@@ -77,6 +77,8 @@ class SimulcastVideoEncoder (
                     originalSettings.capabilities)
             it.initEncode(settings, encodeCallback)
         }
+        // TODO(shino): ひとまず low のものを戻す
+        return statusList[0]
     }
 
     override fun getImplementationName(): String {
@@ -89,12 +91,15 @@ class SimulcastVideoEncoder (
     }
 
     override fun release(): VideoCodecStatus {
-        encoders.map { it.release() }
-        encoders.clear()
+        val statusList = encoders.map { it.release() }
+        // TODO(shino): ひとまず low のものを戻す
+        return statusList[0]
     }
 
     override fun encode(frame: VideoFrame?, info: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-        encoders.map { it.encode(frame, info) }
+        val statusList = encoders.map { it.encode(frame, info) }
+        // TODO(shino): ひとまず low のものを戻す
+        return statusList[0]
     }
 }
 
