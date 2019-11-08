@@ -1,10 +1,13 @@
 package jp.shiguredo.sora.sdk.video
 
+import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
+import java.lang.IllegalArgumentException
 
 
 class SimulcastVideoEncoderFactory (
+        private val encodings: List<Encoding>,
         private val eglContext: EglBase.Context?,
         private val enableIntelVp8Encoder: Boolean = true,
         private val enableH264HighProfile: Boolean = false
@@ -22,27 +25,58 @@ class SimulcastVideoEncoderFactory (
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
         SoraLogger.d(TAG, "createEncoder: codec=${videoCodecInfo?.name} params=${videoCodecInfo?.params}")
-        return SimulcastVideoEncoder(hardwareVideoEncoderFactory, listOf())
+        return SimulcastVideoEncoder(hardwareVideoEncoderFactory, encodings, videoCodecInfo)
     }
-
 }
 
 class SimulcastVideoEncoder (
-        val encoderFactory: VideoEncoderFactory,
-        val encodings: List<RtpParameters.Encoding>
+        private val encoderFactory: VideoEncoderFactory,
+        private val encodings: List<Encoding>,
+        private val videoCodecInfo: VideoCodecInfo?
 ) : VideoEncoder {
     companion object {
         val TAG = SimulcastVideoEncoderFactory::class.simpleName!!
     }
 
-    val encoders = mutableListOf<SingleStreamVideoEncoder>()
+    val encoders: MutableList<SingleStreamVideoEncoder> = encodings.map {
+        // TODO(shino): インデックス付き map (forEach?) が欲しい
+        val spatialIndex = when (it.rid) {
+            "low" -> 0
+            "middle" -> 1
+            "high" -> 2
+            else -> throw IllegalArgumentException("rid=${it.rid}")
+        }
+        SingleStreamVideoEncoder(encoderFactory.createEncoder(videoCodecInfo)!!, it, spatialIndex)
+    }.toMutableList()
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
-        TODO("not implemented")
+        // TODO(shino): ひとまず low に渡す
+        return encoders[0].setRateAllocation(allocation, frameRate)
     }
 
-    override fun initEncode(settings: VideoEncoder.Settings?, encodeCallback: VideoEncoder.Callback?): VideoCodecStatus {
-        TODO("not implemented")
+    override fun initEncode(originalSettings: VideoEncoder.Settings, encodeCallback: VideoEncoder.Callback): VideoCodecStatus {
+        SoraLogger.i(TAG, "resolution=${originalSettings.width}x${originalSettings.height}, " +
+                "maxFrameRate=${originalSettings.maxFramerate}, capabilities=${originalSettings.capabilities}")
+        encoders.map {
+            var width = originalSettings.width
+            var height = originalSettings.height
+            if (it.encoding.scaleResolutionDownBy != null) {
+                val scale = it.encoding.scaleResolutionDownBy as Int
+                // TODO(shino): へんな数字になるとコケるかも。エンコーダの capability と比較する必要あり
+                width = width / scale
+                height = height / scale
+            }
+            val settings = VideoEncoder.Settings(
+                    originalSettings.numberOfCores,
+                    width,
+                    height,
+                    originalSettings.startBitrate,  // TODO(shino): ここはどうする?
+                    originalSettings.maxFramerate,
+                    1,  // numberOfSimulcastStreams
+                    originalSettings.automaticResizeOn,
+                    originalSettings.capabilities)
+            it.initEncode(settings, encodeCallback)
+        }
     }
 
     override fun getImplementationName(): String {
@@ -50,23 +84,25 @@ class SimulcastVideoEncoder (
     }
 
     override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        TODO("not implemented")
+        // TODO(shino): ひとまず low に渡す
+        return encoders[0].scalingSettings
     }
 
     override fun release(): VideoCodecStatus {
-        TODO("not implemented")
+        encoders.map { it.release() }
+        encoders.clear()
     }
 
     override fun encode(frame: VideoFrame?, info: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-        TODO("not implemented")
+        encoders.map { it.encode(frame, info) }
     }
-
 }
 
 
 class SingleStreamVideoEncoder(
         private val encoder: VideoEncoder,
-        private val spatialIndex: Int = 0) : VideoEncoder {
+        val encoding: Encoding,
+        val spatialIndex: Int) : VideoEncoder {
     companion object {
         val TAG = SimulcastVideoEncoderFactory::class.simpleName
     }
