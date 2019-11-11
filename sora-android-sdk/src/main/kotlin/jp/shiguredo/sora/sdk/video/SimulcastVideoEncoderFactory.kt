@@ -114,8 +114,17 @@ class SimulcastVideoEncoder (
     }
 
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
-        SoraLogger.i(TAG, "encode: frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
-        val statusList = encoders.map { it.encode(frame, info) }
+        SoraLogger.i(TAG, "encode: streams=${info.frameTypes.size}, " +
+                "frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
+        val statusList = info.frameTypes.mapIndexed { index, _ ->
+            if (index < encoders.size) {
+                encoders[index].encode(frame, info)
+            } else {
+                SoraLogger.e(TAG, "Too many frameTypes: " +
+                        "frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
+                VideoCodecStatus.ERROR
+            }
+        }
         // TODO(shino): ひとまず low のものを戻す
         return statusList[0]
     }
