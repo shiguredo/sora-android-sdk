@@ -193,14 +193,7 @@ class SingleStreamVideoEncoder(
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
         val adaptedFrame = when (val scale = config.scaleResolutionDownBy) {
             1.0 -> {
-                SoraLogger.d(TAG, "encode: Scaling needed scale=$scale to ${settings.width}x${settings.height}")
-                val buffer = frame.buffer
-                val adaptedBuffer = buffer.cropAndScale(0, 0, buffer.width, buffer.height,
-                        settings.width, settings.height)
-                SoraLogger.w(TAG, "adaptedBuffer=$adaptedBuffer")
-                val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
-                //  adaptedBuffer.release()
-                adaptedFrame
+                frame
             }
             else ->{
                 SoraLogger.d(TAG, "encode: Scaling needed scale=$scale to ${settings.width}x${settings.height}")
@@ -209,7 +202,6 @@ class SingleStreamVideoEncoder(
                         settings.width, settings.height)
                 SoraLogger.w(TAG, "adaptedBuffer=$adaptedBuffer")
                 val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
-                //  adaptedBuffer.release()
                 adaptedFrame
             }
         }
