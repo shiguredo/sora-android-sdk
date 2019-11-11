@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -28,10 +29,28 @@ class RTCComponentFactory(private val option: SoraMediaOption,
         val encoderFactory = when {
             option.videoEncoderFactory != null ->
                 option.videoEncoderFactory!!
-            option.videoUpstreamContext != null ->
-                DefaultVideoEncoderFactory(option.videoUpstreamContext,
-                        true /* enableIntelVp8Encoder */,
-                        false /* enableH264HighProfile */)
+            option.videoUpstreamContext != null -> {
+                if (option.videoCodec == SoraVideoOption.Codec.H264) {
+                    HardwareVideoEncoderFactory(option.videoUpstreamContext,
+                            true /* enableIntelVp8Encoder */,
+                            false /* enableH264HighProfile */)
+                } else {
+                    DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                            true /* enableIntelVp8Encoder */,
+                            false /* enableH264HighProfile */)
+                }
+            }
+            option.videoDownstreamContext != null -> {
+                if (option.videoCodec == SoraVideoOption.Codec.H264) {
+                    HardwareVideoEncoderFactory(option.videoDownstreamContext,
+                            true /* enableIntelVp8Encoder */,
+                            false /* enableH264HighProfile */)
+                } else {
+                    DefaultVideoEncoderFactory(option.videoDownstreamContext,
+                            true /* enableIntelVp8Encoder */,
+                            false /* enableH264HighProfile */)
+                }
+            }
             else ->
                 SoftwareVideoEncoderFactory()
         }
@@ -39,8 +58,13 @@ class RTCComponentFactory(private val option: SoraMediaOption,
         val decoderFactory = when {
             option.videoDecoderFactory != null ->
                 option.videoDecoderFactory!!
-            option.videoDownstreamContext != null ->
-                DefaultVideoDecoderFactory(option.videoDownstreamContext)
+            option.videoDownstreamContext != null -> {
+                if (option.videoCodec == SoraVideoOption.Codec.H264) {
+                    HardwareVideoDecoderFactory(option.videoDownstreamContext)
+                } else {
+                    DefaultVideoDecoderFactory(option.videoDownstreamContext)
+                }
+            }
             else ->
                 SoftwareVideoDecoderFactory()
         }
