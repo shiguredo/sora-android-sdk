@@ -36,12 +36,16 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                         true /* enableIntelVp8Encoder */,
                         false /* enableH264HighProfile */)
 
+            // 注意: 視聴のみかつ H.264 のみの場合のワークアラウンド
             // upstream context が設定されていない場合、
             // downstream context が設定されていればそれを使って
             // DefaultVideoEncoderFactory を用意する
-            option.videoDownstreamContext != null ->
+            // H.264 に限定する理由は、 VP8/VP9 対応のハードウェアエンコーダーを
+            // 搭載していない端末があるため
+            option.videoCodec == SoraVideoOption.Codec.H264 &&
+                    option.videoDownstreamContext != null ->
                 DefaultVideoEncoderFactory(option.videoDownstreamContext,
-                        true /* enableIntelVp8Encoder */,
+                        false /* enableIntelVp8Encoder */,
                         false /* enableH264HighProfile */)
             else ->
                 // context が指定されていなければソフトウェアエンコーダーを使用する
