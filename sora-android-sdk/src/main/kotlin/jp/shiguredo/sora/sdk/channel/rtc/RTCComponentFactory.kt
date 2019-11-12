@@ -26,45 +26,33 @@ class RTCComponentFactory(private val option: SoraMediaOption,
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
 
+        // DefaultVideoEncoderFactory, DefaultVideoDecoderFactory は
+        // EglBase.Context を与えるとハードウェアエンコーダーを使用する
         val encoderFactory = when {
             option.videoEncoderFactory != null ->
                 option.videoEncoderFactory!!
-            option.videoUpstreamContext != null -> {
-                if (option.videoCodec == SoraVideoOption.Codec.H264) {
-                    HardwareVideoEncoderFactory(option.videoUpstreamContext,
-                            true /* enableIntelVp8Encoder */,
-                            false /* enableH264HighProfile */)
-                } else {
-                    DefaultVideoEncoderFactory(option.videoUpstreamContext,
-                            true /* enableIntelVp8Encoder */,
-                            false /* enableH264HighProfile */)
-                }
-            }
-            option.videoDownstreamContext != null -> {
-                if (option.videoCodec == SoraVideoOption.Codec.H264) {
-                    HardwareVideoEncoderFactory(option.videoDownstreamContext,
-                            true /* enableIntelVp8Encoder */,
-                            false /* enableH264HighProfile */)
-                } else {
-                    DefaultVideoEncoderFactory(option.videoDownstreamContext,
-                            true /* enableIntelVp8Encoder */,
-                            false /* enableH264HighProfile */)
-                }
-            }
+            option.videoUpstreamContext != null ->
+                DefaultVideoEncoderFactory(option.videoUpstreamContext,
+                        true /* enableIntelVp8Encoder */,
+                        false /* enableH264HighProfile */)
+
+            // upstream context が設定されていない場合、
+            // downstream context が設定されていればそれを使って
+            // DefaultVideoEncoderFactory を用意する
+            option.videoDownstreamContext != null ->
+                DefaultVideoEncoderFactory(option.videoDownstreamContext,
+                        true /* enableIntelVp8Encoder */,
+                        false /* enableH264HighProfile */)
             else ->
+                // context が指定されていなければソフトウェアエンコーダーを使用する
                 SoftwareVideoEncoderFactory()
         }
 
         val decoderFactory = when {
             option.videoDecoderFactory != null ->
                 option.videoDecoderFactory!!
-            option.videoDownstreamContext != null -> {
-                if (option.videoCodec == SoraVideoOption.Codec.H264) {
-                    HardwareVideoDecoderFactory(option.videoDownstreamContext)
-                } else {
-                    DefaultVideoDecoderFactory(option.videoDownstreamContext)
-                }
-            }
+            option.videoDownstreamContext != null ->
+                DefaultVideoDecoderFactory(option.videoDownstreamContext)
             else ->
                 SoftwareVideoDecoderFactory()
         }
