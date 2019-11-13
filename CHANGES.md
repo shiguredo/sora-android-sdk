@@ -32,7 +32,7 @@
 ### ADD
 
 - シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
- - シグナリング connect メッセージに `audio.opus_params` を追加した
+- シグナリング connect メッセージに `audio.opus_params` を追加した
 - 1:N サイマルキャストの視聴に対応した
 
 ### CHANGE
