@@ -42,6 +42,10 @@
   - `transitive = true` で `sora-android-sdk` に依存している場合はアプリ側の変更は不要
 - シグナリング connect メッセージから `simulcast_rid` を削除した
 
+### FIX
+
+- 視聴のみかつ H.264 を指定した場合に接続できない現象を修正した
+
 
 ## 1.9.0
 
