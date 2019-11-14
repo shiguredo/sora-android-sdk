@@ -125,7 +125,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     override fun disconnect() {
         if (!closing) {
             closing = true
-            client.dispatcher().executorService().shutdown()
+            client.dispatcher.executorService.shutdown()
             webSocket?.close(1000, null)
             listener?.onDisconnect()
             listener = null
@@ -214,7 +214,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val webSocketListener = object : WebSocketListener() {
 
-        override fun onOpen(webSocket: WebSocket?, response: Response?) {
+        override fun onOpen(webSocket: WebSocket, response: Response) {
             try {
                 SoraLogger.d(TAG, "[signaling:$role] @onOpen")
 
@@ -231,7 +231,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
         }
 
-        override fun onMessage(webSocket: WebSocket?, text: String?) {
+        override fun onMessage(webSocket: WebSocket, text: String) {
             try {
                 SoraLogger.d(TAG, "[signaling:$role] @onMessage(text)")
                 SoraLogger.d(TAG, text)
@@ -241,7 +241,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     return
                 }
 
-                text?.let {
+                text.let {
                     val json = it
                     MessageConverter.parseType(json)?.let {
                         when (it) {
@@ -262,12 +262,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
         }
 
-        override fun onMessage(webSocket: WebSocket?, bytes: ByteString?) {
+        override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
             SoraLogger.d(TAG, "[signaling:$role] @onMessage(bytes)")
             // This time, we don't use byte-data, so ignore this message
         }
 
-        override fun onClosed(webSocket: WebSocket?, code: Int, reason: String?) {
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             try {
                 if (code == 1000) {
                     SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = ${code}")
@@ -280,15 +280,15 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
         }
 
-        override fun onClosing(webSocket: WebSocket?, code: Int, reason: String?) {
+        override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing")
             disconnect()
         }
 
-        override fun onFailure(webSocket: WebSocket?, t: Throwable?, response: Response?) {
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             try {
                 response?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message()}, $t")
+                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
                 } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)

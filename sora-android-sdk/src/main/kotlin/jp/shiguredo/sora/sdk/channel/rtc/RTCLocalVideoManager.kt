@@ -52,7 +52,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
     override fun dispose() {
         SoraLogger.d(TAG, "dispose")
         SoraLogger.d(TAG, "dispose surfaceTextureHelper")
-        surfaceTextureHelper?.let {it.dispose() }
+        surfaceTextureHelper?.dispose()
         surfaceTextureHelper = null
 
         SoraLogger.d(TAG, "dispose source")

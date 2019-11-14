@@ -29,7 +29,6 @@ class MessageConverter {
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
                     sdp                     = sdp,
-                    planB                   = mediaOption.planB(),
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
@@ -39,7 +38,13 @@ class MessageConverter {
                 if (mediaOption.audioUpstreamEnabled) {
                     val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
                     mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
+
+                    if (mediaOption.audioOption.opusParams != null) {
+                        audioSetting.opusParams = mediaOption.audioOption.opusParams
+                    }
+
                     msg.audio = audioSetting
+
                 } else {
                     msg.audio = false
                 }
@@ -77,11 +82,11 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = true
-                msg.simulcast_rid = true
             }
 
-            SoraLogger.d(TAG, "$msg")
-            return gson.toJson(msg)
+            val jsonMsg = gson.toJson(msg)
+            SoraLogger.d(TAG, "connect: message=$jsonMsg")
+            return jsonMsg
         }
 
         fun buildPongMessage(): String {

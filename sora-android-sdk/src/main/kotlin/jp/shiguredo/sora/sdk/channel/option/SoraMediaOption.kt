@@ -175,15 +175,4 @@ class SoraMediaOption {
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED
 
-    /**
-     * SDP semantics
-     *
-     * Unified Plan のみ動作確認しています
-     */
-    var sdpSemantics: PeerConnection.SdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
-
-    fun planB(): Boolean {
-        return sdpSemantics == PeerConnection.SdpSemantics.PLAN_B
-    }
-
 }

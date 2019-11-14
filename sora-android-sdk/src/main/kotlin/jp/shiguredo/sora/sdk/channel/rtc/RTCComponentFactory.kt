@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -25,6 +26,8 @@ class RTCComponentFactory(private val option: SoraMediaOption,
         val factoryBuilder = PeerConnectionFactory.builder()
                 .setOptions(options)
 
+        // DefaultVideoEncoderFactory, DefaultVideoDecoderFactory は
+        // EglBase.Context を与えるとハードウェアエンコーダーを使用する
         val encoderFactory = when {
             option.videoEncoderFactory != null ->
                 option.videoEncoderFactory!!
@@ -32,7 +35,20 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                 DefaultVideoEncoderFactory(option.videoUpstreamContext,
                         true /* enableIntelVp8Encoder */,
                         false /* enableH264HighProfile */)
+
+            // 注意: 視聴のみかつ H.264 のみの場合のワークアラウンド
+            // upstream context が設定されていない場合、
+            // downstream context が設定されていればそれを使って
+            // DefaultVideoEncoderFactory を用意する
+            // H.264 に限定する理由は、 VP8/VP9 対応のハードウェアエンコーダーを
+            // 搭載していない端末があるため
+            option.videoCodec == SoraVideoOption.Codec.H264 &&
+                    option.videoDownstreamContext != null ->
+                DefaultVideoEncoderFactory(option.videoDownstreamContext,
+                        false /* enableIntelVp8Encoder */,
+                        false /* enableH264HighProfile */)
             else ->
+                // context が指定されていなければソフトウェアエンコーダーを使用する
                 SoftwareVideoEncoderFactory()
         }
 
@@ -135,6 +151,9 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                                 && option.audioOption.useHardwareNoiseSuppressor)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
+                .setAudioSource(option.audioOption.audioSource)
+                .setUseStereoInput(option.audioOption.useStereoInput)
+                .setUseStereoOutput(option.audioOption.useStereoOutput)
                 .createAudioDeviceModule()
     }
 

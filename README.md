@@ -32,9 +32,8 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 
 ## About Support
 
-Support for Sora Android SDK by Shiguredo Inc. are limited
-**ONLY in JAPANESE** through GitHub issues and there is no guarantee such
-as response time or resolution.
+We check PRs or Issues only when written in JAPANESE.
+In other languages, we won't be able to deal with them. Thank you for your understanding.
 
 ## サポートについて
 
@@ -45,9 +44,9 @@ Sora Android SDK に対する有償のサポートについては現在提供し
 
 ## システム条件
 
-- Android 4.1 以降 (シミュレーターは不可)
-- Android Studio 2.3.3 以降
-- WebRTC SFU Sora 18.02 以降
+- Android 5 以降 (シミュレーターは不可)
+- Android Studio 3.5.1 以降
+- WebRTC SFU Sora 19.04 以降
 
 ## サンプルコード
 
@@ -86,13 +85,12 @@ libwebrtc は、時雨堂ビルドの AAR を Jitpack.io から取得してい�
 
 時雨堂ビルドの libwebrtc については以下のサイトを参照ください。
 
-- https://github.com/shiguredo/sora-webrtc-build
+- https://github.com/shiguredo/shiguredo-webrtc-build
   - ビルドスクリプト、ビルド設定ファイル、およびバージョンタグ
-- https://github.com/shiguredo/sora-webrtc-android
+- https://github.com/shiguredo/shiguredo-webrtc-android
   - Android 用 AAR を公開するためのリポジトリ
   - jitpack.io はこのリポジトリのタグを見ている
-- https://jitpack.io/#shiguredo/sora-webrtc-android/
-
+- https://jitpack.io/#shiguredo/shiguredo-webrtc-android/
 
 ## ローカルでのビルド
 
@@ -159,21 +157,6 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 % curl -O https://jitpack.io/com/github/shiguredo/sora-android-sdk/441568d7ed/build.log
 ```
 
-## 依存ライブラリの最新バージョンチェック
-
-Gradle Versions Plugin https://github.com/ben-manes/gradle-versions-plugin が有効になっています。
-次のコマンドでライブラリの最新バージョンが一覧されます。
-
-```
-./gradlew dependencyUpdates
-```
-
-最新に合わせられない原因がいつくかあります。
-
-- com.android.support 系は PermissionsDispatcher の依存に合わせる必要があるため
-  最新とは限りません
-
-
 ## sora-android-sdk-samples を multi module に押し込む方法
 
 sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下に clone されているとします。
@@ -192,4 +175,4 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 
 # Copyright
 
-Copyright 2017, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
+Copyright 2017-2019, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>

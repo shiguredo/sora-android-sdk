@@ -1,5 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import android.media.MediaRecorder
+import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
 import org.webrtc.MediaConstraints
 import org.webrtc.audio.AudioDeviceModule
 
@@ -83,8 +85,37 @@ class SoraAudioOption {
     /**
      * 音声の `org.webrtc.MediaConstraints` を設定します
      *
-     * null でない場合、 [audioProcessing] 設定は無視されます。
+     * null でない場合、 [audioProcessingEchoCancellation], [audioProcessingAutoGainControl],
+     * [audioProcessingHighpassFilter], [audioProcessingNoiseSuppression] の設定は無視されます。
      */
     var mediaConstraints: MediaConstraints? = null
 
+    /**
+     * 音声ソースの指定
+     *
+     * AudioDeviceModule 生成時に利用されます。
+     * デフォルト値は `android.media.MediaRecorder.AudioSource.MIC です。
+     */
+    var audioSource: Int = MediaRecorder.AudioSource.MIC
+
+    /**
+     * 入力をステレオにするかどうかのフラグ
+     *
+     * AudioDeviceModule 生成時に利用されます。
+     * デフォルト値は false (モノラル) です。
+     */
+    var useStereoInput: Boolean = false
+
+    /**
+     * 出力をステレオにするかどうかのフラグ
+     *
+     * AudioDeviceModule 生成時に利用されます。
+     * デフォルト値は false (モノラル) です。
+     */
+    var useStereoOutput: Boolean = false
+
+    /**
+     * opus_params
+     */
+    var opusParams: OpusParams? = null
 }

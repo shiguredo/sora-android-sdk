@@ -321,6 +321,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
             |audioCodec              = ${mediaOption.audioCodec}
             |audioBitRate            = ${mediaOption.audioBitrate}
+            |audioSource             = ${mediaOption.audioOption.audioSource}
+            |useStereoInput          = ${mediaOption.audioOption.useStereoInput}
+            |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
             |videoIsRequired         = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
             |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
@@ -329,13 +332,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |videoCapturer           = ${mediaOption.videoCapturer}
             |spotlight               = ${mediaOption.spotlight}
-            |sdpSemantics            = ${mediaOption.sdpSemantics}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())
-        if (mediaOption.planB()) {
-            SoraLogger.w(TAG, "Plan-B SDP semantics has no longer been supported. Unified plan should be used.")
-        }
 
         if (closing) {
             return

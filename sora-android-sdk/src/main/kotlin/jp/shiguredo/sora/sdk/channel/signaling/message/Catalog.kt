@@ -1,6 +1,8 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
+import android.os.Build
 import com.google.gson.annotations.SerializedName
+import jp.shiguredo.sora.sdk.BuildConfig
 
 data class MessageCommonPart(
         @SerializedName("type") val type: String?
@@ -19,13 +21,13 @@ data class ConnectMessage(
         @SerializedName("signaling_notify_metadata")
                                        val signalingNotifyMetadata: Any? = null,
         @SerializedName("multistream") val multistream:             Boolean = false,
-        @SerializedName("plan_b")      var planB:                   Boolean = true,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
         @SerializedName("simulcast")   var simulcast:               Any? = null,
-        @SerializedName("simulcast_rid")
-                                       var simulcast_rid:           Boolean = false,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
+        @SerializedName("sdk_type")    val sdkType:                 String = "Android",
+        @SerializedName("sdk_version") val sdkVersion:              String = BuildConfig.GIT_DESCTIPTION,
+        @SerializedName("user_agent")  val userAgent:               String = deviceInfo(),
         @SerializedName("sdp")         val sdp:                     String
 )
 
@@ -35,8 +37,20 @@ data class VideoSetting(
 )
 
 data class AudioSetting(
-        @SerializedName("codec_type") val codecType: String?,
-        @SerializedName("bit_rate")   var bitRate:   Int?    = null
+        @SerializedName("codec_type")  val codecType:  String?,
+        @SerializedName("bit_rate")    var bitRate:    Int?    = null,
+        @SerializedName("opus_params") var opusParams: OpusParams? = null
+)
+
+data class OpusParams(
+        @SerializedName("channels")        var channels:        Int? = null,
+        @SerializedName("clock_rate")      var clockRate:       Int? = null,
+        @SerializedName("maxplaybackrate") var maxplaybackrate: Int? = null,
+        @SerializedName("stereo")          var stereo:          Boolean? = null,
+        @SerializedName("sprop_stereo")    var spropStereo:     Boolean? = null,
+        @SerializedName("minptime")        var minptime:        Int? = null,
+        @SerializedName("useinbandfec")    var useinbandfec:    Boolean? = null,
+        @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )
 
 data class IceServer(
@@ -116,3 +130,15 @@ data class NotificationMessage(
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
 )
+
+private fun deviceInfo() : String {
+    return "Android-SDK: " + Build.VERSION.SDK_INT + ", " +
+            "Release: " + Build.VERSION.RELEASE + ", " +
+            "Id: " + Build.ID + ", " +
+            "Device: " + Build.DEVICE + ", " +
+            "Hardware: " + Build.HARDWARE + ", " +
+            "Brand: " + Build.BRAND + ", " +
+            "Manufacturer: " + Build.MANUFACTURER + ", " +
+            "Model: " + Build.MODEL + ", " +
+            "Product: " + Build.PRODUCT
+}
