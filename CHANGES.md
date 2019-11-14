@@ -10,7 +10,7 @@
     - バグ修正
 
 
-## develop
+## 1.10.0
 
 ### UPDATE
 
@@ -32,7 +32,7 @@
 ### ADD
 
 - シグナリング connect メッセージに `sdk_type`, `sdk_version` と `user_agent` を追加した
- - シグナリング connect メッセージに `audio.opus_params` を追加した
+- シグナリング connect メッセージに `audio.opus_params` を追加した
 - 1:N サイマルキャストの視聴に対応した
 
 ### CHANGE
@@ -41,6 +41,10 @@
   - 旧: `sora-webrtc-android` 、 新: `shiguredo-webrtc-android`
   - `transitive = true` で `sora-android-sdk` に依存している場合はアプリ側の変更は不要
 - シグナリング connect メッセージから `simulcast_rid` を削除した
+
+### FIX
+
+- 視聴のみかつ H.264 を指定した場合に接続できない現象を修正した
 
 
 ## 1.9.0
