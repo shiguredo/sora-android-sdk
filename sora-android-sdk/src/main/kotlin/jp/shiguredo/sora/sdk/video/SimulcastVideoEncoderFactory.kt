@@ -21,86 +21,93 @@ class SimulcastVideoEncoderFactory (
     }
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo): VideoEncoder? {
-        return SimulcastVideoEncoder(videoEncoderFactory, videoCodecInfo)
+        return SimulcastTrackVideoEncoder(videoEncoderFactory, videoCodecInfo)
     }
 }
 
-class SimulcastVideoEncoder (
+
+class SimulcastTrackVideoEncoder (
         private val encoderFactory: VideoEncoderFactory,
         private val videoCodecInfo: VideoCodecInfo
 ) : VideoEncoder {
     companion object {
-        val TAG = SimulcastVideoEncoder::class.simpleName!!
+        val TAG = SimulcastTrackVideoEncoder::class.simpleName!!
     }
 
-    private lateinit var encoderSettings: VideoEncoder.Settings
+    private lateinit var trackSettings: VideoEncoder.Settings
 
-    private val encoders: MutableList<SingleStreamVideoEncoder> = mutableListOf()
+    private val streamEncoders: MutableList<SimulcastStreamVideoEncoder> = mutableListOf()
 
     init {
         SoraLogger.d(TAG, "init($this): codec=${videoCodecInfo.name} params=${videoCodecInfo.params}")
     }
 
-    override fun initEncode(settings: VideoEncoder.Settings,
+    override fun initEncode(trackSettings: VideoEncoder.Settings,
                             originalCallback: VideoEncoder.Callback)
             : VideoCodecStatus {
-        encoderSettings = settings
-        SoraLogger.i(TAG, """initEncode():
-            |numberOfCores=${settings.numberOfCores}
-            |width=${settings.width}
-            |height=${settings.height}
-            |startBitrate=${settings.startBitrate}
-            |maxFramerate=${settings.maxFramerate}
-            |automaticResizeOn=${settings.automaticResizeOn}
-            |numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
-            |lossNotification=${settings.capabilities.lossNotification}
+        this.trackSettings = trackSettings
+        SoraLogger.i(TAG, """initEncode() trackSettings:
+            |numberOfCores=${trackSettings.numberOfCores}
+            |width=${trackSettings.width}
+            |height=${trackSettings.height}
+            |startBitrate=${trackSettings.startBitrate}
+            |maxFramerate=${trackSettings.maxFramerate}
+            |automaticResizeOn=${trackSettings.automaticResizeOn}
+            |numberOfSimulcastStreams=${trackSettings.numberOfSimulcastStreams}
+            |lossNotification=${trackSettings.capabilities.lossNotification}
         """.trimMargin())
-        settings.simulcastStreams.forEachIndexed { spatialIndex, simulcastStream ->
+        trackSettings.simulcastStreams.forEachIndexed { simulcastIndex, simulcastStream ->
+            // stream encoder が無ければ作る、あればそのまま使う
+            val streamEncoder = if(streamEncoders.size <= simulcastIndex) {
+                val streamEncoder = SimulcastStreamVideoEncoder(
+                        encoderFactory.createEncoder(videoCodecInfo)!!, simulcastIndex)
+                streamEncoders.add(simulcastIndex, streamEncoder)
+                streamEncoder
+            } else {
+                streamEncoders[simulcastIndex]
+            }
+
+            // stream encoder ひとつに対する設定
             val streamSettings = VideoEncoder.Settings(
-                    encoderSettings.numberOfCores,
+                    this.trackSettings.numberOfCores,
                     simulcastStream.width.toInt(),
                     simulcastStream.height.toInt(),
                     simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
                     simulcastStream.maxFramerate.toInt(),
                     1,                             // numberOfSimulcastStreams
                     listOf(simulcastStream),
-                    encoderSettings.automaticResizeOn,
-                    encoderSettings.capabilities
+                    this.trackSettings.automaticResizeOn,
+                    this.trackSettings.capabilities
             )
 
-            val streamEncoder = if(encoders.size <= spatialIndex) {
-                val encoder = SingleStreamVideoEncoder(
-                        encoderFactory.createEncoder(videoCodecInfo)!!, spatialIndex)
-                encoders.add(spatialIndex, encoder)
-                encoder
-            } else {
-                encoders[spatialIndex]
-            }
-            val initStatus = streamEncoder.initEncode(streamSettings, originalCallback)
-            if (initStatus != VideoCodecStatus.OK) {
-                return initStatus
+            val status = streamEncoder.initEncode(streamSettings, originalCallback)
+            if (status != VideoCodecStatus.OK) {
+                return status
             }
         }
         return VideoCodecStatus.OK
     }
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation, framerate: Int): VideoCodecStatus {
-        SoraLogger.i(TAG, "setRateAllocation(): framerate=${framerate}, bitrate sum=${allocation.sum}")
-        allocation.bitratesBbs.mapIndexed { spatialIndex, bitrateBbs ->
-            SoraLogger.i(TAG, "setRateAllocation(): spatialIndex=$spatialIndex, " +
-                    "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
-        }
+        // SoraLogger.i(TAG, "setRateAllocation(): framerate=${framerate}, bitrate sum=${allocation.sum}")
+        // allocation.bitratesBbs.mapIndexed { simulcastIndex, bitrateBbs ->
+        //     SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
+        //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
+        // }
 
-        // BitrateAllocation.bitrateBbs は simulcast stream 数よりも多いことがある (固定っぽい)
-        // 明示的ではないので保守的に書いておく。
-        encoders.forEach { encoder ->
-            val spatialIndex = encoder.spatialIndex
-            if (allocation.bitratesBbs.size <= spatialIndex) {
+        // BitrateAllocation.bitrateBbs は simulcast stream 数よりも多いことがある (個数は固定っぽい)
+        // 明示的にきまっているわけではないのでここは保守的に書いておく。
+        streamEncoders.forEach { streamEncoder ->
+            val simulcastIndex = streamEncoder.simulcastIndex
+            if (allocation.bitratesBbs.size <= simulcastIndex) {
+                // stream encoder に対応するアロケーションが無かった。おそらくここを通ることはない。
                 return@forEach
             }
+
+            // 対応するビットレートアロケーションを stream encoder に渡す
             val streamAllocation = VideoEncoder.BitrateAllocation(
-                    arrayOf(allocation.bitratesBbs[spatialIndex]))
-            val status = encoder.setRateAllocation(streamAllocation, framerate)
+                    arrayOf(allocation.bitratesBbs[simulcastIndex]))
+            val status = streamEncoder.setRateAllocation(streamAllocation, framerate)
             if (status != VideoCodecStatus.OK) {
                 return status
             }
@@ -109,17 +116,18 @@ class SimulcastVideoEncoder (
     }
 
     override fun getImplementationName(): String {
-        return "$TAG (${encoderSettings.simulcastStreams})"
+        return "$TAG (${trackSettings.simulcastStreams})"
     }
 
     override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        return encoders[0].scalingSettings
+        return streamEncoders[0].scalingSettings
     }
 
     override fun release(): VideoCodecStatus {
         SoraLogger.d(TAG, "release($this)")
-        val statusList = encoders.map { it.release() }
-        encoders.clear()
+        // エラーに関わらずすべての stream encoder をリリースする
+        val statusList = streamEncoders.map { it.release() }
+        streamEncoders.clear()
         return statusList.find { it != VideoCodecStatus.OK }
                 ?: VideoCodecStatus.OK
     }
@@ -127,32 +135,38 @@ class SimulcastVideoEncoder (
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
         // SoraLogger.i(TAG, "encode: frameTypes size=${info.frameTypes.size}, " +
         //         "frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
-        if (encoders.size < info.frameTypes.size) {
+        if (streamEncoders.size < info.frameTypes.size) {
             return VideoCodecStatus.ERR_PARAMETER
         }
 
-        info.frameTypes.forEachIndexed { spatialIndex, frameType ->
+        info.frameTypes.forEachIndexed { simulcastIndex, frameType ->
             val streamEncodeInfo = VideoEncoder.EncodeInfo(arrayOf(frameType))
-            val status = encoders[spatialIndex].encode(frame, streamEncodeInfo)
+            val status = streamEncoders[simulcastIndex].encode(frame, streamEncodeInfo)
             if (status != VideoCodecStatus.OK) {
                 return status
             }
         }
         return VideoCodecStatus.OK
     }
+
+    override fun isHardwareEncoder() = true
 }
 
 
-class SingleStreamVideoEncoder(
-        private val encoder: VideoEncoder,
-        val spatialIndex: Int) : VideoEncoder {
+class SimulcastStreamVideoEncoder(
+        private val originalEncoder: VideoEncoder,
+        val simulcastIndex: Int) : VideoEncoder {
     companion object {
-        val TAG = SingleStreamVideoEncoder::class.simpleName
+        val TAG = SimulcastStreamVideoEncoder::class.simpleName
     }
 
-    private lateinit var settings: VideoEncoder.Settings
+    // initEncode() で初期化される
+    private lateinit var streamSettings: VideoEncoder.Settings
+    private lateinit var originalCallback: VideoEncoder.Callback
+
 
     private val encodeCallback = VideoEncoder.Callback { originalEncodedImage, codecSpecificInfo ->
+        // EncodedImage に spatial index を設定する、これが RTP で rid に読み替えられる
         val builder = EncodedImage.builder()
                 .setBuffer(originalEncodedImage.buffer,
                         null) // TODO(shino): releaseCallback は null で良いか
@@ -163,42 +177,43 @@ class SingleStreamVideoEncoder(
                 .setRotation(originalEncodedImage.rotation)
                 .setCompleteFrame(originalEncodedImage.completeFrame)
                 .setQp(originalEncodedImage.qp)
-                .setSpatialIndex(spatialIndex)
+                .setSpatialIndex(simulcastIndex)  // 元と違うのはここだけ
         val encodedImage = builder.createEncodedImage()
         originalCallback.onEncodedFrame(encodedImage, codecSpecificInfo)
     }
 
-    private lateinit var originalCallback: VideoEncoder.Callback
-
     init {
-        SoraLogger.d(TAG, "init($this): spatialIndex=${spatialIndex}")
+        SoraLogger.d(TAG, "init($this): simulcastIndex=${simulcastIndex}")
     }
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation,
                                    framerate: Int): VideoCodecStatus {
-        SoraLogger.i(TAG, "setRateAllocation(): spatialIndex=${spatialIndex}, " +
-                "framerate=${framerate}, bitrate sum=${allocation.sum}")
-        allocation.bitratesBbs.forEach{ bitrateBbs ->
-            SoraLogger.i(TAG, "setRateAllocation(): spatialIndex=$spatialIndex, " +
-                    "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
-        }
-        return encoder.setRateAllocation(allocation, framerate)
+        // SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
+        //         "framerate=${framerate}, bitrate sum=${allocation.sum}")
+        // allocation.bitratesBbs.forEach{ bitrateBbs ->
+        //     SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
+        //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
+        // }
+        return originalEncoder.setRateAllocation(allocation, framerate)
     }
 
-    override fun initEncode(settings: VideoEncoder.Settings,
+    override fun initEncode(streamSettings: VideoEncoder.Settings,
                             originalCallback: VideoEncoder.Callback): VideoCodecStatus {
-        SoraLogger.i(TAG, """initEncode() spatialIndex=$spatialIndex, settings:
-            |numberOfCores=${settings.numberOfCores}
-            |width=${settings.width}
-            |height=${settings.height}
-            |startBitrate=${settings.startBitrate}
-            |maxFramerate=${settings.maxFramerate}
-            |automaticResizeOn=${settings.automaticResizeOn}
-            |numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
-            |lossNotification=${settings.capabilities.lossNotification}
+        this.originalCallback = originalCallback
+        this.streamSettings = streamSettings
+
+        SoraLogger.i(TAG, """initEncode() simulcastIndex=$simulcastIndex, streamSettings:
+            |numberOfCores=${streamSettings.numberOfCores}
+            |width=${streamSettings.width}
+            |height=${streamSettings.height}
+            |startBitrate=${streamSettings.startBitrate}
+            |maxFramerate=${streamSettings.maxFramerate}
+            |automaticResizeOn=${streamSettings.automaticResizeOn}
+            |numberOfSimulcastStreams=${streamSettings.numberOfSimulcastStreams}
+            |lossNotification=${streamSettings.capabilities.lossNotification}
         """.trimMargin())
-        val simulcastStream = settings.simulcastStreams[0]
-        SoraLogger.i(TAG, """initEncode() spatialIndex=$spatialIndex, simulcastStream:
+        val simulcastStream = streamSettings.simulcastStreams[0]
+        SoraLogger.i(TAG, """initEncode() simulcastIndex=$simulcastIndex, simulcastStream:
             |width=${simulcastStream.width}
             |height=${simulcastStream.height}
             |maxFramerate=${simulcastStream.maxFramerate}
@@ -210,46 +225,46 @@ class SingleStreamVideoEncoder(
             |active=${simulcastStream.active}
         """.trimMargin())
 
-        this.originalCallback = originalCallback
-        this.settings = settings
-        val status = encoder.initEncode(settings, encodeCallback)
+        val status = originalEncoder.initEncode(streamSettings, encodeCallback)
         if (status != VideoCodecStatus.OK) {
-            SoraLogger.e(TAG, "initEncode() failed: spatialIndex=$spatialIndex, status=${status.name}")
+            SoraLogger.e(TAG, "initEncode() failed: simulcastIndex=$simulcastIndex, status=${status.name}")
         }
         return status
     }
 
     override fun getImplementationName(): String {
-        return "$TAG (spatialIndex=$spatialIndex, ${encoder.implementationName})"
+        return "$TAG (simulcastIndex=$simulcastIndex, ${originalEncoder.implementationName})"
     }
 
     override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        return encoder.scalingSettings
+        return originalEncoder.scalingSettings
     }
 
     override fun release(): VideoCodecStatus {
-        SoraLogger.d(TAG, "release($this): spatialIndex=${spatialIndex}")
-        return encoder.release()
+        SoraLogger.d(TAG, "release($this): simulcastIndex=${simulcastIndex}")
+        return originalEncoder.release()
     }
 
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
-        // TODO(shino): ここでは width のみ確認する。アスペクト比はもっと前で確認を実装すべき。
-        val adaptedFrame = if (frame.buffer.width == settings.width) {
+        // TODO(shino): ここでは width のみ確認する。アスペクト比が等しいことはもっと前で確認を実装すべき。
+        val adaptedFrame = if (frame.buffer.width == streamSettings.width) {
             frame
         }else {
             val buffer = frame.buffer
-            // SoraLogger.d(TAG, "encode: Scaling needed, spatialIndex=$spatialIndex, " +
-            //         "${buffer.width}x${buffer.height} to ${settings.width}x${settings.height}")
+            // SoraLogger.d(TAG, "encode: Scaling needed, simulcastIndex=$simulcastIndex, " +
+            //         "${buffer.width}x${buffer.height} to ${streamSettings.width}x${streamSettings.height}")
             // TODO(shino): 最適化の余地あり??
             val adaptedBuffer = buffer.cropAndScale(0, 0, buffer.width, buffer.height,
-                    settings.width, settings.height)
+                    streamSettings.width, streamSettings.height)
             val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
             adaptedFrame
         }
-        val status = encoder.encode(adaptedFrame, info)
+        val status = originalEncoder.encode(adaptedFrame, info)
         if (status != VideoCodecStatus.OK) {
-            SoraLogger.e(TAG, "encode() failed: spatialIndex=$spatialIndex, status=${status.name}")
+            SoraLogger.e(TAG, "encode() failed: simulcastIndex=$simulcastIndex, status=${status.name}")
         }
         return status
     }
+
+    override fun isHardwareEncoder() = originalEncoder.isHardwareEncoder
 }
