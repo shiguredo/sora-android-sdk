@@ -9,6 +9,11 @@
 - FIX
     - バグ修正
 
+## develop
+
+### ADD
+
+- `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加した
 
 ## 1.10.0
 
