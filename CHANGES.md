@@ -15,6 +15,10 @@
 
 - `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加した
 
+### UPDATE
+
+- `com.android.tools.build:gradle` を 3.5.3 に上げた
+
 ## 1.10.0
 
 ### UPDATE
