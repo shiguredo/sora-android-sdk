@@ -243,7 +243,7 @@ class SoraHardwareVideoEncoder implements VideoEncoder {
       format.setInteger(MediaFormat.KEY_COLOR_FORMAT, colorFormat);
       format.setInteger(MediaFormat.KEY_FRAME_RATE, bitrateAdjuster.getCodecConfigFramerate());
       format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, keyFrameIntervalSec);
-      format.setString(MediaFormat.KEY_TEMPORAL_LAYERING, "webrtc.vp8.3-layer");
+      // format.setString(MediaFormat.KEY_TEMPORAL_LAYERING, "webrtc.vp8.3-layer");
       if (codecType == VideoCodecType.H264) {
         String profileLevelId = params.get(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID);
         if (profileLevelId == null) {

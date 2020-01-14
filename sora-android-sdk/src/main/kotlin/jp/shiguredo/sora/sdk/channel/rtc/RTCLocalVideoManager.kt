@@ -34,6 +34,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
 
     override fun initTrack(factory: PeerConnectionFactory, eglContext: EglBase.Context?, appContext: Context) {
         SoraLogger.d(TAG, "initTrack isScreencast=${capturer.isScreencast}")
+
         surfaceTextureHelper =
                 SurfaceTextureHelper.create("CaptureThread", eglContext);
         source = factory.createVideoSource(capturer.isScreencast);
