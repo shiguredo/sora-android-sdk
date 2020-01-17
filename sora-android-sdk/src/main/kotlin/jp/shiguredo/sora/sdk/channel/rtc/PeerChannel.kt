@@ -188,47 +188,32 @@ class PeerChannelImpl(
 
     override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
 
-        val offerSDP =
-                SessionDescription(SessionDescription.Type.OFFER, offer)
+        val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
 
         return setup().flatMap {
             SoraLogger.d(TAG, "setRemoteDescription")
             return@flatMap setRemoteDescription(offerSDP)
         }.flatMap {
             // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
-            // cf.  Issue 944821: simulcast can not reuse transceiver when setRemoteDescription
-            // is called after addTrack
+            // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
 
             localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
             localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
 
-            // simulcast も addTrack で動作するので set direction + replaceTrack は使わない。
-            // しかし、ときどき動作が不安なときにこっちも試すのでコメントで残しておく。
-            // transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-            // sender.setTrack(videoTrack, /* takeOwnership */ false)
-
-            SoraLogger.d(TAG, "Modify sender.parameters")
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
+                SoraLogger.d(TAG, "Modify sender.parameters")
                 val upstreamVideoTransceiver = conn!!.transceivers!!.first {
-                    SoraLogger.d(TAG, "transceiver after sRD: ${it.mid}, direction=${it.direction}, " +
-                            "currentDirection=${it.currentDirection}, mediaType=${it.mediaType}")
-                    // setRD のあとの direction は recv only になる。
-                    // 現状 sender.track.streamIds を取れないので connection ID との比較もできない。
-                    // video upstream 持っているときは、ひとつめの video type transceiver を
-                    // 自分が send すべき transceiver と決め打ちする。
+                    // 自分が send すべき transceiver は、ひとつめの video type と決め打ちする。
+                    // offer に自分の mid が入ったらそれをフィルタにすべき
                     it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
                 }
 
-                val sender = upstreamVideoTransceiver.sender
                 // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
                 // 変換するのでここで参照を保持しておく。
-                val parameters = sender.parameters
-                parameters.encodings.forEach { senderEncoding ->
-                    val offerEncoding = encodings.first { encoding ->
-                        encoding.rid == senderEncoding.rid
-                    }
+                val parameters = upstreamVideoTransceiver.sender.parameters
+                parameters.encodings.zip(encodings).forEach { (senderEncoding, offerEncoding) ->
                     offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
                     offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
                     offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
@@ -238,17 +223,14 @@ class PeerChannelImpl(
                 listener?.onSenderEncodings(parameters.encodings)
                 parameters.encodings.forEach { senderEncoding ->
                     with (senderEncoding) {
-                        SoraLogger.d(TAG, """Simulcast: sender encoding for rid=$rid,
-                             |ssrc=$ssrc, active=$active,
-                             |scaleResolutionDownBy=$scaleResolutionDownBy,
-                             |maxBitrateBps=$maxBitrateBps,
-                             |maxFramerate=$maxFramerate""".trimMargin())
+                        SoraLogger.d(TAG, "Sender encoding: rid=$rid, active=$active, " +
+                                "scaleResolutionDownBy=$scaleResolutionDownBy, maxFramerate=$maxFramerate, " +
+                                "maxBitrateBps=$maxBitrateBps, ssrc=$ssrc")
                     }
                 }
 
-                // ここまでの Java オブジェクト参照先を変更したのみ。
-                // RtpSender#setParameters() により native に変換して C++ 層を呼び出す。
-                sender.parameters = parameters
+                // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
+                upstreamVideoTransceiver.sender.parameters = parameters
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
