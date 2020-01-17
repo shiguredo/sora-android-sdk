@@ -6,9 +6,6 @@ import org.webrtc.*
 
 class SimulcastVideoEncoderFactory (
         eglContext: EglBase.Context?,
-        // TODO; 外部から設定できるようにする
-        // TODO: または sender.encoding で maxFramerate を渡して動作するか
-        private val fakeVaryingFramerate: Boolean = true,
         enableIntelVp8Encoder: Boolean = true,
         enableH264HighProfile: Boolean = false
 ) : VideoEncoderFactory {
@@ -24,15 +21,14 @@ class SimulcastVideoEncoderFactory (
     }
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo): VideoEncoder? {
-        return SimulcastTrackVideoEncoder(videoEncoderFactory, videoCodecInfo, fakeVaryingFramerate)
+        return SimulcastTrackVideoEncoder(videoEncoderFactory, videoCodecInfo)
     }
 }
 
 
 class SimulcastTrackVideoEncoder (
         private val encoderFactory: VideoEncoderFactory,
-        private val videoCodecInfo: VideoCodecInfo,
-        private val fakeVaryingFramerate: Boolean
+        private val videoCodecInfo: VideoCodecInfo
 ) : VideoEncoder {
     companion object {
         val TAG = SimulcastTrackVideoEncoder::class.simpleName!!
@@ -41,7 +37,6 @@ class SimulcastTrackVideoEncoder (
     private lateinit var trackSettings: VideoEncoder.Settings
 
     private val streamEncoders: MutableList<SimulcastStreamVideoEncoder> = mutableListOf()
-    private val fakeFramerateList = listOf(1, 30, 0, 0, 0)
 
     init {
         SoraLogger.d(TAG, "init($this): codec=${videoCodecInfo.name} params=${videoCodecInfo.params}")
@@ -65,34 +60,16 @@ class SimulcastTrackVideoEncoder (
         val maxSimulcastIndex = trackSettings.numberOfSimulcastStreams - 1
         for (simulcastIndex in 0..maxSimulcastIndex) {
             val simulcastStream = trackSettings.simulcastStreams[simulcastIndex]
-            val maxWidth = trackSettings.width
-            val maxHeight = trackSettings.height
-
-            val streamSettings = if (fakeVaryingFramerate) {
-                VideoEncoder.Settings(
-                        this.trackSettings.numberOfCores,
-                        maxWidth,
-                        maxHeight,
-                        simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
-                        fakeFramerateList[simulcastIndex],
-                        1,                             // numberOfSimulcastStreams
-                        listOf(simulcastStream),
-                        this.trackSettings.automaticResizeOn,
-                        this.trackSettings.capabilities
-                )
-            } else {
-                VideoEncoder.Settings(
-                        this.trackSettings.numberOfCores,
-                        simulcastStream.width.toInt(),
-                        simulcastStream.height.toInt(),
-                        simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
-                        simulcastStream.maxFramerate.toInt(),
-                        1,                             // numberOfSimulcastStreams
-                        listOf(simulcastStream),
-                        this.trackSettings.automaticResizeOn,
-                        this.trackSettings.capabilities
-                )
-            }
+            val streamSettings = VideoEncoder.Settings(
+                    this.trackSettings.numberOfCores,
+                    simulcastStream.width.toInt(),
+                    simulcastStream.height.toInt(),
+                    simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
+                    simulcastStream.maxFramerate.toInt(),
+                    0, emptyList(),                // numberOfSimulcastStreams, simulcastStreams
+                    this.trackSettings.automaticResizeOn,
+                    this.trackSettings.capabilities
+            )
 
             val streamEncoder = SimulcastStreamVideoEncoder(
                     encoderFactory, videoCodecInfo, simulcastIndex)
@@ -117,15 +94,17 @@ class SimulcastTrackVideoEncoder (
         // 明示的にきまっているわけではないのでここは保守的に書いておく。
         streamEncoders.forEach { streamEncoder ->
             val simulcastIndex = streamEncoder.simulcastIndex
-            if (allocation.bitratesBbs.size <= simulcastIndex) {
-                // stream encoder に対応するアロケーションが無かった。おそらくここを通ることはない。
-                return@forEach
+            val streamAllocation = if (allocation.bitratesBbs.size <= simulcastIndex) {
+                // stream encoder に対応するアロケーションが無かった。おそらくここを通ることはないが
+                // ゼロを渡しておく
+                VideoEncoder.BitrateAllocation(arrayOf(IntArray(0)))
+            } else {
+                VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
             }
 
             // 対応するビットレートアロケーションを stream encoder に渡す
-            val streamAllocation = VideoEncoder.BitrateAllocation(
-                    arrayOf(allocation.bitratesBbs[simulcastIndex]))
-            val status = streamEncoder.setRateAllocation(streamAllocation, fakeFramerateList[simulcastIndex])
+            val status = streamEncoder.setRateAllocation(streamAllocation,
+                    streamEncoder.streamSettings.maxFramerate)
             if (status != VideoCodecStatus.OK) {
                 return status
             }
@@ -178,8 +157,9 @@ class SimulcastStreamVideoEncoder(
     private var originalEncoder: VideoEncoder? = null
 
     // initEncode() で初期化される
-    private lateinit var streamSettings: VideoEncoder.Settings
+    lateinit var streamSettings: VideoEncoder.Settings
     private lateinit var originalCallback: VideoEncoder.Callback
+
     private var nextEncodeAt: Long = Long.MIN_VALUE
     private var frameInterval: Long = 0
 
@@ -237,24 +217,12 @@ class SimulcastStreamVideoEncoder(
         }
 
         originalEncoder = encoderFoctory.createEncoder(videoCodecInfo)
-        val simulcastStream = streamSettings.simulcastStreams[0]
-        SoraLogger.i(TAG, """initEncode() simulcastIndex=$simulcastIndex, simulcastStream:
-            |width=${simulcastStream.width}
-            |height=${simulcastStream.height}
-            |maxFramerate=${simulcastStream.maxFramerate}
-            |numberOfTemporalLayers=${simulcastStream.numberOfTemporalLayers}
-            |maxBitrate=${simulcastStream.maxBitrate}
-            |targetBitrate=${simulcastStream.targetBitrate}
-            |minBitrate=${simulcastStream.minBitrate}
-            |qpMax=${simulcastStream.qpMax}
-            |active=${simulcastStream.active}
-        """.trimMargin())
-
-        val status = originalEncoder?.initEncode(streamSettings, encodeCallback)
+        // TODO: ここでエンコーダが取れなかったら SW にフォールバックする?
+        val status = originalEncoder!!.initEncode(streamSettings, encodeCallback)
         if (status != VideoCodecStatus.OK) {
-            SoraLogger.e(TAG, "initEncode() failed: simulcastIndex=$simulcastIndex, status=${status?.name}")
+            SoraLogger.e(TAG, "initEncode() failed: simulcastIndex=$simulcastIndex, status=${status.name}")
         }
-        return status  ?: VideoCodecStatus.ERROR
+        return status
     }
 
     override fun getImplementationName(): String {
