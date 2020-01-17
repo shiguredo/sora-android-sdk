@@ -41,6 +41,7 @@ class SimulcastTrackVideoEncoder (
     private lateinit var trackSettings: VideoEncoder.Settings
 
     private val streamEncoders: MutableList<SimulcastStreamVideoEncoder> = mutableListOf()
+    private val fakeFramerateList = listOf(1, 30, 0, 0, 0)
 
     init {
         SoraLogger.d(TAG, "init($this): codec=${videoCodecInfo.name} params=${videoCodecInfo.params}")
@@ -60,23 +61,20 @@ class SimulcastTrackVideoEncoder (
             |numberOfSimulcastStreams=${trackSettings.numberOfSimulcastStreams}
             |lossNotification=${trackSettings.capabilities.lossNotification}
         """.trimMargin())
-        trackSettings.simulcastStreams.forEachIndexed { simulcastIndex, simulcastStream ->
+
+        val maxSimulcastIndex = trackSettings.numberOfSimulcastStreams - 1
+        for (simulcastIndex in 0..maxSimulcastIndex) {
+            val simulcastStream = trackSettings.simulcastStreams[simulcastIndex]
             val maxWidth = trackSettings.width
             val maxHeight = trackSettings.height
 
             val streamSettings = if (fakeVaryingFramerate) {
-                val streamFramerate = when (simulcastIndex) {
-                    0 -> 1
-                    1 -> 30
-                    2 -> 0
-                    else -> 0
-                }
                 VideoEncoder.Settings(
                         this.trackSettings.numberOfCores,
                         maxWidth,
                         maxHeight,
                         simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
-                        streamFramerate,
+                        fakeFramerateList[simulcastIndex],
                         1,                             // numberOfSimulcastStreams
                         listOf(simulcastStream),
                         this.trackSettings.automaticResizeOn,
@@ -127,7 +125,7 @@ class SimulcastTrackVideoEncoder (
             // 対応するビットレートアロケーションを stream encoder に渡す
             val streamAllocation = VideoEncoder.BitrateAllocation(
                     arrayOf(allocation.bitratesBbs[simulcastIndex]))
-            val status = streamEncoder.setRateAllocation(streamAllocation, framerate)
+            val status = streamEncoder.setRateAllocation(streamAllocation, fakeFramerateList[simulcastIndex])
             if (status != VideoCodecStatus.OK) {
                 return status
             }
@@ -155,7 +153,7 @@ class SimulcastTrackVideoEncoder (
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
         // SoraLogger.i(TAG, "encode: frameTypes size=${info.frameTypes.size}, " +
         //         "frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
-        SoraLogger.i(TAG, "encode: frame.timestampNs=${frame.timestampNs}, buffer=${frame.buffer}")
+        // SoraLogger.i(TAG, "encode: frame.timestampNs=${frame.timestampNs}, buffer=${frame.buffer}")
 
         val statusList = info.frameTypes.mapIndexed { simulcastIndex, frameType ->
             val streamEncodeInfo = VideoEncoder.EncodeInfo(arrayOf(frameType))
@@ -208,8 +206,8 @@ class SimulcastStreamVideoEncoder(
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation,
                                    framerate: Int): VideoCodecStatus {
-        // SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
-        //         "framerate=${framerate}, bitrate sum=${allocation.sum}")
+        SoraLogger.d(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
+                "framerate=${framerate}, bitrate sum=${allocation.sum}")
         // allocation.bitratesBbs.forEach{ bitrateBbs ->
         //     SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
         //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
