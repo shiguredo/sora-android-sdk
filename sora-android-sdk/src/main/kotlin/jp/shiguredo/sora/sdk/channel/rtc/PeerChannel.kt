@@ -28,6 +28,7 @@ interface PeerChannel {
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
+        fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
     }
@@ -225,22 +226,26 @@ class PeerChannelImpl(
                 // 変換するのでここで参照を保持しておく。
                 val parameters = sender.parameters
                 parameters.encodings.forEach { senderEncoding ->
-                    val rid = senderEncoding.rid
                     val offerEncoding = encodings.first { encoding ->
-                        encoding.rid == rid
+                        encoding.rid == senderEncoding.rid
                     }
                     offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
                     offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
                     offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+                }
 
+                // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
+                listener?.onSenderEncodings(parameters.encodings)
+                parameters.encodings.forEach { senderEncoding ->
                     with (senderEncoding) {
-                        SoraLogger.d(TAG, """Simulcast: modified encoding rid=$rid,
+                        SoraLogger.d(TAG, """Simulcast: sender encoding for rid=$rid,
                              |ssrc=$ssrc, active=$active,
                              |scaleResolutionDownBy=$scaleResolutionDownBy,
                              |maxBitrateBps=$maxBitrateBps,
                              |maxFramerate=$maxFramerate""".trimMargin())
                     }
                 }
+
                 // ここまでの Java オブジェクト参照先を変更したのみ。
                 // RtpSender#setParameters() により native に変換して C++ 層を呼び出す。
                 sender.parameters = parameters

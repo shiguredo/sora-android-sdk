@@ -14,6 +14,8 @@
 ### ADD
 
 - `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加した
+- サイマルキャスト配信のエンコーダ設定変更用コールバックを追加した
+  - `SoraMediaChannel.Listener#onSenderEncodings()`
 
 ### UPDATE
 
