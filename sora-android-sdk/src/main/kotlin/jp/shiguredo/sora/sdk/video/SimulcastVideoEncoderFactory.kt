@@ -4,6 +4,7 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
 
+// サイマルキャスト用の video エンコーダを生成するファクトリ
 class SimulcastVideoEncoderFactory (
         eglContext: EglBase.Context?,
         enableIntelVp8Encoder: Boolean = true,
@@ -26,6 +27,14 @@ class SimulcastVideoEncoderFactory (
 }
 
 
+// サイマルキャスト用の video エンコーダ
+// 内部に active なストリーム数分のエンコーダを持つ。
+// - encode 処理はフレームごとに active なエンコーダすべてに投げる
+// - ビットレート allocation をストリームごとに分割してエンコーダに渡す
+//
+// 以下を前提条件とし、条件外の動作検証は行っていない。
+// - ストリームの active フラグの切り替えがない
+// - このエンコーダの再利用 (一度 initEncode して release した後に再度 initEncode すること)
 class SimulcastTrackVideoEncoder (
         private val encoderFactory: VideoEncoderFactory,
         private val videoCodecInfo: VideoCodecInfo
@@ -34,8 +43,10 @@ class SimulcastTrackVideoEncoder (
         val TAG = SimulcastTrackVideoEncoder::class.simpleName!!
     }
 
+    // サイマルキャストのトラック(SDP の m= line)の設定
     private lateinit var trackSettings: VideoEncoder.Settings
 
+    // ストリーム(rid に対応)ごとのエンコーダを保持するリスト
     private val streamEncoders: MutableList<SimulcastStreamVideoEncoder> = mutableListOf()
 
     init {
@@ -57,16 +68,21 @@ class SimulcastTrackVideoEncoder (
             |lossNotification=${trackSettings.capabilities.lossNotification}
         """.trimMargin())
 
-        val maxSimulcastIndex = trackSettings.numberOfSimulcastStreams - 1
-        for (simulcastIndex in 0..maxSimulcastIndex) {
+        // このエンコーダから見ると initEncode() でストリームの設定が見えるので、
+        // ここでストリーム単位のエンコーダインスタンスの生成と初期化をまとめて行う。
+        for(simulcastIndex in 0..trackSettings.numberOfSimulcastStreams - 1) {
+            // ストリームの設定から VideoEncoder.Settings を生成して、ストリーム単位のエンコーダに渡す
             val simulcastStream = trackSettings.simulcastStreams[simulcastIndex]
             val streamSettings = VideoEncoder.Settings(
                     this.trackSettings.numberOfCores,
                     simulcastStream.width.toInt(),
                     simulcastStream.height.toInt(),
-                    simulcastStream.targetBitrate, // TODO(shino): 本当は startBitrate だがいいのか?
+                    simulcastStream.targetBitrate,
                     simulcastStream.maxFramerate.toInt(),
-                    0, emptyList(),                // numberOfSimulcastStreams, simulcastStreams
+                    // numberOfSimulcastStreams, HardwareVideoEncoder はこの値は見ない
+                    0,
+                    // simulcastStreams, HardwareVideoEncoder はこの値は見ない
+                    emptyList(),
                     this.trackSettings.automaticResizeOn,
                     this.trackSettings.capabilities
             )
@@ -83,6 +99,12 @@ class SimulcastTrackVideoEncoder (
         return VideoCodecStatus.OK
     }
 
+    // ビットレートのストリームへの分割を行う
+    // BitrateAllocation はおおまかに言って整数の 2 重配列である。1番目のインデックスが spatial layer を、
+    // 2番目のインデックスは temporal layer を指す。
+    // libwebrtc では、spatial index を simulcast index として扱っている。そのため、spatail index 部分を
+    // 取り出してストリーム単位のエンコーダに順番に渡していく。
+    // ちなみに、HardwareVideoEncoder はどちらの scalability も無く、単に temporal layers の和だけを見ている。
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation, framerate: Int): VideoCodecStatus {
         // SoraLogger.i(TAG, "setRateAllocation(): framerate=${framerate}, bitrate sum=${allocation.sum}")
         // allocation.bitratesBbs.mapIndexed { simulcastIndex, bitrateBbs ->
@@ -90,8 +112,6 @@ class SimulcastTrackVideoEncoder (
         //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
         // }
 
-        // BitrateAllocation.bitrateBbs は simulcast stream 数よりも多いことがある (個数は固定っぽい)
-        // 明示的にきまっているわけではないのでここは保守的に書いておく。
         streamEncoders.forEach { streamEncoder ->
             val simulcastIndex = streamEncoder.simulcastIndex
             val streamAllocation = if (allocation.bitratesBbs.size <= simulcastIndex) {
@@ -129,6 +149,10 @@ class SimulcastTrackVideoEncoder (
                 ?: VideoCodecStatus.OK
     }
 
+    // エンコード処理
+    // info.frameTypes の要素数がエンコードすべきストリーム数を示している。
+    // よって、frameTypes の要素をループして、ストリーム単位のエンコーダに順に渡す。
+    // frameTypes の要素数が active なエンコーダの数を超えないと仮定している。
     override fun encode(frame: VideoFrame, info: VideoEncoder.EncodeInfo): VideoCodecStatus {
         // SoraLogger.i(TAG, "encode: frameTypes size=${info.frameTypes.size}, " +
         //         "frameTypes=${info.frameTypes.map { it.name }.joinToString(separator = ", ")}")
@@ -146,6 +170,16 @@ class SimulcastTrackVideoEncoder (
 }
 
 
+// ストリーム単位のエンコーダ
+//
+// 実際のエンコード処理は encoderFactory で生成した originalEncoder に任せる。
+// よってこのエンコーダは薄いラッパーで、その責務は2つである。
+// 1. encodeCallback をラップし、EncodedImage に spatialIndex をセットする
+//    (実際は simulcastIndex である)
+// 2. maxFramerate からエンコード間隔を調整する
+//    encode() は capturer からフレームが上がるたびに呼ばれるため、
+//    maxFramerate より高い頻度で呼ばれた場合には originalEncoder を呼ばずに
+//    スキップする。
 class SimulcastStreamVideoEncoder(
         private val encoderFoctory: VideoEncoderFactory,
         private val videoCodecInfo: VideoCodecInfo,
@@ -186,12 +220,8 @@ class SimulcastStreamVideoEncoder(
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation,
                                    framerate: Int): VideoCodecStatus {
-        SoraLogger.d(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
-                "framerate=${framerate}, bitrate sum=${allocation.sum}")
-        // allocation.bitratesBbs.forEach{ bitrateBbs ->
-        //     SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
-        //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
-        // }
+        // SoraLogger.d(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
+        //         "framerate=${framerate}, bitrate sum=${allocation.sum}")
         return originalEncoder?.setRateAllocation(allocation, framerate) ?: VideoCodecStatus.OK
     }
 
