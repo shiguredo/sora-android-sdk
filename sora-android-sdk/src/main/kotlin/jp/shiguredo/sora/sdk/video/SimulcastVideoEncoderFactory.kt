@@ -117,10 +117,23 @@ class SimulcastTrackVideoEncoder (
             val streamAllocation = if (allocation.bitratesBbs.size <= simulcastIndex) {
                 // stream encoder に対応するアロケーションが無かった。おそらくここを通ることはないが
                 // ゼロを渡しておく
-                VideoEncoder.BitrateAllocation(arrayOf(IntArray(0)))
+                bitrateAllocation(0)
             } else {
                 VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
+                // ビットレートを振動させるお試しコード
+                // when (simulcastIndex) {
+                //     1 ->
+                //         if (System.currentTimeMillis() % 20000 < 10000) {
+                //             bitrateAllocation(15_000_000)
+                //         } else {
+                //             bitrateAllocation(5_000_000)
+                //         }
+                //     else ->
+                //         VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
+                // }
             }
+            // SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, framerate=${framerate}, " +
+            //         "bitrate sum=${streamAllocation.sum}")
 
             // 対応するビットレートアロケーションを stream encoder に渡す
             val status = streamEncoder.setRateAllocation(streamAllocation,
@@ -130,6 +143,12 @@ class SimulcastTrackVideoEncoder (
             }
         }
         return VideoCodecStatus.OK
+    }
+
+    private fun bitrateAllocation(bitrateBps: Int): VideoEncoder.BitrateAllocation {
+        val bitrates = IntArray(1)
+        bitrates[0] = bitrateBps
+        return VideoEncoder.BitrateAllocation(arrayOf(bitrates))
     }
 
     override fun getImplementationName(): String {
