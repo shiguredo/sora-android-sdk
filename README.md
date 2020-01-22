@@ -119,7 +119,7 @@ sdk.dir=/Users/shino/Library/Android/sdk
 ## kdoc の生成
 
 ```
-% rm -rf sora-android-sdk/build/dokka; gr assemble dokka
+% rm -rf sora-android-sdk/build/dokka; ./gradlew assemble dokka
 ```
 
 sora-android-sdk-doc を更新
@@ -133,7 +133,7 @@ sora-android-sdk-doc を更新
 sdk, doc を `~/g/` 以下にクローンしている場合のワンライナー
 
 ```
-rm -rf sora-android-sdk/build/dokka && gr assemble dokka && rm -rf ~/g/sora-android-sdk-doc/source/extra/apidoc && cp -a ~/g/sora-android-sdk/sora-android-sdk/build/dokka  ~/g/sora-android-sdk-doc/source/extra/apidoc
+rm -rf sora-android-sdk/build/dokka && ./gradlew assemble dokka && rm -rf ~/g/sora-android-sdk-doc/source/extra/apidoc && cp -a ~/g/sora-android-sdk/sora-android-sdk/build/dokka  ~/g/sora-android-sdk-doc/source/extra/apidoc
 ```
 
 ## JitPack
