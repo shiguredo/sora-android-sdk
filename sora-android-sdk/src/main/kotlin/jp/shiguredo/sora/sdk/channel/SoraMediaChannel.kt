@@ -107,6 +107,25 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}
 
         /**
+         * レシーバーが追加されたときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param ms レシーバーに含まれるトラックが追加されたメディアストリームの配列
+         */
+        fun onAddReceiver(mediaChannel: SoraMediaChannel,
+                          receiver: RtpReceiver,
+                          ms: Array<out MediaStream>) {}
+
+        /**
+         * レシーバーが削除されたときに呼び出されるコールバック
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param receiver 削除されたレシーバー
+         */
+        fun onRemoveReceiver(mediaChannel: SoraMediaChannel,
+                             receiver: RtpReceiver) {}
+
+        /**
          * Sora との接続が確立されたときに呼び出されるコールバック
          *
          * @see PeerChannel
@@ -291,6 +310,16 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onAddLocalStream(ms: MediaStream) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
             listener?.onAddLocalStream(this@SoraMediaChannel, ms)
+        }
+
+        override fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddReceiver")
+            listener?.onAddReceiver(this@SoraMediaChannel, receiver, ms)
+        }
+
+        override fun onRemoveReceiver(receiver: RtpReceiver) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver")
+            listener?.onRemoveReceiver(this@SoraMediaChannel, receiver)
         }
 
         override fun onConnect() {
