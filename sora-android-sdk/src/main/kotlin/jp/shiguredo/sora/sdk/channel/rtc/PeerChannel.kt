@@ -26,7 +26,7 @@ interface PeerChannel {
         fun onAddRemoteStream(ms: MediaStream)
         fun onAddLocalStream(ms: MediaStream)
         fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)
-        fun onRemoveReceiver(receiver: RtpReceiver)
+        fun onRemoveReceiver(id: String)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
@@ -110,7 +110,7 @@ class PeerChannelImpl(
 
         override fun onRemoveTrack(receiver: RtpReceiver?) {
             SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
-            receiver?.let { listener?.onRemoveReceiver(receiver) }
+            receiver?.let { listener?.onRemoveReceiver(receiver.id()) }
         }
 
         override  fun onTrack(transceiver: RtpTransceiver) {
