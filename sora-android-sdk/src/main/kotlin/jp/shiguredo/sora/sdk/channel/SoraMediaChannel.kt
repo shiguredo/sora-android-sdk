@@ -120,10 +120,10 @@ class SoraMediaChannel @JvmOverloads constructor(
          * レシーバーが削除されたときに呼び出されるコールバック
          *
          * @param mediaChannel イベントが発生したチャネル
-         * @param receiver 削除されたレシーバー
+         * @param receiver 削除されたレシーバーの ID
          */
         fun onRemoveReceiver(mediaChannel: SoraMediaChannel,
-                             receiver: RtpReceiver) {}
+                             receiverId: String) {}
 
         /**
          * Sora との接続が確立されたときに呼び出されるコールバック
@@ -342,9 +342,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onAddReceiver(this@SoraMediaChannel, receiver, ms)
         }
 
-        override fun onRemoveReceiver(receiver: RtpReceiver) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver")
-            listener?.onRemoveReceiver(this@SoraMediaChannel, receiver)
+        override fun onRemoveReceiver(id: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver=${id}")
+            listener?.onRemoveReceiver(this@SoraMediaChannel, id)
         }
 
         override fun onConnect() {
