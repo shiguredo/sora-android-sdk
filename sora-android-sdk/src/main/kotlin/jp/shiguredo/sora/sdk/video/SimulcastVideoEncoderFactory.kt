@@ -304,6 +304,7 @@ class SimulcastStreamVideoEncoder(
             nextEncodeAt += frameInterval
         } else {
             // スキップする
+            // SoraLogger.d(TAG, "Skip frame simulcastIndex=${simulcastIndex}")
             return VideoCodecStatus.OK
         }
 
