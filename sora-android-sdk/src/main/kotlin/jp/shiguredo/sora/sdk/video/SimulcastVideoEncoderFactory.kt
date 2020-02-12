@@ -264,6 +264,9 @@ class SimulcastStreamVideoEncoder(
         if (streamSettings.maxFramerate == 0) {
             return VideoCodecStatus.OK
         }
+        if (streamSettings.maxFramerate == 60) {
+            return VideoCodecStatus.OK
+        }
 
         originalEncoder = encoderFoctory.createEncoder(videoCodecInfo)
         // TODO: ここでエンコーダが取れなかったら SW にフォールバックする?
