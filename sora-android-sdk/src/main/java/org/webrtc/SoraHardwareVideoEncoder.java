@@ -343,7 +343,8 @@ class SoraHardwareVideoEncoder implements VideoEncoder {
     }
 
     final VideoFrame.Buffer videoFrameBuffer = videoFrame.getBuffer();
-    // Logging.e(TAG, "video frame buffer=" + videoFrameBuffer.toString());
+    // Logging.e(TAG, "video frame buffer=" + videoFrameBuffer.toString() + " " +
+    //         videoFrameBuffer.getWidth() + "x" + videoFrameBuffer.getHeight());
     final boolean isTextureBuffer = videoFrameBuffer instanceof VideoFrame.TextureBuffer;
 
     // If input resolution changed, restart the codec with the new resolution.
