@@ -258,13 +258,12 @@ class SimulcastStreamVideoEncoder(
         // フレームドロップ処理で使う実際に配信で有効になる FPS は startBitfrate の下二桁を使う。
         // sender encoding の maxBitrateBps と minBitrateBps が同じ場合はそれを 1000 で
         // 割った値が startBitrate に入ってくる。
-        val maybeActualMaxFramerate = streamSettings.startBitrate % 100
-        when (maybeActualMaxFramerate) {
+        actualMaxFramerate = when (val maybeActualMaxFramerate = streamSettings.startBitrate % 100) {
             0 ->
-                actualMaxFramerate = streamSettings.maxFramerate
+                streamSettings.maxFramerate
             else -> {
                 SoraLogger.d(TAG, "actualMaxFramerate=${maybeActualMaxFramerate}, simulcastIndex=$simulcastIndex")
-                actualMaxFramerate = maybeActualMaxFramerate
+                maybeActualMaxFramerate
             }
         }
         this.originalCallback = originalCallback
