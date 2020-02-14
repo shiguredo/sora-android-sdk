@@ -107,10 +107,10 @@ class SimulcastTrackVideoEncoder (
     // ちなみに、HardwareVideoEncoder はどちらの scalability も無く、単に temporal layers の和だけを見ている。
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation, framerate: Int): VideoCodecStatus {
         // SoraLogger.i(TAG, "setRateAllocation(): framerate=${framerate}, bitrate sum=${allocation.sum}")
-        // allocation.bitratesBbs.mapIndexed { simulcastIndex, bitrateBbs ->
-        //     SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
-        //             "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
-        // }
+        allocation.bitratesBbs.mapIndexed { simulcastIndex, bitrateBbs ->
+            SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, " +
+                    "bitrate sum=${bitrateBbs.sum()}, bitrateBps=${bitrateBbs.joinToString(", ")}")
+        }
 
         streamEncoders.forEach { streamEncoder ->
             val simulcastIndex = streamEncoder.simulcastIndex
@@ -119,7 +119,6 @@ class SimulcastTrackVideoEncoder (
                 // ゼロを渡しておく
                 bitrateAllocation(0)
             } else {
-                VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
                 // ビットレートを振動させるお試しコード
                 // when (simulcastIndex) {
                 //     1 ->
@@ -131,6 +130,13 @@ class SimulcastTrackVideoEncoder (
                 //     else ->
                 //         VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
                 // }
+                if (simulcastIndex == 0) {
+                    // libwebrtc から来る low stream の allocation は 1Mbps 止まりであるため、ハードコードで引き上げる。
+                    // 実際にはトータルのビットレートから low/middle の分配を考える必要がある。
+                    bitrateAllocation(10_000_000)
+                } else {
+                    VideoEncoder.BitrateAllocation(arrayOf(allocation.bitratesBbs[simulcastIndex]))
+                }
             }
             // SoraLogger.i(TAG, "setRateAllocation(): simulcastIndex=$simulcastIndex, framerate=${framerate}, " +
             //         "bitrate sum=${streamAllocation.sum}")
@@ -239,23 +245,29 @@ class SimulcastStreamVideoEncoder(
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation,
                                    framerate: Int): VideoCodecStatus {
-        // SoraLogger.d(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
-        //         "framerate=${framerate}, bitrate sum=${allocation.sum}")
+        SoraLogger.d(TAG, "setRateAllocation(): simulcastIndex=${simulcastIndex}, " +
+                "framerate=${framerate}, bitrate sum=${allocation.sum}")
         return originalEncoder?.setRateAllocation(allocation, framerate) ?: VideoCodecStatus.OK
     }
 
     override fun initEncode(streamSettings: VideoEncoder.Settings,
                             originalCallback: VideoEncoder.Callback): VideoCodecStatus {
+        // sender encoding で 1 FPS とするとビットレートが上がらないため、フレームドロップ処理で
+        // low stream を 1 FPS にするためのロジック。リファクタリングが必要。
+        val actualMaxFramerate = when (simulcastIndex) {
+            0 -> 1
+            else -> streamSettings.maxFramerate
+        }
         this.originalCallback = originalCallback
         this.streamSettings = streamSettings
-        frameInterval = 1000L / maxOf(streamSettings.maxFramerate, 1)
+        frameInterval = 1000L / maxOf(actualMaxFramerate, 1)
 
         SoraLogger.i(TAG, """initEncode() simulcastIndex=$simulcastIndex, frameInterval=$frameInterval, streamSettings:
             |numberOfCores=${streamSettings.numberOfCores}
             |width=${streamSettings.width}
             |height=${streamSettings.height}
             |startBitrate=${streamSettings.startBitrate}
-            |maxFramerate=${streamSettings.maxFramerate}
+            |maxFramerate=${streamSettings.maxFramerate} (actual=$actualMaxFramerate)
             |automaticResizeOn=${streamSettings.automaticResizeOn}
             |numberOfSimulcastStreams=${streamSettings.numberOfSimulcastStreams}
             |lossNotification=${streamSettings.capabilities.lossNotification}
@@ -269,8 +281,20 @@ class SimulcastStreamVideoEncoder(
         }
 
         originalEncoder = encoderFoctory.createEncoder(videoCodecInfo)
+        val fakeStreamSettings = VideoEncoder.Settings(
+                streamSettings.numberOfCores,
+                streamSettings.width,
+                streamSettings.height,
+                streamSettings.startBitrate,
+                streamSettings.maxFramerate,
+                // 30,
+                streamSettings.numberOfSimulcastStreams,
+                streamSettings.simulcastStreams,
+                streamSettings.automaticResizeOn,
+                streamSettings.capabilities
+        )
         // TODO: ここでエンコーダが取れなかったら SW にフォールバックする?
-        val status = originalEncoder!!.initEncode(streamSettings, encodeCallback)
+        val status = originalEncoder!!.initEncode(fakeStreamSettings, encodeCallback)
         if (status != VideoCodecStatus.OK) {
             SoraLogger.e(TAG, "initEncode() failed: simulcastIndex=$simulcastIndex, status=${status.name}")
         }
