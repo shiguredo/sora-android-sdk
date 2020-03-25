@@ -41,7 +41,7 @@ https://discord.gg/QWUKD2f
 Sora Android SDK に関する質問・要望などの報告は Disocrd へお願いします。
 
 バグに関してもまずは Discord へお願いします。 
-ただし、 Sora のライセンス契約の有無に関わらず、 Issue への応答時間と問題の解決を保証しませんのでご了承ください。
+ただし、 Sora のライセンス契約の有無に関わらず、 応答時間と問題の解決を保証しませんのでご了承ください。
 
 Sora Android SDK に対する有償のサポートについては提供しておりません。
 
@@ -49,7 +49,7 @@ Sora Android SDK に対する有償のサポートについては提供してお
 
 - Android 5 以降 (シミュレーターは不可)
 - Android Studio 3.5.1 以降
-- WebRTC SFU Sora 19.04 以降
+- WebRTC SFU Sora 19. 以降
 
 ## サンプルコード
 
