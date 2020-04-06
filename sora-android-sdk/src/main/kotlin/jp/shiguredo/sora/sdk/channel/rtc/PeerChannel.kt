@@ -127,10 +127,13 @@ class PeerChannelImpl(
                        listener?.onConnect()
                    }
                    PeerConnection.IceConnectionState.FAILED -> {
-                        listener?.onError(SoraErrorReason.ICE_FAILURE)
+                       listener?.onError(SoraErrorReason.ICE_FAILURE)
                        disconnect()
                    }
-                   PeerConnection.IceConnectionState.DISCONNECTED,
+                   PeerConnection.IceConnectionState.DISCONNECTED -> {
+                       // disconnected はなにもしない、ネットワークが不安定な場合は
+                       // failed に遷移して上の節で捕まえられる
+                   }
                    PeerConnection.IceConnectionState.CLOSED -> {
                         if (!closing) {
                             listener?.onError(SoraErrorReason.ICE_CLOSED_BY_SERVER)

@@ -21,6 +21,10 @@
 
 - `com.android.tools.build:gradle` を 3.5.3 に上げた
 
+### FIX
+
+- IceConnectionState=disconnected では切断処理を行わないよう変更する
+
 ## 1.10.0
 
 ### UPDATE
