@@ -28,18 +28,22 @@ class CameraCapturerFactory {
          * @param context application context
          * @param fixedResolution true の場合は解像度維持を優先、false の場合は
          * フレームレート維持を優先する。デフォルト値は false 。
+         * @param frontFacingFirst true の場合はフロントカメラを優先、false の場合は
+         * リアカメラを優先して選択する。デフォルト値は true 。
          * @return 生成された `CameraVideoCapturer`
          */
         @JvmOverloads
-        fun create(context: Context, fixedResolution: Boolean = false) : CameraVideoCapturer? {
+        fun create(context: Context,
+                   fixedResolution: Boolean = false,
+                   frontFacingFirst: Boolean = true) : CameraVideoCapturer? {
             var videoCapturer: CameraVideoCapturer? = null
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 if (Camera2Enumerator.isSupported(context)) {
-                    videoCapturer = createCapturer(Camera2Enumerator(context))
+                    videoCapturer = createCapturer(Camera2Enumerator(context), frontFacingFirst)
                 }
             }
             if (videoCapturer == null) {
-                videoCapturer = createCapturer(Camera1Enumerator(true))
+                videoCapturer = createCapturer(Camera1Enumerator(true), frontFacingFirst)
             }
 
             if (videoCapturer == null) {
@@ -56,12 +60,12 @@ class CameraCapturerFactory {
             }
         }
 
-        private fun createCapturer(enumerator: CameraEnumerator): CameraVideoCapturer? {
+        private fun createCapturer(enumerator: CameraEnumerator, frontFacingFirst: Boolean): CameraVideoCapturer? {
             var capturer : CameraVideoCapturer? = null
             enumerator.deviceNames.forEach {
                 deviceName ->
                 if (capturer == null) {
-                    capturer = findDeviceCamera(enumerator, deviceName, true)
+                    capturer = findDeviceCamera(enumerator, deviceName, frontFacingFirst)
                 }
             }
             if (capturer != null) {
@@ -70,14 +74,15 @@ class CameraCapturerFactory {
             enumerator.deviceNames.forEach {
                 deviceName ->
                 if (capturer == null) {
-                    capturer = findDeviceCamera(enumerator, deviceName, false)
+                    capturer = findDeviceCamera(enumerator, deviceName, !frontFacingFirst)
                 }
             }
             return capturer
         }
 
         private fun findDeviceCamera(enumerator: CameraEnumerator,
-                                     deviceName: String, frontFacing: Boolean) : CameraVideoCapturer? {
+                                     deviceName: String,
+                                     frontFacing: Boolean) : CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
             if (enumerator.isFrontFacing(deviceName) == frontFacing) {
                 capturer = enumerator.createCapturer(deviceName, null)

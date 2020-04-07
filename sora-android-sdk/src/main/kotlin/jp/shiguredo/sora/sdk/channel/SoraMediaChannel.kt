@@ -148,6 +148,31 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
 
         /**
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason 警告の理由
+         */
+        fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
+
+        /**
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason 警告の理由
+         * @param message 警告の情報
+         */
+        fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
+
+        /**
          * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック
          *
          * @param mediaChannel イベントが発生したチャネル
@@ -182,6 +207,26 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param statsReports 統計レポート
          */
         fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
+
+        /**
+         * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック
+         *
+         * 引数の encodings は Sora が送ってきた設定を反映した RtpParameters.Encoding のリストです。
+         * デフォルトの実装ではなにも行いません。
+         * このコールバックを実装し、引数のオブジェクトを変更することで、アプリケーションの要件に従った
+         * 設定をエンコーダにわたすことができます。
+         *
+         * cf. Web 標準の対応 API は次のとおりです。libwebrtc の native(C++) と android の実装は
+         * 異なりますので注意してください。
+         * - https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters
+         * - https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-setparameters
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param encodings Sora から送信された encodings
+         * @return encodings または、それを変更したオブジェクト
+         */
+        fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
+
     }
 
     private var peer:            PeerChannel?      = null
@@ -279,12 +324,25 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onConnect(this@SoraMediaChannel)
         }
 
+        override fun onSenderEncodings(encodings: List<RtpParameters.Encoding>) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onSenderEncodings")
+            listener?.onSenderEncodings(this@SoraMediaChannel, encodings)
+        }
+
         override fun onError(reason: SoraErrorReason) {
             listener?.onError(this@SoraMediaChannel, reason)
         }
 
         override fun onError(reason: SoraErrorReason, message: String) {
             listener?.onError(this@SoraMediaChannel, reason, message)
+        }
+
+        override fun onWarning(reason: SoraErrorReason) {
+            listener?.onWarning(this@SoraMediaChannel, reason)
+        }
+
+        override fun onWarning(reason: SoraErrorReason, message: String) {
+            listener?.onWarning(this@SoraMediaChannel, reason, message)
         }
 
         override fun onDisconnect() {

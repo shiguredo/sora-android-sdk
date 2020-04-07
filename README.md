@@ -1,12 +1,11 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-
 [![CircleCI](https://circleci.com/gh/shiguredo/sora-android-sdk.svg?style=svg)](https://circleci.com/gh/shiguredo/sora-android-sdk)
 
 Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android クライアントアプリケーションを開発するためのライブラリです。
 
-使い方は [Sora Android SDK ドキュメント](https://sora.shiguredo.jp/android-sdk-doc/) を参照してください。
+使い方は [Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/) を参照してください。
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
@@ -35,18 +34,22 @@ Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android �
 We check PRs or Issues only when written in JAPANESE.
 In other languages, we won't be able to deal with them. Thank you for your understanding.
 
-## サポートについて
+## Discord
 
-Sora Android SDK に関する質問・要望・バグなどの報告は Issues の利用をお願いします。
-ただし、 Sora のライセンス契約の有無に関わらず、 Issue への応答時間と問題の解決を保証しませんのでご了承ください。
+https://discord.gg/QWUKD2f
 
-Sora Android SDK に対する有償のサポートについては現在提供しておりません。
+Sora Android SDK に関する質問・要望などの報告は Disocrd へお願いします。
+
+バグに関してもまずは Discord へお願いします。 
+ただし、 Sora のライセンス契約の有無に関わらず、 応答時間と問題の解決を保証しませんのでご了承ください。
+
+Sora Android SDK に対する有償のサポートについては提供しておりません。
 
 ## システム条件
 
 - Android 5 以降 (シミュレーターは不可)
 - Android Studio 3.5.1 以降
-- WebRTC SFU Sora 19.04 以降
+- WebRTC SFU Sora 19. 以降
 
 ## サンプルコード
 
@@ -119,7 +122,7 @@ sdk.dir=/Users/shino/Library/Android/sdk
 ## kdoc の生成
 
 ```
-% rm -rf sora-android-sdk/build/dokka; gr assemble dokka
+% rm -rf sora-android-sdk/build/dokka; ./gradlew assemble dokka
 ```
 
 sora-android-sdk-doc を更新
@@ -133,7 +136,7 @@ sora-android-sdk-doc を更新
 sdk, doc を `~/g/` 以下にクローンしている場合のワンライナー
 
 ```
-rm -rf sora-android-sdk/build/dokka && gr assemble dokka && rm -rf ~/g/sora-android-sdk-doc/source/extra/apidoc && cp -a ~/g/sora-android-sdk/sora-android-sdk/build/dokka  ~/g/sora-android-sdk-doc/source/extra/apidoc
+rm -rf sora-android-sdk/build/dokka && ./gradlew assemble dokka && rm -rf ~/g/sora-android-sdk-doc/source/extra/apidoc && cp -a ~/g/sora-android-sdk/sora-android-sdk/build/dokka  ~/g/sora-android-sdk-doc/source/extra/apidoc
 ```
 
 ## JitPack
@@ -173,6 +176,22 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
      ext.signaling_endpoint = "wss://sora.example.com/signaling"
 ```
 
-# Copyright
+# License
 
-Copyright 2017-2019, Shiguredo Inc. and Lyo Kato <lyo.kato at gmail.com>
+
+```
+Copyright 2017, Lyo Kato <lyo.kato at gmail.com> (Original Author)
+Copyright 2017-2020, Shiguredo Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
