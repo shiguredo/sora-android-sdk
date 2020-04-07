@@ -15,7 +15,12 @@
 
 - `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加した
 - サイマルキャスト配信のエンコーダ設定変更用コールバックを追加した
-  - `SoraMediaChannel.Listener#onSenderEncodings()`
+  - `SoraMediaChannel.Listener#onSenderEncodings()`-
+- 定数 SoraErrorReason.ICE_DISCONNECTED を追加した
+- SoraMediaChannel.Listener に onWarning メソッドを追加した
+  - このバージョンでは ICE_DISCONNECTED の通知のみに利用している
+  - 想定ユースケースは、ネットワークが不安定であることを UI に伝えること
+  - デフォルト実装は処理なしである
 
 ### UPDATE
 
@@ -23,7 +28,7 @@
 
 ### FIX
 
-- IceConnectionState=disconnected では切断処理を行わないよう変更する
+- IceConnectionState=disconnected では切断処理を行わないよう変更した
 
 ## 1.10.0
 
