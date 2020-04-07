@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2020.1
+
 ### ADD
 
 - `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加する
