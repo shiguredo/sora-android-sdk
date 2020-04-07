@@ -148,6 +148,31 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
 
         /**
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason 警告の理由
+         */
+        fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
+
+        /**
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         *
+         * cf.
+         * - `org.webrtc.PeerConnection`
+         * - `org.webrtc.PeerConnection.Observer`
+         *
+         * @see PeerChannel
+         * @param reason 警告の理由
+         * @param message 警告の情報
+         */
+        fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
+
+        /**
          * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック
          *
          * @param mediaChannel イベントが発生したチャネル
@@ -310,6 +335,14 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onError(reason: SoraErrorReason, message: String) {
             listener?.onError(this@SoraMediaChannel, reason, message)
+        }
+
+        override fun onWarning(reason: SoraErrorReason) {
+            listener?.onWarning(this@SoraMediaChannel, reason)
+        }
+
+        override fun onWarning(reason: SoraErrorReason, message: String) {
+            listener?.onWarning(this@SoraMediaChannel, reason, message)
         }
 
         override fun onDisconnect() {

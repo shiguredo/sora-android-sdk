@@ -31,6 +31,8 @@ interface PeerChannel {
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
+        fun onWarning(reason: SoraErrorReason)
+        fun onWarning(reason: SoraErrorReason, message: String)
     }
 }
 
@@ -127,15 +129,21 @@ class PeerChannelImpl(
                        listener?.onConnect()
                    }
                    PeerConnection.IceConnectionState.FAILED -> {
-                        listener?.onError(SoraErrorReason.ICE_FAILURE)
+                       listener?.onError(SoraErrorReason.ICE_FAILURE)
                        disconnect()
                    }
-                   PeerConnection.IceConnectionState.DISCONNECTED,
+                   PeerConnection.IceConnectionState.DISCONNECTED -> {
+                       if (closing) return
+
+                       // disconnected はなにもしない、ネットワークが不安定な場合は
+                       // failed に遷移して上の節で捕まえられるため、listener 通知のみ行う。
+                       listener?.onWarning(SoraErrorReason.ICE_DISCONNECTED)
+                   }
                    PeerConnection.IceConnectionState.CLOSED -> {
-                        if (!closing) {
+                       if (!closing) {
                             listener?.onError(SoraErrorReason.ICE_CLOSED_BY_SERVER)
-                        }
-                        disconnect()
+                       }
+                       disconnect()
                    }
                    else -> {}
                }

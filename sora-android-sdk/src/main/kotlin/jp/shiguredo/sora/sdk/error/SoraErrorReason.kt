@@ -10,6 +10,9 @@ enum class SoraErrorReason {
     ICE_CLOSED_BY_SERVER,
     TIMEOUT,
 
+    // Sora との接続の警告
+    ICE_DISCONNECTED,
+
     // audio track 関連のエラー
     // cf. JavaAudioDeviceModule.AudioTrackErrorCallback
     AUDIO_TRACK_INIT_ERROR,
