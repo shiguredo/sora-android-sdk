@@ -227,7 +227,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 listener?.onConnect()
                 sendConnectMessage()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -258,7 +258,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
 
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -276,7 +276,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
                 disconnect()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -294,7 +294,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
     }
