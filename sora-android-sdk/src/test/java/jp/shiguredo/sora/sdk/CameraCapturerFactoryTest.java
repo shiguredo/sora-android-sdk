@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk;
 
 import android.content.Context;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -11,6 +12,7 @@ import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory;
 
 import static org.junit.Assert.*;
 
+@Ignore
 @RunWith(RobolectricTestRunner.class)
 public class CameraCapturerFactoryTest {
 
