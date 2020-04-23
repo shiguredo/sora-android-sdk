@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - name: Copy gradle.properties
+        run: cp gradle.properties.example gradle.properties
       - name: Build with Gradle
-        run:
-          - cp gradle.properties.example gradle.properties
-          - ./gradlew build
+        run: ./gradlew build
