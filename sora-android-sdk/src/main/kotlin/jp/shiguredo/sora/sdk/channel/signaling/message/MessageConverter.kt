@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import java.util.*
 
 class MessageConverter {
 
@@ -24,7 +25,7 @@ class MessageConverter {
         ): String {
 
             val msg = ConnectMessage(
-                    role                    = role.toString().toLowerCase(),
+                    role                    = role.toString().toLowerCase(Locale.getDefault()),
                     channelId               = channelId,
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
