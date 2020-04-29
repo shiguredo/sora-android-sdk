@@ -1,7 +1,6 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![CircleCI](https://circleci.com/gh/shiguredo/sora-android-sdk.svg?style=svg)](https://circleci.com/gh/shiguredo/sora-android-sdk)
 
 Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android クライアントアプリケーションを開発するためのライブラリです。
 
@@ -40,7 +39,7 @@ https://discord.gg/QWUKD2f
 
 Sora Android SDK に関する質問・要望などの報告は Disocrd へお願いします。
 
-バグに関してもまずは Discord へお願いします。 
+バグに関してもまずは Discord へお願いします。
 ただし、 Sora のライセンス契約の有無に関わらず、 応答時間と問題の解決を保証しませんのでご了承ください。
 
 Sora Android SDK に対する有償のサポートについては提供しておりません。
