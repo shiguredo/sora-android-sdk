@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import android.os.Build
 import com.google.gson.annotations.SerializedName
 import jp.shiguredo.sora.sdk.BuildConfig
+import jp.shiguredo.sora.sdk.util.SDKInfo
 
 data class MessageCommonPart(
         @SerializedName("type") val type: String?
@@ -25,9 +26,9 @@ data class ConnectMessage(
         @SerializedName("simulcast")   var simulcast:               Any? = null,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
-        @SerializedName("sdk_type")    val sdkType:                 String = "Android",
-        @SerializedName("sdk_version") val sdkVersion:              String = BuildConfig.GIT_DESCTIPTION,
-        @SerializedName("user_agent")  val userAgent:               String = deviceInfo(),
+        @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
+        @SerializedName("libwebrtc")   val libwebrtc:               String = SDKInfo.libwebrtcInfo(),
+        @SerializedName("environment") val environment:             String = SDKInfo.deviceInfo(),
         @SerializedName("sdp")         val sdp:                     String
 )
 
@@ -130,15 +131,3 @@ data class NotificationMessage(
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?
 )
-
-private fun deviceInfo() : String {
-    return "Android-SDK: " + Build.VERSION.SDK_INT + ", " +
-            "Release: " + Build.VERSION.RELEASE + ", " +
-            "Id: " + Build.ID + ", " +
-            "Device: " + Build.DEVICE + ", " +
-            "Hardware: " + Build.HARDWARE + ", " +
-            "Brand: " + Build.BRAND + ", " +
-            "Manufacturer: " + Build.MANUFACTURER + ", " +
-            "Model: " + Build.MODEL + ", " +
-            "Product: " + Build.PRODUCT
-}

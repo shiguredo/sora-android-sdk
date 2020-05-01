@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk;
 
 import android.content.Context;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -18,6 +19,7 @@ import static org.junit.Assert.fail;
 // Java からの互換性を確認するためのテスト
 //
 // コンパイルタイムの確認なので実行する必要はないが、いちおうテストにして実行しておく。
+@Ignore
 @RunWith(RobolectricTestRunner.class)
 public class SoraMediaChannelTest {
 

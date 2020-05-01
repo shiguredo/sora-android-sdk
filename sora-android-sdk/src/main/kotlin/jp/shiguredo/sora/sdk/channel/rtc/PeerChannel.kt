@@ -176,7 +176,7 @@ class PeerChannelImpl(
             setupInternal()
             it.onSuccess(true)
         } catch (e: Exception) {
-            SoraLogger.w(TAG, e.message)
+            SoraLogger.w(TAG, e.toString())
             it.onError(e)
         }
     }).subscribeOn(Schedulers.from(executor))
