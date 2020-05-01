@@ -13,8 +13,10 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 29
+        versionName "${grgit.describe().split("-").first()}"
 
-        buildConfigField("String", "GIT_DESCTIPTION", "\"${grgit.describe()}\"")
+        buildConfigField("String", "REVISION", "\"${grgit.head().abbreviatedId}\"")
+        buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libwebrtc_version}\"")
     }
     sourceSets {
         main {
