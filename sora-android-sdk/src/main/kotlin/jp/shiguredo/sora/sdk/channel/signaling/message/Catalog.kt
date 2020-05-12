@@ -29,7 +29,8 @@ data class ConnectMessage(
         @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
         @SerializedName("libwebrtc")   val libwebrtc:               String = SDKInfo.libwebrtcInfo(),
         @SerializedName("environment") val environment:             String = SDKInfo.deviceInfo(),
-        @SerializedName("sdp")         val sdp:                     String
+        @SerializedName("sdp")         val sdp:                     String? = null,
+        @SerializedName("sdp_error")   val sdp_error:               String? = null
 )
 
 data class VideoSetting(

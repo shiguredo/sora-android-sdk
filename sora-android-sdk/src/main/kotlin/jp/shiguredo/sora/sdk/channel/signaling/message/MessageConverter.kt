@@ -19,7 +19,8 @@ class MessageConverter {
                                 channelId:               String?,
                                 mediaOption:             SoraMediaOption,
                                 metadata:                Any?,
-                                sdp:                     String,
+                                sdp:                     String?          = null,
+                                sdpError:                String?          = null,
                                 clientId:                String?          = null,
                                 signalingNotifyMetadata: Any?             = null
         ): String {
@@ -30,6 +31,7 @@ class MessageConverter {
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
                     sdp                     = sdp,
+                    sdp_error               = sdpError,
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )

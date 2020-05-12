@@ -448,9 +448,13 @@ class SoraMediaChannel @JvmOverloads constructor(
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
                                 disconnect()
+
+                                if (it.isFailure) {
+                                    SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
+                                }
                                 val handler = Handler(Looper.getMainLooper())
                                 handler.post() {
-                                    connectSignalingChannel(it)
+                                    connectSignalingChannel(it.getOrNull(), it.exceptionOrNull()?.message)
                                 }
                             },
                             onError = {
@@ -464,7 +468,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?,
+                                        clientOfferSdpError: String?) {
         signaling = SignalingChannelImpl(
                 endpoint                = signalingEndpoint,
                 role                    = role,
@@ -473,6 +478,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 connectMetadata         = signalingMetadata,
                 listener                = signalingListener,
                 clientOfferSdp          = clientOfferSdp,
+                clientOfferSdpError     = clientOfferSdpError,
                 clientId                = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata
         )
