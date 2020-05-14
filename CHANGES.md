@@ -11,6 +11,23 @@
 
 ## develop
 
+### CHANGE
+
+- `compileSdkVersion` を 29 に上げる
+  - @szktty
+- `targetSdkVersion` を 29 に上げる
+  - @szktty
+- libwebrtc を 79.5.1 に上げる
+  - @szktty
+- Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
+  - @szktty
+- シグナリング connect に含めるクライアント情報を変更する
+  - @szktty
+- API: `SoraMediaChannel.Listener`: `onAddReceiver()` を追加する
+  - @szktty
+- API: `SoraMediaChannel.Listener`: `onRemoveReceiver()` を追加する
+  - @szktty
+
 ## 2020.1
 
 ### ADD
