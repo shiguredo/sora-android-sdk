@@ -17,7 +17,17 @@
   - @szktty
 - `targetSdkVersion` を 29 に上げる
   - @szktty
+- Kotlin を 1.3.72 に上げる
+  - @szktty
+- Dokka を 0.10.1 に上げる
+  - @szktty
 - libwebrtc を 79.5.1 に上げる
+  - @szktty
+- `com.android.tools.build:gradle` を 3.6.3 に上げる
+  - @szktty
+- `com.squareup.okhttp3:okhttp` を 4.6.0 に上げる
+  - @szktty
+- `junit:junit` を `4.13` に上げる
   - @szktty
 - Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
   - @szktty
