@@ -41,7 +41,7 @@ import kotlin.concurrent.schedule
  * @param signalingMetadata connect メッセージに含める `metadata`
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
- * @param timeoutSeconds WebSocket の接続タイムアウト[秒]
+ * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
@@ -242,7 +242,6 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param encodings Sora から送信された encodings
-         * @return encodings または、それを変更したオブジェクト
          */
         fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
 
