@@ -33,10 +33,6 @@
   - @szktty
 - シグナリング connect に含めるクライアント情報を変更する
   - @szktty
-- API: `SoraMediaChannel.Listener`: `onAddReceiver()` を追加する
-  - @szktty
-- API: `SoraMediaChannel.Listener`: `onRemoveReceiver()` を追加する
-  - @szktty
 
 ## 2020.1
 
