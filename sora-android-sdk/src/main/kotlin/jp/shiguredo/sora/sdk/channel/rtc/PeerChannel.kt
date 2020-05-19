@@ -16,7 +16,11 @@ interface PeerChannel {
 
     fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
-    fun requestClientOfferSdp(): Single<SessionDescription>
+
+    // 失敗しても問題のない処理が含まれる (client offer SDP は生成に失敗しても問題ない) ので、
+    // その場合に Result 型でエラーを含めて返す
+    fun requestClientOfferSdp(): Single<Result<SessionDescription>>
+
     fun disconnect()
 
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
@@ -25,6 +29,8 @@ interface PeerChannel {
         fun onRemoveRemoteStream(label: String)
         fun onAddRemoteStream(ms: MediaStream)
         fun onAddLocalStream(ms: MediaStream)
+        fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)
+        fun onRemoveReceiver(id: String)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
@@ -105,6 +111,12 @@ class PeerChannelImpl(
 
         override fun onAddTrack(receiver: RtpReceiver?, ms: Array<out MediaStream>?) {
             SoraLogger.d(TAG, "[rtc] @onAddTrack")
+            receiver?.let { listener?.onAddReceiver(receiver, ms!!) }
+        }
+
+        override fun onRemoveTrack(receiver: RtpReceiver?) {
+            SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
+            receiver?.let { listener?.onRemoveReceiver(receiver.id()) }
         }
 
         override  fun onTrack(transceiver: RtpTransceiver) {
@@ -176,7 +188,7 @@ class PeerChannelImpl(
             setupInternal()
             it.onSuccess(true)
         } catch (e: Exception) {
-            SoraLogger.w(TAG, e.message)
+            SoraLogger.w(TAG, e.toString())
             it.onError(e)
         }
     }).subscribeOn(Schedulers.from(executor))
@@ -249,15 +261,15 @@ class PeerChannelImpl(
         }
     }
 
-    override fun requestClientOfferSdp(): Single<SessionDescription> {
+    override fun requestClientOfferSdp(): Single<Result<SessionDescription>> {
         return setup().flatMap {
             SoraLogger.d(TAG, "requestClientOfferSdp")
             return@flatMap createClientOfferSdp()
         }
     }
 
-    private fun createClientOfferSdp() : Single<SessionDescription> =
-        Single.create(SingleOnSubscribe<SessionDescription> {
+    private fun createClientOfferSdp() : Single<Result<SessionDescription>> =
+        Single.create(SingleOnSubscribe<Result<SessionDescription>> {
 
             val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
                     RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
@@ -267,10 +279,12 @@ class PeerChannelImpl(
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
                     SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
-                    it.onSuccess(sdp!!)
+                    it.onSuccess(Result.success(sdp!!))
                 }
-                override fun onCreateFailure(error: String?) {
-                    it.onError(Error(error))
+                override fun onCreateFailure(error: String) {
+                    SoraLogger.d(TAG, "createOffer:onCreateFailure: $error")
+                    // Offer SDP は生成に失敗しても問題ないので、エラーメッセージを onSuccess で渡す
+                    it.onSuccess(Result.failure(Error(error)))
                 }
                 override fun onSetSuccess() {
                     it.onError(Error("must not come here"))

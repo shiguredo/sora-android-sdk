@@ -41,7 +41,7 @@ import kotlin.concurrent.schedule
  * @param signalingMetadata connect メッセージに含める `metadata`
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
- * @param timeoutSeconds WebSocket の接続タイムアウト[秒]
+ * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
@@ -223,7 +223,6 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param encodings Sora から送信された encodings
-         * @return encodings または、それを変更したオブジェクト
          */
         fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
 
@@ -316,6 +315,14 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onAddLocalStream(ms: MediaStream) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
             listener?.onAddLocalStream(this@SoraMediaChannel, ms)
+        }
+
+        override fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddReceiver")
+        }
+
+        override fun onRemoveReceiver(id: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver=${id}")
         }
 
         override fun onConnect() {
@@ -448,9 +455,13 @@ class SoraMediaChannel @JvmOverloads constructor(
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
                                 disconnect()
+
+                                if (it.isFailure) {
+                                    SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
+                                }
                                 val handler = Handler(Looper.getMainLooper())
                                 handler.post() {
-                                    connectSignalingChannel(it)
+                                    connectSignalingChannel(it.getOrNull(), it.exceptionOrNull()?.message)
                                 }
                             },
                             onError = {
@@ -464,7 +475,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?,
+                                        clientOfferSdpError: String?) {
         signaling = SignalingChannelImpl(
                 endpoint                = signalingEndpoint,
                 role                    = role,
@@ -473,6 +485,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 connectMetadata         = signalingMetadata,
                 listener                = signalingListener,
                 clientOfferSdp          = clientOfferSdp,
+                clientOfferSdpError     = clientOfferSdpError,
                 clientId                = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata
         )

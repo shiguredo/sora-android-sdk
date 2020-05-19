@@ -38,7 +38,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         private val mediaOption:             SoraMediaOption,
         private val connectMetadata:         Any?,
         private var listener:                SignalingChannel.Listener?,
-        private val clientOfferSdp:          SessionDescription,
+        private val clientOfferSdp:          SessionDescription?,
+        private val clientOfferSdpError:     String?                     = null,
         private val clientId:                String?                     = null,
         private val signalingNotifyMetadata: Any?                        = null
 ) : SignalingChannel {
@@ -145,7 +146,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     channelId               = channelId,
                     mediaOption             = mediaOption,
                     metadata                = connectMetadata,
-                    sdp                     = clientOfferSdp.description,
+                    sdp                     = clientOfferSdp?.description,
+                    sdpError                = clientOfferSdpError,
                     clientId                = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
@@ -227,7 +229,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 listener?.onConnect()
                 sendConnectMessage()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -258,7 +260,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
 
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -276,7 +278,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
                 disconnect()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
 
@@ -294,7 +296,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect()
             } catch (e: Exception) {
-                SoraLogger.w(TAG, e.message)
+                SoraLogger.w(TAG, e.toString())
             }
         }
     }

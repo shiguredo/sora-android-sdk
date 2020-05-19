@@ -17,4 +17,5 @@ org.gradle.jvmargs=-Xmx1536m
 # org.gradle.parallel=true
 
 # http://robolectric.org/getting-started/
-android.enableUnitTestBinaryResources=true
+android.useAndroidX = true
+android.enableJetifier = true
