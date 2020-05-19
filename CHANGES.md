@@ -9,7 +9,7 @@
 - FIX
     - バグ修正
 
-## develop
+## 2020.2
 
 ### CHANGE
 
