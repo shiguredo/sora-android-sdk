@@ -56,8 +56,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         private var listener:                Listener?,
         private val clientId:                String?              = null,
         private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()) {
-
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
+) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
