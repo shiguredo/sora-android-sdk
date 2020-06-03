@@ -11,7 +11,6 @@ enum class Role {
     SEND,
     RECV,
     SENDRECV
-
 }
 
 /**
@@ -84,17 +83,25 @@ class AudioConstraint {
 class Configuration @JvmOverloads constructor(
         var url: URL,
         var channelId: String?,
-        var role: Role,
-        var metadata: Any? = null,
-        var notifyMetadata: Any? = null
+        var role: Role
+
 ){
-    // TODO: 送受信をそれぞれ別途メディア有効無効の切替できたっけ？
-    // できないはず
+
+    companion object {
+        const val DEFAULT_TIMEOUT_SECONDS = 10L
+    }
+
+    var timeout: Long = DEFAULT_TIMEOUT_SECONDS
+
     var videoEnabled = false
     var audioEnabled = false
     var multistreamEnabled     = false
     var simulcastEnabled       = false
     var spotlightEnabled       = false
+
+    // gson.toJson で扱える型。 Object?
+    var metadata: Any? = null
+    var notifyMetadata: Any? = null
 
     /**
      * 端末組み込みの acoustic echo canceler を使うかどうかの設定
