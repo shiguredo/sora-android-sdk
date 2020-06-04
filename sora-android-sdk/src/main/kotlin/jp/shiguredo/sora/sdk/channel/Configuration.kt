@@ -1,11 +1,16 @@
 package jp.shiguredo.sora.sdk.channel
 
+import android.content.Context
 import android.graphics.Point
 import android.media.MediaRecorder
+import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
+import org.webrtc.EglBase
 import org.webrtc.MediaConstraints
+import org.webrtc.VideoCapturer
 import org.webrtc.audio.AudioDeviceModule
 import java.net.URL
+import javax.microedition.khronos.egl.EGLConfig
 
 enum class Role {
     SEND,
@@ -28,7 +33,18 @@ enum class VideoCodec {
 /**
  * 映像のフレームサイズをまとめるクラスです
  */
-class VideoFrameSize {
+enum class VideoFrameSize {
+    QQVGA,
+    UHD4096x2160
+}
+
+enum class VideoDirection {
+    PORTRAIT,
+    LANDSCAPE
+}
+
+// TODO: deprecated
+class VideoFrameSize0 {
 
     // 反転するメソッドがあればいい？
 
@@ -69,6 +85,11 @@ enum class AudioCodec {
     PCMU
 }
 
+enum class AudioSound {
+    STEREO,
+    MONO,
+}
+
 class AudioConstraint {
 
     companion object {
@@ -81,6 +102,7 @@ class AudioConstraint {
 }
 
 class Configuration @JvmOverloads constructor(
+        var context: Context,
         var url: URL,
         var channelId: String?,
         var role: Role
@@ -93,29 +115,41 @@ class Configuration @JvmOverloads constructor(
 
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
+    var eglBase: EglBase
+
     var videoEnabled = false
+    var videoCodec: VideoCodec = VideoCodec.VP9
+    var videoBitRate: Int? = null
+
+    var videoCapturer: VideoCapturer? = null
+    var videoSendEglBaseContext: EglBase.Context? = null
+    var videoRecvEglBaseContext: EglBase.Context? = null
+
     var audioEnabled = false
+    var audioCodec: AudioCodec = AudioCodec.OPUS
+    var audioBitRate: Int? = null
+
     var multistreamEnabled     = false
     var simulcastEnabled       = false
     var spotlightEnabled       = false
 
     // gson.toJson で扱える型。 Object?
-    var metadata: Any? = null
-    var notifyMetadata: Any? = null
+    var signalingMetadata: Object? = null
+    var signalingNotifyMetadata: Object? = null
 
     /**
      * 端末組み込みの acoustic echo canceler を使うかどうかの設定
      *
      * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareAcousticEchoCanceler()`
      */
-    var useHardwareAcousticEchoCanceler: Boolean = true
+    var usesHardwareAcousticEchoCanceler: Boolean = true
 
     /**
      * 端末組み込みの noise suppressor を使うかどうかの設定
      *
      * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareNoiseSuppressor()`
      */
-    var useHardwareNoiseSuppressor: Boolean = true
+    var usesHardwareNoiseSuppressor: Boolean = true
 
     /**
      * 利用する AudioDeviceModule を指定します
@@ -133,7 +167,7 @@ class Configuration @JvmOverloads constructor(
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googEchoCancellation` : false
      */
-    var audioProcessingEchoCancellation: Boolean = true
+    var audioProcessingEchoCancellationEnabled: Boolean = true
 
     /**
      * 入力音声の自動ゲイン調整処理の有無の設定
@@ -141,7 +175,7 @@ class Configuration @JvmOverloads constructor(
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googAutoGainControl` : false
      */
-    var audioProcessingAutoGainControl: Boolean = true
+    var audioProcessingAutoGainControlEnabled: Boolean = true
 
     /**
      * 入力音声のハイパスフィルタ処理の有無の設定
@@ -149,7 +183,7 @@ class Configuration @JvmOverloads constructor(
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googHighpassFilter` : false
      */
-    var audioProcessingHighpassFilter: Boolean = true
+    var audioProcessingHighpassFilterEnabled: Boolean = true
 
     /**
      * 入力音声のノイズ抑制処理の有無の設定
@@ -157,7 +191,7 @@ class Configuration @JvmOverloads constructor(
      * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
      * - `googNoiseSuppression` : false
      */
-    var audioProcessingNoiseSuppression: Boolean = true
+    var audioProcessingNoiseSuppressionEnabled: Boolean = true
 
     /**
      * 音声の `org.webrtc.MediaConstraints` を設定します
@@ -165,7 +199,7 @@ class Configuration @JvmOverloads constructor(
      * null でない場合、 [audioProcessingEchoCancellation], [audioProcessingAutoGainControl],
      * [audioProcessingHighpassFilter], [audioProcessingNoiseSuppression] の設定は無視されます。
      */
-    var mediaConstraints: MediaConstraints? = null
+    var audioMediaConstraints: MediaConstraints? = null
 
     /**
      * 音声ソースの指定
@@ -181,7 +215,7 @@ class Configuration @JvmOverloads constructor(
      * AudioDeviceModule 生成時に利用されます。
      * デフォルト値は false (モノラル) です。
      */
-    var useStereoInput: Boolean = false
+    var inputAudioSound: AudioSound = AudioSound.MONO
 
     /**
      * 出力をステレオにするかどうかのフラグ
@@ -189,10 +223,28 @@ class Configuration @JvmOverloads constructor(
      * AudioDeviceModule 生成時に利用されます。
      * デフォルト値は false (モノラル) です。
      */
-    var useStereoOutput: Boolean = false
+    var outputAudioSound: AudioSound = AudioSound.MONO
 
     /**
      * opus_params
      */
     var opusParams: OpusParams? = null
+
+    init {
+        eglBase = EglBase.create()!!
+
+        if (videoEnabled) {
+            if (role == Role.SEND || role == Role.SENDRECV) {
+                videoCapturer = CameraCapturerFactory.create(context)
+                if (videoSendEglBaseContext == null) {
+                    videoSendEglBaseContext = eglBase.eglBaseContext
+                }
+            } else if (role == Role.RECV) {
+                if (videoRecvEglBaseContext == null) {
+                    videoRecvEglBaseContext = eglBase.eglBaseContext
+                }
+            }
+        }
+    }
+
 }
