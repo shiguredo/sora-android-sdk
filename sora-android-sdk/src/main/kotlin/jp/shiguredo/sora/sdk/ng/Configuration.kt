@@ -1,62 +1,136 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
+import android.graphics.Point
 import android.media.MediaRecorder
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
-import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
-import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
-import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.*
+import org.webrtc.EglBase
+import org.webrtc.MediaConstraints
+import org.webrtc.VideoCapturer
 import org.webrtc.audio.AudioDeviceModule
+import java.net.URL
 
-class Configuration(var context: Context,
-                    var url: String,
-                    var channelId: String,
-                    var role: Role) {
+enum class Role {
+    SEND,
+    RECV,
+    SENDRECV
+}
+
+/**
+ * 利用できる映像コーデックを示します
+ */
+enum class VideoCodec {
+    /** H.264 */
+    H264,
+    /** VP8 */
+    VP8,
+    /** VP9 */
+    VP9
+}
+
+/**
+ * 映像のフレームサイズをまとめるクラスです
+ */
+enum class VideoFrameSize {
+    QQVGA,
+    UHD4096x2160
+}
+
+enum class VideoDirection {
+    PORTRAIT,
+    LANDSCAPE
+}
+
+// TODO: deprecated
+class VideoFrameSize0 {
+
+    // 反転するメソッドがあればいい？
 
     companion object {
-        private val TAG = Configuration::class.simpleName!!
+
+        /** QQVGA 160x120 */
+        val QQVGA = Point(160, 120)
+        /** QCIF  176x144 */
+        val QCIF  = Point(176, 144)
+        /** HQVGA 240x160 */
+        val HQVGA = Point(240, 160)
+        /** QVGA  320x240 */
+        val QVGA  = Point(320, 240)
+        /** VGA   640x480 */
+        val VGA   = Point(640, 480)
+        /** HD    1280x720 */
+        val HD    = Point(1280, 720)
+        /** FHD   1920x1080 */
+        val FHD   = Point(1920, 1080)
+        /** Res3840x1920   3840x1920 */
+        val Res3840x1920 = Point(3840, 1920)
+        /** UHD3840x2160   3840x2160 */
+        val UHD3840x2160 = Point(3840, 2160)
+        /** UHD4096x2160   4096x2160 */
+        val UHD4096x2160 = Point(4096, 2160)
+
+    }
+
+}
+
+/**
+ * 利用できる音声コーデックを示します。
+ */
+enum class AudioCodec {
+    /** Opus */
+    OPUS,
+    /** PCMU */
+    PCMU
+}
+
+enum class AudioSound {
+    STEREO,
+    MONO,
+}
+
+class AudioConstraint {
+
+    companion object {
+        const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
+        const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
+        const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
+        const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
+    }
+
+}
+
+class Configuration @JvmOverloads constructor(
+        var context: Context,
+        var url: URL,
+        var channelId: String?,
+        var role: Role
+
+){
+
+    companion object {
         const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
-    var senderVideoRenderingContext: VideoRenderingContext? = null
-    var receiverVideoRenderingContext: VideoRenderingContext? = null
+    var eglBase: EglBase
 
-    var videoEnabled = true
+    var videoEnabled = false
     var videoCodec: VideoCodec = VideoCodec.VP9
     var videoBitRate: Int? = null
 
     var videoCapturer: VideoCapturer? = null
-    var videoFrameSize = VideoFrameSize.VGA
-    var videoFps: Int = 30
+    var videoSendEglBaseContext: EglBase.Context? = null
+    var videoRecvEglBaseContext: EglBase.Context? = null
 
-    /**
-     * 利用する VideoEncoderFactory を指定します
-     */
-    var videoEncoderFactory: VideoEncoderFactory? = null
-
-    /**
-     * 利用する VideoDecoderFactory を指定します
-     */
-    var videoDecoderFactory: VideoDecoderFactory? = null
-
-    // true のとき、 MediaChannel を close すると video renderer も自動的に release する
-    // 接続中の renderer のみ対象とする
-    var managesVideoRendererLifecycle: Boolean = true
-
-    var audioEnabled = true
+    var audioEnabled = false
     var audioCodec: AudioCodec = AudioCodec.OPUS
     var audioBitRate: Int? = null
 
     var multistreamEnabled     = false
     var simulcastEnabled       = false
     var spotlightEnabled       = false
-
-    var spotlight: Int? = null
 
     // gson.toJson で扱える型。 Object?
     var signalingMetadata: Object? = null
@@ -130,15 +204,15 @@ class Configuration(var context: Context,
      * 音声ソースの指定
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION です。
+     * デフォルト値は `android.media.MediaRecorder.AudioSource.MIC です。
      */
-    var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
+    var audioSource: Int = MediaRecorder.AudioSource.MIC
 
     /**
      * 入力をステレオにするかどうかのフラグ
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値はモノラル です。
+     * デフォルト値は false (モノラル) です。
      */
     var inputAudioSound: AudioSound = AudioSound.MONO
 
@@ -146,7 +220,7 @@ class Configuration(var context: Context,
      * 出力をステレオにするかどうかのフラグ
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値はモノラル です。
+     * デフォルト値は false (モノラル) です。
      */
     var outputAudioSound: AudioSound = AudioSound.MONO
 
@@ -156,114 +230,20 @@ class Configuration(var context: Context,
     var opusParams: OpusParams? = null
 
     init {
-    }
+        eglBase = EglBase.create()!!
 
-    private var isInitialized: Boolean = false
-
-    private fun initialize() {
-        if (isInitialized)
-            return
-
-        SoraLogger.d(TAG, "initialize configuration")
-
-        if (role.isSender) {
-            SoraLogger.d(TAG, "create video capturer")
-            videoCapturer = CameraCapturerFactory.create(context)
-            if (senderVideoRenderingContext == null) {
-                SoraLogger.d(TAG, "create sender video rendering context")
-                senderVideoRenderingContext = VideoRenderingContext()
+        if (videoEnabled) {
+            if (role == Role.SEND || role == Role.SENDRECV) {
+                videoCapturer = CameraCapturerFactory.create(context)
+                if (videoSendEglBaseContext == null) {
+                    videoSendEglBaseContext = eglBase.eglBaseContext
+                }
+            } else if (role == Role.RECV) {
+                if (videoRecvEglBaseContext == null) {
+                    videoRecvEglBaseContext = eglBase.eglBaseContext
+                }
             }
         }
-
-        if (role.isReceiver) {
-            if (receiverVideoRenderingContext == null) {
-                SoraLogger.d(TAG, "create receiver video rendering context")
-                receiverVideoRenderingContext = VideoRenderingContext()
-            }
-        }
-
-        isInitialized = true
-    }
-
-    internal fun toSoraMediaOption(): SoraMediaOption {
-        if (!isInitialized)
-            initialize()
-
-        return SoraMediaOption().also {
-            it.requiredRole = role.basicRole
-            it.multistreamEnabled = multistreamEnabled
-            it.simulcastEnabled = simulcastEnabled
-
-            if (spotlightEnabled && spotlight != null) {
-                it.spotlight = spotlight!!
-            }
-
-            if (videoEnabled) {
-                it.videoBitrate = videoBitRate
-
-                it.videoCodec = when (videoCodec) {
-                    VideoCodec.VP8 -> SoraVideoOption.Codec.VP8
-                    VideoCodec.VP9 -> SoraVideoOption.Codec.VP9
-                    VideoCodec.H264 -> SoraVideoOption.Codec.H264
-                    else -> SoraVideoOption.Codec.VP9
-                }
-
-                it.videoEncoderFactory = videoEncoderFactory
-                it.videoDecoderFactory = videoDecoderFactory
-
-                SoraLogger.d(TAG, "role $role, ${role.isSender} ${role.isReceiver}")
-                if (role.isSender) {
-                    SoraLogger.d(TAG, "enable video upstream")
-                    it.enableVideoUpstream(videoCapturer!!,
-                            senderVideoRenderingContext!!.eglBase.eglBaseContext)
-                }
-
-                if (role.isReceiver) {
-                    it.enableVideoDownstream(receiverVideoRenderingContext!!.eglBase.eglBaseContext)
-                }
-            }
-
-            if (audioEnabled) {
-                it.audioUpstreamEnabled = role.isSender
-                it.audioDownstreamEnabled = role.isReceiver
-
-                it.audioBitrate = audioBitRate
-
-                it.audioCodec = when (audioCodec) {
-                    AudioCodec.OPUS -> SoraAudioOption.Codec.OPUS
-                    AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
-                }
-
-                it.audioOption.audioSource = audioSource
-                it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
-                it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
-                it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
-                it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
-            }
-        }
-    }
-
-    fun printDebug(tag: String, message: String){
-        SoraLogger.d(tag, """$message: Configuration:
-            |url                     = $url
-            |channelId               = $channelId
-            |role                    = ${role.name}
-            |multistreamEnabled      = $multistreamEnabled
-            |simulcastEnabled        = $simulcastEnabled
-            |spotlightEnabled        = $spotlightEnabled
-            |spotlight               = $spotlight
-            |videoEnabled            = $videoEnabled
-            |videoCodec              = $videoCodec
-            |videoBitRate            = $videoBitRate
-            |videoCapturer           = $videoCapturer
-            |videoFrameSize          = $videoFrameSize
-            |videoFps                = $videoFps
-            |videoEncoderFactory     = $videoEncoderFactory
-            |videoDecoderFactory     = $videoDecoderFactory
-            |audioCodec              = $audioCodec
-            |audioBitRate            = $audioBitRate
-            |signalingMetadata       = $signalingMetadata
-            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())
     }
 
 }
