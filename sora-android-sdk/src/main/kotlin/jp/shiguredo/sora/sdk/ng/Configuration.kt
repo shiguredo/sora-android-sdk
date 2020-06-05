@@ -1,4 +1,4 @@
-package jp.shiguredo.sora.sdk.channel
+package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
 import android.graphics.Point
@@ -10,7 +10,6 @@ import org.webrtc.MediaConstraints
 import org.webrtc.VideoCapturer
 import org.webrtc.audio.AudioDeviceModule
 import java.net.URL
-import javax.microedition.khronos.egl.EGLConfig
 
 enum class Role {
     SEND,
