@@ -1,10 +1,8 @@
 package jp.shiguredo.sora.sdk
 
 import android.content.Context
-import jp.shiguredo.sora.sdk.channel.Configuration
-import jp.shiguredo.sora.sdk.channel.MediaChannel
-import org.webrtc.PeerConnection
-import java.lang.Error
+import jp.shiguredo.sora.sdk.ng.Configuration
+import jp.shiguredo.sora.sdk.ng.MediaChannel
 
 class Sora {
 
