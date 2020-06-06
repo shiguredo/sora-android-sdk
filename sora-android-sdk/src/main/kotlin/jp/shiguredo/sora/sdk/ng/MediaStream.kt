@@ -7,8 +7,16 @@ import org.webrtc.RendererCommon.RendererEvents
 
 class MediaStream internal constructor(val mediaChannel: MediaChannel) {
 
-    var nativeVideoTrack: MediaStreamTrack? = null
-    var nativeAudioTrack: MediaStreamTrack? = null
+    var videoTrack: MediaStreamTrack? = null
+        internal set
+
+    var audioTrack: MediaStreamTrack? = null
+        internal set
+
+    var isEnabled: Boolean = true
+    set(value) {
+        // TODO: トラック操作
+    }
 
     // video capturer
     private var videoRenderer: VideoRenderer? = null
