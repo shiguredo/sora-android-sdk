@@ -114,15 +114,23 @@ class Configuration @JvmOverloads constructor(
 
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
-    var eglBase: EglBase
+    var eglBase: EglBase? = null
 
     var videoEnabled = false
     var videoCodec: VideoCodec = VideoCodec.VP9
     var videoBitRate: Int? = null
 
     var videoCapturer: VideoCapturer? = null
+
+    // TODO: この2つ分ける必要あるのか？
+    // eglBase 一つでいいのでは？
+    // もしくは Configuration に不要？
+    // VideoView を自前で初期化すべきでは
     var videoSendEglBaseContext: EglBase.Context? = null
     var videoRecvEglBaseContext: EglBase.Context? = null
+
+    // true のとき、 MediaChannel を close すると video renderer も自動的に release する
+    var releasesVideoRendererWhenDone: Boolean = true
 
     var audioEnabled = false
     var audioCodec: AudioCodec = AudioCodec.OPUS
@@ -230,20 +238,7 @@ class Configuration @JvmOverloads constructor(
     var opusParams: OpusParams? = null
 
     init {
-        eglBase = EglBase.create()!!
 
-        if (videoEnabled) {
-            if (role == Role.SEND || role == Role.SENDRECV) {
-                videoCapturer = CameraCapturerFactory.create(context)
-                if (videoSendEglBaseContext == null) {
-                    videoSendEglBaseContext = eglBase.eglBaseContext
-                }
-            } else if (role == Role.RECV) {
-                if (videoRecvEglBaseContext == null) {
-                    videoRecvEglBaseContext = eglBase.eglBaseContext
-                }
-            }
-        }
     }
 
 }
