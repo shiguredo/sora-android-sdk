@@ -55,14 +55,6 @@ class MediaChannel @JvmOverloads internal constructor(
     internal fun connect(completionHandler: (Throwable?) -> Unit) {
         onConnect = completionHandler
 
-        eglBase = configuration.eglBase
-        if (eglBase == null) {
-            eglBase = EglBase.create()
-            if (eglBase == null) {
-                // TODO: エラー
-            }
-        }
-
         /*
         // Configuration
         if (videoEnabled) {

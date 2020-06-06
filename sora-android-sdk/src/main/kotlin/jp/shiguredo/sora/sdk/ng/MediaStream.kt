@@ -39,20 +39,17 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
      */
 
 
-    // video capturer
+    // TODO: video capturer
     private var videoRenderer: VideoRenderer? = null
 
-    fun setVideoRenderer(newRenderer: VideoRenderer?,
-                         rendererEvents: RendererEvents? = null,
-                         configAttributes: IntArray? = null,
-                         drawer: GlDrawer? = null) {
-        if (newRenderer == null) {
-            videoRenderer = null
-            return
-        }
+    // TODO: renderer の release のタイミングはどうなる？
+    fun setVideoRenderer(newRenderer: VideoRenderer,
+                         renderingContext: RenderingContext) {
+        if (videoRenderer != null) {
 
-        newRenderer!!.init(mediaChannel.configuration.eglBase.eglBaseContext,
-                rendererEvents, configAttributes, drawer)
+        }
+        newRenderer.init(renderingContext)
+        videoRenderer = newRenderer
     }
 
     internal fun close() {
