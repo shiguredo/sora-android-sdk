@@ -21,15 +21,21 @@ class MediaChannel @JvmOverloads internal constructor(
     }
 
     var nativePeerConnection: PeerConnection? = null
+        internal set
+
     var signalingChannel: SignalingChannel? = null
+        internal set
+
     var state: State = State.READY
+        internal set
 
     val streams: List<MediaStream>
     get() = _streams
 
-    var _streams: MutableList<MediaStream>
+    private var _streams: MutableList<MediaStream>
 
-    private var sender: RtpSender? = null
+    var sender: RtpSender? = null
+        internal set
 
     private var onConnect: ((Throwable?) -> Unit)? = null
     private var _onDisconnect: ((Throwable?) -> Unit)? = null
