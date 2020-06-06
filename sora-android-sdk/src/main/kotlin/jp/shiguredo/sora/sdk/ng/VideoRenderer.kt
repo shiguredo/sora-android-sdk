@@ -7,13 +7,7 @@ import org.webrtc.VideoFrame
 
 interface VideoRenderer {
 
-    // TODO: 以下の引数をラップするオブジェクトがいる？
-    // RenderingContext?
-    // RenderingContext?
-    fun init(sharedContext: EglBase.Context,
-             rendererEvents: RendererEvents?,
-             configAttributes: IntArray?,
-             drawer: GlDrawer?)
+    fun init(renderingContext: RenderingContext)
 
     fun release()
 
