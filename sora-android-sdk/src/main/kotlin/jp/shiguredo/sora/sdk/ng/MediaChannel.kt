@@ -23,7 +23,12 @@ class MediaChannel @JvmOverloads internal constructor(
     var nativePeerConnection: PeerConnection? = null
     var signalingChannel: SignalingChannel? = null
     var state: State = State.READY
-    var streams: List<MediaStream>
+
+    val streams: List<MediaStream>
+    get() = _streams
+
+    var _streams: MutableList<MediaStream>
+
     private var sender: RtpSender? = null
 
     private var onConnect: ((Throwable?) -> Unit)? = null
@@ -31,6 +36,10 @@ class MediaChannel @JvmOverloads internal constructor(
     private var onAddLocalStreamHandler: (stream: MediaStream) -> Unit = {}
     private var onAddRemoteStreamHandler: (stream: MediaStream) -> Unit = {}
     private var onRemoveRemoteStreamHandler: (label: String) -> Unit = {}
+
+    init {
+        _streams = mutableListOf()
+    }
 
     internal fun connect(completionHandler: (Throwable?) -> Unit) {
         onConnect = completionHandler
@@ -53,8 +62,15 @@ class MediaChannel @JvmOverloads internal constructor(
         onRemoveRemoteStreamHandler = handler
     }
 
+    fun addStream(stream: MediaStream) {
+        _streams.add(stream)
+    }
+
+    // TODO: Android SDK の Public API はストリームベースとする
+    /*
     fun addTrack(track: MediaStreamTrack) {
 
     }
+     */
 
 }
