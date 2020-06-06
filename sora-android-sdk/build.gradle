@@ -41,6 +41,10 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
 dokka {
