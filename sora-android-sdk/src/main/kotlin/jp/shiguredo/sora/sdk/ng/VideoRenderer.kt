@@ -1,13 +1,14 @@
 package jp.shiguredo.sora.sdk.ng
 
-import org.webrtc.EglBase
-import org.webrtc.RendererCommon.GlDrawer
-import org.webrtc.RendererCommon.RendererEvents
 import org.webrtc.VideoFrame
 
 interface VideoRenderer {
 
-    fun init(renderingContext: RenderingContext)
+    fun shouldInitialization(): Boolean
+
+    fun shouldRelease(): Boolean
+
+    fun initialize(videoRenderingContext: VideoRenderingContext)
 
     fun release()
 

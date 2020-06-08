@@ -1,15 +1,10 @@
 package jp.shiguredo.sora.sdk.ng
 
-import org.webrtc.EglBase
-import org.webrtc.GlRectDrawer
-import org.webrtc.MediaStream
-import org.webrtc.RendererCommon.GlDrawer
-import org.webrtc.RendererCommon.RendererEvents
-
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
                                        var nativeStream: org.webrtc.MediaStream) {
 
     private var _videoTrack: VideoTrack? = null
+
     var videoTrack: VideoTrack? = null
     set(value) {
         if (_videoTrack != null) {
@@ -40,19 +35,33 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
 
 
     // TODO: video capturer
-    private var videoRenderer: VideoRenderer? = null
 
-    // TODO: renderer の release のタイミングはどうなる？
+    private var _videoRenderer: VideoRenderer? = null
+
+    val videoRenderer: VideoRenderer?
+    get() = _videoRenderer
+
     fun setVideoRenderer(newRenderer: VideoRenderer,
-                         renderingContext: RenderingContext) {
-        if (videoRenderer != null) {
-
+                         videoRenderingContext: VideoRenderingContext) {
+        removeVideoRenderer()
+        if (mediaChannel.configuration.managesVideoRendererLifecycle &&
+                newRenderer.shouldInitialization()) {
+            newRenderer.initialize(videoRenderingContext)
         }
-        newRenderer.init(renderingContext)
-        videoRenderer = newRenderer
+        _videoRenderer = newRenderer
+    }
+
+    fun removeVideoRenderer() {
+        if (mediaChannel.configuration.managesVideoRendererLifecycle &&
+                _videoRenderer != null && _videoRenderer!!.shouldRelease()) {
+            _videoRenderer!!.release()
+        }
+        _videoRenderer = null
     }
 
     internal fun close() {
+        removeVideoRenderer()
+
         videoTrack?.close()
         videoTrack = null
 
