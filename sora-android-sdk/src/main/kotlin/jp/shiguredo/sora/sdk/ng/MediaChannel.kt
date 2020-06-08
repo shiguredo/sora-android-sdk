@@ -1,11 +1,17 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
+import android.util.Log
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
+import jp.shiguredo.sora.sdk.channel.SoraMediaChannel
+import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
+import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
+import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import org.webrtc.PeerConnection
 import jp.shiguredo.sora.sdk.ng.MediaStream
 import jp.shiguredo.sora.sdk.ng.MediaStreamTrack
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.RtpSender
 import org.webrtc.VideoCapturer
@@ -14,6 +20,10 @@ class MediaChannel @JvmOverloads internal constructor(
         private val context: Context,
         val configuration: Configuration
 ) {
+
+    companion object {
+        private val TAG = MediaChannel::class.simpleName
+    }
 
     enum class State {
         READY,
@@ -42,18 +52,35 @@ class MediaChannel @JvmOverloads internal constructor(
     var eglBase: EglBase? = null
     var videoCapturer: VideoCapturer? = null
 
-    private var onConnect: ((Throwable?) -> Unit)? = null
-    private var _onDisconnect: ((Throwable?) -> Unit)? = null
-    private var onAddLocalStreamHandler: (stream: MediaStream) -> Unit = {}
-    private var onAddRemoteStreamHandler: (stream: MediaStream) -> Unit = {}
-    private var onRemoveRemoteStreamHandler: (label: String) -> Unit = {}
+    private var _onConnect: ((error: Throwable?) -> Unit)? = null
+    private var _onDisconnect: (() -> Unit)? = null
+    private var _onFailure: ((error: Throwable) -> Unit)? = null
+    private var _onAddLocalStream: (stream: MediaStream) -> Unit = {}
+    private var _onAddRemoteStream: (stream: MediaStream) -> Unit = {}
+    private var _onRemoveRemoteStream: (label: String) -> Unit = {}
+    private var _onPush: (message: PushMessage) -> Unit = {}
+
+    private var _basicMediaChannel: SoraMediaChannel? = null
+    private var _basicMediaOption: SoraMediaOption? = null
 
     init {
         _streams = mutableListOf()
     }
 
-    internal fun connect(completionHandler: (Throwable?) -> Unit) {
-        onConnect = completionHandler
+    internal fun connect(completionHandler: (error: Throwable?) -> Unit) {
+        state = State.CONNECTING
+
+        _onConnect = completionHandler
+
+        _basicMediaOption = configuration.toSoraMediaOption()
+        _basicMediaChannel = SoraMediaChannel(
+                context           = context,
+                signalingEndpoint = configuration.url.toString(),
+                channelId         = configuration.channelId,
+                mediaOption       = _basicMediaOption!!,
+                listener          = basicMediaChannelListner)
+        _basicMediaChannel!!.connect()
+
 
         /*
         // Configuration
@@ -72,24 +99,58 @@ class MediaChannel @JvmOverloads internal constructor(
          */
     }
 
-    fun onDisconnect(completionHandler: (Throwable?) -> Unit) {
-        _onDisconnect = completionHandler
+    private fun basicDisconnect() {
+        _basicMediaChannel!!.disconnect()
+        state = State.DISCONNECTED
+    }
+
+    fun disconnect() {
+        basicDisconnect()
+        if (_onDisconnect != null) {
+            _onDisconnect!!()
+        }
+    }
+
+    private fun fail(error: Throwable) {
+        basicDisconnect()
+
+        when (state) {
+            State.CONNECTING ->
+                if (_onConnect != null) {
+                    _onConnect!!(error)
+                }
+            else ->
+                if (_onFailure != null) {
+                    _onFailure!!(error)
+                }
+        }
+    }
+
+    fun onDisconnect(handler: () -> Unit) {
+        _onDisconnect = handler
+    }
+
+    fun onFailure(handler: (error: Throwable) -> Unit) {
+        _onFailure = handler
     }
 
     fun onAddLocalStream(handler: (stream: MediaStream) -> Unit) {
-        onAddLocalStreamHandler = handler
+        _onAddLocalStream = handler
     }
 
     fun onAddRemoteStream(handler: (stream: MediaStream) -> Unit) {
-        onAddRemoteStreamHandler = handler
+        _onAddRemoteStream = handler
     }
 
     fun onRemoveRemoteStream(handler: (label: String) -> Unit) {
-        onRemoveRemoteStreamHandler = handler
+        _onRemoveRemoteStream = handler
     }
 
+    // TODO: 内部ではトラックベース
     fun addStream(stream: MediaStream) {
         _streams.add(stream)
+
+        //nativePeerConnection.addTrack()
     }
 
     // TODO: Android SDK の Public API はストリームベースとする
@@ -98,5 +159,66 @@ class MediaChannel @JvmOverloads internal constructor(
 
     }
      */
+
+    private val basicMediaChannelListner = object : SoraMediaChannel.Listener {
+
+        override fun onConnect(mediaChannel: SoraMediaChannel) {
+            Log.d(TAG, "onConnect")
+            state = State.CONNECTED
+            if (_onConnect != null) {
+                _onConnect!!(null)
+            }
+        }
+
+        override fun onClose(mediaChannel: SoraMediaChannel) {
+            Log.d(TAG, "onClose")
+            disconnect()
+        }
+
+        override fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {
+            Log.d(TAG, "onError [$reason]")
+            fail(SoraError(SoraError.Kind.fromReason(reason)))
+        }
+
+        override fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {
+            SoraLogger.d(TAG, "onError [$reason]: $message")
+            fail(SoraError(SoraError.Kind.fromReason(reason)))
+        }
+
+        override fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
+            Log.d(TAG, "onAddRemoteStream")
+
+            val stream = MediaStream(this@MediaChannel, ms)
+            _streams.add(stream)
+
+            if (_onAddRemoteStream != null) {
+                //_onAddRemoteStream!!(ms)
+            }
+        }
+
+        override fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
+            Log.d(TAG, "onAddLocalStream")
+
+            val stream = MediaStream(this@MediaChannel, ms)
+            _streams.add(stream)
+
+            // TODO: callback
+        }
+
+        /*
+        override fun onAddReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver, ms: Array<out MediaStream>) {
+            Log.d(TAG, "onAddReceiver")
+        }
+
+        override fun onRemoveReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver) {
+            Log.d(TAG, "onRemoveReceiver")
+        }
+         */
+
+        override fun onPushMessage(mediaChannel: SoraMediaChannel, push: PushMessage) {
+            Log.d(TAG, "onPushMessage: push=${push}")
+        }
+
+    }
 
 }
