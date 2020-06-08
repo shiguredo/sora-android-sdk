@@ -65,7 +65,7 @@ dependencies {
 
     // required by "signaling" part
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'com.squareup.okhttp3:okhttp:4.6.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.7.2'
 
     // required by "rtc" part
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
