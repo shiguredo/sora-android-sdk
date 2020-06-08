@@ -3,11 +3,11 @@ package jp.shiguredo.sora.sdk.ng
 import android.content.Context
 import android.graphics.Point
 import android.media.MediaRecorder
-import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
+import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
-import org.webrtc.EglBase
-import org.webrtc.MediaConstraints
-import org.webrtc.VideoCapturer
+import org.webrtc.*
 import org.webrtc.audio.AudioDeviceModule
 import java.net.URL
 
@@ -111,8 +111,8 @@ class Configuration(var context: Context,
 
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
-    // null をセットすると、 video renderer に与える EglContext をカスタマイズできる
-    var sharedRenderingContext: RenderingContext? = null
+    var senderVideoRenderingContext: VideoRenderingContext? = null
+    var receiverVideoRenderingContext: VideoRenderingContext? = null
 
     var videoEnabled = false
     var videoCodec: VideoCodec = VideoCodec.VP9
@@ -120,8 +120,19 @@ class Configuration(var context: Context,
 
     var videoCapturer: VideoCapturer? = null
 
+    /**
+     * 利用する VideoEncoderFactory を指定します
+     */
+    var videoEncoderFactory: VideoEncoderFactory? = null
+
+    /**
+     * 利用する VideoDecoderFactory を指定します
+     */
+    var videoDecoderFactory: VideoDecoderFactory? = null
+
     // true のとき、 MediaChannel を close すると video renderer も自動的に release する
-    var releasesVideoRendererWhenDone: Boolean = true
+    // 接続中の renderer のみ対象とする
+    var managesVideoRendererLifecycle: Boolean = true
 
     var audioEnabled = false
     var audioCodec: AudioCodec = AudioCodec.OPUS
@@ -229,7 +240,51 @@ class Configuration(var context: Context,
     var opusParams: OpusParams? = null
 
     init {
-        sharedRenderingContext = RenderingContext()
+    }
+
+    internal fun toSoraMediaOption(): SoraMediaOption {
+        return SoraMediaOption().also {
+            it.multistreamEnabled = multistreamEnabled
+            it.simulcastEnabled = simulcastEnabled
+
+            // TODO
+            if (spotlightEnabled) {
+            }
+
+            // TODO: 自動的に両方セットしていいのか？
+            it.videoUpstreamEnabled = videoEnabled
+            it.videoDownstreamEnabled = videoEnabled
+
+            it.videoBitrate = videoBitRate
+
+            it.videoCodec = when (videoCodec) {
+                VideoCodec.VP8 -> SoraVideoOption.Codec.VP8
+                VideoCodec.VP9 -> SoraVideoOption.Codec.VP9
+                VideoCodec.H264 -> SoraVideoOption.Codec.H264
+            }
+
+            it.videoCapturer = videoCapturer
+            it.videoEncoderFactory = videoEncoderFactory
+            it.videoDecoderFactory = videoDecoderFactory
+            it.videoUpstreamContext = senderVideoRenderingContext?.eglBase?.eglBaseContext
+            it.videoDownstreamContext = receiverVideoRenderingContext?.eglBase?.eglBaseContext
+
+            it.audioUpstreamEnabled = audioEnabled
+            it.audioDownstreamEnabled = audioEnabled
+
+            it.audioBitrate = audioBitRate
+
+            it.audioCodec = when (audioCodec) {
+                AudioCodec.OPUS -> SoraAudioOption.Codec.OPUS
+                AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
+            }
+
+            it.audioOption.audioSource = audioSource
+            it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
+            it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
+            it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
+            it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
+        }
     }
 
 }
