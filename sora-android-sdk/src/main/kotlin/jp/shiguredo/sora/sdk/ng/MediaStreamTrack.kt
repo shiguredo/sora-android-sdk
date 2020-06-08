@@ -27,6 +27,8 @@ abstract class MediaStreamTrack {
 
     abstract var isEnabled: Boolean
 
+    abstract var nativeTrack: org.webrtc.MediaStreamTrack
+
     var nativeSender: RtpSender? = null
         internal set
 

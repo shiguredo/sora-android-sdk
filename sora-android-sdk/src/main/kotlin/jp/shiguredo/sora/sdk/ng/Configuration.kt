@@ -3,6 +3,8 @@ package jp.shiguredo.sora.sdk.ng
 import android.content.Context
 import android.graphics.Point
 import android.media.MediaRecorder
+import android.provider.MediaStore
+import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
@@ -251,39 +253,50 @@ class Configuration(var context: Context,
             if (spotlightEnabled) {
             }
 
-            // TODO: 自動的に両方セットしていいのか？
-            it.videoUpstreamEnabled = videoEnabled
-            it.videoDownstreamEnabled = videoEnabled
+            if (videoEnabled) {
+                it.videoBitrate = videoBitRate
 
-            it.videoBitrate = videoBitRate
+                it.videoCodec = when (videoCodec) {
+                    VideoCodec.VP8 -> SoraVideoOption.Codec.VP8
+                    VideoCodec.VP9 -> SoraVideoOption.Codec.VP9
+                    VideoCodec.H264 -> SoraVideoOption.Codec.H264
+                }
 
-            it.videoCodec = when (videoCodec) {
-                VideoCodec.VP8 -> SoraVideoOption.Codec.VP8
-                VideoCodec.VP9 -> SoraVideoOption.Codec.VP9
-                VideoCodec.H264 -> SoraVideoOption.Codec.H264
+                it.videoEncoderFactory = videoEncoderFactory
+                it.videoDecoderFactory = videoDecoderFactory
+
+                if (role == Role.SEND || role == Role.SENDRECV) {
+                    videoCapturer = CameraCapturerFactory.create(context)
+                    if (senderVideoRenderingContext == null) {
+                        senderVideoRenderingContext = VideoRenderingContext()
+                    }
+                    it.enableVideoUpstream(videoCapturer!!,
+                            senderVideoRenderingContext!!.eglBase.eglBaseContext)
+                } else if (role == Role.RECV) {
+                    if (receiverVideoRenderingContext == null) {
+                        receiverVideoRenderingContext = VideoRenderingContext()
+                    }
+                    it.enableVideoDownstream(receiverVideoRenderingContext!!.eglBase.eglBaseContext)
+                }
             }
 
-            it.videoCapturer = videoCapturer
-            it.videoEncoderFactory = videoEncoderFactory
-            it.videoDecoderFactory = videoDecoderFactory
-            it.videoUpstreamContext = senderVideoRenderingContext?.eglBase?.eglBaseContext
-            it.videoDownstreamContext = receiverVideoRenderingContext?.eglBase?.eglBaseContext
+            if (audioEnabled) {
+                it.audioUpstreamEnabled = audioEnabled
+                it.audioDownstreamEnabled = audioEnabled
 
-            it.audioUpstreamEnabled = audioEnabled
-            it.audioDownstreamEnabled = audioEnabled
+                it.audioBitrate = audioBitRate
 
-            it.audioBitrate = audioBitRate
+                it.audioCodec = when (audioCodec) {
+                    AudioCodec.OPUS -> SoraAudioOption.Codec.OPUS
+                    AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
+                }
 
-            it.audioCodec = when (audioCodec) {
-                AudioCodec.OPUS -> SoraAudioOption.Codec.OPUS
-                AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
+                it.audioOption.audioSource = audioSource
+                it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
+                it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
+                it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
+                it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
             }
-
-            it.audioOption.audioSource = audioSource
-            it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
-            it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
-            it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
-            it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
         }
     }
 
