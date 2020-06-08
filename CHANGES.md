@@ -19,6 +19,8 @@
   - @szktty
 - `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
   - @szktty
+- `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
+  - @szktty
 
 ## 2020.2
 

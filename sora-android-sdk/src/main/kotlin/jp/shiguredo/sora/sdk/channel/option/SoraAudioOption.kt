@@ -96,7 +96,7 @@ class SoraAudioOption {
      * AudioDeviceModule 生成時に利用されます。
      * デフォルト値は `android.media.MediaRecorder.AudioSource.MIC です。
      */
-    var audioSource: Int = MediaRecorder.AudioSource.MIC
+    var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
     /**
      * 入力をステレオにするかどうかのフラグ
