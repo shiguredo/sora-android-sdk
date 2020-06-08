@@ -9,6 +9,17 @@
 - FIX
     - バグ修正
 
+## develop
+
+### CHANGE
+
+- libwebrtc を 83.4103.12.2 に上げる
+  - @szktty
+- `com.android.tools.build:gradle` を 4.0.0 に上げる
+  - @szktty
+- `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
+  - @szktty
+
 ## 2020.2
 
 ### CHANGE
