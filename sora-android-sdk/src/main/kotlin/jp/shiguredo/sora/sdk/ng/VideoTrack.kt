@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.ng
 
+/*
 class VideoTrack: MediaStreamTrack() {
 
     override var kind: Kind = Kind.VIDEO
@@ -24,3 +25,5 @@ class VideoTrack: MediaStreamTrack() {
     }
 
 }
+
+ */
