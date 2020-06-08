@@ -1,20 +1,31 @@
 package jp.shiguredo.sora.sdk.ng
 
+import org.webrtc.RtpReceiver
+import org.webrtc.RtpSender
+
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
                                        var nativeStream: org.webrtc.MediaStream) {
 
+    /*
     private var _videoTrack: VideoTrack? = null
 
     var videoTrack: VideoTrack? = null
-    set(value) {
-        if (_videoTrack != null) {
-            nativeStream?.removeTrack(_videoTrack!!.nativeTrack)
+        set(value) {
+            if (_videoTrack != null) {
+                nativeStream?.removeTrack(_videoTrack!!.nativeTrack)
+            }
+            _videoTrack = value
         }
-        _videoTrack = value
-    }
 
     var audioTrack: AudioTrack? = null
         set(value) {}
+     */
+
+    val id: String
+    get() = nativeStream.id
+
+    var sender: RtpSender? = null
+    var receiver: RtpReceiver? = null
 
     /*
     var isEnabled: Boolean
@@ -62,11 +73,19 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     internal fun close() {
         removeVideoRenderer()
 
+        sender?.track()?.dispose()
+        sender = null
+
+        receiver?.track()?.dispose()
+        receiver = null
+
+        /*
         videoTrack?.close()
         videoTrack = null
 
         audioTrack?.close()
         audioTrack = null
+         */
 
         nativeStream.dispose()
     }
