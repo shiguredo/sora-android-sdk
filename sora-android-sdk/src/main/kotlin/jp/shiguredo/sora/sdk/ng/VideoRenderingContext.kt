@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.app.Activity
 import org.webrtc.EglBase
 import org.webrtc.GlRectDrawer
 import org.webrtc.RendererCommon.GlDrawer
