@@ -1,10 +1,12 @@
 package jp.shiguredo.sora.sdk.ng
 
+import android.provider.MediaStore
+import org.webrtc.MediaStreamTrack
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
 
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
-                                       var nativeStream: org.webrtc.MediaStream) {
+                                       val nativeStream: org.webrtc.MediaStream) {
 
     /*
     private var _videoTrack: VideoTrack? = null
@@ -25,49 +27,63 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     get() = nativeStream.id
 
     var sender: RtpSender? = null
-    var receiver: RtpReceiver? = null
+        internal set
 
-    /*
+    var receiver: RtpReceiver? = null
+        internal set
+
+    internal val videoTracks: List<MediaStreamTrack>
+        get() = nativeStream.videoTracks
+
+    internal val audioTracks: List<MediaStreamTrack>
+        get() = nativeStream.audioTracks
+
+    internal val allTracks: List<MediaStreamTrack>
+        get() = videoTracks + audioTracks
+
     var isEnabled: Boolean
         get() {
-            return if (videoTrack != null) {
-                videoTrack!!.isEnabled
-            } else if (audioTrack != null) {
-                audioTrack!!.isEnabled
-            } else {
-                false
+            for (track in allTracks) {
+                if (!track.enabled()) {
+                    return false
+                }
             }
+            return true
         }
         set(value) {
-            videoTrack?.isEnabled = value
-            audioTrack?.isEnabled = value
+            for (track in allTracks) {
+                track.setEnabled(value)
+            }
         }
-     */
 
+    private var _videoRendererAdapter = VideoRendererAdapter()
+
+    init {
+        for (track in nativeStream.videoTracks) {
+            track.addSink(_videoRendererAdapter)
+        }
+    }
 
     // TODO: video capturer
-
-    private var _videoRenderer: VideoRenderer? = null
-
-    val videoRenderer: VideoRenderer?
-    get() = _videoRenderer
 
     fun setVideoRenderer(newRenderer: VideoRenderer,
                          videoRenderingContext: VideoRenderingContext) {
         removeVideoRenderer()
+
         if (mediaChannel.configuration.managesVideoRendererLifecycle &&
                 newRenderer.shouldInitialization()) {
             newRenderer.initialize(videoRenderingContext)
         }
-        _videoRenderer = newRenderer
+        _videoRendererAdapter.videoRenderer = newRenderer
     }
 
     fun removeVideoRenderer() {
         if (mediaChannel.configuration.managesVideoRendererLifecycle &&
-                _videoRenderer != null && _videoRenderer!!.shouldRelease()) {
-            _videoRenderer!!.release()
+                _videoRendererAdapter.videoRenderer != null &&
+                _videoRendererAdapter.videoRenderer!!.shouldRelease()) {
+            _videoRendererAdapter.videoRenderer!!.release()
         }
-        _videoRenderer = null
+        _videoRendererAdapter.videoRenderer = null
     }
 
     internal fun close() {

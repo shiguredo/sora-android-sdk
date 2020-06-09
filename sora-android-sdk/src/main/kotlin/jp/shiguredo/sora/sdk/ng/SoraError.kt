@@ -5,7 +5,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 class SoraError(val kind: Kind,
                 message: String? = null,
                 cause: Throwable? = null):
-        Error(message = message, cause = cause) {
+        Throwable(message = message, cause = cause) {
 
     /**
      * Sora との通信やメディアに関するエラーを示します

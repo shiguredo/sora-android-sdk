@@ -103,7 +103,7 @@ class AudioConstraint {
 }
 
 class Configuration(var context: Context,
-                    var url: URL,
+                    var url: String,
                     var channelId: String?,
                     var role: Role) {
 
