@@ -15,7 +15,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
 class MediaChannel @JvmOverloads internal constructor(
-        private val context: Context,
         val configuration: Configuration
 ) {
 
@@ -66,7 +65,7 @@ class MediaChannel @JvmOverloads internal constructor(
 
         _basicMediaOption = configuration.toSoraMediaOption()
         _basicMediaChannel = SoraMediaChannel(
-                context           = context,
+                context           = configuration.context,
                 signalingEndpoint = configuration.url.toString(),
                 channelId         = configuration.channelId,
                 mediaOption       = _basicMediaOption!!,
