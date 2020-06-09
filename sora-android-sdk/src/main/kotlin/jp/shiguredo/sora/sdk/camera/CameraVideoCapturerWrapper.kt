@@ -23,6 +23,10 @@ class CameraVideoCapturerWrapper(private val capturer: CameraVideoCapturer,
         capturer.switchCamera(handler)
     }
 
+    override fun switchCamera(p0: CameraVideoCapturer.CameraSwitchHandler?, p1: String?) {
+        capturer.switchCamera(p0, p1)
+    }
+
     override fun isScreencast(): Boolean {
         return fixedResolution
     }

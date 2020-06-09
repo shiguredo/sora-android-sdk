@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.ng
 
+/*
 class AudioTrack: MediaStreamTrack() {
 
     override var kind: Kind = Kind.AUDIO
@@ -28,3 +29,5 @@ class AudioTrack: MediaStreamTrack() {
     }
 
 }
+
+ */

@@ -12,6 +12,6 @@ interface VideoRenderer {
 
     fun release()
 
-    fun onFrame(frame: VideoFrame)
+    fun onFrame(frame: VideoFrame?)
 
 }

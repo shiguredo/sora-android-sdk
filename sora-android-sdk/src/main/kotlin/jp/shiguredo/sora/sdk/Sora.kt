@@ -8,10 +8,9 @@ class Sora {
 
     companion object {
 
-        fun connect(context: Context,
-                    configuration: Configuration,
+        fun connect(configuration: Configuration,
                     completionHandler: (Result<MediaChannel>) -> Unit) {
-            val mediaChannel = MediaChannel(context, configuration)
+            val mediaChannel = MediaChannel(configuration)
             mediaChannel.connect() { error ->
                 if (error == null) {
                     completionHandler(Result.failure(error!!))
