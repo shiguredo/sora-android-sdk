@@ -94,7 +94,7 @@ class SoraAudioOption {
      * 音声ソースの指定
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は `android.media.MediaRecorder.AudioSource.MIC です。
+     * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION です。
      */
     var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
