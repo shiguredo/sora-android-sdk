@@ -151,7 +151,7 @@ class SoraMediaOption {
 
     internal var _multistreamIsRequired: Boolean? = null
 
-    internal val multistreamIsRequired: Boolean
+    internal var multistreamIsRequired: Boolean
         get() = when {
             _multistreamIsRequired != null ->
                 _multistreamIsRequired!!
@@ -160,6 +160,9 @@ class SoraMediaOption {
                 true
             else ->
                 multistreamEnabled
+        }
+        set(value) {
+            _multistreamIsRequired = value
         }
 
     internal var _requiredRole: SoraChannelRole? = null
@@ -186,5 +189,5 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED
-
 }
+

@@ -6,18 +6,14 @@ import android.media.MediaRecorder
 import android.provider.MediaStore
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
+import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import org.webrtc.audio.AudioDeviceModule
 import java.net.URL
-
-enum class Role {
-    SEND,
-    RECV,
-    SENDRECV
-}
 
 /**
  * 利用できる映像コーデックを示します
@@ -104,7 +100,7 @@ class AudioConstraint {
 
 class Configuration(var context: Context,
                     var url: String,
-                    var channelId: String?,
+                    var channelId: String,
                     var role: Role) {
 
     companion object {
@@ -116,7 +112,7 @@ class Configuration(var context: Context,
     var senderVideoRenderingContext: VideoRenderingContext? = null
     var receiverVideoRenderingContext: VideoRenderingContext? = null
 
-    var videoEnabled = false
+    var videoEnabled = true
     var videoCodec: VideoCodec = VideoCodec.VP9
     var videoBitRate: Int? = null
 
@@ -136,7 +132,7 @@ class Configuration(var context: Context,
     // 接続中の renderer のみ対象とする
     var managesVideoRendererLifecycle: Boolean = true
 
-    var audioEnabled = false
+    var audioEnabled = true
     var audioCodec: AudioCodec = AudioCodec.OPUS
     var audioBitRate: Int? = null
 
@@ -246,6 +242,7 @@ class Configuration(var context: Context,
 
     internal fun toSoraMediaOption(): SoraMediaOption {
         return SoraMediaOption().also {
+            it.requiredRole = role.basicRole
             it.multistreamEnabled = multistreamEnabled
             it.simulcastEnabled = simulcastEnabled
 
@@ -265,14 +262,16 @@ class Configuration(var context: Context,
                 it.videoEncoderFactory = videoEncoderFactory
                 it.videoDecoderFactory = videoDecoderFactory
 
-                if (role == Role.SEND || role == Role.SENDRECV) {
+                if (role.isSender) {
                     videoCapturer = CameraCapturerFactory.create(context)
                     if (senderVideoRenderingContext == null) {
                         senderVideoRenderingContext = VideoRenderingContext()
                     }
                     it.enableVideoUpstream(videoCapturer!!,
                             senderVideoRenderingContext!!.eglBase.eglBaseContext)
-                } else if (role == Role.RECV) {
+                }
+
+                if (role.isReceiver) {
                     if (receiverVideoRenderingContext == null) {
                         receiverVideoRenderingContext = VideoRenderingContext()
                     }
@@ -281,8 +280,8 @@ class Configuration(var context: Context,
             }
 
             if (audioEnabled) {
-                it.audioUpstreamEnabled = audioEnabled
-                it.audioDownstreamEnabled = audioEnabled
+                it.audioUpstreamEnabled = role.isSender
+                it.audioDownstreamEnabled = role.isReceiver
 
                 it.audioBitrate = audioBitRate
 
@@ -298,6 +297,24 @@ class Configuration(var context: Context,
                 it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
             }
         }
+    }
+
+    fun printDebug(tag: String, message: String){
+        SoraLogger.d(tag, """$message: Configuration:
+            |url                     = $url
+            |channelId               = $channelId
+            |role                    = ${role.name}
+            |multistreamEnabled      = $multistreamEnabled
+            |simulcastEnabled        = $simulcastEnabled
+            |spotlightEnabled        = $spotlightEnabled
+            |videoEnabled            = $videoEnabled
+            |videoCodec              = $videoCodec
+            |videoBitRate            = $videoBitRate
+            |videoCapturer           = $videoCapturer
+            |audioCodec              = $audioCodec
+            |audioBitRate            = $audioBitRate
+            |signalingMetadata       = $signalingMetadata
+            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())
     }
 
 }

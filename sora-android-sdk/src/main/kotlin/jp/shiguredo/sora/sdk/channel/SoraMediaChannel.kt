@@ -403,6 +403,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         SoraLogger.d(TAG, """connect: SoraMediaOption
+            |requiredRole            = ${mediaOption.requiredRole}
             |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
             |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
             |multistreamEnabled      = ${mediaOption.multistreamEnabled}
