@@ -129,15 +129,15 @@ class Configuration(var context: Context,
      * 音声ソースの指定
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は `android.media.MediaRecorder.AudioSource.MIC です。
+     * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION です。
      */
-    var audioSource: Int = MediaRecorder.AudioSource.MIC
+    var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
     /**
      * 入力をステレオにするかどうかのフラグ
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は false (モノラル) です。
+     * デフォルト値はモノラル です。
      */
     var inputAudioSound: AudioSound = AudioSound.MONO
 
@@ -145,7 +145,7 @@ class Configuration(var context: Context,
      * 出力をステレオにするかどうかのフラグ
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は false (モノラル) です。
+     * デフォルト値はモノラル です。
      */
     var outputAudioSound: AudioSound = AudioSound.MONO
 
