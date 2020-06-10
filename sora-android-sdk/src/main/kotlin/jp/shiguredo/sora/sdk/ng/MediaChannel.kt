@@ -19,7 +19,7 @@ class MediaChannel @JvmOverloads internal constructor(
 ) {
 
     companion object {
-        private val TAG = MediaChannel::class.simpleName
+        private val TAG = MediaChannel::class.simpleName!!
     }
 
     enum class State {
@@ -62,6 +62,8 @@ class MediaChannel @JvmOverloads internal constructor(
         state = State.CONNECTING
 
         _onConnect = completionHandler
+
+        configuration.printDebug(TAG, "connect")
 
         _basicMediaOption = configuration.toSoraMediaOption()
         _basicMediaChannel = SoraMediaChannel(
