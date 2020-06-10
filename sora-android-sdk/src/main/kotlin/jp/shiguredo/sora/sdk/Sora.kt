@@ -12,7 +12,7 @@ class Sora {
                     completionHandler: (Result<MediaChannel>) -> Unit) {
             val mediaChannel = MediaChannel(configuration)
             mediaChannel.connect() { error ->
-                if (error == null) {
+                if (error != null) {
                     completionHandler(Result.failure(error!!))
                 } else {
                     completionHandler(Result.success(mediaChannel))
