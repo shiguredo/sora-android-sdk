@@ -149,13 +149,20 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
     get() = audioUpstreamEnabled || videoUpstreamEnabled
 
+    internal var _multistreamIsRequired: Boolean? = null
+
     internal val multistreamIsRequired: Boolean
-    get() = if (downstreamIsRequired && upstreamIsRequired) {
-            // 双方向通信の場合は multistream フラグを立てる
-            true
-        } else {
-            multistreamEnabled
+        get() = when {
+            _multistreamIsRequired != null ->
+                _multistreamIsRequired!!
+            downstreamIsRequired && upstreamIsRequired ->
+                // 双方向通信の場合は multistream フラグを立てる
+                true
+            else ->
+                multistreamEnabled
         }
+
+    internal var _requiredRole: SoraChannelRole? = null
 
     internal val requiredRole: SoraChannelRole
     get() = if (upstreamIsRequired && downstreamIsRequired)
