@@ -151,7 +151,7 @@ class SoraMediaOption {
 
     internal var _multistreamIsRequired: Boolean? = null
 
-    internal val multistreamIsRequired: Boolean
+    internal var multistreamIsRequired: Boolean
         get() = when {
             _multistreamIsRequired != null ->
                 _multistreamIsRequired!!
@@ -161,10 +161,13 @@ class SoraMediaOption {
             else ->
                 multistreamEnabled
         }
+        set(value) {
+            _multistreamIsRequired = value
+        }
 
     internal var _requiredRole: SoraChannelRole? = null
 
-    internal val requiredRole: SoraChannelRole
+    internal var requiredRole: SoraChannelRole
         get() = when {
             _requiredRole != null ->
                 _requiredRole!!
@@ -172,6 +175,9 @@ class SoraMediaOption {
                 SoraChannelRole.UPSTREAM
             else ->
                 SoraChannelRole.DOWNSTREAM
+        }
+        set(value) {
+            _requiredRole = value
         }
 
     /**
@@ -188,5 +194,5 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED
-
 }
+
