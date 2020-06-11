@@ -34,7 +34,7 @@ interface PeerChannel {
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
-        fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
+        fun onSenderEncodings(sender: RtpSender, encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
         fun onWarning(reason: SoraErrorReason)
@@ -82,6 +82,9 @@ class PeerChannelImpl(
     private val localVideoManager = componentFactory.createVideoManager()
 
     private var localStream: MediaStream? = null
+
+    private var videoSenders: MutableList<RtpSender> = mutableListOf()
+    private var audioSenders: MutableList<RtpSender> = mutableListOf()
 
     private var closing = false
 
@@ -219,38 +222,39 @@ class PeerChannelImpl(
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
 
-            localStream!!.audioTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
-            localStream!!.videoTracks.forEach { conn!!.addTrack(it, mediaStreamLabels) }
+            localStream!!.audioTracks.forEach {
+                audioSenders.add(conn!!.addTrack(it, mediaStreamLabels))
+            }
+            localStream!!.videoTracks.forEach {
+                videoSenders.add(conn!!.addTrack(it, mediaStreamLabels))
+            }
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
                 SoraLogger.d(TAG, "Modify sender.parameters")
-                val upstreamVideoTransceiver = conn!!.transceivers!!.first {
-                    // 自分が send すべき transceiver は、ひとつめの video type と決め打ちする。
-                    // offer に自分の mid が入ったらそれをフィルタにすべき
-                    it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO
-                }
 
-                // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
-                // 変換するのでここで参照を保持しておく。
-                val parameters = upstreamVideoTransceiver.sender.parameters
-                parameters.encodings.zip(encodings).forEach { (senderEncoding, offerEncoding) ->
-                    offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
-                    offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
-                    offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
-                }
-
-                // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
-                listener?.onSenderEncodings(parameters.encodings)
-                parameters.encodings.forEach { senderEncoding ->
-                    with (senderEncoding) {
-                        SoraLogger.d(TAG, "Sender encoding: rid=$rid, active=$active, " +
-                                "scaleResolutionDownBy=$scaleResolutionDownBy, maxFramerate=$maxFramerate, " +
-                                "maxBitrateBps=$maxBitrateBps, ssrc=$ssrc")
+                for (sender in videoSenders) {
+                    // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
+                    // 変換するのでここで参照を保持しておく。
+                    val parameters = sender.parameters
+                    parameters.encodings.zip(encodings).forEach { (senderEncoding, offerEncoding) ->
+                        offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
+                        offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+                        offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
                     }
-                }
 
-                // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
-                upstreamVideoTransceiver.sender.parameters = parameters
+                    // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
+                    listener?.onSenderEncodings(sender, parameters.encodings)
+                    parameters.encodings.forEach {
+                        with(it) {
+                            SoraLogger.d(TAG, "Sender encoding: sender=${sender.id()} rid=$rid, active=$active, " +
+                                    "scaleResolutionDownBy=$scaleResolutionDownBy, maxFramerate=$maxFramerate, " +
+                                    "maxBitrateBps=$maxBitrateBps, ssrc=$ssrc")
+                        }
+                    }
+
+                    // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
+                    sender.parameters = parameters
+                }
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
