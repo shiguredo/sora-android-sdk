@@ -1,19 +1,15 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
-import android.graphics.Point
 import android.media.MediaRecorder
-import android.provider.MediaStore
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
-import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import org.webrtc.audio.AudioDeviceModule
-import java.net.URL
 
 class Configuration(var context: Context,
                     var url: String,
@@ -21,6 +17,7 @@ class Configuration(var context: Context,
                     var role: Role) {
 
     companion object {
+        private val TAG = Configuration::class.simpleName!!
         const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
@@ -56,6 +53,8 @@ class Configuration(var context: Context,
     var multistreamEnabled     = false
     var simulcastEnabled       = false
     var spotlightEnabled       = false
+
+    var spotlight: Int? = null
 
     // gson.toJson で扱える型。 Object?
     var signalingMetadata: Object? = null
@@ -157,14 +156,44 @@ class Configuration(var context: Context,
     init {
     }
 
+    private var isInitialized: Boolean = false
+
+    private fun initialize() {
+        if (isInitialized)
+            return
+
+        SoraLogger.d(TAG, "initialize configuration")
+
+        if (role.isSender) {
+            SoraLogger.d(TAG, "create video capturer")
+            videoCapturer = CameraCapturerFactory.create(context)
+            if (senderVideoRenderingContext == null) {
+                SoraLogger.d(TAG, "create sender video rendering context")
+                senderVideoRenderingContext = VideoRenderingContext()
+            }
+        }
+
+        if (role.isReceiver) {
+            if (receiverVideoRenderingContext == null) {
+                SoraLogger.d(TAG, "create receiver video rendering context")
+                receiverVideoRenderingContext = VideoRenderingContext()
+            }
+        }
+
+        isInitialized = true
+    }
+
     internal fun toSoraMediaOption(): SoraMediaOption {
+        if (!isInitialized)
+            initialize()
+
         return SoraMediaOption().also {
             it.requiredRole = role.basicRole
             it.multistreamEnabled = multistreamEnabled
             it.simulcastEnabled = simulcastEnabled
 
-            // TODO
-            if (spotlightEnabled) {
+            if (spotlightEnabled && spotlight != null) {
+                it.spotlight = spotlight!!
             }
 
             if (videoEnabled) {
@@ -180,19 +209,14 @@ class Configuration(var context: Context,
                 it.videoEncoderFactory = videoEncoderFactory
                 it.videoDecoderFactory = videoDecoderFactory
 
+                SoraLogger.d(TAG, "role $role, ${role.isSender} ${role.isReceiver}")
                 if (role.isSender) {
-                    videoCapturer = CameraCapturerFactory.create(context)
-                    if (senderVideoRenderingContext == null) {
-                        senderVideoRenderingContext = VideoRenderingContext()
-                    }
+                    SoraLogger.d(TAG, "enable video upstream")
                     it.enableVideoUpstream(videoCapturer!!,
                             senderVideoRenderingContext!!.eglBase.eglBaseContext)
                 }
 
                 if (role.isReceiver) {
-                    if (receiverVideoRenderingContext == null) {
-                        receiverVideoRenderingContext = VideoRenderingContext()
-                    }
                     it.enableVideoDownstream(receiverVideoRenderingContext!!.eglBase.eglBaseContext)
                 }
             }
@@ -225,10 +249,13 @@ class Configuration(var context: Context,
             |multistreamEnabled      = $multistreamEnabled
             |simulcastEnabled        = $simulcastEnabled
             |spotlightEnabled        = $spotlightEnabled
+            |spotlight               = $spotlight
             |videoEnabled            = $videoEnabled
             |videoCodec              = $videoCodec
             |videoBitRate            = $videoBitRate
             |videoCapturer           = $videoCapturer
+            |videoEncoderFactory     = $videoEncoderFactory
+            |videoDecoderFactory     = $videoDecoderFactory
             |audioCodec              = $audioCodec
             |audioBitRate            = $audioBitRate
             |signalingMetadata       = $signalingMetadata

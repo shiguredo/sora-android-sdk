@@ -1,16 +1,11 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.content.Context
-import android.provider.MediaStore
 import android.util.Log
-import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
-import jp.shiguredo.sora.sdk.ng.MediaStream
-import jp.shiguredo.sora.sdk.ng.MediaStreamTrack
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
@@ -19,7 +14,7 @@ class MediaChannel @JvmOverloads internal constructor(
 ) {
 
     companion object {
-        private val TAG = MediaChannel::class.simpleName!!
+        internal val TAG = MediaChannel::class.simpleName!!
     }
 
     enum class State {
@@ -51,6 +46,7 @@ class MediaChannel @JvmOverloads internal constructor(
     private var _onRemoveRemoteStream: (label: String) -> Unit = {}
     private var _onPush: (message: PushMessage) -> Unit = {}
 
+
     private var _basicMediaChannel: SoraMediaChannel? = null
     private var _basicMediaOption: SoraMediaOption? = null
 
@@ -73,23 +69,6 @@ class MediaChannel @JvmOverloads internal constructor(
                 mediaOption       = _basicMediaOption!!,
                 listener          = basicMediaChannelListner)
         _basicMediaChannel!!.connect()
-
-
-        /*
-        // Configuration
-        if (videoEnabled) {
-            if (role == Role.SEND || role == Role.SENDRECV) {
-                videoCapturer = CameraCapturerFactory.create(context)
-                if (videoSendEglBaseContext == null) {
-                    videoSendEglBaseContext = eglBase.eglBaseContext
-                }
-            } else if (role == Role.RECV) {
-                if (videoRecvEglBaseContext == null) {
-                    videoRecvEglBaseContext = eglBase.eglBaseContext
-                }
-            }
-        }
-         */
     }
 
     private fun basicDisconnect() {
@@ -121,22 +100,27 @@ class MediaChannel @JvmOverloads internal constructor(
     }
 
     fun onDisconnect(handler: () -> Unit) {
+        SoraLogger.d(TAG, "@onDisconnect")
         _onDisconnect = handler
     }
 
     fun onFailure(handler: (error: Throwable) -> Unit) {
+        SoraLogger.d(TAG, "@onFailure")
         _onFailure = handler
     }
 
     fun onAddLocalStream(handler: (stream: MediaStream) -> Unit) {
+        SoraLogger.d(TAG, "@onAddLocalStream")
         _onAddLocalStream = handler
     }
 
     fun onAddRemoteStream(handler: (stream: MediaStream) -> Unit) {
+        SoraLogger.d(TAG, "@onAddRemoteStream")
         _onAddRemoteStream = handler
     }
 
     fun onRemoveRemoteStream(handler: (label: String) -> Unit) {
+        SoraLogger.d(TAG, "@onRemoveRemoteStream")
         _onRemoveRemoteStream = handler
     }
 
