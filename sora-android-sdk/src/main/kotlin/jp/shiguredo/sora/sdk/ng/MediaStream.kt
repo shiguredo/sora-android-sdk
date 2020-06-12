@@ -1,12 +1,18 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.provider.MediaStore
+import jp.shiguredo.sora.sdk.Sora
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.MediaStreamTrack
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
 
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
                                        val nativeStream: org.webrtc.MediaStream) {
+
+    companion object {
+        internal val TAG = MediaStream::class.simpleName!!
+    }
 
     /*
     private var _videoTrack: VideoTrack? = null
@@ -59,13 +65,17 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     private var _videoRendererAdapter = VideoRendererAdapter()
 
     init {
+        SoraLogger.d(TAG, "video tracks => ${nativeStream.videoTracks}")
+        SoraLogger.d(TAG, "audio tracks => ${nativeStream.audioTracks}")
         for (track in nativeStream.videoTracks) {
+            SoraLogger.d(TAG, "add sink => $track")
             track.addSink(_videoRendererAdapter)
         }
     }
 
     fun setVideoRenderer(newRenderer: VideoRenderer,
                          videoRenderingContext: VideoRenderingContext) {
+        SoraLogger.d(TAG, "set video renderer => $newRenderer")
         removeVideoRenderer()
 
         if (mediaChannel.configuration.managesVideoRendererLifecycle &&

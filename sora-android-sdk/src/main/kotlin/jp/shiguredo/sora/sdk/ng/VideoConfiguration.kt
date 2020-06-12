@@ -1,6 +1,9 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.graphics.Point
+import android.provider.MediaStore
+import android.util.Size
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 
 /**
  * 利用できる映像コーデックを示します
@@ -20,36 +23,56 @@ enum class VideoCodec {
 /**
  * 映像のフレームサイズをまとめるクラスです
  */
-class VideoFrameSize {
+class VideoFrameSize(var width: Int,
+                     var height: Int,
+                     var direction: VideoDirection = VideoDirection.LANDSCAPE) {
 
     companion object {
 
         /** QQVGA 160x120 */
-        val QQVGA = Point(160, 120)
+        val QQVGA = VideoFrameSize(160, 120).rotate()
         /** QCIF  176x144 */
-        val QCIF  = Point(176, 144)
+        val QCIF  = VideoFrameSize(176, 144).rotate()
         /** HQVGA 240x160 */
-        val HQVGA = Point(240, 160)
+        val HQVGA = VideoFrameSize(240, 160).rotate()
         /** QVGA  320x240 */
-        val QVGA  = Point(320, 240)
+        val QVGA  = VideoFrameSize(320, 240).rotate()
         /** VGA   640x480 */
-        val VGA   = Point(640, 480)
+        val VGA   = VideoFrameSize(640, 480).rotate()
         /** HD    1280x720 */
-        val HD    = Point(1280, 720)
+        val HD    = VideoFrameSize(1280, 720).rotate()
         /** FHD   1920x1080 */
-        val FHD   = Point(1920, 1080)
+        val FHD   = VideoFrameSize(1920, 1080).rotate()
         /** Res3840x1920   3840x1920 */
-        val Res3840x1920 = Point(3840, 1920)
+        val Res3840x1920 = VideoFrameSize(3840, 1920).rotate()
         /** UHD3840x2160   3840x2160 */
-        val UHD3840x2160 = Point(3840, 2160)
+        val UHD3840x2160 = VideoFrameSize(3840, 2160).rotate()
         /** UHD4096x2160   4096x2160 */
-        val UHD4096x2160 = Point(4096, 2160)
+        val UHD4096x2160 = VideoFrameSize(4096, 2160).rotate()
 
+    }
+
+    fun rotate(): VideoFrameSize =
+        VideoFrameSize(height, width, direction.rotate())
+
+    fun toSize(direction: VideoDirection): Size {
+        return when (this.direction) {
+            direction -> Size(width, height)
+            else -> Size(height, width)
+        }
     }
 
 }
 
 enum class VideoDirection {
     PORTRAIT,
-    LANDSCAPE
+    LANDSCAPE;
+
+    fun rotate(): VideoDirection {
+        return when (this) {
+            PORTRAIT -> LANDSCAPE
+            LANDSCAPE -> PORTRAIT
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceHolder.Callback
 import android.view.SurfaceView
 import jp.shiguredo.sora.sdk.Sora
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RendererCommon.ScalingType
 import org.webrtc.SurfaceViewRenderer
 import org.webrtc.ThreadUtils
@@ -17,6 +18,10 @@ class VideoView @JvmOverloads constructor (context: Context,
                                            attrs: AttributeSet? = null,
                                            defStyleAttr: Int = 0) :
         SurfaceView(context, attrs, defStyleAttr), VideoRenderer, Callback {
+
+    companion object {
+        internal val TAG = VideoView::class.simpleName!!
+    }
 
     var nativeViewRenderer: SurfaceViewRenderer = SurfaceViewRenderer(context, attrs)
 
@@ -55,6 +60,7 @@ class VideoView @JvmOverloads constructor (context: Context,
     }
 
     override fun initialize(context: VideoRenderingContext) {
+        SoraLogger.d(TAG, "initialize => $context")
         Sora.runOnUiThread {
             nativeViewRenderer.init(context.eglBase.eglBaseContext,
                     context.rendererEvents,
@@ -92,6 +98,7 @@ class VideoView @JvmOverloads constructor (context: Context,
     }
 
     override fun onFrame(frame: VideoFrame?) {
+        SoraLogger.d(TAG, "onFrame => $frame")
         nativeViewRenderer.onFrame(frame)
     }
 
