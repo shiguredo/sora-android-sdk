@@ -31,6 +31,8 @@ class Configuration(var context: Context,
     var videoBitRate: Int? = null
 
     var videoCapturer: VideoCapturer? = null
+    var videoFrameSize = VideoFrameSize.VGA
+    var videoFps: Int = 30
 
     /**
      * 利用する VideoEncoderFactory を指定します
@@ -254,6 +256,8 @@ class Configuration(var context: Context,
             |videoCodec              = $videoCodec
             |videoBitRate            = $videoBitRate
             |videoCapturer           = $videoCapturer
+            |videoFrameSize          = $videoFrameSize
+            |videoFps                = $videoFps
             |videoEncoderFactory     = $videoEncoderFactory
             |videoDecoderFactory     = $videoDecoderFactory
             |audioCodec              = $audioCodec
