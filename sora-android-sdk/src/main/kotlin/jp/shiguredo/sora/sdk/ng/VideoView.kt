@@ -1,14 +1,17 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceHolder.Callback
 import android.view.SurfaceView
+import jp.shiguredo.sora.sdk.Sora
 import org.webrtc.RendererCommon.ScalingType
 import org.webrtc.SurfaceViewRenderer
 import org.webrtc.ThreadUtils
 import org.webrtc.VideoFrame
+import java.util.logging.Handler
 
 class VideoView @JvmOverloads constructor (context: Context,
                                            attrs: AttributeSet? = null,
@@ -52,10 +55,12 @@ class VideoView @JvmOverloads constructor (context: Context,
     }
 
     override fun initialize(context: VideoRenderingContext) {
-        nativeViewRenderer.init(context.eglBase.eglBaseContext,
-                context.rendererEvents,
-                context.configAttributes,
-                context.drawer)
+        Sora.runOnUiThread {
+            nativeViewRenderer.init(context.eglBase.eglBaseContext,
+                    context.rendererEvents,
+                    context.configAttributes,
+                    context.drawer)
+        }
     }
 
     override fun release() {
