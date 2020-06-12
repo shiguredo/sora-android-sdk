@@ -344,28 +344,28 @@ class PeerChannelImpl(
                 networkConfig.createConfiguration(),
                 connectionObserver)
 
-        SoraLogger.d(TAG, "local managers' initTrack")
+        SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+
+        SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
         val streamId = UUID.randomUUID().toString()
         localStream = factory!!.createLocalMediaStream(streamId)
 
-        /*
-        localAudioManager.attachTrackToStream(localStream!!)
-        localVideoManager.attachTrackToStream(localStream!!)
-         */
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
 
-        if (conn != null && localStream?.videoTracks != null) {
+        if (conn != null && localStream!!.videoTracks != null) {
+            SoraLogger.d(TAG, "attach video tracks to peer connection")
             attachTracksToPeerConnection(localStream!!.videoTracks!!, localStream!!, conn!!)
         }
-        if (conn != null && localStream?.audioTracks != null) {
+        if (conn != null && localStream!!.audioTracks != null) {
+            SoraLogger.d(TAG, "attach audio tracks to peer connection")
             attachTracksToPeerConnection(localStream!!.audioTracks!!, localStream!!, conn!!)
         }
 
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
 
         for (sender in _senders) {
