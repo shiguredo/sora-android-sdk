@@ -26,7 +26,7 @@ class MessageConverter {
         ): String {
 
             val msg = ConnectMessage(
-                    role                    = role.toString().toLowerCase(Locale.getDefault()),
+                    role                    = role.signaling,
                     channelId               = channelId,
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
@@ -85,6 +85,16 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = true
+
+                msg.role = when (role) {
+                    SoraChannelRole.UPSTREAM ->
+                        if (msg.multistream)
+                            SoraChannelRole.SENDRECV
+                        else
+                            SoraChannelRole.SENDONLY
+                    SoraChannelRole.DOWNSTREAM -> SoraChannelRole.RECVONLY
+                    else -> role
+                }.signaling
             }
 
             val jsonMsg = gson.toJson(msg)
