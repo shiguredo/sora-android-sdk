@@ -36,19 +36,25 @@ class CameraCapturerFactory {
         fun create(context: Context,
                    fixedResolution: Boolean = false,
                    frontFacingFirst: Boolean = true) : CameraVideoCapturer? {
+            SoraLogger.d(TAG, "create camera capturer")
             var videoCapturer: CameraVideoCapturer? = null
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 if (Camera2Enumerator.isSupported(context)) {
+                    SoraLogger.d(TAG, "create camera capturer: Camera2Enumerator")
                     videoCapturer = createCapturer(Camera2Enumerator(context), frontFacingFirst)
                 }
             }
             if (videoCapturer == null) {
+                SoraLogger.d(TAG, "create camera capturer: Camera1Enumerator")
                 videoCapturer = createCapturer(Camera1Enumerator(true), frontFacingFirst)
             }
 
             if (videoCapturer == null) {
+                SoraLogger.d(TAG, "cannot create camera capturer")
                 return null
             }
+
+            SoraLogger.d(TAG, "camera capturer => $videoCapturer")
             return when (videoCapturer.isScreencast) {
                 fixedResolution -> {
                     videoCapturer

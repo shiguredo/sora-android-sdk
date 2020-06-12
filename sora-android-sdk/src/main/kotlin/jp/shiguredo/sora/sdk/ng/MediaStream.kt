@@ -64,8 +64,6 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         }
     }
 
-    // TODO: video capturer
-
     fun setVideoRenderer(newRenderer: VideoRenderer,
                          videoRenderingContext: VideoRenderingContext) {
         removeVideoRenderer()
