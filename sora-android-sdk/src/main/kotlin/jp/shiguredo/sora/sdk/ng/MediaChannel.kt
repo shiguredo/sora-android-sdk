@@ -149,20 +149,27 @@ class MediaChannel @JvmOverloads internal constructor(
     private val basicMediaChannelListner = object : SoraMediaChannel.Listener {
 
         override fun onConnect(mediaChannel: SoraMediaChannel) {
-            Log.d(TAG, "onConnect")
+            SoraLogger.d(TAG, "onConnect")
             state = State.CONNECTED
+
+            if (configuration.role.isSender && configuration.videoCapturer != null) {
+                val size = configuration.videoFrameSize
+                SoraLogger.d(TAG, "start capturer: width => ${size.width}, height => ${size.height}, fps => ${configuration.videoFps}")
+                configuration.videoCapturer!!.startCapture(size.width, size.height, configuration.videoFps)
+            }
+
             if (_onConnect != null) {
                 _onConnect!!(null)
             }
         }
 
         override fun onClose(mediaChannel: SoraMediaChannel) {
-            Log.d(TAG, "onClose")
+            SoraLogger.d(TAG, "onClose")
             disconnect()
         }
 
         override fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {
-            Log.d(TAG, "onError [$reason]")
+            SoraLogger.d(TAG, "onError [$reason]")
             fail(SoraError(SoraError.Kind.fromReason(reason)))
         }
 
@@ -172,7 +179,7 @@ class MediaChannel @JvmOverloads internal constructor(
         }
 
         override fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
-            Log.d(TAG, "onAddRemoteStream")
+            SoraLogger.d(TAG, "onAddRemoteStream")
 
             val newStream = MediaStream(this@MediaChannel, ms)
             addStream(newStream)
@@ -182,14 +189,14 @@ class MediaChannel @JvmOverloads internal constructor(
         }
 
         override fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
-            Log.d(TAG, "onAddLocalStream")
+            SoraLogger.d(TAG, "onAddLocalStream")
 
             val newStream = MediaStream(this@MediaChannel, ms)
             addStream(newStream)
         }
 
         override fun onAddSender(mediaChannel: SoraMediaChannel, sender: RtpSender, ms: Array<out org.webrtc.MediaStream>) {
-            Log.d(TAG, "onAddSender")
+            SoraLogger.d(TAG, "onAddSender")
             for (nativeStream in ms) {
                 val stream = getStream(nativeStream)
                 if (stream != null) {
@@ -199,7 +206,7 @@ class MediaChannel @JvmOverloads internal constructor(
         }
 
         override fun onAddReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver, ms: Array<out org.webrtc.MediaStream>) {
-            Log.d(TAG, "onAddReceiver")
+            SoraLogger.d(TAG, "onAddReceiver")
             for (nativeStream in ms) {
                 val stream = getStream(nativeStream)
                 if (stream != null) {
@@ -209,7 +216,7 @@ class MediaChannel @JvmOverloads internal constructor(
         }
 
         override fun onRemoveReceiver(mediaChannel: SoraMediaChannel, id: String) {
-            Log.d(TAG, "onRemoveReceiver")
+            SoraLogger.d(TAG, "onRemoveReceiver")
             val stream = getStream(id)
             if (stream != null) {
                 stream!!.receiver = null
@@ -217,7 +224,7 @@ class MediaChannel @JvmOverloads internal constructor(
         }
 
         override fun onPushMessage(mediaChannel: SoraMediaChannel, push: PushMessage) {
-            Log.d(TAG, "onPushMessage: push=${push}")
+            SoraLogger.d(TAG, "onPushMessage: push=${push}")
         }
 
     }
