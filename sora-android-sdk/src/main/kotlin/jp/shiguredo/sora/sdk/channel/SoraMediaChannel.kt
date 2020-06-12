@@ -222,10 +222,9 @@ class SoraMediaChannel @JvmOverloads constructor(
          * - https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-setparameters
          *
          * @param mediaChannel イベントが発生したチャネル
-         * @param sender エンコーダ設定を行うトラック
          * @param encodings Sora から送信された encodings
          */
-        fun onSenderEncodings(mediaChannel: SoraMediaChannel, sender: RtpSender, encodings: List<RtpParameters.Encoding>) {}
+        fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
 
     }
 
@@ -332,9 +331,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onConnect(this@SoraMediaChannel)
         }
 
-        override fun onSenderEncodings(sender: RtpSender, encodings: List<RtpParameters.Encoding>) {
+        override fun onSenderEncodings(encodings: List<RtpParameters.Encoding>) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onSenderEncodings")
-            listener?.onSenderEncodings(this@SoraMediaChannel, sender, encodings)
+            listener?.onSenderEncodings(this@SoraMediaChannel, encodings)
         }
 
         override fun onError(reason: SoraErrorReason) {

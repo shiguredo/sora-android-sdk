@@ -34,7 +34,7 @@ interface PeerChannel {
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
-        fun onSenderEncodings(sender: RtpSender, encodings: List<RtpParameters.Encoding>)
+        fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
         fun onWarning(reason: SoraErrorReason)
@@ -83,8 +83,8 @@ class PeerChannelImpl(
 
     private var localStream: MediaStream? = null
 
-    private var videoSenders: MutableList<RtpSender> = mutableListOf()
-    private var audioSenders: MutableList<RtpSender> = mutableListOf()
+    private var videoSender: RtpSender? = null
+    private var audioSender: RtpSender? = null
 
     private var closing = false
 
@@ -222,17 +222,17 @@ class PeerChannelImpl(
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
 
-            localStream!!.audioTracks.forEach {
-                audioSenders.add(conn!!.addTrack(it, mediaStreamLabels))
+            audioSender = localStream!!.audioTracks.firstOrNull()?.let {
+                conn!!.addTrack(it, mediaStreamLabels)
             }
-            localStream!!.videoTracks.forEach {
-                videoSenders.add(conn!!.addTrack(it, mediaStreamLabels))
+            videoSender = localStream!!.videoTracks.firstOrNull()?.let {
+                conn!!.addTrack(it, mediaStreamLabels)
             }
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
                 SoraLogger.d(TAG, "Modify sender.parameters")
 
-                for (sender in videoSenders) {
+                videoSender?.let { sender ->
                     // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
                     // 変換するのでここで参照を保持しておく。
                     val parameters = sender.parameters
@@ -243,7 +243,7 @@ class PeerChannelImpl(
                     }
 
                     // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
-                    listener?.onSenderEncodings(sender, parameters.encodings)
+                    listener?.onSenderEncodings(parameters.encodings)
                     parameters.encodings.forEach {
                         with(it) {
                             SoraLogger.d(TAG, "Sender encoding: sender=${sender.id()} rid=$rid, active=$active, " +
