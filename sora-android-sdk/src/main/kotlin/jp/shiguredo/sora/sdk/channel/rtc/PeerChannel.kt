@@ -256,6 +256,9 @@ class PeerChannelImpl(
                 conn!!.addTrack(it, mediaStreamLabels)
             }
 
+            audioSender?.let { _senders.add(it) }
+            videoSender?.let { _senders.add(it) }
+
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
                 SoraLogger.d(TAG, "Modify sender.parameters")
 
