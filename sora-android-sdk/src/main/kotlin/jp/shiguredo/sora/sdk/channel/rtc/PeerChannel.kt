@@ -356,12 +356,12 @@ class PeerChannelImpl(
         val streamId = UUID.randomUUID().toString()
         localStream = factory!!.createLocalMediaStream(streamId)
 
-        //localAudioManager.attachTrackToStream(localStream!!)
-        audioSender = localAudioManager.attachTrackToPeerConnection(conn!!, localStream!!)
+        localAudioManager.attachTrackToStream(localStream!!)
+        //audioSender = localAudioManager.attachTrackToPeerConnection(conn!!, localStream!!)
 
         // TODO: add track to peer connection のみだと local stream に追加されない
-        //localVideoManager.attachTrackToStream(localStream!!)
-        videoSender = localVideoManager.attachTrackToPeerConnection(conn!!, localStream!!)
+        localVideoManager.attachTrackToStream(localStream!!)
+        //videoSender = localVideoManager.attachTrackToPeerConnection(conn!!, localStream!!)
         SoraLogger.d(TAG, "attached video sender => $videoSender")
 
         /*
@@ -379,10 +379,12 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
 
+        /*
         if (audioSender != null)
             listener?.onAddSender(audioSender!!, arrayOf(localStream!!))
         if (videoSender != null)
             listener?.onAddSender(videoSender!!, arrayOf(localStream!!))
+         */
     }
 
     private fun attachTracksToPeerConnection(tracks: List<MediaStreamTrack>,

@@ -3,9 +3,11 @@ package jp.shiguredo.sora.sdk.ng
 import android.content.Context
 import android.os.Looper
 import android.util.AttributeSet
+import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.view.SurfaceHolder.Callback
-import android.view.SurfaceView
+import android.widget.LinearLayout
+import jp.shiguredo.sora.sdk.R
 import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RendererCommon.ScalingType
@@ -18,7 +20,7 @@ import java.util.logging.Handler
 class VideoView @JvmOverloads constructor (context: Context,
                                            attrs: AttributeSet? = null,
                                            defStyleAttr: Int = 0) :
-        SurfaceView(context, attrs, defStyleAttr), VideoRenderer, Callback {
+        LinearLayout(context, attrs, defStyleAttr), VideoRenderer {
 
     companion object {
         internal val TAG = VideoView::class.simpleName!!
@@ -51,6 +53,13 @@ class VideoView @JvmOverloads constructor (context: Context,
             field = value
             nativeViewRenderer.setFpsReduction(value)
         }
+
+    init {
+        //holder.addCallback(this)
+
+        val layout = LayoutInflater.from(context).inflate(R.layout.videoview, this)
+        nativeViewRenderer = layout.findViewById(R.id.renderer)
+    }
 
     override fun attachToVideoTrack(track: VideoTrack) {
         SoraLogger.d(TAG, "attach $nativeViewRenderer to video track $track")
@@ -121,18 +130,6 @@ class VideoView @JvmOverloads constructor (context: Context,
 
     override fun onFrameResolutionChanged(videoWidth: Int, videoHeight: Int, rotation: Int) {
         nativeViewRenderer.onFrameResolutionChanged(videoWidth, videoHeight, rotation)
-    }
-
-    override fun surfaceCreated(holder: SurfaceHolder?) {
-        nativeViewRenderer.surfaceCreated(holder)
-    }
-
-    override fun surfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
-        nativeViewRenderer.surfaceChanged(holder, format, width, height)
-    }
-
-    override fun surfaceDestroyed(holder: SurfaceHolder?) {
-        nativeViewRenderer.surfaceDestroyed(holder)
     }
 
 }
