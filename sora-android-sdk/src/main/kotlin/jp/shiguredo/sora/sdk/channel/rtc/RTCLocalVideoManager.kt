@@ -58,6 +58,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
                                              stream: MediaStream): RtpSender? {
         SoraLogger.d(TAG, "attachTrackToPeerConnection: stream => ${stream.id}")
         return track?.let {
+            SoraLogger.d(TAG, "    add track $it to ${stream.id}")
             connection.addTrack(it, listOf(stream.id))
         }
     }

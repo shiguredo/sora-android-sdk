@@ -1,11 +1,10 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.provider.MediaStore
-import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.MediaStreamTrack
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
+import org.webrtc.VideoTrack
 
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
                                        val nativeStream: org.webrtc.MediaStream) {
@@ -32,11 +31,15 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     val id: String
     get() = nativeStream.id
 
-    var sender: RtpSender? = null
-        internal set
+    internal var _senders: MutableList<RtpSender> = mutableListOf()
 
-    var receiver: RtpReceiver? = null
-        internal set
+    val senders: List<RtpSender>
+        get() = _senders
+
+    internal var _receivers: MutableList<RtpReceiver> = mutableListOf()
+
+    val receivers: List<RtpReceiver>
+        get() = _receivers
 
     internal val videoTracks: List<MediaStreamTrack>
         get() = nativeStream.videoTracks
@@ -80,36 +83,57 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
 
         if (mediaChannel.configuration.managesVideoRendererLifecycle &&
                 newRenderer.shouldInitialization()) {
+            SoraLogger.d(TAG, "initialize video renderer => $videoRenderingContext")
             newRenderer.initialize(videoRenderingContext)
         }
         _videoRendererAdapter.videoRenderer = newRenderer
+
+        for (sender in _senders) {
+            (sender.track() as? VideoTrack)?.let {
+                SoraLogger.d(TAG, "attach to video track => $it")
+                newRenderer.attachToVideoTrack(it)
+            }
+        }
     }
 
     fun removeVideoRenderer() {
-        if (mediaChannel.configuration.managesVideoRendererLifecycle &&
-                _videoRendererAdapter.videoRenderer != null &&
-                _videoRendererAdapter.videoRenderer!!.shouldRelease()) {
-            _videoRendererAdapter.videoRenderer!!.release()
+        _videoRendererAdapter.videoRenderer?.let { renderer ->
+            if (mediaChannel.configuration.managesVideoRendererLifecycle &&
+                    renderer.shouldRelease()) {
+                renderer.release()
+            }
+
+            for (sender in _senders) {
+                (sender.track() as? VideoTrack)?.let { track ->
+                    SoraLogger.d(TAG, "detach from video track => $track")
+                    renderer.detachFromVideoTrack(track)
+                }
+            }
         }
+
         _videoRendererAdapter.videoRenderer = null
+    }
+
+    internal fun basicAddSender(sender: RtpSender) {
+        _senders.add(sender)
+    }
+
+    internal fun basicAddReceiver(receiver: RtpReceiver) {
+        _receivers.add(receiver)
     }
 
     internal fun close() {
         removeVideoRenderer()
 
-        sender?.track()?.dispose()
-        sender = null
+        for (sender in _senders) {
+            sender.dispose()
+        }
+        _senders = mutableListOf()
 
-        receiver?.track()?.dispose()
-        receiver = null
-
-        /*
-        videoTrack?.close()
-        videoTrack = null
-
-        audioTrack?.close()
-        audioTrack = null
-         */
+        for (receiver in _receivers) {
+            receiver.dispose()
+        }
+        _receivers = mutableListOf()
 
         nativeStream.dispose()
     }

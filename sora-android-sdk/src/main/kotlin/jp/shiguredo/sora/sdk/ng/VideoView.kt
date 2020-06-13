@@ -12,6 +12,7 @@ import org.webrtc.RendererCommon.ScalingType
 import org.webrtc.SurfaceViewRenderer
 import org.webrtc.ThreadUtils
 import org.webrtc.VideoFrame
+import org.webrtc.VideoTrack
 import java.util.logging.Handler
 
 class VideoView @JvmOverloads constructor (context: Context,
@@ -50,6 +51,18 @@ class VideoView @JvmOverloads constructor (context: Context,
             field = value
             nativeViewRenderer.setFpsReduction(value)
         }
+
+    override fun attachToVideoTrack(track: VideoTrack) {
+        SoraLogger.d(TAG, "attach $nativeViewRenderer to video track $track")
+        track.setEnabled(true)
+        track.addSink(nativeViewRenderer)
+    }
+
+    override fun detachFromVideoTrack(track: VideoTrack) {
+        SoraLogger.d(TAG, "detach $nativeViewRenderer from video track $track")
+        track.setEnabled(false)
+        track.removeSink(nativeViewRenderer)
+    }
 
     override fun shouldInitialization(): Boolean {
         return true
