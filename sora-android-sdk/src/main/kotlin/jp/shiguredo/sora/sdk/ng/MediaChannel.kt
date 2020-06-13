@@ -192,6 +192,13 @@ class MediaChannel @JvmOverloads internal constructor(
             SoraLogger.d(TAG, "onAddLocalStream")
 
             val newStream = MediaStream(this@MediaChannel, ms)
+
+            mediaChannel.peer?.senders?.let {
+                for (sender in it) {
+                    SoraLogger.d(TAG, "add sender $sender to new stream $newStream")
+                    newStream._senders.add(sender)
+                }
+            }
             addStream(newStream)
         }
 
@@ -199,28 +206,36 @@ class MediaChannel @JvmOverloads internal constructor(
             SoraLogger.d(TAG, "onAddSender")
             for (nativeStream in ms) {
                 val stream = getStream(nativeStream)
-                if (stream != null) {
-                    stream!!.sender = sender
-                }
+                SoraLogger.d(TAG, "add sender $sender to stream $stream")
+                stream?.basicAddSender(sender)
+                /*
+                    if (stream != null) {
+                        stream!!.sender = sender
+                    }
+                 */
             }
         }
 
         override fun onAddReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver, ms: Array<out org.webrtc.MediaStream>) {
             SoraLogger.d(TAG, "onAddReceiver")
+            /*
             for (nativeStream in ms) {
                 val stream = getStream(nativeStream)
                 if (stream != null) {
                     stream!!.receiver = receiver
                 }
             }
+             */
         }
 
         override fun onRemoveReceiver(mediaChannel: SoraMediaChannel, id: String) {
             SoraLogger.d(TAG, "onRemoveReceiver")
+            /*
             val stream = getStream(id)
             if (stream != null) {
                 stream!!.receiver = null
             }
+             */
         }
 
         override fun onPushMessage(mediaChannel: SoraMediaChannel, push: PushMessage) {

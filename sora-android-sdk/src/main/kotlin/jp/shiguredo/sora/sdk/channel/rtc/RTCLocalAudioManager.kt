@@ -57,6 +57,14 @@ class RTCLocalAudioManager(
         }
     }
 
+    fun attachTrackToPeerConnection(connection: PeerConnection,
+                                    stream: MediaStream): RtpSender? {
+        SoraLogger.d(TAG, "attachTrackToPeerConnection: stream => ${stream.id}")
+        return track?.let {
+            connection.addTrack(it, listOf(stream.id))
+        }
+    }
+
     fun dispose() {
         SoraLogger.d(TAG, "dispose")
         source?.dispose()

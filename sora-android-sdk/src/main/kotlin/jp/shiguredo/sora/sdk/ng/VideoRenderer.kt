@@ -2,6 +2,8 @@ package jp.shiguredo.sora.sdk.ng
 
 import org.webrtc.RendererCommon
 import org.webrtc.VideoFrame
+import org.webrtc.VideoSink
+import org.webrtc.VideoTrack
 
 interface VideoRenderer {
 
@@ -12,6 +14,10 @@ interface VideoRenderer {
     var fpsReduction: Float
 
     var fpsReductionEnabled: Boolean
+
+    fun attachToVideoTrack(track: VideoTrack)
+
+    fun detachFromVideoTrack(track: VideoTrack)
 
     fun shouldInitialization(): Boolean
 
