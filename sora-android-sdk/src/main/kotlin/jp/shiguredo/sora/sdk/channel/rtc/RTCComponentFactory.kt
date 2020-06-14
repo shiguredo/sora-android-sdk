@@ -1,8 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
-import jp.shiguredo.sora.sdk.Sora
-import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraErrorReason

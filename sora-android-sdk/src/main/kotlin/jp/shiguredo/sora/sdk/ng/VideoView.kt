@@ -1,21 +1,15 @@
 package jp.shiguredo.sora.sdk.ng
 
 import android.content.Context
-import android.os.Looper
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.SurfaceHolder
-import android.view.SurfaceHolder.Callback
 import android.widget.LinearLayout
 import jp.shiguredo.sora.sdk.R
-import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RendererCommon.ScalingType
 import org.webrtc.SurfaceViewRenderer
-import org.webrtc.ThreadUtils
 import org.webrtc.VideoFrame
 import org.webrtc.VideoTrack
-import java.util.logging.Handler
 
 class VideoView @JvmOverloads constructor (context: Context,
                                            attrs: AttributeSet? = null,
