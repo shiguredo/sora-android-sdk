@@ -1,10 +1,7 @@
-package jp.shiguredo.sora.sdk
+package jp.shiguredo.sora.sdk.ng
 
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import jp.shiguredo.sora.sdk.ng.Configuration
-import jp.shiguredo.sora.sdk.ng.MediaChannel
 
 class Sora {
 
