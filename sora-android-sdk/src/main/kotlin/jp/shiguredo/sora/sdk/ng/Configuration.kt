@@ -23,9 +23,6 @@ class Configuration(var context: Context,
 
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
-    var senderVideoRenderingContext: VideoRenderingContext? = null
-    var receiverVideoRenderingContext: VideoRenderingContext? = null
-
     var videoEnabled = true
     var videoCodec: VideoCodec = VideoCodec.VP9
     var videoBitRate: Int? = null
@@ -33,6 +30,21 @@ class Configuration(var context: Context,
     var videoCapturer: VideoCapturer? = null
     var videoFrameSize = VideoFrameSize.VGA
     var videoFps: Int = 30
+
+    /**
+     * 映像キャプチャーと映像レンダラーで共有して使われる映像描画コンテキスト
+     */
+    var sharedVideoRenderingContext = VideoRenderingContext()
+
+    /**
+     * 映像キャプチャーで使われる映像描画コンテキスト
+     * null をセットした場合、 sharedVideoRenderingContext が使われる
+     * デフォルトは null
+     */
+    var videoCapturerVideoRenderingContext: VideoRenderingContext? = null
+
+    internal val usingVideoCapturerVideoRenderingContext: VideoRenderingContext
+        get() = videoCapturerVideoRenderingContext ?: sharedVideoRenderingContext
 
     /**
      * 利用する VideoEncoderFactory を指定します
@@ -169,17 +181,6 @@ class Configuration(var context: Context,
         if (role.isSender) {
             SoraLogger.d(TAG, "create video capturer")
             videoCapturer = CameraCapturerFactory.create(context)
-            if (senderVideoRenderingContext == null) {
-                SoraLogger.d(TAG, "create sender video rendering context")
-                senderVideoRenderingContext = VideoRenderingContext()
-            }
-        }
-
-        if (role.isReceiver) {
-            if (receiverVideoRenderingContext == null) {
-                SoraLogger.d(TAG, "create receiver video rendering context")
-                receiverVideoRenderingContext = VideoRenderingContext()
-            }
         }
 
         isInitialized = true
@@ -215,11 +216,11 @@ class Configuration(var context: Context,
                 if (role.isSender) {
                     SoraLogger.d(TAG, "enable video upstream")
                     it.enableVideoUpstream(videoCapturer!!,
-                            senderVideoRenderingContext!!.eglBase.eglBaseContext)
+                            usingVideoCapturerVideoRenderingContext.eglBase.eglBaseContext)
                 }
 
                 if (role.isReceiver) {
-                    it.enableVideoDownstream(receiverVideoRenderingContext!!.eglBase.eglBaseContext)
+                    it.enableVideoDownstream(sharedVideoRenderingContext.eglBase.eglBaseContext)
                 }
             }
 

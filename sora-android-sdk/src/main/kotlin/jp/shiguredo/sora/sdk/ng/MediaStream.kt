@@ -76,6 +76,13 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         }
     }
 
+    var videoRenderer: VideoRenderer? = null
+        set(value) {
+            field = value
+            if (value != null)
+                setVideoRenderer(value, mediaChannel.configuration.sharedVideoRenderingContext)
+        }
+
     fun setVideoRenderer(newRenderer: VideoRenderer,
                          videoRenderingContext: VideoRenderingContext) {
         SoraLogger.d(TAG, "set video renderer => $newRenderer")
