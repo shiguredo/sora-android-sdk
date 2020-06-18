@@ -10,8 +10,6 @@ interface RTCLocalVideoManager {
                   eglContext: EglBase.Context?,
                   appContext: Context)
     fun attachTrackToStream(stream: MediaStream)
-    fun attachTrackToPeerConnection(connection: PeerConnection,
-                                    stream: MediaStream): RtpSender?
     fun dispose()
 }
 
@@ -21,8 +19,6 @@ class RTCNullLocalVideoManager: RTCLocalVideoManager {
                            eglContext: EglBase.Context?,
                            appContext: Context) {}
     override fun attachTrackToStream(stream: MediaStream) {}
-    override fun attachTrackToPeerConnection(connection: PeerConnection,
-                                             stream: MediaStream): RtpSender? = null
     override fun dispose() {}
 }
 
@@ -52,15 +48,6 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
     override fun attachTrackToStream(stream: MediaStream) {
         SoraLogger.d(TAG, "attachTrackToStream")
         track?.let{ stream.addTrack(it) }
-    }
-
-    override fun attachTrackToPeerConnection(connection: PeerConnection,
-                                             stream: MediaStream): RtpSender? {
-        SoraLogger.d(TAG, "attachTrackToPeerConnection: stream => ${stream.id}")
-        return track?.let {
-            SoraLogger.d(TAG, "    add track $it to ${stream.id}")
-            connection.addTrack(it, listOf(stream.id))
-        }
     }
 
     override fun dispose() {

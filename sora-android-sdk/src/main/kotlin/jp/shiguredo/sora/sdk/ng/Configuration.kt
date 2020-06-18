@@ -58,7 +58,7 @@ class Configuration(var context: Context,
 
     // true のとき、 MediaChannel を close すると video renderer も自動的に release する
     // 接続中の renderer のみ対象とする
-    var managesVideoRendererLifecycle: Boolean = true
+    var videoRendererLifecycleManagementEnabled: Boolean = true
 
     var audioEnabled = true
     var audioCodec: AudioCodec = AudioCodec.OPUS

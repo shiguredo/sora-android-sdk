@@ -5,12 +5,16 @@ import org.webrtc.RendererCommon.RendererEvents
 import org.webrtc.VideoFrame
 import org.webrtc.VideoSink
 
-internal class VideoRendererAdapter: VideoSink, RendererEvents {
+internal class VideoRendererAdapter(val stream: MediaStream): VideoSink, RendererEvents {
 
     var videoRenderer: VideoRenderer? = null
 
     override fun onFrame(frame: VideoFrame?) {
         SoraLogger.d("VideoRendererAdapter", "@onFrame => $frame")
+        var frame = frame
+        for (filter in stream.videoFilters) {
+            frame = filter.onFrame(frame)
+        }
         videoRenderer?.onFrame(frame)
     }
 

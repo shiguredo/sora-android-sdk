@@ -16,7 +16,9 @@
 
   - 映像の描画に関して libwebrtc を隠蔽する
 
-- 現行 API は廃止しない。新 API は現行 API を利用しており、両方の開発を継続する
+  - 音声は特に何もしない
+
+- 現行 API は当面廃止しない。新 API は現行 API を利用しており、両方の開発を継続する
 
 - 高度なカスタマイズができるように、ラップした libwebrtc のデータにアクセスできるようにする
 
@@ -66,12 +68,17 @@ Sora.connect(configuration) { result ->
 
 映像を描画する UI コンポーネントは ``VideoView`` 。
 接続後、 ``MediaChannel`` が持つストリームにセットする。
+受信も同様。
 
 ```
 val stream = mediaChannel!!.streams.firstOrNull()!!
-stream.setVideoRenderer(videoView, configuration!!.senderVideoRenderingContext!!)
+stream.videoRenderer = videoView
 ```
 
-## カスタマイズ
+UI コンポーネントを自前で実装したい場合は、 ``VideoRenderer`` インターフェースを実装する。
 
-- VideoRenderer
+## 映像フレームのフィルター
+
+``VideoFilter`` インターフェースを実装したオブジェクトを ``MediaStream.addVideoFilter()`` でストリームに追加する。
+
+
