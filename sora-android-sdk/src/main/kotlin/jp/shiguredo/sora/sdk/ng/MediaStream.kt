@@ -13,21 +13,6 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         internal val TAG = MediaStream::class.simpleName!!
     }
 
-    /*
-    private var _videoTrack: VideoTrack? = null
-
-    var videoTrack: VideoTrack? = null
-        set(value) {
-            if (_videoTrack != null) {
-                nativeStream?.removeTrack(_videoTrack!!.nativeTrack)
-            }
-            _videoTrack = value
-        }
-
-    var audioTrack: AudioTrack? = null
-        set(value) {}
-     */
-
     val id: String
     get() = nativeStream.id
 
@@ -65,7 +50,12 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
             }
         }
 
-    private var _videoRendererAdapter = VideoRendererAdapter()
+    internal var _videoFilters: MutableList<VideoFilter> = mutableListOf()
+
+    val videoFilters: List<VideoFilter>
+        get() = _videoFilters
+
+    private var _videoRendererAdapter = VideoRendererAdapter(this)
 
     init {
         SoraLogger.d(TAG, "video tracks => ${nativeStream.videoTracks}")
@@ -88,7 +78,7 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         SoraLogger.d(TAG, "set video renderer => $newRenderer")
         removeVideoRenderer()
 
-        if (mediaChannel.configuration.managesVideoRendererLifecycle &&
+        if (mediaChannel.configuration.videoRendererLifecycleManagementEnabled &&
                 newRenderer.shouldInitialization()) {
             SoraLogger.d(TAG, "initialize video renderer => $videoRenderingContext")
             newRenderer.initialize(videoRenderingContext)
@@ -105,7 +95,7 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
 
     fun removeVideoRenderer() {
         _videoRendererAdapter.videoRenderer?.let { renderer ->
-            if (mediaChannel.configuration.managesVideoRendererLifecycle &&
+            if (mediaChannel.configuration.videoRendererLifecycleManagementEnabled &&
                     renderer.shouldRelease()) {
                 renderer.release()
             }
@@ -119,6 +109,14 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         }
 
         _videoRendererAdapter.videoRenderer = null
+    }
+
+    fun addVideoFilter(filter: VideoFilter) {
+        _videoFilters.add(filter)
+    }
+
+    fun removeVideoFilter(filter: VideoFilter) {
+        _videoFilters.remove(filter)
     }
 
     internal fun basicAddSender(sender: RtpSender) {
