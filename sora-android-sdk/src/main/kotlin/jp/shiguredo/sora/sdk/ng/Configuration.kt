@@ -73,8 +73,8 @@ class Configuration(var context: Context,
     var spotlight: Int? = null
 
     // gson.toJson で扱える型。 Object?
-    var signalingMetadata: Object? = null
-    var signalingNotifyMetadata: Object? = null
+    var signalingMetadata: Any? = null
+    var signalingNotifyMetadata: Any? = null
 
     /**
      * 端末組み込みの acoustic echo canceler を使うかどうかの設定
@@ -98,7 +98,7 @@ class Configuration(var context: Context,
      * - [usesHardwareAcousticEchoCanceler]
      * - [usesHardwareNoiseSuppressor]
      *
-     * @see org.webrtc.AudioDeviceModule
+     * @see org.webrtc.audio.AudioDeviceModule
      */
     var audioDeviceModule: AudioDeviceModule? = null
 
