@@ -30,13 +30,15 @@ class SoraError(val kind: Kind,
         // cf. JavaAudioDeviceModule.AudioRecordErrorCallback
         AUDIO_RECORD_INIT_ERROR,
         AUDIO_RECORD_START_ERROR,
-        AUDIO_RECORD_ERROR;
+        AUDIO_RECORD_ERROR,
+
+        PLEASE_CONTACT_US_ERROR;
 
         companion object {
 
             fun fromReason(reason: SoraErrorReason): Kind {
                 // TODO: 変換
-                return Kind.SIGNALING_FAILURE
+                return SIGNALING_FAILURE
             }
 
         }
