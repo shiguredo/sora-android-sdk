@@ -8,7 +8,9 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.*
+import org.webrtc.VideoCapturer
+import org.webrtc.VideoDecoderFactory
+import org.webrtc.VideoEncoderFactory
 import org.webrtc.audio.AudioDeviceModule
 
 class Configuration(var context: Context,
@@ -89,52 +91,46 @@ class Configuration(var context: Context,
     var usesHardwareNoiseSuppressor: Boolean = true
 
     /**
-     * 利用する AudioDeviceModule を指定します
+     * 利用する AudioDeviceModule の設定
      *
-     * null でない場合、 [useHardwareAcousticEchoCanceler] と [useHardwareNoiseSuppressor] の
-     * 設定は無視されます。
+     * このプロパティを設定した場合、以下の設定は無視されます。
      *
-     * cf `org.webrtc.AudioDeviceModule`
+     * - [usesHardwareAcousticEchoCanceler]
+     * - [usesHardwareNoiseSuppressor]
+     *
+     * @see org.webrtc.AudioDeviceModule
      */
     var audioDeviceModule: AudioDeviceModule? = null
 
     /**
      * 入力音声のエコーキャンセル処理の有無の設定
-     *
-     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
-     * - `googEchoCancellation` : false
      */
     var audioProcessingEchoCancellationEnabled: Boolean = true
 
     /**
      * 入力音声の自動ゲイン調整処理の有無の設定
-     *
-     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
-     * - `googAutoGainControl` : false
      */
     var audioProcessingAutoGainControlEnabled: Boolean = true
 
     /**
      * 入力音声のハイパスフィルタ処理の有無の設定
-     *
-     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
-     * - `googHighpassFilter` : false
      */
     var audioProcessingHighpassFilterEnabled: Boolean = true
 
     /**
      * 入力音声のノイズ抑制処理の有無の設定
-     *
-     * false に設定すると音声の `org.webrtc.MediaConstraints` に以下の設定を追加します。
-     * - `googNoiseSuppression` : false
      */
     var audioProcessingNoiseSuppressionEnabled: Boolean = true
 
     /**
-     * 音声の `org.webrtc.MediaConstraints` を設定します
+     * 音声の `MediaConstraints` の設定
      *
-     * null でない場合、 [audioProcessingEchoCancellation], [audioProcessingAutoGainControl],
-     * [audioProcessingHighpassFilter], [audioProcessingNoiseSuppression] の設定は無視されます。
+     * このプロパティを設定した場合、以下の設定は無視されます。
+     *
+     * - [audioProcessingEchoCancellationEnabled]
+     * - [audioProcessingAutoGainControlEnabled]
+     * - [audioProcessingHighpassFilterEnabled]
+     * - [audioProcessingNoiseSuppressionEnabled]
      */
     var audioMediaConstraints: MediaConstraints? = null
 
@@ -142,23 +138,23 @@ class Configuration(var context: Context,
      * 音声ソースの指定
      *
      * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION です。
+     * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION` です。
      */
     var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
     /**
      * 入力をステレオにするかどうかのフラグ
      *
-     * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値はモノラル です。
+     * AudioDeviceModule の生成時に利用されます。
+     * デフォルト値はモノラルです。
      */
     var inputAudioSound: AudioSound = AudioSound.MONO
 
     /**
      * 出力をステレオにするかどうかのフラグ
      *
-     * AudioDeviceModule 生成時に利用されます。
-     * デフォルト値はモノラル です。
+     * AudioDeviceModule の生成時に利用されます。
+     * デフォルト値はモノラルです。
      */
     var outputAudioSound: AudioSound = AudioSound.MONO
 
@@ -166,9 +162,6 @@ class Configuration(var context: Context,
      * opus_params
      */
     var opusParams: OpusParams? = null
-
-    init {
-    }
 
     private var isInitialized: Boolean = false
 
@@ -235,11 +228,18 @@ class Configuration(var context: Context,
                     AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
                 }
 
+                it.audioOption.audioDeviceModule = audioDeviceModule
                 it.audioOption.audioSource = audioSource
                 it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
                 it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
                 it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
                 it.audioOption.useHardwareNoiseSuppressor = usesHardwareNoiseSuppressor
+                it.audioOption.audioProcessingAutoGainControl = audioProcessingAutoGainControlEnabled
+                it.audioOption.audioProcessingEchoCancellation = audioProcessingEchoCancellationEnabled
+                it.audioOption.audioProcessingHighpassFilter = audioProcessingHighpassFilterEnabled
+                it.audioOption.audioProcessingNoiseSuppression = audioProcessingNoiseSuppressionEnabled
+                it.audioOption.mediaConstraints = audioMediaConstraints?.toNative()
+                it.audioOption.opusParams = opusParams
             }
         }
     }
