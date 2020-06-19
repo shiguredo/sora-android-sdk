@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.util.Log
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
@@ -9,7 +8,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
-class MediaChannel @JvmOverloads internal constructor(
+class MediaChannel internal constructor(
         val configuration: Configuration
 ) {
 
@@ -31,7 +30,7 @@ class MediaChannel @JvmOverloads internal constructor(
     var state: State = State.READY
         internal set
 
-    private var _streams: MutableList<MediaStream>
+    private var _streams: MutableList<MediaStream> = mutableListOf()
     val streams: List<MediaStream>
     get() = _streams
 
@@ -50,10 +49,6 @@ class MediaChannel @JvmOverloads internal constructor(
     private var _basicMediaChannel: SoraMediaChannel? = null
     private var _basicMediaOption: SoraMediaOption? = null
 
-    init {
-        _streams = mutableListOf()
-    }
-
     internal fun connect(completionHandler: (error: Throwable?) -> Unit) {
         state = State.CONNECTING
 
@@ -64,7 +59,7 @@ class MediaChannel @JvmOverloads internal constructor(
         _basicMediaOption = configuration.toSoraMediaOption()
         _basicMediaChannel = SoraMediaChannel(
                 context           = configuration.context,
-                signalingEndpoint = configuration.url.toString(),
+                signalingEndpoint = configuration.url,
                 channelId         = configuration.channelId,
                 mediaOption       = _basicMediaOption!!,
                 listener          = basicMediaChannelListner)
@@ -183,9 +178,7 @@ class MediaChannel @JvmOverloads internal constructor(
 
             val newStream = MediaStream(this@MediaChannel, ms)
             addStream(newStream)
-            if (_onAddRemoteStream != null) {
-                _onAddRemoteStream!!(newStream)
-            }
+            _onAddRemoteStream(newStream)
         }
 
         override fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
