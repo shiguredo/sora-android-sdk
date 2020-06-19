@@ -6,7 +6,10 @@ import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.*
+import org.webrtc.EglBase
+import org.webrtc.RtpReceiver
+import org.webrtc.RtpSender
+import org.webrtc.VideoCapturer
 
 class MediaChannel internal constructor(
         val configuration: Configuration
