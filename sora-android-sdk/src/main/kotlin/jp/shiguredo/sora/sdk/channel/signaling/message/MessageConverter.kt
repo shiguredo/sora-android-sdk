@@ -85,16 +85,7 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = true
-
-                msg.role = when (role) {
-                    SoraChannelRole.UPSTREAM ->
-                        if (msg.multistream)
-                            SoraChannelRole.SENDRECV
-                        else
-                            SoraChannelRole.SENDONLY
-                    SoraChannelRole.DOWNSTREAM -> SoraChannelRole.RECVONLY
-                    else -> role
-                }.signaling
+                msg.role = role.signaling
             }
 
             val jsonMsg = gson.toJson(msg)

@@ -158,7 +158,12 @@ class SoraMediaOption {
         }
 
     internal val requiredRole: SoraChannelRole
-    get() = if (upstreamIsRequired) SoraChannelRole.UPSTREAM else SoraChannelRole.DOWNSTREAM
+    get() = if (upstreamIsRequired && downstreamIsRequired)
+        SoraChannelRole.SENDRECV
+    else if (upstreamIsRequired)
+        SoraChannelRole.SENDONLY
+    else
+        SoraChannelRole.RECVONLY
 
     /**
      * enableCpuOveruseDetection
