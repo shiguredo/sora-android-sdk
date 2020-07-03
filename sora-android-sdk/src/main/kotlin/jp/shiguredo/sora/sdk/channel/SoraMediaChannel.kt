@@ -232,7 +232,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling:       SignalingChannel? = null
 
     private var closing = false
-    private var connectionId: String? = null
+
+    var connectionId: String? = null
+    private set
 
     private val compositeDisposable = ReusableCompositeDisposable()
 
