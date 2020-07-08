@@ -47,7 +47,7 @@ Sora Android SDK に対する有償のサポートについては提供してお
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 3.6.3 以降
+- Android Studio 4.0 以降
 - WebRTC SFU Sora 19.04.9 以降
 
 ## サンプルコード

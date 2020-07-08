@@ -26,7 +26,7 @@ class MessageConverter {
         ): String {
 
             val msg = ConnectMessage(
-                    role                    = role.toString().toLowerCase(Locale.getDefault()),
+                    role                    = role.signaling,
                     channelId               = channelId,
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
@@ -85,6 +85,7 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = true
+                msg.role = role.signaling
             }
 
             val jsonMsg = gson.toJson(msg)

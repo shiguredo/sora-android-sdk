@@ -9,6 +9,23 @@
 - FIX
     - バグ修正
 
+## 2020.3
+
+### CHANGE
+
+- libwebrtc を 83.4103.12.2 に上げる
+  - @szktty
+- `com.android.tools.build:gradle` を 4.0.0 に上げる
+  - @szktty
+- `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
+  - @szktty
+- 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
+  - @szktty
+- 古いロール (`upstream`, `downstream`) を削除する
+  - @szktty
+- `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
+  - @szktty
+
 ## 2020.2
 
 ### CHANGE

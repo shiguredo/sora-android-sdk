@@ -56,8 +56,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         private var listener:                Listener?,
         private val clientId:                String?              = null,
         private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
-        ) {
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()) {
+
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
@@ -232,7 +232,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling:       SignalingChannel? = null
 
     private var closing = false
-    private var connectionId: String? = null
+
+    var connectionId: String? = null
+    private set
 
     private val compositeDisposable = ReusableCompositeDisposable()
 
@@ -411,7 +413,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var timer: Timer? = null
 
     private fun startTimer() {
-       stopTimer()
+        stopTimer()
         timer = Timer()
         timer!!.schedule(object: TimerTask() {
             override fun run() {
