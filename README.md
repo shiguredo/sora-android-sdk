@@ -48,7 +48,7 @@ Sora Android SDK に対する有償のサポートについては提供してお
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
 - Android Studio 4.0 以降
-- WebRTC SFU Sora 19.04.9 以降
+- WebRTC SFU Sora 2020.1 以降
 
 ## サンプルコード
 
