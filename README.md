@@ -55,13 +55,6 @@ Sora Android SDK に対する有償のサポートについては提供してお
 - [クイックスタート](https://github.com/shiguredo/sora-android-sdk-quickstart)
 - [サンプル集](https://github.com/shiguredo/sora-android-sdk-samples)
 
-## Issues について
-
-質問やバグ報告は本リポジトリの Issues でお願いします。
-その際、 [Issues 利用ガイドライン](https://github.com/shiguredo/sora-android-sdk/blob/develop/docs/CONTRIBUTING.md) をご覧いただき、テンプレートに従って issue 登録してください。
-テンプレートにある環境のバージョンは、 `2.3.3` など **メジャーバージョン、マイナーバージョン、メンテナンスバージョン** まで含めて書いてください。
-メンテナンスバージョンの違いでも Sora Android SDK の挙動が変わる可能性があります。
-
 # SDK 開発者向け
 
 ## ブランチ利用方法
@@ -79,7 +72,6 @@ git flow release start X.Y.Z
 git flow release finish X.Y.Z
 git push --tags master develop
 ```
-
 
 ## libwebrtc への依存
 
