@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel.Listener
@@ -236,7 +237,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     var connectionId: String? = null
     private set
 
-    private val compositeDisposable = ReusableCompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     private val signalingListener = object : SignalingChannel.Listener {
 
@@ -583,7 +584,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         closing = true
 
         stopTimer()
-        compositeDisposable.dispose()
+        compositeDisposable.clear()
 
         listener?.onClose(this)
         listener = null
