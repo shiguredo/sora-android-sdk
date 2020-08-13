@@ -24,6 +24,7 @@ interface PeerChannel {
     fun disconnect()
 
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
+    fun getStats(handler: (RTCStatsReport?) -> Unit)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -419,4 +420,13 @@ class PeerChannelImpl(
     override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
         conn?.getStats(statsCollectorCallback)
     }
+
+    override fun getStats(handler: (RTCStatsReport?) -> Unit) {
+        if (conn != null) {
+            conn!!.getStats(handler)
+        } else {
+            handler(null)
+        }
+    }
+
 }

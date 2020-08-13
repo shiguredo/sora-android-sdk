@@ -287,6 +287,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onError(reason: SoraErrorReason) {
             listener?.onError(this@SoraMediaChannel, reason)
         }
+
+        override fun getStats(handler: (RTCStatsReport?) -> Unit) {
+            if (peer != null) {
+                peer!!.getStats(handler)
+            } else {
+                handler(null)
+            }
+        }
+
     }
 
     private val peerListener = object : PeerChannel.Listener {

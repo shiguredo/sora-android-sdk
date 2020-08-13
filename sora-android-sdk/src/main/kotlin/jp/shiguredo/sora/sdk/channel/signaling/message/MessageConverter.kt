@@ -93,8 +93,8 @@ class MessageConverter {
             return jsonMsg
         }
 
-        fun buildPongMessage(): String {
-            return gson.toJson(PongMessage())
+        fun buildPongMessage(stats: Any?): String {
+            return gson.toJson(PongMessage(stats = stats))
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
@@ -136,6 +136,10 @@ class MessageConverter {
 
         fun parsePushMessage(text: String): PushMessage {
             return gson.fromJson(text, PushMessage::class.java)
+        }
+
+        fun parsePingMessage(text: String): PingMessage {
+            return gson.fromJson(text, PingMessage::class.java)
         }
     }
 }
