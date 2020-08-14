@@ -221,10 +221,24 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun sendPongMessage(report: RTCStatsReport?) {
         webSocket?.let { ws ->
-            val msg = MessageConverter.buildPongMessage(report)
+            val stats = report?.let { createStats(it) }
+            val msg = MessageConverter.buildPongMessage(stats)
             SoraLogger.d(TAG, msg)
             ws.send(msg)
         }
+    }
+
+    private fun createStats(report: RTCStatsReport): Any? {
+        var entries = mutableListOf<Any>()
+        for ((_, stats) in report.statsMap) {
+            val entry = mutableMapOf<String, Any>()
+            entry["id"] = stats.id
+            entry["type"] = stats.type
+            entry["timestamp"] = stats.timestampUs
+            entry.putAll(stats.members)
+            entries.add(entry)
+        }
+        return entries
     }
 
     private val webSocketListener = object : WebSocketListener() {
