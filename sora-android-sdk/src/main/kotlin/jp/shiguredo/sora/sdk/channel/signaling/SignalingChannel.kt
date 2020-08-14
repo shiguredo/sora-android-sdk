@@ -7,6 +7,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import okhttp3.*
 import okio.ByteString
+import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.util.concurrent.TimeUnit
 
@@ -28,6 +29,7 @@ interface SignalingChannel {
         fun onError(reason: SoraErrorReason)
         fun onNotificationMessage(notification: NotificationMessage)
         fun onPushMessage(push: PushMessage)
+        fun getStats(handler: (RTCStatsReport?) -> Unit)
     }
 }
 
@@ -204,14 +206,39 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onPushMessage(push)
     }
 
-    private fun onPingMessage() {
-        webSocket?.let {
-            SoraLogger.d(TAG, "[signaling:$role] <- ping")
-            SoraLogger.d(TAG, "[signaling:$role] -> pong")
-            val msg = MessageConverter.buildPongMessage()
-            SoraLogger.d(TAG, msg)
-            it.send(msg)
+    private fun onPingMessage(text: String) {
+        SoraLogger.d(TAG, "[signaling:$role] <- ping")
+        SoraLogger.d(TAG, "[signaling:$role] -> pong")
+        val ping = MessageConverter.parsePingMessage(text)
+        if (ping.stats == true && listener != null) {
+            listener!!.getStats { report ->
+                sendPongMessage(report)
+            }
+        } else {
+            sendPongMessage(null)
         }
+    }
+
+    private fun sendPongMessage(report: RTCStatsReport?) {
+        webSocket?.let { ws ->
+            val stats = report?.let { createStats(it) }
+            val msg = MessageConverter.buildPongMessage(stats)
+            SoraLogger.d(TAG, msg)
+            ws.send(msg)
+        }
+    }
+
+    private fun createStats(report: RTCStatsReport): Any? {
+        var entries = mutableListOf<Any>()
+        for ((_, stats) in report.statsMap) {
+            val entry = mutableMapOf<String, Any>()
+            entry["id"] = stats.id
+            entry["type"] = stats.type
+            entry["timestamp"] = stats.timestampUs
+            entry.putAll(stats.members)
+            entries.add(entry)
+        }
+        return entries
     }
 
     private val webSocketListener = object : WebSocketListener() {
@@ -248,7 +275,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     MessageConverter.parseType(json)?.let {
                         when (it) {
                             "offer"    -> onOfferMessage(json)
-                            "ping"     -> onPingMessage()
+                            "ping"     -> onPingMessage(json)
                             "update"   -> onUpdateMessage(json)
                             "re-offer" -> onReOfferMessage(json)
                             "notify"   -> onNotifyMessage(json)

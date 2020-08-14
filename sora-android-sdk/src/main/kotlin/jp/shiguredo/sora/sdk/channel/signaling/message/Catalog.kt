@@ -9,8 +9,14 @@ data class MessageCommonPart(
         @SerializedName("type") val type: String?
 )
 
+data class PingMessage(
+        @SerializedName("type") val type: String = "ping",
+        @SerializedName("stats") val stats: Boolean?
+)
+
 data class PongMessage(
-        @SerializedName("type") val type: String = "pong"
+        @SerializedName("type") val type: String = "pong",
+        @SerializedName("stats") val stats: Any? = null
 )
 
 data class ConnectMessage(
