@@ -34,8 +34,8 @@ interface PeerChannel {
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
-        fun onAddRemoteStream(ms: MediaStream)
-        fun onAddLocalStream(ms: MediaStream)
+        fun onAddRemoteStream(ms: MediaStream, videoSource: VideoSource?)
+        fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?)
         fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>)
         fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)
         fun onRemoveReceiver(id: String)
@@ -378,7 +378,7 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
-        listener?.onAddLocalStream(localStream!!)
+        listener?.onAddLocalStream(localStream!!, localVideoManager.source)
 
         /*
         if (audioSender != null)

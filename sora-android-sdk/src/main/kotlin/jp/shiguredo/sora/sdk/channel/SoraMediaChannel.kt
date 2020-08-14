@@ -81,7 +81,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
-        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
+        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream, videoSource: VideoSource?) {}
 
         /**
          * リモートストリームが追加されたときに呼び出されるコールバック
@@ -93,7 +93,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
-        fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
+        fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream, videoSource: VideoSource?) {}
 
         /**
          * リモートストリームが削除されたときに呼び出されるコールバック
@@ -321,18 +321,18 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onRemoveRemoteStream(this@SoraMediaChannel, label)
         }
 
-        override fun onAddRemoteStream(ms: MediaStream) {
+        override fun onAddRemoteStream(ms: MediaStream, videoSource: VideoSource?) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=${connectionId}")
             if (mediaOption.multistreamEnabled && connectionId != null && ms.id == connectionId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
-            listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
+            listener?.onAddRemoteStream(this@SoraMediaChannel, ms, videoSource)
         }
 
-        override fun onAddLocalStream(ms: MediaStream) {
+        override fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
-            listener?.onAddLocalStream(this@SoraMediaChannel, ms)
+            listener?.onAddLocalStream(this@SoraMediaChannel, ms, videoSource)
         }
 
         override fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>) {
