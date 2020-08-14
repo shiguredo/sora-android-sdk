@@ -1,13 +1,11 @@
 package jp.shiguredo.sora.sdk.ng
 
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.MediaStreamTrack
-import org.webrtc.RtpReceiver
-import org.webrtc.RtpSender
-import org.webrtc.VideoTrack
+import org.webrtc.*
 
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
-                                       val nativeStream: org.webrtc.MediaStream) {
+                                       val nativeStream: org.webrtc.MediaStream,
+                                       val videoSource: VideoSource?) {
 
     companion object {
         internal val TAG = MediaStream::class.simpleName!!
@@ -50,10 +48,10 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
             }
         }
 
-    internal var _videoFilters: MutableList<VideoFilter> = mutableListOf()
+    internal var videoFilterAdapter = VideoFilterAdapter(this)
 
     val videoFilters: List<VideoFilter>
-        get() = _videoFilters
+        get() = videoFilterAdapter.filters
 
     private var _videoRendererAdapter = VideoRendererAdapter(this)
 
@@ -64,6 +62,8 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
             SoraLogger.d(TAG, "add sink => $track")
             track.addSink(_videoRendererAdapter)
         }
+
+        videoSource?.setVideoProcessor(videoFilterAdapter)
     }
 
     var videoRenderer: VideoRenderer? = null
@@ -112,11 +112,11 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     }
 
     fun addVideoFilter(filter: VideoFilter) {
-        _videoFilters.add(filter)
+        videoFilterAdapter.addFilter(filter)
     }
 
     fun removeVideoFilter(filter: VideoFilter) {
-        _videoFilters.remove(filter)
+        videoFilterAdapter.removeFilter(filter)
     }
 
     internal fun basicAddSender(sender: RtpSender) {

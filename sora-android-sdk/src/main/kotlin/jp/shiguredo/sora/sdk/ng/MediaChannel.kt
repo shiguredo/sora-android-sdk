@@ -6,10 +6,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.EglBase
-import org.webrtc.RtpReceiver
-import org.webrtc.RtpSender
-import org.webrtc.VideoCapturer
+import org.webrtc.*
 
 class MediaChannel internal constructor(
         val configuration: Configuration
@@ -176,18 +173,22 @@ class MediaChannel internal constructor(
             fail(SoraError(SoraError.Kind.fromReason(reason)))
         }
 
-        override fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
+        override fun onAddRemoteStream(mediaChannel: SoraMediaChannel,
+                                       ms: org.webrtc.MediaStream,
+                                       videoSource: VideoSource?) {
             SoraLogger.d(TAG, "onAddRemoteStream")
 
-            val newStream = MediaStream(this@MediaChannel, ms)
+            val newStream = MediaStream(this@MediaChannel, ms, videoSource)
             addStream(newStream)
             _onAddRemoteStream(newStream)
         }
 
-        override fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: org.webrtc.MediaStream) {
+        override fun onAddLocalStream(mediaChannel: SoraMediaChannel,
+                                      ms: org.webrtc.MediaStream,
+                                      videoSource: VideoSource?) {
             SoraLogger.d(TAG, "onAddLocalStream")
 
-            val newStream = MediaStream(this@MediaChannel, ms)
+            val newStream = MediaStream(this@MediaChannel, ms, videoSource)
 
             mediaChannel.peer?.senders?.let {
                 for (sender in it) {
