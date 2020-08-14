@@ -9,6 +9,21 @@
 - FIX
     - バグ修正
 
+## develop
+
+### CHANGE
+
+- `com.android.tools.build:gradle` を 4.0.1 に上げる
+  - @szktty
+- `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
+  - @szktty
+- `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
+  - @szktty
+- `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
+  - @szktty
+- シグナリング pong に統計情報を含める
+  - @szktty
+
 ## 2020.3
 
 ### CHANGE
