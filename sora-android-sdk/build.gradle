@@ -4,7 +4,6 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'org.jetbrains.dokka'
-apply plugin: 'org.ajoberstar.grgit'
 
 group = 'com.github.shiguredo'
 
