@@ -184,7 +184,6 @@ class Configuration(var context: Context,
             initialize()
 
         return SoraMediaOption().also {
-            it.requiredRole = role.basicRole
             it.multistreamEnabled = multistreamEnabled
             it.simulcastEnabled = simulcastEnabled
 

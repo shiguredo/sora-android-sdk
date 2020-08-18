@@ -19,11 +19,4 @@ enum class Role {
             SENDONLY -> false
         }
 
-    val basicRole: SoraChannelRole
-        get() = when (this) {
-            SENDONLY -> SoraChannelRole.UPSTREAM
-            RECVONLY -> SoraChannelRole.DOWNSTREAM
-            SENDRECV -> SoraChannelRole.UPSTREAM
-        }
-
 }
