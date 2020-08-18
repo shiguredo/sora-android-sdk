@@ -34,7 +34,7 @@ interface PeerChannel {
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
-        fun onAddRemoteStream(ms: MediaStream, videoSource: VideoSource?)
+        fun onAddRemoteStream(ms: MediaStream)
         fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?)
         fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>)
         fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)

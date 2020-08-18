@@ -174,11 +174,10 @@ class MediaChannel internal constructor(
         }
 
         override fun onAddRemoteStream(mediaChannel: SoraMediaChannel,
-                                       ms: org.webrtc.MediaStream,
-                                       videoSource: VideoSource?) {
+                                       ms: org.webrtc.MediaStream) {
             SoraLogger.d(TAG, "onAddRemoteStream")
 
-            val newStream = MediaStream(this@MediaChannel, ms, videoSource)
+            val newStream = MediaStream(this@MediaChannel, ms, null)
             addStream(newStream)
             _onAddRemoteStream(newStream)
         }

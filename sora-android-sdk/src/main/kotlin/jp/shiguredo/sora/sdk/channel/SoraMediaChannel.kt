@@ -93,7 +93,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
-        fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream, videoSource: VideoSource?) {}
+        fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
 
         /**
          * リモートストリームが削除されたときに呼び出されるコールバック
@@ -321,13 +321,13 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onRemoveRemoteStream(this@SoraMediaChannel, label)
         }
 
-        override fun onAddRemoteStream(ms: MediaStream, videoSource: VideoSource?) {
+        override fun onAddRemoteStream(ms: MediaStream) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=${connectionId}")
             if (mediaOption.multistreamEnabled && connectionId != null && ms.id == connectionId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
-            listener?.onAddRemoteStream(this@SoraMediaChannel, ms, videoSource)
+            listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
         }
 
         override fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?) {
