@@ -114,7 +114,6 @@ class VideoView @JvmOverloads constructor (context: Context,
     }
 
     override fun onFrame(frame: VideoFrame?) {
-        SoraLogger.d(TAG, "onFrame => $frame")
         nativeViewRenderer.onFrame(frame)
     }
 
