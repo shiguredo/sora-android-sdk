@@ -27,12 +27,12 @@ internal class VideoFilterAdapter(val stream: MediaStream): VideoProcessor {
     }
 
     override fun onFrameCaptured(frame: VideoFrame?) {
-        var frame = frame
+        var frame1 = frame
         for (filter in filters) {
-            frame = filter.onFrame(frame)
+            frame1 = filter.onFrame(frame1)
         }
-        if (frame != null) {
-            sink?.onFrame(frame!!)
+        if (frame1 != null) {
+            sink?.onFrame(frame1)
         }
     }
 
