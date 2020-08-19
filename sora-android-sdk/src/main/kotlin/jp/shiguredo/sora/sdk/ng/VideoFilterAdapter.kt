@@ -4,18 +4,22 @@ import org.webrtc.VideoFrame
 import org.webrtc.VideoProcessor
 import org.webrtc.VideoSink
 
-internal class VideoFilterAdapter(stream: MediaStream): VideoProcessor {
+internal class VideoFilterAdapter(val stream: MediaStream): VideoProcessor {
 
     private var sink: VideoSink? = null
 
     var filters: MutableList<VideoFilter> = mutableListOf()
 
-    override fun onCapturerStopped() {
-        TODO("Not yet implemented")
+    override fun onCapturerStarted(success: Boolean) {
+        for (filter in filters) {
+            filter.onCapturerStarted(success)
+        }
     }
 
-    override fun onCapturerStarted(p0: Boolean) {
-        TODO("Not yet implemented")
+    override fun onCapturerStopped() {
+        for (filter in filters) {
+            filter.onCapturerStopped()
+        }
     }
 
     override fun setSink(sink: VideoSink?) {
@@ -37,7 +41,7 @@ internal class VideoFilterAdapter(stream: MediaStream): VideoProcessor {
     }
 
     fun removeFilter(filter: VideoFilter) {
-        // TODO
+        filters.remove(filter)
     }
 
 }
