@@ -11,11 +11,11 @@ internal class VideoRendererAdapter(val stream: MediaStream): VideoSink, Rendere
 
     override fun onFrame(frame: VideoFrame?) {
         SoraLogger.d("VideoRendererAdapter", "@onFrame => $frame")
-        var frame = frame
+        var frame1 = frame
         for (filter in stream.videoFilters) {
-            frame = filter.onFrame(frame)
+            frame1 = filter.onFrame(frame1)
         }
-        videoRenderer?.onFrame(frame)
+        videoRenderer?.onFrame(frame1)
     }
 
     override fun onFirstFrameRendered() {

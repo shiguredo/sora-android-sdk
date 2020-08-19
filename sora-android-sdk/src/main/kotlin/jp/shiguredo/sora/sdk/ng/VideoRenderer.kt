@@ -2,7 +2,6 @@ package jp.shiguredo.sora.sdk.ng
 
 import org.webrtc.RendererCommon
 import org.webrtc.VideoFrame
-import org.webrtc.VideoSink
 import org.webrtc.VideoTrack
 
 interface VideoRenderer {

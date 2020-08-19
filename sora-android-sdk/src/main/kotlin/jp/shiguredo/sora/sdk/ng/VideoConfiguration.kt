@@ -1,9 +1,6 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.graphics.Point
-import android.provider.MediaStore
 import android.util.Size
-import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 
 /**
  * 利用できる映像コーデックを示します

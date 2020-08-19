@@ -6,7 +6,7 @@ class MediaConstraints {
     var optional: MutableMap<String, Any> = mutableMapOf()
 
     fun toNative(): org.webrtc.MediaConstraints {
-        var native = org.webrtc.MediaConstraints()
+        val native = org.webrtc.MediaConstraints()
         for ((key, value) in mandatory) {
             val pair = org.webrtc.MediaConstraints.KeyValuePair(key, value.toString())
             native.mandatory.add(pair)

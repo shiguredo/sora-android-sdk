@@ -75,13 +75,13 @@ class VideoView @JvmOverloads constructor (context: Context,
         return true
     }
 
-    override fun initialize(context: VideoRenderingContext) {
-        SoraLogger.d(TAG, "initialize => $context")
+    override fun initialize(videoRenderingContext: VideoRenderingContext) {
+        SoraLogger.d(TAG, "initialize => $videoRenderingContext")
         Sora.runOnUiThread {
-            nativeViewRenderer.init(context.eglBase.eglBaseContext,
-                    context.rendererEvents,
-                    context.configAttributes,
-                    context.drawer)
+            nativeViewRenderer.init(videoRenderingContext.eglBase.eglBaseContext,
+                    videoRenderingContext.rendererEvents,
+                    videoRenderingContext.configAttributes,
+                    videoRenderingContext.drawer)
         }
     }
 
@@ -97,10 +97,7 @@ class VideoView @JvmOverloads constructor (context: Context,
 
     override fun resume() {
         if (fpsReductionEnabled) {
-            if (fpsReduction != null)
-                nativeViewRenderer.setFpsReduction(fpsReduction!!)
-            else
-                nativeViewRenderer.disableFpsReduction()
+            nativeViewRenderer.setFpsReduction(fpsReduction)
         } else
             nativeViewRenderer.disableFpsReduction()
     }

@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.ng
 
-import android.app.Activity
 import org.webrtc.EglBase
 import org.webrtc.GlRectDrawer
 import org.webrtc.RendererCommon.GlDrawer
@@ -17,7 +16,7 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
 
     init {
         if (configAttributes != null) {
-            this.configAttributes = configAttributes!!
+            this.configAttributes = configAttributes
         } else {
             this.configAttributes = EglBase.CONFIG_PLAIN
         }

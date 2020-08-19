@@ -132,15 +132,6 @@ class MediaChannel internal constructor(
         return null
     }
 
-    private fun getStream(id: String): MediaStream? {
-        for (stream in _streams) {
-            if (stream.id == id) {
-                return stream
-            }
-        }
-        return null
-    }
-
     private val basicMediaChannelListner = object : SoraMediaChannel.Listener {
 
         override fun onConnect(mediaChannel: SoraMediaChannel) {

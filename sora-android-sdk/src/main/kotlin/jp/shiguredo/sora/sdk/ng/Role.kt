@@ -1,7 +1,5 @@
 package jp.shiguredo.sora.sdk.ng
 
-import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
-
 enum class Role {
     SENDONLY,
     RECVONLY,

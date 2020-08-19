@@ -14,12 +14,12 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     val id: String
     get() = nativeStream.id
 
-    internal var _senders: MutableList<RtpSender> = mutableListOf()
+    private var _senders: MutableList<RtpSender> = mutableListOf()
 
     val senders: List<RtpSender>
         get() = _senders
 
-    internal var _receivers: MutableList<RtpReceiver> = mutableListOf()
+    private var _receivers: MutableList<RtpReceiver> = mutableListOf()
 
     val receivers: List<RtpReceiver>
         get() = _receivers
