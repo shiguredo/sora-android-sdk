@@ -47,16 +47,21 @@ android {
     }
 }
 
-dokka {
-    outputFormat = 'javadoc'
+dokkaHtml {
+    outputDirectory = "$buildDir/dokka"
+    disableAutoconfiguration = false
+    cacheRoot = file("default")
 
-    configuration {
-        moduleName = 'sora'
+    dokkaSourceSets {
+        configureEach {
+            moduleDisplayName = 'sora'
+            reportUndocumented = true
 
-        sourceLink {
-            path = "sora-android-sdk/src/main/kotlin"
-            url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
-            lineSuffix = "#L"
+            sourceLink {
+                path = "sora-android-sdk/src/main/kotlin"
+                url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
+                lineSuffix = "#L"
+            }
         }
     }
 }
