@@ -54,8 +54,9 @@ dokkaHtml {
 
     dokkaSourceSets {
         configureEach {
-            moduleDisplayName = 'sora'
+            moduleDisplayName = 'Sora Android SDK'
             reportUndocumented = true
+            includes = ['packages.md']
 
             sourceLink {
                 path = "sora-android-sdk/src/main/kotlin"
