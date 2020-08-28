@@ -18,10 +18,10 @@ enum class AudioSound {
 class AudioConstraint {
 
     companion object {
-        const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
-        const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
-        const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
-        const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
+        const val ECHO_CANCELLATION = "googEchoCancellation"
+        const val AUTO_GAIN_CONTROL = "googAutoGainControl"
+        const val HIGH_PASS_FILTER = "googHighpassFilter"
+        const val NOISE_SUPPRESSION = "googNoiseSuppression"
     }
 
 }
