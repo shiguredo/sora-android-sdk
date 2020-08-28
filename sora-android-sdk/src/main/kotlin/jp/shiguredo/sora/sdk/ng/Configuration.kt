@@ -224,7 +224,6 @@ class Configuration(var context: Context,
 
                 it.audioCodec = when (audioCodec) {
                     AudioCodec.OPUS -> SoraAudioOption.Codec.OPUS
-                    AudioCodec.PCMU -> SoraAudioOption.Codec.PCMU
                 }
 
                 it.audioOption.audioDeviceModule = audioDeviceModule

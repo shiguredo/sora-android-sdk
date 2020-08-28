@@ -6,8 +6,6 @@ package jp.shiguredo.sora.sdk.ng
 enum class AudioCodec {
     /** Opus */
     OPUS,
-    /** PCMU */
-    PCMU
 }
 
 enum class AudioSound {
