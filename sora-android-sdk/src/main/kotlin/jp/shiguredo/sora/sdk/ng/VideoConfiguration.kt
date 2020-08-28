@@ -3,7 +3,7 @@ package jp.shiguredo.sora.sdk.ng
 import android.util.Size
 
 /**
- * 利用できる映像コーデックを示します
+ * 利用できる映像コーデックです。
  */
 enum class VideoCodec {
 
@@ -18,7 +18,11 @@ enum class VideoCodec {
 }
 
 /**
- * 映像のフレームサイズをまとめるクラスです
+ * 映像フレームのサイズと方向を表します。
+ *
+ * @property width 幅
+ * @property height 高さ
+ * @property direction 方向
  */
 class VideoFrameSize(var width: Int,
                      var height: Int,
@@ -49,9 +53,21 @@ class VideoFrameSize(var width: Int,
 
     }
 
+    /**
+     * 映像の方向を回転します。
+     *
+     * @return 方向を回転した映像フレーム
+     */
     fun rotate(): VideoFrameSize =
         VideoFrameSize(height, width, direction.rotate())
 
+    /**
+     * 映像の方向に応じたサイズを返します。
+     * 映像の方向が指定された方向と異なる場合、幅と高さを逆にしたサイズを返します。
+     *
+     * @param direction 映像の方向
+     * @return サイズ
+     */
     fun toSize(direction: VideoDirection): Size {
         return when (this.direction) {
             direction -> Size(width, height)
@@ -61,10 +77,25 @@ class VideoFrameSize(var width: Int,
 
 }
 
+/**
+ * 映像の方向です。
+ */
 enum class VideoDirection {
+    /**
+     * ポートレート
+     */
     PORTRAIT,
+
+    /**
+     * ランドスケープ
+     */
     LANDSCAPE;
 
+    /**
+     * 映像の方向を回転します。
+     *
+     * @return 回転後の方向
+     */
     fun rotate(): VideoDirection {
         return when (this) {
             PORTRAIT -> LANDSCAPE

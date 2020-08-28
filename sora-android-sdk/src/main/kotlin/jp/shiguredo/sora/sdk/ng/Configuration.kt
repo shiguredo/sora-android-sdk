@@ -23,14 +23,36 @@ class Configuration(var context: Context,
         const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
+    /**
+     * 接続試行時にタイムアウトするまでの秒数
+     */
     var timeout: Long = DEFAULT_TIMEOUT_SECONDS
 
+    /**
+     * 映像の可否
+     */
     var videoEnabled = true
+
+    /**
+     * 映像コーデック
+     */
     var videoCodec: VideoCodec = VideoCodec.VP9
+
+    /**
+     * 映像のビットレート
+     */
     var videoBitRate: Int? = null
 
     var videoCapturer: VideoCapturer? = null
+
+    /**
+     * 映像フレームのサイズ
+     */
     var videoFrameSize = VideoFrameSize.VGA
+
+    /**
+     * 映像のフレームレート
+     */
     var videoFps: Int = 30
 
     /**
