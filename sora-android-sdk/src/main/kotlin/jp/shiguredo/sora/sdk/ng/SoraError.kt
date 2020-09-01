@@ -2,39 +2,90 @@ package jp.shiguredo.sora.sdk.ng
 
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 
+/**
+ * Sora に関するエラーを表します。
+ *
+ * @property kind エラーの種別
+ *
+ * @constructor
+ * オブジェクトを生成します。
+ *
+ * @param message エラーメッセージ
+ * @param cause エラーの原因のオブジェクト
+ */
 class SoraError(val kind: Kind,
                 message: String? = null,
                 cause: Throwable? = null):
         Throwable(message = message, cause = cause) {
 
     /**
-     * Sora との通信やメディアに関するエラーを示します
+     * サーバーとの通信やメディアに関するエラーを表します。
      */
     enum class Kind {
-        // Sora との接続のエラー
-        SIGNALING_FAILURE,
-        ICE_FAILURE,
-        ICE_CLOSED_BY_SERVER,
-        TIMEOUT,
 
-        // Sora との接続の警告
+        /**
+         * シグナリングの失敗
+         */
+        SIGNALING_FAILURE,
+
+        /**
+         * ICE 接続の失敗
+         */
+        ICE_FAILURE,
+
+        /**
+         * サーバーによる ICE 接続の強制解除
+         */
+        ICE_CLOSED_BY_SERVER,
+
+        /**
+         * ICE 接続の解除
+         */
         ICE_DISCONNECTED,
 
-        // audio track 関連のエラー
-        // cf. JavaAudioDeviceModule.AudioTrackErrorCallback
+        /**
+         * タイムアウト
+         */
+        TIMEOUT,
+
+        /**
+         * 音声トラックの初期化に関するエラー
+         */
         AUDIO_TRACK_INIT_ERROR,
+
+        /**
+         * 音声トラックの開始に関するエラー
+         */
         AUDIO_TRACK_START_ERROR,
+
+        /**
+         * 音声トラックに関するその他のエラー
+         */
         AUDIO_TRACK_ERROR,
 
-        // audio record 関連のエラー
-        // cf. JavaAudioDeviceModule.AudioRecordErrorCallback
+        /**
+         * 音声録音の初期化に関するエラー
+         */
         AUDIO_RECORD_INIT_ERROR,
+
+        /**
+         * 音声録音の開始に関するエラー
+         */
         AUDIO_RECORD_START_ERROR,
+
+        /**
+         * 音声録音のその他のエラー
+         */
         AUDIO_RECORD_ERROR,
 
+        /**
+         * Sora または SDK に関する重要なエラー。
+         * このエラーが発生したらお問い合わせ下さい。
+         * 問い合わせの方法については [README](https://github.com/shiguredo/sora-android-sdk/blob/develop/README.md) を参照して下さい。
+         */
         PLEASE_CONTACT_US_ERROR;
 
-        companion object {
+        internal companion object {
 
             fun fromReason(reason: SoraErrorReason): Kind {
                 // TODO: 変換

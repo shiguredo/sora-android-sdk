@@ -4,6 +4,9 @@ import org.webrtc.RendererCommon
 import org.webrtc.VideoFrame
 import org.webrtc.VideoTrack
 
+/**
+ * 映像を描画するオブジェクトが実装すべきインターフェースです。
+ */
 interface VideoRenderer {
 
     var isMirrored: Boolean

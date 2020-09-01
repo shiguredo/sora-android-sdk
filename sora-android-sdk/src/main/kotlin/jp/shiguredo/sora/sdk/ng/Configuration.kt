@@ -171,7 +171,7 @@ class Configuration(var context: Context,
     var usesHardwareNoiseSuppressor: Boolean = true
 
     /**
-     * 使用する音声デバイスモジュール。
+     * 使用する音声デバイスモジュール ([org.webrtc.audio.AudioDeviceModule])。
      * このプロパティを設定した場合、以下の設定は無視されます。
      *
      * - [usesHardwareAcousticEchoCanceler]
