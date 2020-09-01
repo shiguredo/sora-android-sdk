@@ -316,7 +316,7 @@ class Configuration(var context: Context,
         }
     }
 
-    fun printDebug(tag: String, message: String){
+    internal fun printDebug(tag: String, message: String) {
         SoraLogger.d(tag, """$message: Configuration:
             |url                     = $url
             |channelId               = $channelId
