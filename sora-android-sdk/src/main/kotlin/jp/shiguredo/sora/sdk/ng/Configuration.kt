@@ -218,7 +218,7 @@ class Configuration(var context: Context,
      *
      * @see android.media.MediaRecorder.AudioSource
      */
-    var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
+    var mediaRecorderAudioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
     /**
      * 入力音声のモノラルまたはステレオの設定。
@@ -301,7 +301,7 @@ class Configuration(var context: Context,
                 }
 
                 it.audioOption.audioDeviceModule = audioDeviceModule
-                it.audioOption.audioSource = audioSource
+                it.audioOption.audioSource = mediaRecorderAudioSource
                 it.audioOption.useStereoInput = inputAudioSound == AudioSound.STEREO
                 it.audioOption.useStereoOutput = outputAudioSound == AudioSound.STEREO
                 it.audioOption.useHardwareAcousticEchoCanceler = usesHardwareAcousticEchoCanceler
