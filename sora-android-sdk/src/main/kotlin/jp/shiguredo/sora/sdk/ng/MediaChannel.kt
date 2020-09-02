@@ -8,33 +8,78 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
+/**
+ * メディアデータの送受信を行います。
+ *
+ * @property configuration 接続設定
+ */
 class MediaChannel internal constructor(
         val configuration: Configuration
 ) {
 
-    companion object {
-        internal val TAG = MediaChannel::class.simpleName!!
+    internal companion object {
+        val TAG = MediaChannel::class.simpleName!!
     }
 
+    /**
+     * 接続状態を表します。
+     */
     enum class State {
+
+        /**
+         * 接続可能な状態
+         */
         READY,
+
+        /**
+         * 接続試行中
+         */
         CONNECTING,
+
+        /**
+         * 接続完了
+         */
         CONNECTED,
+
+        /**
+         * 接続解除中
+         */
         DISCONNECTING,
+
+        /**
+         * 接続解除完了
+         */
         DISCONNECTED
     }
 
+    /**
+     * シグナリングチャネル
+     */
     var signalingChannel: SignalingChannel? = null
         internal set
 
+    /**
+     * 接続状態
+     */
     var state: State = State.READY
         internal set
 
-    private var _streams: MutableList<MediaStream> = mutableListOf()
+    /**
+     * ストリームのリスト
+     */
     val streams: List<MediaStream>
     get() = _streams
 
+    private var _streams: MutableList<MediaStream> = mutableListOf()
+
+    /**
+     * EGL のユーティリティオブジェクト ([org.webrtc.EglBase])
+     */
     var eglBase: EglBase? = null
+
+    /**
+     * 映像キャプチャー
+     */
     var videoCapturer: VideoCapturer? = null
 
     private var _onConnect: ((error: Throwable?) -> Unit)? = null
@@ -71,6 +116,11 @@ class MediaChannel internal constructor(
         state = State.DISCONNECTED
     }
 
+    /**
+     * 接続を解除します。
+     *
+     * @see [onDisconnect]
+     */
     fun disconnect() {
         state = State.DISCONNECTING
         basicDisconnect()
@@ -94,31 +144,61 @@ class MediaChannel internal constructor(
         }
     }
 
+    /**
+     * 接続解除時に呼ばれるハンドラをセットします。
+     *
+     * @param handler ハンドラ
+     */
     fun onDisconnect(handler: () -> Unit) {
         SoraLogger.d(TAG, "@onDisconnect")
         _onDisconnect = handler
     }
 
+    /**
+     * エラー発生時に呼ばれるハンドラをセットします。
+     *
+     * @param handler 発生したエラーを受け取るハンドラ
+     */
     fun onFailure(handler: (error: Throwable) -> Unit) {
         SoraLogger.d(TAG, "@onFailure")
         _onFailure = handler
     }
 
+    /**
+     * ローカルのストリーム (送信ストリーム) が追加されたときに呼ばれるハンドラをセットします。
+     *
+     * @param handler 追加されたストリームを受け取るハンドラ
+     */
     fun onAddLocalStream(handler: (stream: MediaStream) -> Unit) {
         SoraLogger.d(TAG, "@onAddLocalStream")
         _onAddLocalStream = handler
     }
 
+    /**
+     * リモートのストリーム (受信ストリーム) が追加されたときに呼ばれるハンドラをセットします。
+     *
+     * @param handler 追加されたストリームを受け取るハンドラ
+     */
     fun onAddRemoteStream(handler: (stream: MediaStream) -> Unit) {
         SoraLogger.d(TAG, "@onAddRemoteStream")
         _onAddRemoteStream = handler
     }
 
+    /**
+     * リモートのストリーム (受信ストリーム) が除去されたときに呼ばれるハンドラをセットします。
+     *
+     * @param handler 除去されたストリームの ID を受け取るハンドラ
+     */
     fun onRemoveRemoteStream(handler: (label: String) -> Unit) {
         SoraLogger.d(TAG, "@onRemoveRemoteStream")
         _onRemoveRemoteStream = handler
     }
 
+    /**
+     * ストリームを追加します。
+     *
+     * @param stream 追加するストリーム
+     */
     fun addStream(stream: MediaStream) {
         _streams.add(stream)
     }
@@ -183,7 +263,7 @@ class MediaChannel internal constructor(
             mediaChannel.peer?.senders?.let {
                 for (sender in it) {
                     SoraLogger.d(TAG, "add sender $sender to new stream $newStream")
-                    newStream._senders.add(sender)
+                    newStream.mutableSenders.add(sender)
                 }
             }
             addStream(newStream)

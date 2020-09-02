@@ -9,9 +9,17 @@ enum class AudioCodec {
 }
 
 /**
- * 音声のモノラル・ステレオです。
+ * 音声のモノラル・ステレオの種別です。
  */
 enum class AudioSound {
+
+    /**
+     * ステレオ
+     */
     STEREO,
+
+    /**
+     * モノラル
+     */
     MONO,
 }

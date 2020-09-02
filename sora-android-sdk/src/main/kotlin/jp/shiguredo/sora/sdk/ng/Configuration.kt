@@ -27,6 +27,9 @@ class Configuration(var context: Context,
                     var channelId: String,
                     var role: Role) {
 
+    /**
+     * 定数を提供します。
+     */
     companion object {
         private val TAG = Configuration::class.simpleName!!
 
@@ -142,10 +145,13 @@ class Configuration(var context: Context,
     var simulcastEnabled       = false
 
     /**
-     * スポットライトの可否
+     * スポットライト機能の可否
      */
     var spotlightEnabled       = false
 
+    /**
+     * スポットライト機能の有効時に配信可能なストリームの数
+     */
     var spotlight: Int? = null
 
     /**

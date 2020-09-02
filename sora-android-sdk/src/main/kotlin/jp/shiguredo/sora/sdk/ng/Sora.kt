@@ -3,6 +3,9 @@ package jp.shiguredo.sora.sdk.ng
 import android.os.Handler
 import android.os.Looper
 
+/**
+ * サーバーに接続するインターフェースを提供します。
+ */
 object Sora {
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -11,6 +14,12 @@ object Sora {
         mainHandler.post { handler() }
     }
 
+    /**
+     * サーバーに接続します。
+     *
+     * @param configuration 接続設定
+     * @param completionHandler 接続試行終了時に呼ばれる関数
+     */
     fun connect(configuration: Configuration,
                 completionHandler: (Result<MediaChannel>) -> Unit) {
         val mediaChannel = MediaChannel(configuration)

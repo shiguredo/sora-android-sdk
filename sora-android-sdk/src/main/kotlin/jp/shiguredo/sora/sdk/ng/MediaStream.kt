@@ -3,26 +3,42 @@ package jp.shiguredo.sora.sdk.ng
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
+/**
+ * メディアストリームを表します。
+ *
+ * @property mediaChannel ストリームを管理するメディアチャネル
+ * @property nativeStream libwebrtc のストリームオブジェクト ([org.webrtc.MediaStream]])
+ * @property videoSource 映像ソース
+ */
 class MediaStream internal constructor(val mediaChannel: MediaChannel,
                                        val nativeStream: org.webrtc.MediaStream,
                                        val videoSource: VideoSource?) {
 
-    companion object {
-        internal val TAG = MediaStream::class.simpleName!!
+    internal companion object {
+        val TAG = MediaStream::class.simpleName!!
     }
 
+    /**
+     * メディアストリームの ID
+     */
     val id: String
     get() = nativeStream.id
 
-    internal var _senders: MutableList<RtpSender> = mutableListOf()
+    internal var mutableSenders: MutableList<RtpSender> = mutableListOf()
 
+    /**
+     * センダーのリスト ([org.webrtc.RtpSender])
+     */
     val senders: List<RtpSender>
-        get() = _senders
+        get() = mutableSenders
 
-    internal var _receivers: MutableList<RtpReceiver> = mutableListOf()
+    internal var mutableReceivers: MutableList<RtpReceiver> = mutableListOf()
 
+    /**
+     * レシーバのリスト ([org.webrtc.RtpReceiver])
+     */
     val receivers: List<RtpReceiver>
-        get() = _receivers
+        get() = mutableReceivers
 
     internal val videoTracks: List<MediaStreamTrack>
         get() = nativeStream.videoTracks
@@ -33,6 +49,10 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     internal val allTracks: List<MediaStreamTrack>
         get() = videoTracks + audioTracks
 
+    /**
+     * ストリームが有効なら `true` 、無効なら `false` です。
+     * 無効にするとメディアデータの送受信を一時的に停止します。
+     */
     var isEnabled: Boolean
         get() {
             for (track in allTracks) {
@@ -50,6 +70,9 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
 
     internal var videoFilterAdapter = VideoFilterAdapter(this)
 
+    /**
+     * 映像フィルターのリスト
+     */
     val videoFilters: List<VideoFilter>
         get() = videoFilterAdapter.filters
 
@@ -66,6 +89,9 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         videoSource?.setVideoProcessor(videoFilterAdapter)
     }
 
+    /**
+     * 映像レンダラー
+     */
     var videoRenderer: VideoRenderer? = null
         set(value) {
             field = value
@@ -73,6 +99,12 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
                 setVideoRenderer(value, mediaChannel.configuration.sharedVideoRenderingContext)
         }
 
+    /**
+     * ストリームに映像レンダラーをセットします。
+     *
+     * @param newRenderer 新しいレンダラー
+     * @param videoRenderingContext 描画に使用するコンテキスト
+     */
     fun setVideoRenderer(newRenderer: VideoRenderer,
                          videoRenderingContext: VideoRenderingContext) {
         SoraLogger.d(TAG, "set video renderer => $newRenderer")
@@ -85,7 +117,7 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         }
         _videoRendererAdapter.videoRenderer = newRenderer
 
-        for (sender in _senders) {
+        for (sender in mutableSenders) {
             (sender.track() as? VideoTrack)?.let {
                 SoraLogger.d(TAG, "attach to video track => $it")
                 newRenderer.attachToVideoTrack(it)
@@ -93,6 +125,9 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         }
     }
 
+    /**
+     * ストリームにセットされた映像レンダラーを外します。
+     */
     fun removeVideoRenderer() {
         _videoRendererAdapter.videoRenderer?.let { renderer ->
             if (mediaChannel.configuration.videoRendererLifecycleManagementEnabled &&
@@ -100,7 +135,7 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
                 renderer.release()
             }
 
-            for (sender in _senders) {
+            for (sender in mutableSenders) {
                 (sender.track() as? VideoTrack)?.let { track ->
                     SoraLogger.d(TAG, "detach from video track => $track")
                     renderer.detachFromVideoTrack(track)
@@ -111,34 +146,44 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         _videoRendererAdapter.videoRenderer = null
     }
 
+    /**
+     * 映像フィルターを追加します。
+     *
+     * @param filter 追加する映像フィルター
+     */
     fun addVideoFilter(filter: VideoFilter) {
         videoFilterAdapter.addFilter(filter)
     }
 
+    /**
+     * 映像フィルターを除去します。
+     *
+     * @param filter 除去する映像フィルター
+     */
     fun removeVideoFilter(filter: VideoFilter) {
         videoFilterAdapter.removeFilter(filter)
     }
 
     internal fun basicAddSender(sender: RtpSender) {
-        _senders.add(sender)
+        mutableSenders.add(sender)
     }
 
     internal fun basicAddReceiver(receiver: RtpReceiver) {
-        _receivers.add(receiver)
+        mutableReceivers.add(receiver)
     }
 
     internal fun close() {
         removeVideoRenderer()
 
-        for (sender in _senders) {
+        for (sender in mutableSenders) {
             sender.dispose()
         }
-        _senders = mutableListOf()
+        mutableSenders = mutableListOf()
 
-        for (receiver in _receivers) {
+        for (receiver in mutableReceivers) {
             receiver.dispose()
         }
-        _receivers = mutableListOf()
+        mutableReceivers = mutableListOf()
 
         nativeStream.dispose()
     }
