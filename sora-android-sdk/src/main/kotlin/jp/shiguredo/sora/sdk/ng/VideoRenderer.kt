@@ -81,16 +81,48 @@ interface VideoRenderer {
     fun setScalingType(scalingTypeMatchOrientation: RendererCommon.ScalingType?,
                        scalingTypeMismatchOrientation: RendererCommon.ScalingType?)
 
+    /**
+     * 描画が一時停止されていれば再開します。
+     *
+     * @see pause
+     */
     fun resume()
 
+    /**
+     * 描画を一時停止します。
+     *
+     * @see resume
+     */
     fun pause()
 
+    /**
+     * 画面をクリアします。
+     */
     fun clear()
 
+    /**
+     * 映像を描画します。
+     *
+     * @param frame 描画する映像フレーム
+     *
+     * @see onFirstFrameRendered
+     */
     fun onFrame(frame: VideoFrame?)
 
+    /**
+     * 最初の映像フレームが描画されるときに呼ばれます。
+     *
+     * @see onFrame
+     */
     fun onFirstFrameRendered()
 
+    /**
+     * 解像度が変更されたときに呼ばれます。
+     *
+     * @param videoWidth 解像度の幅
+     * @param videoHeight 解像度の高さ
+     * @param rotation 回転の角度
+     */
     fun onFrameResolutionChanged(videoWidth: Int, videoHeight: Int, rotation: Int)
 
 }
