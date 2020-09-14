@@ -1,4 +1,4 @@
-package jp.shiguredo.sora.sdk.ng
+package jp.shiguredo.sora.sdk2
 
 /**
  * メディアの制約を定義します。

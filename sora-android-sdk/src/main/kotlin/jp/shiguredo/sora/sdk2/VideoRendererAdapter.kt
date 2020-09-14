@@ -1,4 +1,4 @@
-package jp.shiguredo.sora.sdk.ng
+package jp.shiguredo.sora.sdk2
 
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RendererCommon.RendererEvents
