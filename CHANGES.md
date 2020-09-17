@@ -1,97 +1,83 @@
 # 変更履歴
 
+- CHANGE
+    - 下位互換のない変更
 - UPDATE
     - 下位互換がある変更
 - ADD
     - 下位互換がある追加
-- CHANGE
-    - 下位互換のない変更
 - FIX
     - バグ修正
 
 ## develop
 
-### CHANGE
-
-- `com.android.tools.build:gradle` を 4.0.1 に上げる
-  - @szktty
-- `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
-  - @szktty
-- `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
-  - @szktty
-- `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
-  - @szktty
-- シグナリング pong に統計情報を含める
-  - @szktty
+- [UPDATE] `com.android.tools.build:gradle` を 4.0.1 に上げる
+    - @szktty
+- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
+    - @szktty
+- [UPDATE] `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
+    - @szktty
+- [UPDATE] `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
+    - @szktty
+- [ADD] シグナリング pong に統計情報を含める
+    - @szktty
 
 ## 2020.3
 
-### CHANGE
-
-- libwebrtc を 83.4103.12.2 に上げる
-  - @szktty
-- `com.android.tools.build:gradle` を 4.0.0 に上げる
-  - @szktty
-- `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
-  - @szktty
-- 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
-  - @szktty
-- 古いロール (`upstream`, `downstream`) を削除する
-  - @szktty
-- `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
-  - @szktty
+- [UPDATE] libwebrtc を 83.4103.12.2 に上げる
+    - @szktty
+- [UPDATE] `com.android.tools.build:gradle` を 4.0.0 に上げる
+    - @szktty
+- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
+    - @szktty
+- [ADD] 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
+    - @szktty
+- [CHANGE] 古いロール (`upstream`, `downstream`) を削除する
+    - @szktty
+- [CHANGE] `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
+    - @szktty
 
 ## 2020.2
 
-### CHANGE
-
-- `compileSdkVersion` を 29 に上げる
-  - @szktty
-- `targetSdkVersion` を 29 に上げる
-  - @szktty
-- Kotlin を 1.3.72 に上げる
-  - @szktty
-- Dokka を 0.10.1 に上げる
-  - @szktty
-- libwebrtc を 79.5.1 に上げる
-  - @szktty
-- `com.android.tools.build:gradle` を 3.6.3 に上げる
-  - @szktty
-- `com.squareup.okhttp3:okhttp` を 4.6.0 に上げる
-  - @szktty
-- `junit:junit` を `4.13` に上げる
-  - @szktty
-- Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
-  - @szktty
-- シグナリング connect に含めるクライアント情報を変更する
-  - @szktty
+- [CHANGE] シグナリング connect に含めるクライアント情報を変更する
+    - @szktty
+- [UPDATE] `compileSdkVersion` を 29 に上げる
+    - @szktty
+- [UPDATE] `targetSdkVersion` を 29 に上げる
+    - @szktty
+- [UPDATE] Kotlin を 1.3.72 に上げる
+    - @szktty
+- [UPDATE] Dokka を 0.10.1 に上げる
+    - @szktty
+- [UPDATE] libwebrtc を 79.5.1 に上げる
+    - @szktty
+- [UPDATE] `com.android.tools.build:gradle` を 3.6.3 に上げる
+    - @szktty
+- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.6.0 に上げる
+    - @szktty
+- [UPDATE] `junit:junit` を `4.13` に上げる
+    - @szktty
+- [ADD] Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
+    - @szktty
 
 ## 2020.1
 
-### ADD
-
-- `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加する
-  - @shino
-- サイマルキャスト配信のエンコーダ設定変更用コールバックを追加する
-  - `SoraMediaChannel.Listener#onSenderEncodings()`
-  - @shino
-- 定数 `SoraErrorReason.ICE_DISCONNECTED` を追加する
-  - @shino
-- `SoraMediaChannel.Listener` に `onWarning` メソッドを追加する
-  - このバージョンでは `ICE_DISCONNECTED` の通知のみに利用している
-  - 想定ユースケースは、ネットワークが不安定であることを UI に伝えること
-  - デフォルト実装は処理なしである
-  - @shino
-
-### UPDATE
-
-- `com.android.tools.build:gradle` を 3.5.3 に上げる
-  - @shino
-
-### FIX
-
-- IceConnectionState = disconnected では切断処理を行わないよう変更する
-  - @shino
+- [ADD] `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加する
+    - @shino
+- [ADD] サイマルキャスト配信のエンコーダ設定変更用コールバックを追加する
+    - `SoraMediaChannel.Listener#onSenderEncodings()`
+    - @shino
+- [ADD] 定数 `SoraErrorReason.ICE_DISCONNECTED` を追加する
+    - @shino
+- [ADD] `SoraMediaChannel.Listener` に `onWarning` メソッドを追加する
+    - このバージョンでは `ICE_DISCONNECTED` の通知のみに利用している
+    - 想定ユースケースは、ネットワークが不安定であることを UI に伝えること
+    - デフォルト実装は処理なしである
+    - @shino
+- [UPDATE] `com.android.tools.build:gradle` を 3.5.3 に上げる
+    - @shino
+- [FIX] IceConnectionState = disconnected では切断処理を行わないよう変更する
+    - @shino
 
 ## 1.10.0
 
