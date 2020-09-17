@@ -39,11 +39,11 @@
 
 ## 2020.2
 
+- [CHANGE] `compileSdkVersion` を 29 に上げる
+    - @szktty
+- [CHANGE] `targetSdkVersion` を 29 に上げる
+    - @szktty
 - [CHANGE] シグナリング connect に含めるクライアント情報を変更する
-    - @szktty
-- [UPDATE] `compileSdkVersion` を 29 に上げる
-    - @szktty
-- [UPDATE] `targetSdkVersion` を 29 に上げる
     - @szktty
 - [UPDATE] Kotlin を 1.3.72 に上げる
     - @szktty
@@ -555,5 +555,5 @@
 
 ## 1.0.0
 
-最初のリリース
+- 最初のリリース
   - @shino

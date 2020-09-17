@@ -1,32 +1,14 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-m84.4103.12-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/4103)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 
 Sora Android SDK は [WebRTC SFU Sora](https://sora.shiguredo.jp) の Android クライアントアプリケーションを開発するためのライブラリです。
 
 使い方は [Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/) を参照してください。
-
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-**Table of Contents**
-
-- [Sora Android SDK](#sora-android-sdk)
-    - [About Support](#about-support)
-    - [サポートについて](#サポートについて)
-    - [システム条件](#システム条件)
-    - [サンプルコード](#サンプルコード)
-    - [Issues について](#issues-について)
-- [SDK 開発者向け](#sdk-開発者向け)
-    - [ブランチ利用方法](#ブランチ利用方法)
-    - [リリース](#リリース)
-    - [libwebrtc への依存](#libwebrtc-への依存)
-    - [ローカルでのビルド](#ローカルでのビルド)
-    - [kdoc の生成](#kdoc-の生成)
-    - [JitPack](#jitpack)
-    - [依存ライブラリの最新バージョンチェック](#依存ライブラリの最新バージョンチェック)
-    - [sora-android-sdk-samples を multi module に押し込む方法](#sora-android-sdk-samples-を-multi-module-に押し込む方法)
-- [Copyright](#copyright)
-
-<!-- markdown-toc end -->
 
 ## About Support
 
