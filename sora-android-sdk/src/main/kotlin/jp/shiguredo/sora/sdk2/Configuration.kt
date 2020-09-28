@@ -150,7 +150,8 @@ class Configuration(var context: Context,
     var spotlightEnabled       = false
 
     /**
-     * スポットライト機能の有効時に配信可能なストリームの数
+     * 最大同時アクティブ配信者数。
+     * スポットライト機能の有効時のみ制限されます。
      */
     var activeSpeakerLimit: Int? = null
 
