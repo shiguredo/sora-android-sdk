@@ -152,7 +152,7 @@ class Configuration(var context: Context,
     /**
      * スポットライト機能の有効時に配信可能なストリームの数
      */
-    var spotlight: Int? = null
+    var activeSpeakerLimit: Int? = null
 
     /**
      * シグナリング  `connect` に含めるメタデータ。
@@ -267,8 +267,8 @@ class Configuration(var context: Context,
             it.multistreamEnabled = multistreamEnabled
             it.simulcastEnabled = simulcastEnabled
 
-            if (spotlightEnabled && spotlight != null) {
-                it.spotlight = spotlight!!
+            if (spotlightEnabled && activeSpeakerLimit != null) {
+                it.spotlight = activeSpeakerLimit!!
             }
 
             if (videoEnabled) {
@@ -330,7 +330,7 @@ class Configuration(var context: Context,
             |multistreamEnabled      = $multistreamEnabled
             |simulcastEnabled        = $simulcastEnabled
             |spotlightEnabled        = $spotlightEnabled
-            |spotlight               = $spotlight
+            |activeSpeakerLimit      = $activeSpeakerLimit
             |videoEnabled            = $videoEnabled
             |videoCodec              = $videoCodec
             |videoBitRate            = $videoBitRate
