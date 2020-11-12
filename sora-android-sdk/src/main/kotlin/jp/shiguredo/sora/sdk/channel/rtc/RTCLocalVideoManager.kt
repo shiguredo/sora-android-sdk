@@ -6,6 +6,7 @@ import org.webrtc.*
 import java.util.*
 
 interface RTCLocalVideoManager {
+    var source: VideoSource?
     fun initTrack(factory: PeerConnectionFactory,
                   eglContext: EglBase.Context?,
                   appContext: Context)
@@ -15,6 +16,7 @@ interface RTCLocalVideoManager {
 
 // just for Null-Object-Pattern
 class RTCNullLocalVideoManager: RTCLocalVideoManager {
+    override var source: VideoSource? = null
     override fun initTrack(factory: PeerConnectionFactory,
                            eglContext: EglBase.Context?,
                            appContext: Context) {}
@@ -28,7 +30,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
         private val TAG = RTCLocalVideoManagerImpl::class.simpleName
     }
 
-    var source: VideoSource? = null
+    override var source: VideoSource? = null
     var track:  VideoTrack?  = null
     var surfaceTextureHelper: SurfaceTextureHelper? = null
 
@@ -42,6 +44,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
         val trackId = UUID.randomUUID().toString()
         track = factory.createVideoTrack(trackId, source)
         track!!.setEnabled(true)
+        SoraLogger.d(TAG, "created track => $trackId, $track")
     }
 
     override fun attachTrackToStream(stream: MediaStream) {
@@ -60,3 +63,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
     }
 }
 
+interface VideoSink {
+    @CalledByNative
+    fun onFrame(var1: VideoFrame?)
+}

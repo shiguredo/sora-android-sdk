@@ -1,7 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
-import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
@@ -28,6 +27,8 @@ class RTCComponentFactory(private val option: SoraMediaOption,
 
         // DefaultVideoEncoderFactory, DefaultVideoDecoderFactory は
         // EglBase.Context を与えるとハードウェアエンコーダーを使用する
+        SoraLogger.d(TAG, "videoEncoderFactory => ${option.videoEncoderFactory}")
+        SoraLogger.d(TAG, "videoUpstreamContext => ${option.videoUpstreamContext}")
         val encoderFactory = when {
             option.videoEncoderFactory != null ->
                 option.videoEncoderFactory!!
@@ -52,6 +53,8 @@ class RTCComponentFactory(private val option: SoraMediaOption,
                 SoftwareVideoEncoderFactory()
         }
 
+        SoraLogger.d(TAG, "videoDecoderFactory => ${option.videoDecoderFactory}")
+        SoraLogger.d(TAG, "videoDownstreamContext => ${option.videoDownstreamContext}")
         val decoderFactory = when {
             option.videoDecoderFactory != null ->
                 option.videoDecoderFactory!!
@@ -60,6 +63,9 @@ class RTCComponentFactory(private val option: SoraMediaOption,
             else ->
                 SoftwareVideoDecoderFactory()
         }
+
+        SoraLogger.d(TAG, "decoderFactory => $decoderFactory")
+        SoraLogger.d(TAG, "encoderFactory => $encoderFactory")
 
         decoderFactory.supportedCodecs.forEach {
             SoraLogger.d(TAG, "decoderFactory supported codec: ${it.name} ${it.params}")

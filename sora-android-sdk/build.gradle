@@ -41,18 +41,28 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
-dokka {
-    outputFormat = 'javadoc'
+dokkaHtml {
+    outputDirectory = "$buildDir/dokka"
+    disableAutoconfiguration = false
+    cacheRoot = file("default")
 
-    configuration {
-        moduleName = 'sora'
+    dokkaSourceSets {
+        configureEach {
+            moduleDisplayName = 'Sora Android SDK'
+            reportUndocumented = true
+            includes = ['packages.md']
 
-        sourceLink {
-            path = "sora-android-sdk/src/main/kotlin"
-            url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
-            lineSuffix = "#L"
+            sourceLink {
+                path = "sora-android-sdk/src/main/kotlin"
+                url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
+                lineSuffix = "#L"
+            }
         }
     }
 }

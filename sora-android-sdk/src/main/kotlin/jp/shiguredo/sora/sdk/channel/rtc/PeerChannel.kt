@@ -14,6 +14,12 @@ import java.util.concurrent.Executors
 
 interface PeerChannel {
 
+    var conn:    PeerConnection?
+    var factory: PeerConnectionFactory?
+    val senders: List<RtpSender>
+    val receivers: List<RtpReceiver>
+    val transceivers: List<RtpTransceiver>
+
     fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
 
@@ -29,7 +35,8 @@ interface PeerChannel {
     interface Listener {
         fun onRemoveRemoteStream(label: String)
         fun onAddRemoteStream(ms: MediaStream)
-        fun onAddLocalStream(ms: MediaStream)
+        fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?)
+        fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>)
         fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)
         fun onRemoveReceiver(id: String)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
@@ -73,8 +80,20 @@ class PeerChannelImpl(
 
     private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
-    private var conn:    PeerConnection?        = null
-    private var factory: PeerConnectionFactory? = null
+    override var conn:    PeerConnection?        = null
+    override var factory: PeerConnectionFactory? = null
+
+    private var _senders: MutableList<RtpSender> = mutableListOf()
+    override val senders: List<RtpSender>
+        get() = _senders
+
+    private var _receivers: MutableList<RtpReceiver> = mutableListOf()
+    override val receivers: List<RtpReceiver>
+        get() = _receivers
+
+    private var _transceivers: MutableList<RtpTransceiver> = mutableListOf()
+    override val transceivers: List<RtpTransceiver>
+        get() = _transceivers
 
     private val executor =  Executors.newSingleThreadExecutor()
 
@@ -115,12 +134,19 @@ class PeerChannelImpl(
 
         override fun onAddTrack(receiver: RtpReceiver?, ms: Array<out MediaStream>?) {
             SoraLogger.d(TAG, "[rtc] @onAddTrack")
-            receiver?.let { listener?.onAddReceiver(receiver, ms!!) }
+            if (receiver != null) {
+                _receivers.add(receiver!!)
+                receiver?.let { listener?.onAddReceiver(receiver!!, ms!!) }
+            }
         }
 
         override fun onRemoveTrack(receiver: RtpReceiver?) {
             SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
-            receiver?.let { listener?.onRemoveReceiver(receiver.id()) }
+            if (receiver != null) {
+                _receivers.remove(receiver!!)
+                receiver?.let { listener?.onRemoveReceiver(receiver.id()) }
+            }
+
         }
 
         override  fun onTrack(transceiver: RtpTransceiver) {
@@ -230,6 +256,9 @@ class PeerChannelImpl(
                 conn!!.addTrack(it, mediaStreamLabels)
             }
 
+            audioSender?.let { _senders.add(it) }
+            videoSender?.let { _senders.add(it) }
+
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
                 SoraLogger.d(TAG, "Modify sender.parameters")
 
@@ -278,8 +307,15 @@ class PeerChannelImpl(
 
             val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
                     RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+
+            val audioTransceiver = conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
+            if (audioTransceiver != null) {
+                _transceivers.add(audioTransceiver!!)
+            }
+            val videoTransceiver = conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+            if (videoTransceiver != null) {
+                _transceivers.add(videoTransceiver!!)
+            }
 
             conn?.createOffer(object : SdpObserver {
                 override fun onCreateSuccess(sdp: SessionDescription?) {
@@ -311,8 +347,10 @@ class PeerChannelImpl(
                 networkConfig.createConfiguration(),
                 connectionObserver)
 
-        SoraLogger.d(TAG, "local managers' initTrack")
+        SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+
+        SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
@@ -320,10 +358,45 @@ class PeerChannelImpl(
         localStream = factory!!.createLocalMediaStream(streamId)
 
         localAudioManager.attachTrackToStream(localStream!!)
+        //audioSender = localAudioManager.attachTrackToPeerConnection(conn!!, localStream!!)
+
+        // TODO: add track to peer connection のみだと local stream に追加されない
         localVideoManager.attachTrackToStream(localStream!!)
+        //videoSender = localVideoManager.attachTrackToPeerConnection(conn!!, localStream!!)
+        SoraLogger.d(TAG, "attached video sender => $videoSender")
+
+        /*
+        if (conn != null && localStream!!.videoTracks != null) {
+            SoraLogger.d(TAG, "attach video tracks to peer connection")
+            attachTracksToPeerConnection(localStream!!.videoTracks!!, localStream!!, conn!!)
+        }
+        if (conn != null && localStream!!.audioTracks != null) {
+            SoraLogger.d(TAG, "attach audio tracks to peer connection")
+            attachTracksToPeerConnection(localStream!!.audioTracks!!, localStream!!, conn!!)
+        }
+         */
+
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
-        listener?.onAddLocalStream(localStream!!)
+        listener?.onAddLocalStream(localStream!!, localVideoManager.source)
+
+        /*
+        if (audioSender != null)
+            listener?.onAddSender(audioSender!!, arrayOf(localStream!!))
+        if (videoSender != null)
+            listener?.onAddSender(videoSender!!, arrayOf(localStream!!))
+         */
+    }
+
+    private fun attachTracksToPeerConnection(tracks: List<MediaStreamTrack>,
+                                             stream: MediaStream,
+                                             conn: PeerConnection) {
+        for (track in tracks) {
+            val sender = conn.addTrack(track, listOf(stream.id))
+            if (sender != null) {
+                _senders.add(sender!!)
+            }
+        }
     }
 
     override fun disconnect() {

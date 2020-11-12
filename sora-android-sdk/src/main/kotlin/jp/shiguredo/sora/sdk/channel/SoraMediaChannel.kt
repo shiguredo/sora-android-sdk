@@ -56,8 +56,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         private var listener:                Listener?,
         private val clientId:                String?              = null,
         private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()) {
-
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
+) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
@@ -81,7 +81,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
-        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
+        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream, videoSource: VideoSource?) {}
 
         /**
          * リモートストリームが追加されたときに呼び出されるコールバック
@@ -105,6 +105,13 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param label メディアストリームのラベル (`ms.label()`)
          */
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}
+
+        // undocumented
+        fun onAddSender(mediaChannel: SoraMediaChannel, sender: RtpSender, ms: Array<out MediaStream>) {}
+
+        fun onAddReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver, ms: Array<out MediaStream>) {}
+
+        fun onRemoveReceiver(mediaChannel: SoraMediaChannel, id: String) {}
 
         /**
          * Sora との接続が確立されたときに呼び出されるコールバック
@@ -228,8 +235,8 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     }
 
-    private var peer:            PeerChannel?      = null
-    private var signaling:       SignalingChannel? = null
+    var peer:            PeerChannel?      = null
+    var signaling:       SignalingChannel? = null
 
     private var closing = false
 
@@ -323,17 +330,24 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
         }
 
-        override fun onAddLocalStream(ms: MediaStream) {
+        override fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
-            listener?.onAddLocalStream(this@SoraMediaChannel, ms)
+            listener?.onAddLocalStream(this@SoraMediaChannel, ms, videoSource)
+        }
+
+        override fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onAddSender")
+            listener?.onAddSender(this@SoraMediaChannel, sender, ms)
         }
 
         override fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddReceiver")
+            listener?.onAddReceiver(this@SoraMediaChannel, receiver, ms)
         }
 
         override fun onRemoveReceiver(id: String) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver=${id}")
+            listener?.onRemoveReceiver(this@SoraMediaChannel, id)
         }
 
         override fun onConnect() {
@@ -389,6 +403,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         SoraLogger.d(TAG, """connect: SoraMediaOption
+            |requiredRole            = ${mediaOption.requiredRole}
             |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
             |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
             |multistreamEnabled      = ${mediaOption.multistreamEnabled}
@@ -402,7 +417,11 @@ class SoraMediaChannel @JvmOverloads constructor(
             |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
             |videoIsRequired         = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
+            |videoUpstreamContext    = ${mediaOption.videoUpstreamContext}
             |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
+            |videoDownstreamContext  = ${mediaOption.videoDownstreamContext}
+            |videoEncoderFactory     = ${mediaOption.videoEncoderFactory}
+            |videoDecoderFactory     = ${mediaOption.videoDecoderFactory}
             |videoCodec              = ${mediaOption.videoCodec}
             |videoBitRate            = ${mediaOption.videoBitrate}
             |simulcastEnabled        = ${mediaOption.simulcastEnabled}

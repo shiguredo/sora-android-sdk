@@ -149,13 +149,23 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
     get() = audioUpstreamEnabled || videoUpstreamEnabled
 
-    internal val multistreamIsRequired: Boolean
-    get() = if (downstreamIsRequired && upstreamIsRequired) {
-            // 双方向通信の場合は multistream フラグを立てる
-            true
-        } else {
-            multistreamEnabled
+    internal var _multistreamIsRequired: Boolean? = null
+
+    internal var multistreamIsRequired: Boolean
+        get() = when {
+            _multistreamIsRequired != null ->
+                _multistreamIsRequired!!
+            downstreamIsRequired && upstreamIsRequired ->
+                // 双方向通信の場合は multistream フラグを立てる
+                true
+            else ->
+                multistreamEnabled
         }
+        set(value) {
+            _multistreamIsRequired = value
+        }
+
+    internal var _requiredRole: SoraChannelRole? = null
 
     internal val requiredRole: SoraChannelRole
     get() = if (upstreamIsRequired && downstreamIsRequired)
@@ -179,5 +189,5 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED
-
 }
+
