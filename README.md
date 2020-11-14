@@ -23,7 +23,7 @@ In other languages, we won't be able to deal with them. Thank you for your under
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
 - Android Studio 4.0 以降
-- WebRTC SFU Sora 2020.1 以降
+- WebRTC SFU Sora 2020.2 以降
 
 ## サンプルコード
 
