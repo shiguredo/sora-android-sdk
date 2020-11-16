@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 86.4240.1.2 に上げる
+    - @szktty
 - [UPDATE] `com.android.tools.build:gradle` を 4.0.1 に上げる
     - @szktty
 - [UPDATE] `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
@@ -20,6 +22,8 @@
 - [UPDATE] `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
     - @szktty
 - [ADD] シグナリング pong に統計情報を含める
+    - @szktty
+- [ADD] 新しい API を追加する (`jp.shiguredo.sora.sdk2`)
     - @szktty
 
 ## 2020.3
