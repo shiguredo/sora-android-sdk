@@ -163,7 +163,7 @@ class PeerChannelImpl(
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
-            SoraLogger.d(TAG, "[rtc] @onIceConnectionChange")
+            SoraLogger.d(TAG, "[rtc] @onIceConnectionChange:$state")
             state?.let {
                SoraLogger.d(TAG, "[rtc] @ice:${it.name}")
                when (it) {
@@ -193,11 +193,21 @@ class PeerChannelImpl(
         }
 
         override fun onIceConnectionReceivingChange(received: Boolean) {
-            SoraLogger.d(TAG, "[rtc] @onIceConnectionReceivingChange")
+            SoraLogger.d(TAG, "[rtc] @onIceConnectionReceivingChange:$received")
         }
 
         override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
-            SoraLogger.d(TAG, "[rtc] @onIceGatheringChange")
+            SoraLogger.d(TAG, "[rtc] @onIceGatheringChange:$state")
+        }
+
+        override fun onStandardizedIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+            super.onStandardizedIceConnectionChange(newState)
+            SoraLogger.d(TAG, "[rtc] @onStandardizedIceConnectionChange:$newState")
+        }
+
+        override fun onConnectionChange(newState: PeerConnection.PeerConnectionState?) {
+            super.onConnectionChange(newState)
+            SoraLogger.d(TAG, "[rtc] @onConnectionChange:$newState")
         }
 
         override fun onRemoveStream(ms: MediaStream?) {
