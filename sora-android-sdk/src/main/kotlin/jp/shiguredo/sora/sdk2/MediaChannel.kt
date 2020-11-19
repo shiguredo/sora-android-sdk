@@ -126,6 +126,7 @@ class MediaChannel internal constructor(
         basicDisconnect()
         if (_onDisconnect != null) {
             _onDisconnect!!()
+            _onDisconnect = null
         }
     }
 
@@ -136,10 +137,12 @@ class MediaChannel internal constructor(
             State.CONNECTING ->
                 if (_onConnect != null) {
                     _onConnect!!(error)
+                    _onConnect = null
                 }
             else ->
                 if (_onFailure != null) {
                     _onFailure!!(error)
+                    _onFailure = null
                 }
         }
     }
@@ -226,6 +229,7 @@ class MediaChannel internal constructor(
 
             if (_onConnect != null) {
                 _onConnect!!(null)
+                _onConnect = null
             }
         }
 
