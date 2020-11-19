@@ -82,7 +82,7 @@ class MediaChannel internal constructor(
      */
     var videoCapturer: VideoCapturer? = null
 
-    private var _onConnect: ((error: Throwable?) -> Unit)? = null
+    private var _completionHandler: ((error: Throwable?) -> Unit)? = null
     private var _onDisconnect: (() -> Unit)? = null
     private var _onFailure: ((error: Throwable) -> Unit)? = null
     private var _onAddLocalStream: (stream: MediaStream) -> Unit = {}
@@ -97,7 +97,7 @@ class MediaChannel internal constructor(
     internal fun connect(completionHandler: (error: Throwable?) -> Unit) {
         state = State.CONNECTING
 
-        _onConnect = completionHandler
+        _completionHandler = completionHandler
 
         configuration.printDebug(TAG, "connect")
 
@@ -135,9 +135,9 @@ class MediaChannel internal constructor(
 
         when (state) {
             State.CONNECTING ->
-                if (_onConnect != null) {
-                    _onConnect!!(error)
-                    _onConnect = null
+                if (_completionHandler != null) {
+                    _completionHandler!!(error)
+                    _completionHandler = null
                 }
             else ->
                 if (_onFailure != null) {
@@ -227,9 +227,9 @@ class MediaChannel internal constructor(
                 configuration.videoCapturer!!.startCapture(size.width, size.height, configuration.videoFps)
             }
 
-            if (_onConnect != null) {
-                _onConnect!!(null)
-                _onConnect = null
+            if (_completionHandler != null) {
+                _completionHandler!!(null)
+                _completionHandler = null
             }
         }
 
