@@ -292,6 +292,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onError(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason")
             listener?.onError(this@SoraMediaChannel, reason)
         }
 
@@ -362,18 +363,22 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onError(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason")
             listener?.onError(this@SoraMediaChannel, reason)
         }
 
         override fun onError(reason: SoraErrorReason, message: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason:$message")
             listener?.onError(this@SoraMediaChannel, reason, message)
         }
 
         override fun onWarning(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onWarning:$reason")
             listener?.onWarning(this@SoraMediaChannel, reason)
         }
 
         override fun onWarning(reason: SoraErrorReason, message: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onWarning:$reason:$message")
             listener?.onWarning(this@SoraMediaChannel, reason, message)
         }
 
