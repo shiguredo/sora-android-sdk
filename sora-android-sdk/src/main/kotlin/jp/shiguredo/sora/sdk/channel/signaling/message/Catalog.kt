@@ -29,7 +29,7 @@ data class ConnectMessage(
                                        val signalingNotifyMetadata: Any? = null,
         @SerializedName("multistream") val multistream:             Boolean = false,
         @SerializedName("spotlight")   var spotlight:               Int? = null,
-        @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("simulcast")   var simulcast:               Simulcast? = null,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
@@ -59,6 +59,10 @@ data class OpusParams(
         @SerializedName("minptime")        var minptime:        Int? = null,
         @SerializedName("useinbandfec")    var useinbandfec:    Boolean? = null,
         @SerializedName("usedtx")          var usedtx:          Boolean? = null
+)
+
+data class Simulcast(
+        @SerializedName("quality")       val quality:       String = "high" // low, middle, high
 )
 
 data class IceServer(

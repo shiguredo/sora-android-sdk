@@ -84,7 +84,7 @@ class MessageConverter {
             }
 
             if (mediaOption.simulcastEnabled) {
-                msg.simulcast = true
+                msg.simulcast = Simulcast(mediaOption.simulcastQuality.rawValue)
                 msg.role = role.signaling
             }
 

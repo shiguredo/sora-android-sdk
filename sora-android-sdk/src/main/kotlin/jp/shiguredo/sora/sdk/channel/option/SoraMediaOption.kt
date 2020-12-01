@@ -17,6 +17,7 @@ class SoraMediaOption {
     internal var videoUpstreamEnabled   = false
     internal var multistreamEnabled     = false
     internal var simulcastEnabled       = false
+    internal var simulcastQuality: SimulcastOption.Quality = SimulcastOption.Quality.High
 
     var spotlight : Int        = 0
 
@@ -94,8 +95,9 @@ class SoraMediaOption {
     /**
      * サイマルキャストを有効にします
      */
-    fun enableSimulcast() {
+    fun enableSimulcast(quality: SimulcastOption.Quality = SimulcastOption.Quality.High) {
         simulcastEnabled = true
+        simulcastQuality = quality
     }
 
     /**
