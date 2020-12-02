@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk2
 import android.content.Context
 import android.media.MediaRecorder
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
+import jp.shiguredo.sora.sdk.channel.option.SimulcastOption
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
@@ -143,6 +144,11 @@ class Configuration(var context: Context,
      * サイマルキャストの可否
      */
     var simulcastEnabled       = false
+
+    /**
+     * サイマルキャスト有効時の画質
+     */
+    var simulcastQuality: SimulcastOption.Quality = SimulcastOption.Quality.High
 
     /**
      * スポットライト機能の可否
@@ -319,6 +325,10 @@ class Configuration(var context: Context,
                 it.audioOption.audioProcessingNoiseSuppression = audioProcessingNoiseSuppressionEnabled
                 it.audioOption.mediaConstraints = audioMediaConstraints?.toNative()
                 it.audioOption.opusParams = opusParams
+            }
+
+            if (simulcastEnabled) {
+                it.simulcastQuality = simulcastQuality
             }
         }
     }
