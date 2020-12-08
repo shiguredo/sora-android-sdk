@@ -32,7 +32,7 @@ enum class VideoCodec {
  */
 class VideoFrameSize(var width: Int,
                      var height: Int,
-                     var direction: VideoDirection = VideoDirection.LANDSCAPE) {
+                     var direction: VideoDirection) {
 
     /**
      * 定数を提供します。
@@ -40,58 +40,71 @@ class VideoFrameSize(var width: Int,
     companion object {
 
         /** QQVGA 160x120 */
-        val QQVGA = VideoFrameSize(160, 120).rotate()
+        val QQVGA = VideoFrameSize(160, 120, VideoDirection.LANDSCAPE)
 
         /** QCIF  176x144 */
-        val QCIF  = VideoFrameSize(176, 144).rotate()
+        val QCIF  = VideoFrameSize(176, 144, VideoDirection.LANDSCAPE)
 
         /** HQVGA 240x160 */
-        val HQVGA = VideoFrameSize(240, 160).rotate()
+        val HQVGA = VideoFrameSize(240, 160, VideoDirection.LANDSCAPE)
 
         /** QVGA  320x240 */
-        val QVGA  = VideoFrameSize(320, 240).rotate()
+        val QVGA  = VideoFrameSize(320, 240, VideoDirection.LANDSCAPE)
 
         /** VGA   640x480 */
-        val VGA   = VideoFrameSize(640, 480).rotate()
+        val VGA   = VideoFrameSize(640, 480, VideoDirection.LANDSCAPE)
 
         /** HD    1280x720 */
-        val HD    = VideoFrameSize(1280, 720).rotate()
+        val HD    = VideoFrameSize(1280, 720, VideoDirection.LANDSCAPE)
 
         /** FHD   1920x1080 */
-        val FHD   = VideoFrameSize(1920, 1080).rotate()
+        val FHD   = VideoFrameSize(1920, 1080, VideoDirection.LANDSCAPE)
 
         /** Res3840x1920   3840x1920 */
-        val Res3840x1920 = VideoFrameSize(3840, 1920).rotate()
+        val Res3840x1920 = VideoFrameSize(3840, 1920, VideoDirection.LANDSCAPE)
 
         /** UHD3840x2160   3840x2160 */
-        val UHD3840x2160 = VideoFrameSize(3840, 2160).rotate()
+        val UHD3840x2160 = VideoFrameSize(3840, 2160, VideoDirection.LANDSCAPE)
 
         /** UHD4096x2160   4096x2160 */
-        val UHD4096x2160 = VideoFrameSize(4096, 2160).rotate()
+        val UHD4096x2160 = VideoFrameSize(4096, 2160, VideoDirection.LANDSCAPE)
 
     }
 
     /**
      * 映像の方向を回転します。
      *
+     * @param direction 映像の方向。 null の場合は 90 度回転します。
      * @return 方向を回転した映像フレーム
      */
-    fun rotate(): VideoFrameSize =
-        VideoFrameSize(height, width, direction.rotate())
-
-    /**
-     * 映像の方向に応じたサイズを返します。
-     * 映像の方向が指定された方向と異なる場合、幅と高さを逆にしたサイズを返します。
-     *
-     * @param direction 映像の方向
-     * @return サイズ
-     */
-    fun toSize(direction: VideoDirection): Size {
-        return when (this.direction) {
-            direction -> Size(width, height)
-            else -> Size(height, width)
+    fun rotate(direction: VideoDirection? = null): VideoFrameSize {
+        return if (direction == null) {
+            VideoFrameSize(height, width, this.direction.rotated)
+        } else {
+            when (this.direction) {
+                direction -> this
+                else -> VideoFrameSize(height, width, this.direction.rotated)
+            }
         }
     }
+
+    /**
+     * ポートレートに回転したサイズ
+     */
+    val portrate: VideoFrameSize
+        get() = rotate(VideoDirection.PORTRAIT)
+
+    /**
+     * ランドスケープに回転したサイズ
+     */
+    val landscape: VideoFrameSize
+        get() = rotate(VideoDirection.LANDSCAPE)
+
+    /**
+     * 映像のサイズ
+     */
+    val size: Size
+        get() = Size(width, height)
 
 }
 
@@ -114,11 +127,10 @@ enum class VideoDirection {
      *
      * @return 回転後の方向
      */
-    fun rotate(): VideoDirection {
-        return when (this) {
+    val rotated: VideoDirection
+        get() = when (this) {
             PORTRAIT -> LANDSCAPE
             LANDSCAPE -> PORTRAIT
         }
-    }
 
 }
