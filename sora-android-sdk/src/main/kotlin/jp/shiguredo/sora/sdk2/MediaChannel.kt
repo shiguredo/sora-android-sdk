@@ -75,12 +75,14 @@ class MediaChannel internal constructor(
     /**
      * EGL のユーティリティオブジェクト ([org.webrtc.EglBase])
      */
-    var eglBase: EglBase? = null
+    val eglBase: EglBase?
+        get() = configuration.videoCapturerVideoRenderingContext?.eglBase
 
     /**
      * 映像キャプチャー
      */
-    var videoCapturer: VideoCapturer? = null
+    val videoCapturer: VideoCapturer?
+        get() = configuration.videoCapturer
 
     private var _completionHandler: ((error: Throwable?) -> Unit)? = null
     private var _onDisconnect: (() -> Unit)? = null
