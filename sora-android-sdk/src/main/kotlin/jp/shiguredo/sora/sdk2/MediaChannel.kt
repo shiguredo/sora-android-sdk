@@ -114,6 +114,9 @@ class MediaChannel internal constructor(
     }
 
     private fun basicDisconnect() {
+        if (configuration.videoRendererLifecycleManagementEnabled) {
+            configuration.videoCapturerVideoRenderingContext?.eglBase?.release()
+        }
         _basicMediaChannel!!.disconnect()
         state = State.DISCONNECTED
     }
