@@ -73,6 +73,17 @@ class MediaChannel internal constructor(
     private var _streams: MutableList<MediaStream> = mutableListOf()
 
     /**
+     * 送信ストリーム
+     */
+    val senderStream: MediaStream?
+        get() =
+            _basicMediaChannel?.peer?.senders?.firstOrNull().let { sender ->
+                _streams.firstOrNull {
+                    sender?.streams?.contains(it.id) ?: false
+                }
+            }
+
+    /**
      * EGL のユーティリティオブジェクト ([org.webrtc.EglBase])
      */
     val eglBase: EglBase?
