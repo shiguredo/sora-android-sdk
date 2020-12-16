@@ -41,6 +41,38 @@ class Configuration(var context: Context,
     }
 
     /**
+     * カメラの撮影モード
+     */
+    enum class CaptureMode {
+        /**
+         * 解像度優先
+         */
+        RESOLUTION,
+
+        /**
+         * フレームレート優先
+         */
+        FRAME_RATE
+    }
+
+    /**
+     * カメラ初期化時のカメラ位置
+     */
+    enum class CameraPosition {
+
+        /**
+         * 前面カメラ
+         */
+        FRONT,
+
+        /**
+         * 背面カメラ
+         */
+        REAR
+
+    }
+
+    /**
      * 接続試行時にタイムアウトするまでの秒数。
      * デフォルトは 10 秒です。
      */
@@ -79,6 +111,18 @@ class Configuration(var context: Context,
      * デフォルトは 30 です。
      */
     var videoFps: Int = 30
+
+    /**
+     * カメラの撮影モード。
+     * デフォルトはフレームレート優先です。
+     */
+    var captureMode: CaptureMode = CaptureMode.FRAME_RATE
+
+    /**
+     * カメラ初期化時に優先されるカメラ位置。
+     * デフォルトは前面カメラが優先されます。
+     */
+    var cameraPosition: CameraPosition = CameraPosition.FRONT
 
     /**
      * 映像キャプチャーと映像レンダラーで共有する映像描画コンテキスト
@@ -260,7 +304,9 @@ class Configuration(var context: Context,
 
         if (role.isSender) {
             SoraLogger.d(TAG, "create video capturer")
-            videoCapturer = CameraCapturerFactory.create(context)
+            videoCapturer = CameraCapturerFactory.create(context,
+                    captureMode == CaptureMode.RESOLUTION,
+                    cameraPosition == CameraPosition.FRONT)
         }
 
         isInitialized = true
