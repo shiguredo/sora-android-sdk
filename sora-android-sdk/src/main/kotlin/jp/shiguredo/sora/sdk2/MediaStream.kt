@@ -164,6 +164,15 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
         videoFilterAdapter.removeFilter(filter)
     }
 
+    /**
+     * ミュートの可否
+     */
+    var isMuted: Boolean = false
+        set(value) {
+            field = value
+            nativeStream.audioTracks?.firstOrNull()?.setEnabled(!value)
+        }
+
     internal fun basicAddSender(sender: RtpSender) {
         mutableSenders.add(sender)
     }
