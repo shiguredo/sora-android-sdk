@@ -302,7 +302,7 @@ class Configuration(var context: Context,
 
         SoraLogger.d(TAG, "initialize configuration")
 
-        if (role.isSender) {
+        if (role.isSender && videoEnabled) {
             SoraLogger.d(TAG, "create video capturer")
             videoCapturer = CameraCapturerFactory.create(context,
                     captureMode == CaptureMode.RESOLUTION,
