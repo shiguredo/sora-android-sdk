@@ -28,8 +28,10 @@ data class ConnectMessage(
         @SerializedName("signaling_notify_metadata")
                                        val signalingNotifyMetadata: Any? = null,
         @SerializedName("multistream") val multistream:             Boolean = false,
-        @SerializedName("spotlight")   var spotlight:               Int? = null,
-        @SerializedName("simulcast")   var simulcast:               Simulcast? = null,
+        @SerializedName("spotlight")   var spotlight:               Boolean = false,
+        @SerializedName("spotlight_number") var spotlightNumber: Int? = null,
+        @SerializedName("simulcast")   var simulcast:               Boolean = false,
+        @SerializedName("simulcast_rid") var simulcastRid: Simulcast? = null,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),

@@ -30,6 +30,8 @@ class MessageConverter {
                     channelId               = channelId,
                     metadata                = metadata,
                     multistream             = mediaOption.multistreamIsRequired,
+                    spotlight               = mediaOption.spotlightEnabled,
+                    spotlightNumber         = mediaOption.activeSpeakerLimit,
                     sdp                     = sdp,
                     sdp_error               = sdpError,
                     clientId                = clientId,
@@ -78,14 +80,9 @@ class MessageConverter {
                 }
             }
 
-
-            if (0 < mediaOption.spotlight) {
-                msg.spotlight = mediaOption.spotlight
-            }
-
             if (mediaOption.simulcastEnabled) {
-                msg.simulcast = Simulcast(mediaOption.simulcastQuality.rawValue)
-                msg.role = role.signaling
+                msg.simulcast = mediaOption.simulcastEnabled
+                //msg.simulcast = Simulcast(mediaOption.simulcastQuality.rawValue)
             }
 
             val jsonMsg = gson.toJson(msg)

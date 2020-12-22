@@ -431,7 +431,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             |videoBitRate            = ${mediaOption.videoBitrate}
             |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |videoCapturer           = ${mediaOption.videoCapturer}
-            |spotlight               = ${mediaOption.spotlight}
+            |spotlightEnabled        = ${mediaOption.spotlightEnabled}
+            |activeSpeakerLimit      = ${mediaOption.activeSpeakerLimit}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())

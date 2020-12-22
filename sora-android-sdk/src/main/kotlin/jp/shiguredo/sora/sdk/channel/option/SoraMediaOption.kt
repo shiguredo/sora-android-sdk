@@ -16,10 +16,9 @@ class SoraMediaOption {
     internal var videoDownstreamEnabled = false
     internal var videoUpstreamEnabled   = false
     internal var multistreamEnabled     = false
+    internal var _spotlightEnabled      = false
     internal var simulcastEnabled       = false
     internal var simulcastQuality: SimulcastOption.Quality = SimulcastOption.Quality.High
-
-    var spotlight : Int        = 0
 
     /**
      * スポットライト機能のアクティブな配信数を指定します
@@ -28,17 +27,13 @@ class SoraMediaOption {
      * - Sora ドキュメントのスポットライト機能
      *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
      */
-    set(value) {
-        if (0 < value) {
-            multistreamEnabled = true
-        }
-        field = value
-    }
+    var activeSpeakerLimit: Int? = null
 
     /**
      * スポットライトが有効か否かを返します
      */
-    fun isSpotlight() = spotlight > 0
+    val spotlightEnabled: Boolean
+        get() = _spotlightEnabled
 
     /**
      * 利用する VideoEncoderFactory を指定します
@@ -98,6 +93,16 @@ class SoraMediaOption {
     fun enableSimulcast(quality: SimulcastOption.Quality = SimulcastOption.Quality.High) {
         simulcastEnabled = true
         simulcastQuality = quality
+    }
+
+    /**
+     * スポットライトを有効にします
+     */
+    fun enableSpotlight(number: Int? = null, quality: SimulcastOption.Quality = SimulcastOption.Quality.High) {
+        _spotlightEnabled = true
+        activeSpeakerLimit = number
+        multistreamEnabled = true
+        enableSimulcast(quality)
     }
 
     /**

@@ -182,12 +182,12 @@ class Configuration(var context: Context,
     /**
      * マルチストリームの可否
      */
-    var multistreamEnabled     = false
+    var multistreamEnabled = false
 
     /**
      * サイマルキャストの可否
      */
-    var simulcastEnabled       = false
+    var simulcastEnabled = false
 
     /**
      * サイマルキャスト有効時の画質
@@ -197,13 +197,13 @@ class Configuration(var context: Context,
     /**
      * スポットライト機能の可否
      */
-    var spotlightEnabled       = false
+    var spotlightEnabled = false
 
     /**
      * 最大同時アクティブ配信者数。
      * スポットライト機能の有効時のみ制限されます。
      */
-    var activeSpeakerLimit: Int? = null
+    var activeSpeakerLimit: Int = 3
 
     /**
      * シグナリング  `connect` に含めるメタデータ。
@@ -320,8 +320,8 @@ class Configuration(var context: Context,
             it.multistreamEnabled = multistreamEnabled
             it.simulcastEnabled = simulcastEnabled
 
-            if (spotlightEnabled && activeSpeakerLimit != null) {
-                it.spotlight = activeSpeakerLimit!!
+            if (spotlightEnabled) {
+                it.enableSpotlight(activeSpeakerLimit, simulcastQuality)
             }
 
             if (videoEnabled) {
