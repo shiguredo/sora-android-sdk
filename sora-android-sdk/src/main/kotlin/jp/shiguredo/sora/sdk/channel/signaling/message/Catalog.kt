@@ -30,8 +30,8 @@ data class ConnectMessage(
         @SerializedName("multistream") val multistream:             Boolean = false,
         @SerializedName("spotlight")   var spotlight:               Boolean = false,
         @SerializedName("spotlight_number") var spotlightNumber: Int? = null,
-        @SerializedName("simulcast")   var simulcast:               Boolean = false,
-        @SerializedName("simulcast_rid") var simulcastRid: Simulcast? = null,
+        @SerializedName("simulcast")   var simulcast:               Boolean? = false,
+        @SerializedName("simulcast_rid") var simulcastRid: SimulcastRid? = null,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
@@ -63,9 +63,13 @@ data class OpusParams(
         @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )
 
-data class Simulcast(
-        @SerializedName("quality")       val quality:       String = "high" // low, middle, high
-)
+enum class SimulcastRid(val value: String) {
+    R0("r0"),
+    R1("r1"),
+    R2("r2");
+
+    override fun toString(): String = value
+}
 
 data class IceServer(
         @SerializedName("urls")       val urls:       List<String>,

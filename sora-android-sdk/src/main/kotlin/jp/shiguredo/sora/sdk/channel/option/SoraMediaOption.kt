@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 import org.webrtc.*
 
 /**
@@ -18,7 +19,7 @@ class SoraMediaOption {
     internal var multistreamEnabled     = false
     internal var _spotlightEnabled      = false
     internal var simulcastEnabled       = false
-    internal var simulcastQuality: SimulcastOption.Quality = SimulcastOption.Quality.High
+    internal var simulcastRid: SimulcastRid? = null
 
     /**
      * スポットライト機能のアクティブな配信数を指定します
@@ -90,19 +91,19 @@ class SoraMediaOption {
     /**
      * サイマルキャストを有効にします
      */
-    fun enableSimulcast(quality: SimulcastOption.Quality = SimulcastOption.Quality.High) {
+    fun enableSimulcast(rid: SimulcastRid? = null) {
         simulcastEnabled = true
-        simulcastQuality = quality
+        simulcastRid = rid
     }
 
     /**
      * スポットライトを有効にします
      */
-    fun enableSpotlight(number: Int? = null, quality: SimulcastOption.Quality = SimulcastOption.Quality.High) {
+    fun enableSpotlight(number: Int? = null, rid: SimulcastRid? = null) {
         _spotlightEnabled = true
         activeSpeakerLimit = number
         multistreamEnabled = true
-        enableSimulcast(quality)
+        enableSimulcast(rid)
     }
 
     /**

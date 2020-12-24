@@ -3,11 +3,11 @@ package jp.shiguredo.sora.sdk2
 import android.content.Context
 import android.media.MediaRecorder
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
-import jp.shiguredo.sora.sdk.channel.option.SimulcastOption
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
+import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.VideoCapturer
 import org.webrtc.VideoDecoderFactory
@@ -192,7 +192,7 @@ class Configuration(var context: Context,
     /**
      * サイマルキャスト有効時の画質
      */
-    var simulcastQuality: SimulcastOption.Quality = SimulcastOption.Quality.High
+    var simulcastRid: SimulcastRid? = null
 
     /**
      * スポットライト機能の可否
@@ -318,10 +318,9 @@ class Configuration(var context: Context,
 
         return SoraMediaOption().also {
             it.multistreamEnabled = multistreamEnabled
-            it.simulcastEnabled = simulcastEnabled
 
             if (spotlightEnabled) {
-                it.enableSpotlight(activeSpeakerLimit, simulcastQuality)
+                it.enableSpotlight(activeSpeakerLimit, simulcastRid)
             }
 
             if (videoEnabled) {
@@ -374,7 +373,7 @@ class Configuration(var context: Context,
             }
 
             if (simulcastEnabled) {
-                it.simulcastQuality = simulcastQuality
+                it.enableSimulcast(simulcastRid)
             }
         }
     }
