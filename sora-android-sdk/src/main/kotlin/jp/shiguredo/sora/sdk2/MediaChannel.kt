@@ -59,6 +59,12 @@ class MediaChannel internal constructor(
         internal set
 
     /**
+     * 接続 ID
+     */
+    val connectionId: String?
+        get() = _basicMediaChannel?.connectionId
+
+    /**
      * 接続状態
      */
     var state: State = State.READY
