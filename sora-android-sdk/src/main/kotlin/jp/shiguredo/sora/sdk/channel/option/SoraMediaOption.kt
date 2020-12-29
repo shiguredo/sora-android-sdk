@@ -94,6 +94,8 @@ class SoraMediaOption {
     fun enableSimulcast(rid: SimulcastRid? = null) {
         simulcastEnabled = true
         simulcastRid = rid
+        videoEncoderFactory = SoftwareVideoEncoderFactory()
+        videoDecoderFactory = SoftwareVideoDecoderFactory()
     }
 
     /**
