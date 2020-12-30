@@ -37,6 +37,8 @@ class VideoView @JvmOverloads constructor (context: Context,
      */
     var nativeViewRenderer: SurfaceViewRenderer = SurfaceViewRenderer(context, attrs)
 
+    override var state: VideoRenderer.State = VideoRenderer.State.NOT_INITIALIZED
+
     /**
      * [VideoRenderer.isMirrored] を参照
      */
@@ -119,11 +121,22 @@ class VideoView @JvmOverloads constructor (context: Context,
      */
     override fun initialize(videoRenderingContext: VideoRenderingContext) {
         SoraLogger.d(TAG, "initialize => $videoRenderingContext")
-        Sora.runOnUiThread {
-            nativeViewRenderer.init(videoRenderingContext.eglBase.eglBaseContext,
-                    videoRenderingContext.rendererEvents,
-                    videoRenderingContext.configAttributes,
-                    videoRenderingContext.drawer)
+
+        when (state) {
+            VideoRenderer.State.RUNNING -> {
+                SoraLogger.d(TAG, "already initialized")
+            }
+            VideoRenderer.State.RELEASED -> {
+                SoraLogger.d(TAG, "already released")
+            }
+            VideoRenderer.State.NOT_INITIALIZED -> {
+                Sora.runOnUiThread {
+                    nativeViewRenderer.init(videoRenderingContext.eglBase.eglBaseContext,
+                            videoRenderingContext.rendererEvents,
+                            videoRenderingContext.configAttributes,
+                            videoRenderingContext.drawer)
+                }
+            }
         }
     }
 
@@ -131,7 +144,21 @@ class VideoView @JvmOverloads constructor (context: Context,
      * [VideoRenderer.release] を参照
      */
     override fun release() {
-        nativeViewRenderer.release()
+        SoraLogger.d(TAG, "release")
+
+        when (state) {
+            VideoRenderer.State.NOT_INITIALIZED -> {
+                SoraLogger.d(TAG, "not initialized")
+            }
+            VideoRenderer.State.RELEASED -> {
+                SoraLogger.d(TAG, "already released")
+            }
+            VideoRenderer.State.RUNNING -> {
+                Sora.runOnUiThread {
+                    nativeViewRenderer.release()
+                }
+            }
+        }
     }
 
     /**

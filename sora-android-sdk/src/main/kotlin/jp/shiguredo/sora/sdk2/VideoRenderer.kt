@@ -9,6 +9,14 @@ import org.webrtc.VideoTrack
  */
 interface VideoRenderer {
 
+    enum class State {
+        NOT_INITIALIZED,
+        RUNNING,
+        RELEASED
+    }
+
+    var state: State
+
     /**
      * 映像が反転していれば `true`
      */
