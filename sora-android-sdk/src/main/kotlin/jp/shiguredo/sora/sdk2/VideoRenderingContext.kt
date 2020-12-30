@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk2
 
+import android.util.Log
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.GlRectDrawer
@@ -9,27 +10,29 @@ import org.webrtc.RendererCommon.RendererEvents
 /**
  * 映像の描画に使うコンテキストです。
  *
- * @param eglBaseContext EGL コンテキスト ([org.webrtc.EglBase.Context])
  * @param configAttributes EGL の設定。 [org.webrtc.EglBase] で定義されています。
  * @param drawer OpenGL の描画オブジェクト ([org.webrtc.RendererCommon.GlDrawer])
  *
  * @property rendererEvents 映像レンダラーのイベントハンドラ ([org.webrtc.RendererCommon.RendererEvents])
  */
-class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
-                            configAttributes: IntArray? = null,
+class VideoRenderingContext(configAttributes: IntArray? = null,
                             val rendererEvents: RendererEvents? = null,
                             drawer: GlDrawer? = null) {
 
     companion object {
         private val TAG = VideoRenderingContext::class.simpleName!!
-    }
 
         /**
-     * EGL ユーティリティ ([org.webrtc.EglBase])
-     */
-    val eglBase: EglBase
+         * EGL ユーティリティ ([org.webrtc.EglBase])
+         */
+        var rootEglBase = EglBase.create()
 
-    /**
+        fun release() {
+            rootEglBase.release()
+        }
+    }
+
+   /**
      * EGL の設定。 [org.webrtc.EglBase] で定義されています。
      */
     val configAttributes: IntArray
@@ -42,13 +45,13 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
     internal var videoRendererPool = VideoRendererPool()
 
     init {
+        SoraLogger.d(TAG, "initialize")
+
         if (configAttributes != null) {
             this.configAttributes = configAttributes
         } else {
             this.configAttributes = EglBase.CONFIG_PLAIN
         }
-
-        eglBase = EglBase.create(eglBaseContext, this.configAttributes)
 
         if (drawer != null) {
             this.drawer = GlRectDrawer()
@@ -68,7 +71,6 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
     internal fun release() {
         SoraLogger.d(TAG, "release video renderers and EglBase")
         videoRendererPool.release()
-        eglBase.release()
     }
 
 }

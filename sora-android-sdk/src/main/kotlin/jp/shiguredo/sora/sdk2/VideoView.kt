@@ -122,7 +122,7 @@ class VideoView @JvmOverloads constructor (context: Context,
             }
             else -> {
                 Sora.runOnUiThread {
-                    nativeViewRenderer.init(videoRenderingContext.eglBase.eglBaseContext,
+                    nativeViewRenderer.init(VideoRenderingContext.rootEglBase.eglBaseContext,
                             videoRenderingContext.rendererEvents,
                             videoRenderingContext.configAttributes,
                             videoRenderingContext.drawer)

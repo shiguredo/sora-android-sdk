@@ -324,11 +324,11 @@ class Configuration(var context: Context,
                 SoraLogger.d(TAG, "role $role, ${role.isSender} ${role.isReceiver}")
                 if (role.isSender) {
                     SoraLogger.d(TAG, "enable video upstream")
-                    it.enableVideoUpstream(videoCapturer!!, videoRenderingContext!!.eglBase.eglBaseContext)
+                    it.enableVideoUpstream(videoCapturer!!, VideoRenderingContext.rootEglBase.eglBaseContext)
                 }
 
                 if (role.isReceiver) {
-                    it.enableVideoDownstream(videoRenderingContext!!.eglBase.eglBaseContext)
+                    it.enableVideoDownstream(VideoRenderingContext.rootEglBase.eglBaseContext)
                 }
             }
 
