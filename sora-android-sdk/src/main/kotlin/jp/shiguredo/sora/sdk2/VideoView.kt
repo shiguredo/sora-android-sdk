@@ -78,8 +78,6 @@ class VideoView @JvmOverloads constructor (context: Context,
         }
 
     init {
-        //holder.addCallback(this)
-
         val layout = LayoutInflater.from(context).inflate(R.layout.videoview, this)
         nativeViewRenderer = layout.findViewById(R.id.renderer)
     }
@@ -103,18 +101,14 @@ class VideoView @JvmOverloads constructor (context: Context,
     }
 
     /**
-     * [VideoRenderer.shouldInitialization] を参照
+     * [VideoRenderer.shouldInitialize] を参照
      */
-    override fun shouldInitialization(): Boolean {
-        return true
-    }
+    override val shouldInitialize: Boolean = true
 
     /**
      * [VideoRenderer.shouldRelease] を参照
      */
-    override fun shouldRelease(): Boolean {
-        return true
-    }
+    override val shouldRelease: Boolean = true
 
     /**
      * [VideoRenderer.initialize] を参照
@@ -126,10 +120,7 @@ class VideoView @JvmOverloads constructor (context: Context,
             VideoRenderer.State.RUNNING -> {
                 SoraLogger.d(TAG, "already initialized")
             }
-            VideoRenderer.State.RELEASED -> {
-                SoraLogger.d(TAG, "already released")
-            }
-            VideoRenderer.State.NOT_INITIALIZED -> {
+            else -> {
                 Sora.runOnUiThread {
                     nativeViewRenderer.init(videoRenderingContext.eglBase.eglBaseContext,
                             videoRenderingContext.rendererEvents,

@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk2
 
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.GlRectDrawer
 import org.webrtc.RendererCommon.GlDrawer
@@ -19,7 +20,11 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
                             val rendererEvents: RendererEvents? = null,
                             drawer: GlDrawer? = null) {
 
-    /**
+    companion object {
+        private val TAG = VideoRenderingContext::class.simpleName!!
+    }
+
+        /**
      * EGL ユーティリティ ([org.webrtc.EglBase])
      */
     val eglBase: EglBase
@@ -33,6 +38,8 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
      * OpenGL の描画オブジェクト ([org.webrtc.RendererCommon.GlDrawer]])
      */
     val drawer: GlDrawer
+
+    internal var videoRendererPool = VideoRendererPool()
 
     init {
         if (configAttributes != null) {
@@ -48,6 +55,20 @@ class VideoRenderingContext(eglBaseContext: EglBase.Context? = null,
         } else {
             this.drawer = GlRectDrawer()
         }
+    }
+
+    internal fun initializeVideoRenderer(videoRenderer: VideoRenderer, releaseWhenDone: Boolean) {
+        SoraLogger.d(TAG, "initialize video renderer => $videoRenderer")
+        videoRenderer.initialize(this)
+        if (releaseWhenDone) {
+            videoRendererPool.add(videoRenderer)
+        }
+    }
+
+    internal fun release() {
+        SoraLogger.d(TAG, "release video renderers and EglBase")
+        videoRendererPool.release()
+        eglBase.release()
     }
 
 }

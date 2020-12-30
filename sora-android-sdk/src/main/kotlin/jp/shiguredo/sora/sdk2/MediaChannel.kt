@@ -90,16 +90,15 @@ class MediaChannel internal constructor(
             }
 
     /**
-     * EGL のユーティリティオブジェクト ([org.webrtc.EglBase])
-     */
-    val eglBase: EglBase?
-        get() = configuration.videoCapturerVideoRenderingContext?.eglBase
-
-    /**
      * 映像キャプチャー
      */
     val videoCapturer: VideoCapturer?
         get() = configuration.videoCapturer
+
+    /**
+     * 映像レンダラーで共有する映像描画コンテキスト
+     */
+    val videoRenderingContext: VideoRenderingContext
 
     private var _completionHandler: ((error: Throwable?) -> Unit)? = null
     private var _onDisconnect: (() -> Unit)? = null
@@ -109,9 +108,12 @@ class MediaChannel internal constructor(
     private var _onRemoveRemoteStream: (label: String) -> Unit = {}
     private var _onPush: (message: PushMessage) -> Unit = {}
 
-
     private var _basicMediaChannel: SoraMediaChannel? = null
     private var _basicMediaOption: SoraMediaOption? = null
+
+    init {
+        videoRenderingContext = configuration.videoRenderingContext ?: VideoRenderingContext()
+    }
 
     internal fun connect(completionHandler: (error: Throwable?) -> Unit) {
         state = State.CONNECTING
@@ -131,9 +133,7 @@ class MediaChannel internal constructor(
     }
 
     private fun basicDisconnect() {
-        if (configuration.videoRendererLifecycleManagementEnabled) {
-            configuration.videoCapturerVideoRenderingContext?.eglBase?.release()
-        }
+        videoRenderingContext.release()
         _basicMediaChannel!!.disconnect()
         state = State.DISCONNECTED
     }

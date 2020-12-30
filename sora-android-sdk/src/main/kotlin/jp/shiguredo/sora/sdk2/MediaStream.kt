@@ -90,30 +90,23 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     }
 
     /**
-     * 映像レンダラー
-     */
-    var videoRenderer: VideoRenderer? = null
-        set(value) {
-            field = value
-            if (value != null)
-                setVideoRenderer(value, mediaChannel.configuration.sharedVideoRenderingContext)
-        }
-
-    /**
      * ストリームに映像レンダラーをセットします。
+     * `null` を渡すと現在セットされているレンダラーの除去のみを行います。
      *
      * @param newRenderer 新しいレンダラー
      * @param videoRenderingContext 描画に使用するコンテキスト
      */
-    fun setVideoRenderer(newRenderer: VideoRenderer,
-                         videoRenderingContext: VideoRenderingContext) {
+    fun setVideoRenderer(newRenderer: VideoRenderer?, releaseWhenDone: Boolean = true) {
         SoraLogger.d(TAG, "set video renderer => $newRenderer")
-        removeVideoRenderer()
 
-        if (mediaChannel.configuration.videoRendererLifecycleManagementEnabled &&
-                newRenderer.shouldInitialization()) {
-            SoraLogger.d(TAG, "initialize video renderer => $videoRenderingContext")
-            newRenderer.initialize(videoRenderingContext)
+        removeVideoRenderer()
+        if (newRenderer == null) {
+            return
+        }
+
+        if (newRenderer.canInitialize) {
+            SoraLogger.d(TAG, "initialize video renderer => $newRenderer")
+            mediaChannel.videoRenderingContext.initializeVideoRenderer(newRenderer, releaseWhenDone)
         }
         _videoRendererAdapter.videoRenderer = newRenderer
 
@@ -128,13 +121,8 @@ class MediaStream internal constructor(val mediaChannel: MediaChannel,
     /**
      * ストリームにセットされた映像レンダラーを外します。
      */
-    fun removeVideoRenderer() {
+    private fun removeVideoRenderer() {
         _videoRendererAdapter.videoRenderer?.let { renderer ->
-            if (mediaChannel.configuration.videoRendererLifecycleManagementEnabled &&
-                    renderer.shouldRelease()) {
-                renderer.release()
-            }
-
             for (sender in mutableSenders) {
                 (sender.track() as? VideoTrack)?.let { track ->
                     SoraLogger.d(TAG, "detach from video track => $track")

@@ -125,18 +125,9 @@ class Configuration(var context: Context,
     var cameraPosition: CameraPosition = CameraPosition.FRONT
 
     /**
-     * 映像キャプチャーと映像レンダラーで共有する映像描画コンテキスト
+     * 映像レンダラーで共有する映像描画コンテキスト
      */
-    var sharedVideoRenderingContext = VideoRenderingContext()
-
-    /**
-     * 映像キャプチャーで使う映像描画コンテキスト。
-     * `null` を指定した場合は [sharedVideoRenderingContext] が使われます。
-     */
-    var videoCapturerVideoRenderingContext: VideoRenderingContext? = null
-
-    internal val usingVideoCapturerVideoRenderingContext: VideoRenderingContext
-        get() = videoCapturerVideoRenderingContext ?: sharedVideoRenderingContext
+    var videoRenderingContext: VideoRenderingContext? = null
 
     /**
      * 使用する映像エンコーダー ([org.webrtc.VideoEncoderFactory])
@@ -151,16 +142,6 @@ class Configuration(var context: Context,
      * @see org.webrtc.VideoDecoderFactory
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
-
-    /**
-     * 映像レンダラー ([VideoRenderer]) のライフサイクルの管理の可否。
-     * この値が `true` の場合、接続終了時に映像レンダラーの終了処理を行います。
-     * 映像レンダラーのライフサイクルを制御したい場合は `false` を指定して下さい。
-     * デフォルトは `true` です。
-     *
-     * @see VideoRenderer
-     */
-    var videoRendererLifecycleManagementEnabled: Boolean = true
 
     /**
      * 音声の可否。
@@ -309,6 +290,10 @@ class Configuration(var context: Context,
                     cameraPosition == CameraPosition.FRONT)
         }
 
+        if (videoRenderingContext == null) {
+            videoRenderingContext = VideoRenderingContext()
+        }
+
         isInitialized = true
     }
 
@@ -339,12 +324,11 @@ class Configuration(var context: Context,
                 SoraLogger.d(TAG, "role $role, ${role.isSender} ${role.isReceiver}")
                 if (role.isSender) {
                     SoraLogger.d(TAG, "enable video upstream")
-                    it.enableVideoUpstream(videoCapturer!!,
-                            usingVideoCapturerVideoRenderingContext.eglBase.eglBaseContext)
+                    it.enableVideoUpstream(videoCapturer!!, videoRenderingContext!!.eglBase.eglBaseContext)
                 }
 
                 if (role.isReceiver) {
-                    it.enableVideoDownstream(sharedVideoRenderingContext.eglBase.eglBaseContext)
+                    it.enableVideoDownstream(videoRenderingContext!!.eglBase.eglBaseContext)
                 }
             }
 

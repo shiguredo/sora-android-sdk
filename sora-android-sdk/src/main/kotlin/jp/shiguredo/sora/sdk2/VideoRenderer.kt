@@ -59,17 +59,19 @@ interface VideoRenderer {
 
     /**
      * 初期化すべきであれば `true` を返します。
-     *
-     * @return 初期化すべきなら `true`
      */
-    fun shouldInitialization(): Boolean
+    val shouldInitialize: Boolean
+
+    val canInitialize: Boolean
+        get() = shouldInitialize && state != State.RUNNING
 
     /**
      * 終了処理をすべきであれば `true` を返します。
-     *
-     * @return 終了処理をすべきなら `true`
      */
-    fun shouldRelease(): Boolean
+    val shouldRelease: Boolean
+
+    val canRelease: Boolean
+        get() = shouldRelease && state == State.RUNNING
 
     /**
      * 映像を描画するための初期化処理を行います。
