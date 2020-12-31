@@ -108,6 +108,12 @@ class PeerChannelImpl(
 
     private var closing = false
 
+    // offer 時に受け取った encodings を保持しておく
+    // sender に encodings をセット後、
+    // setRemoteDescription() を実行すると encodings が変更前に戻ってしまう
+    // そのため re-offer, update 時に再度 encodings をセットする
+    private var offerEncodings: List<Encoding>? = null
+
     private val connectionObserver = object : PeerConnection.Observer {
 
         override fun onSignalingChange(state: PeerConnection.SignalingState?) {
@@ -249,6 +255,7 @@ class PeerChannelImpl(
     override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
+        offerEncodings = encodings
 
         return setup().flatMap {
             SoraLogger.d(TAG, "setRemoteDescription")
@@ -271,30 +278,7 @@ class PeerChannelImpl(
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
                 SoraLogger.d(TAG, "Modify sender.parameters")
-
-                videoSender?.let { sender ->
-                    // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
-                    // 変換するのでここで参照を保持しておく。
-                    val parameters = sender.parameters
-                    parameters.encodings.zip(encodings).forEach { (senderEncoding, offerEncoding) ->
-                        offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
-                        offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
-                        offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
-                    }
-
-                    // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
-                    listener?.onSenderEncodings(parameters.encodings)
-                    parameters.encodings.forEach {
-                        with(it) {
-                            SoraLogger.d(TAG, "Sender encoding: sender=${sender.id()} rid=$rid, active=$active, " +
-                                    "scaleResolutionDownBy=$scaleResolutionDownBy, maxFramerate=$maxFramerate, " +
-                                    "maxBitrateBps=$maxBitrateBps, ssrc=$ssrc")
-                        }
-                    }
-
-                    // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
-                    sender.parameters = parameters
-                }
+                updateVideoSenderOfferEncodings()
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -303,6 +287,43 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "setLocalDescription")
             return@flatMap setLocalDescription(answer)
         }
+    }
+
+    private fun updateVideoSenderOfferEncodings() {
+        videoSender?.let { updateSenderOfferEncodings(it) }
+    }
+
+    private fun updateSenderOfferEncodings(sender: RtpSender) {
+        if (offerEncodings == null)
+            return
+
+        // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
+        // 変換するのでここで参照を保持しておく。
+        val parameters = sender.parameters
+        parameters.encodings.zip(offerEncodings!!).forEach { (senderEncoding, offerEncoding) ->
+            offerEncoding.active?.also { senderEncoding.active = it }
+            offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
+            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+            offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+        }
+
+        // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
+        listener?.onSenderEncodings(parameters.encodings)
+        parameters.encodings.forEach {
+            with(it) {
+                SoraLogger.d(TAG, "update ender encoding: " +
+                        "id=${sender.id()}, " +
+                        "rid=$rid, " +
+                        "active=$active, " +
+                        "scaleResolutionDownBy=$scaleResolutionDownBy, " +
+                        "maxFramerate=$maxFramerate, " +
+                        "maxBitrateBps=$maxBitrateBps, " +
+                        "ssrc=$ssrc")
+            }
+        }
+
+        // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
+        sender.parameters = parameters
     }
 
     override fun requestClientOfferSdp(): Single<Result<SessionDescription>> {

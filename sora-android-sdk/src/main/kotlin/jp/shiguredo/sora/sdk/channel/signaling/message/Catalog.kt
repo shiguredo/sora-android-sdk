@@ -84,6 +84,7 @@ data class OfferConfig(
 
 data class Encoding(
         @SerializedName("rid")                   val rid:                   String?,
+        @SerializedName("active")                val active:                Boolean?,
         @SerializedName("maxBitrate")            val maxBitrate:            Int?,
         @SerializedName("maxFramerate")          val maxFramerate:          Int?,
         @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
