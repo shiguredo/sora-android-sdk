@@ -96,4 +96,8 @@ class SoraError(val kind: Kind,
 
     }
 
+    override fun toString(): String {
+        return "SoraError: $kind: ${message ?: "(no message)"}: ${cause ?: "(no cause)"}"
+    }
+
 }
