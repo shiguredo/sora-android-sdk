@@ -133,6 +133,7 @@ class MediaChannel internal constructor(
     }
 
     private fun basicDisconnect() {
+        state = State.DISCONNECTING
         videoRenderingContext.release()
         _basicMediaChannel!!.disconnect()
         state = State.DISCONNECTED
@@ -144,7 +145,6 @@ class MediaChannel internal constructor(
      * @see [onDisconnect]
      */
     fun disconnect() {
-        state = State.DISCONNECTING
         basicDisconnect()
         if (_onDisconnect != null) {
             _onDisconnect!!()
@@ -153,19 +153,15 @@ class MediaChannel internal constructor(
     }
 
     private fun fail(error: Throwable) {
+        SoraLogger.d(TAG, "fail => $error, state => $state")
         basicDisconnect()
-
-        when (state) {
-            State.CONNECTING ->
-                if (_completionHandler != null) {
-                    _completionHandler!!(error)
-                    _completionHandler = null
-                }
-            else ->
-                if (_onFailure != null) {
-                    _onFailure!!(error)
-                    _onFailure = null
-                }
+        if (_completionHandler != null) {
+            _completionHandler!!(error)
+            _completionHandler = null
+        }
+        if (_onFailure != null) {
+            _onFailure!!(error)
+            _onFailure = null
         }
     }
 
