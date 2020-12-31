@@ -479,18 +479,18 @@ class PeerChannelImpl(
         }).subscribeOn(Schedulers.from(executor))
 
     private fun closeInternal() {
-        SoraLogger.d(TAG, "closeInternal")
         if (closing)
             return
+        SoraLogger.d(TAG, "disconnect")
         closing = true
         listener?.onDisconnect()
         listener = null
-        SoraLogger.d(TAG, "conn.dispose")
+        SoraLogger.d(TAG, "dispose peer connection")
         conn?.dispose()
         conn = null
         localAudioManager.dispose()
         localVideoManager.dispose()
-        SoraLogger.d(TAG, "factory.dispose")
+        SoraLogger.d(TAG, "dispose peer connection factory")
         factory?.dispose()
         factory = null
 
