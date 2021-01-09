@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 88.4324.3.1 に上げる
+    - @enm10k
 - [UPDATE] libwebrtc を 86.4240.1.2 に上げる
     - @szktty
 - [UPDATE] `com.android.tools.build:gradle` を 4.0.1 に上げる
