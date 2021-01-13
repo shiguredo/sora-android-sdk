@@ -15,26 +15,36 @@ class MessageConverter {
         val gson = Gson()
 
         @JvmOverloads
-        fun buildConnectMessage(role:                    SoraChannelRole,
-                                channelId:               String?,
-                                mediaOption:             SoraMediaOption,
-                                metadata:                Any?,
-                                sdp:                     String?          = null,
-                                sdpError:                String?          = null,
-                                clientId:                String?          = null,
-                                signalingNotifyMetadata: Any?             = null
+        fun buildConnectMessage(role: SoraChannelRole,
+                                channelId: String?,
+                                mediaOption: SoraMediaOption,
+                                metadata: Any?,
+                                sdp: String? = null,
+                                sdpError: String? = null,
+                                clientId: String? = null,
+                                signalingNotifyMetadata: Any? = null
         ): String {
 
             val msg = ConnectMessage(
-                    role                    = role.signaling,
-                    channelId               = channelId,
-                    metadata                = metadata,
-                    multistream             = mediaOption.multistreamIsRequired,
-                    spotlight               = mediaOption.spotlightEnabled,
-                    spotlightNumber         = mediaOption.activeSpeakerLimit,
-                    sdp                     = sdp,
-                    sdp_error               = sdpError,
-                    clientId                = clientId,
+                    role = role.signaling,
+                    channelId = channelId,
+                    metadata = metadata,
+                    multistream = mediaOption.multistreamIsRequired,
+                    spotlight = mediaOption.spotlightOption?.let {
+                        if (it.legacyEnabled)
+                            it.activeSpeakerLimit
+                        else
+                            true
+                    },
+                    spotlightNumber = mediaOption.spotlightOption?.let {
+                        if (it.legacyEnabled)
+                            null
+                        else
+                            it.activeSpeakerLimit
+                    },
+                    sdp = sdp,
+                    sdp_error = sdpError,
+                    clientId = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
 

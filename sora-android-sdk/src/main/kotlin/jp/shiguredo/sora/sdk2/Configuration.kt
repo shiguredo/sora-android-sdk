@@ -305,7 +305,8 @@ class Configuration(var context: Context,
             it.multistreamEnabled = multistreamEnabled
 
             if (spotlightEnabled) {
-                it.enableSpotlight(activeSpeakerLimit, simulcastRid)
+                // FIX
+                //it.enableSpotlight(activeSpeakerLimit, simulcastRid)
             }
 
             if (videoEnabled) {
