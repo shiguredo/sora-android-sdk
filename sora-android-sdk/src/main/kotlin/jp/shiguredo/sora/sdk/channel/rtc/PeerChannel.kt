@@ -311,7 +311,7 @@ class PeerChannelImpl(
         listener?.onSenderEncodings(parameters.encodings)
         parameters.encodings.forEach {
             with(it) {
-                SoraLogger.d(TAG, "update ender encoding: " +
+                SoraLogger.d(TAG, "update sender encoding: " +
                         "id=${sender.id()}, " +
                         "rid=$rid, " +
                         "active=$active, " +
