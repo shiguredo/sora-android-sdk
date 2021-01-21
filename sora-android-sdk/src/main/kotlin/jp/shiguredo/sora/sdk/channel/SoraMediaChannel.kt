@@ -433,7 +433,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |simulcastRid            = ${mediaOption.simulcastRid}
             |spotlightEnabled        = ${mediaOption.spotlightEnabled}
-            |spotlightLegacy         = ${mediaOption.spotlightOption?.legacyEnabled}
             |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}

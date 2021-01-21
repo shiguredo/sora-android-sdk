@@ -1,10 +1,10 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
+import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import java.util.*
 
 class MessageConverter {
 
@@ -31,13 +31,13 @@ class MessageConverter {
                     metadata = metadata,
                     multistream = mediaOption.multistreamIsRequired,
                     spotlight = mediaOption.spotlightOption?.let {
-                        if (it.legacyEnabled)
+                        if (Sora.usesSpotlightLegacy)
                             it.spotlightNumber
                         else
                             true
                     },
                     spotlightNumber = mediaOption.spotlightOption?.let {
-                        if (it.legacyEnabled)
+                        if (Sora.usesSpotlightLegacy)
                             null
                         else
                             it.spotlightNumber

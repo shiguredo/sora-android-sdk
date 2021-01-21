@@ -14,6 +14,5 @@ class SoraSpotlightOption {
      *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
      */
     var spotlightNumber: Int? = null
-    var legacyEnabled: Boolean = false
 
 }
