@@ -434,7 +434,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |simulcastRid            = ${mediaOption.simulcastRid}
             |spotlightEnabled        = ${mediaOption.spotlightEnabled}
             |spotlightLegacy         = ${mediaOption.spotlightOption?.legacyEnabled}
-            |activeSpeakerLimit      = ${mediaOption.spotlightOption?.activeSpeakerLimit}
+            |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())

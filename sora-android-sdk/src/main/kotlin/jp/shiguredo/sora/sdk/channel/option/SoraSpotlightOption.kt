@@ -13,7 +13,7 @@ class SoraSpotlightOption {
      * - Sora ドキュメントのスポットライト機能
      *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
      */
-    var activeSpeakerLimit: Int? = null
+    var spotlightNumber: Int? = null
     var legacyEnabled: Boolean = false
 
 }

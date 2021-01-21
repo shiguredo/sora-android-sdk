@@ -32,7 +32,7 @@ class MessageConverter {
                     multistream = mediaOption.multistreamIsRequired,
                     spotlight = mediaOption.spotlightOption?.let {
                         if (it.legacyEnabled)
-                            it.activeSpeakerLimit
+                            it.spotlightNumber
                         else
                             true
                     },
@@ -40,7 +40,7 @@ class MessageConverter {
                         if (it.legacyEnabled)
                             null
                         else
-                            it.activeSpeakerLimit
+                            it.spotlightNumber
                     },
                     sdp = sdp,
                     sdp_error = sdpError,

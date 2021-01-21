@@ -184,7 +184,7 @@ class Configuration(var context: Context,
      * 最大同時アクティブ配信者数。
      * スポットライト機能の有効時のみ制限されます。
      */
-    var activeSpeakerLimit: Int = 3
+    var spotlightNumber: Int = 3
 
     /**
      * シグナリング  `connect` に含めるメタデータ。
@@ -306,7 +306,7 @@ class Configuration(var context: Context,
 
             if (spotlightEnabled) {
                 // FIX
-                //it.enableSpotlight(activeSpeakerLimit, simulcastRid)
+                //it.enableSpotlight(spotlightNumber, simulcastRid)
             }
 
             if (videoEnabled) {
@@ -371,7 +371,7 @@ class Configuration(var context: Context,
             |multistreamEnabled      = $multistreamEnabled
             |simulcastEnabled        = $simulcastEnabled
             |spotlightEnabled        = $spotlightEnabled
-            |activeSpeakerLimit      = $activeSpeakerLimit
+            |spotlightNumber         = $spotlightNumber
             |videoEnabled            = $videoEnabled
             |videoCodec              = $videoCodec
             |videoBitRate            = $videoBitRate
