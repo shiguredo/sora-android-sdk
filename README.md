@@ -142,6 +142,26 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
      ext.signaling_endpoint = "wss://sora.example.com/signaling"
 ```
 
+## ローカルの libwebrtc.aar を参照する
+
+1. Android Studio で本プロジェクトを開き、メニューから "File > New > New Module... > Import .JAR/.AAR Package" を選択し、 libwebrtc.aar を指定する。 libwebrtc モジュールとディレクトリが生成される。
+
+2. settings.gradle の先頭に次の行を追加する。
+
+```
+include ':libwebrtc'
+```
+
+3. sora-android-sdk/build.gradle でリモートの libwebrtc のパスをコメントアウトし、ローカルの libwebrtc モジュールをロードする設定を追記する。
+
+```
+dependencies {
+    // api "com.github.shiguredo:shiguredo-webrtc-android:${libwebrtc_version}"
+    api project(":libwebrtc")
+    ...
+}
+```
+
 # License
 
 
