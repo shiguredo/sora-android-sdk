@@ -148,7 +148,7 @@ $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 
 ```
 Copyright 2017, Lyo Kato <lyo.kato at gmail.com> (Original Author)
-Copyright 2017-2020, Shiguredo Inc.
+Copyright 2017-2021, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
