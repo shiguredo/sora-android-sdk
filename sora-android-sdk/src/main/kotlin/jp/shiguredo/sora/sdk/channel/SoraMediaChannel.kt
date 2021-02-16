@@ -429,10 +429,11 @@ class SoraMediaChannel @JvmOverloads constructor(
             |videoDecoderFactory     = ${mediaOption.videoDecoderFactory}
             |videoCodec              = ${mediaOption.videoCodec}
             |videoBitRate            = ${mediaOption.videoBitrate}
-            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |videoCapturer           = ${mediaOption.videoCapturer}
+            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
+            |simulcastRid            = ${mediaOption.simulcastRid}
             |spotlightEnabled        = ${mediaOption.spotlightEnabled}
-            |activeSpeakerLimit      = ${mediaOption.activeSpeakerLimit}
+            |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())

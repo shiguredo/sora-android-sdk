@@ -1,10 +1,10 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
+import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import java.util.*
 
 class MessageConverter {
 
@@ -15,26 +15,36 @@ class MessageConverter {
         val gson = Gson()
 
         @JvmOverloads
-        fun buildConnectMessage(role:                    SoraChannelRole,
-                                channelId:               String?,
-                                mediaOption:             SoraMediaOption,
-                                metadata:                Any?,
-                                sdp:                     String?          = null,
-                                sdpError:                String?          = null,
-                                clientId:                String?          = null,
-                                signalingNotifyMetadata: Any?             = null
+        fun buildConnectMessage(role: SoraChannelRole,
+                                channelId: String?,
+                                mediaOption: SoraMediaOption,
+                                metadata: Any?,
+                                sdp: String? = null,
+                                sdpError: String? = null,
+                                clientId: String? = null,
+                                signalingNotifyMetadata: Any? = null
         ): String {
 
             val msg = ConnectMessage(
-                    role                    = role.signaling,
-                    channelId               = channelId,
-                    metadata                = metadata,
-                    multistream             = mediaOption.multistreamIsRequired,
-                    spotlight               = mediaOption.spotlightEnabled,
-                    spotlightNumber         = mediaOption.activeSpeakerLimit,
-                    sdp                     = sdp,
-                    sdp_error               = sdpError,
-                    clientId                = clientId,
+                    role = role.signaling,
+                    channelId = channelId,
+                    metadata = metadata,
+                    multistream = mediaOption.multistreamIsRequired,
+                    spotlight = mediaOption.spotlightOption?.let {
+                        if (Sora.usesSpotlightLegacy)
+                            it.spotlightNumber
+                        else
+                            true
+                    },
+                    spotlightNumber = mediaOption.spotlightOption?.let {
+                        if (Sora.usesSpotlightLegacy)
+                            null
+                        else
+                            it.spotlightNumber
+                    },
+                    sdp = sdp,
+                    sdp_error = sdpError,
+                    clientId = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )
 
