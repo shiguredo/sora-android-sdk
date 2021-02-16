@@ -79,20 +79,21 @@ class SoraMediaOption {
     /**
      * サイマルキャストを有効にします
      */
-    fun enableSimulcast(rid: SimulcastRid? = null) {
+    fun enableSimulcast(rid: SimulcastRid? = null, eglContext: EglBase.Context) {
         simulcastEnabled = true
         simulcastRid = rid
-        videoEncoderFactory = SoftwareVideoEncoderFactory()
+        videoEncoderFactory = SimulcastVideoEncoderFactory(HardwareVideoEncoderFactory(eglContext, true, true),
+                SoftwareVideoEncoderFactory())
         videoDecoderFactory = SoftwareVideoDecoderFactory()
     }
 
     /**
      * スポットライトを有効にします
      */
-    fun enableSpotlight(option: SoraSpotlightOption) {
+    fun enableSpotlight(option: SoraSpotlightOption, eglContext: EglBase.Context) {
         spotlightOption = option
         multistreamEnabled = true
-        enableSimulcast(option.simulcastRid)
+        enableSimulcast(option.simulcastRid, eglContext)
     }
 
     /**
