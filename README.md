@@ -137,10 +137,11 @@ sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下�
 $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 ```
 
-2. (optional) top level か samples の build.gradle に ext の設定を足す::
+2. (optional) settings.gradle に設定を足す
 
 ```
-     ext.signaling_endpoint = "wss://sora.example.com/signaling"
+signaling_endpoint=wss://sora.example.com/signaling
+channel_id=sora
 ```
 
 ## ローカルの libwebrtc.aar を参照する
