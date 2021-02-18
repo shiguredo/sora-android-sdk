@@ -137,7 +137,7 @@ sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下�
 $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 ```
 
-2. (optional) top level の settings.gradle に設定を足す
+2. (optional) top level の gradle.properties に設定を足す
 
 ```
 signaling_endpoint=wss://sora.example.com/signaling
