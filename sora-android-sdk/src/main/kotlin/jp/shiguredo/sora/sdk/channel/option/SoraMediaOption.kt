@@ -1,7 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
-import jp.shiguredo.sora.sdk.codec.SoftwarePriorityVideoEncoderFactory
+import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import org.webrtc.*
 
 /**
@@ -84,8 +84,7 @@ class SoraMediaOption {
         simulcastEnabled = true
         simulcastRid = rid
 
-        val hw = HardwareVideoEncoderFactory(eglContext, true, true)
-        videoEncoderFactory = SimulcastVideoEncoderFactory(hw, SoftwarePriorityVideoEncoderFactory(hw))
+        videoEncoderFactory = SimulcastVideoEncoderFactoryWrapper(eglContext, true, true)
         videoDecoderFactory = SoftwareVideoDecoderFactory()
     }
 
