@@ -13,9 +13,9 @@
 
 - [UPDATE] libwebrtc を 88.4324.3.1 に上げる
     - @enm10k
-- [UPDATE] libwebrtc を 86.4240.1.2 に上げる
+- [UPDATE] Kotlin を 1.4.31 に上げる
     - @szktty
-- [UPDATE] `com.android.tools.build:gradle` を 4.0.1 に上げる
+- [UPDATE] `com.android.tools.build:gradle` を 4.1.2 に上げる
     - @szktty
 - [UPDATE] `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
     - @szktty
@@ -25,7 +25,19 @@
     - @szktty
 - [ADD] シグナリング pong に統計情報を含める
     - @szktty
-- [ADD] 新しい API を追加する (`jp.shiguredo.sora.sdk2`)
+- [ADD] 最新のサイマルキャストの仕様に追従する
+    - @szktty
+- [ADD] サイマルキャストで VP8, H.264 (ハードウェアアクセラレーション含む) に対応する
+    - @szktty, @enm10k
+- [ADD] 最新のスポットライトの仕様に追従する
+    - @szktty
+- [ADD] スポットライトレガシーに対応する
+    - @szktty
+- [ADD] `SoraMediaOption.enableSimulcast()` に引数を追加する
+    - @szktty
+- [ADD] `SoraMediaOption.enableSpotlight()` を追加する
+    - @szktty
+- [ADD] `SoraSpotlightOption` を追加する
     - @szktty
 
 ## 2020.3
