@@ -27,8 +27,8 @@
     - @szktty
 - [UPDATE] 最新のサイマルキャストの仕様に追従する
     - @szktty
-- [UPDATE] サイマルキャストで VP8, H.264 (ハードウェアアクセラレーション含む) に対応する
-    - @szktty, @enm10k
+- [UPDATE] サイマルキャストで VP8 / H.264 (ハードウェアアクセラレーション含む) に対応する
+    - @szktty @enm10k
 - [UPDATE] 最新のスポットライトの仕様に追従する
     - @szktty
 - [UPDATE] スポットライトレガシーに対応する
@@ -38,6 +38,8 @@
 - [UPDATE] `SoraMediaOption.enableSpotlight()` を追加する
     - @szktty
 - [UPDATE] `SoraSpotlightOption` を追加する
+    - @szktty
+- [UPDATE] より使いやすい API 対応する (`jp.shiguredo.sora.sdk2`)
     - @szktty
 
 ## 2020.3
