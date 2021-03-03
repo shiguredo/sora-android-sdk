@@ -31,8 +31,6 @@
     - @szktty @enm10k
 - [UPDATE] 最新のスポットライトの仕様に追従する
     - @szktty
-- [UPDATE] スポットライトレガシーに対応する
-    - @szktty
 - [UPDATE] `SoraMediaOption.enableSimulcast()` に引数を追加する
     - @szktty
 - [UPDATE] `SoraMediaOption.enableSpotlight()` を追加する
@@ -40,6 +38,8 @@
 - [UPDATE] `SoraSpotlightOption` を追加する
     - @szktty
 - [UPDATE] より使いやすい API 対応する (`jp.shiguredo.sora.sdk2`)
+    - @szktty
+- [FIX] スポットライトレガシーに対応する
     - @szktty
 
 ## 2020.3
