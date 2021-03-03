@@ -23,21 +23,21 @@
     - @szktty
 - [UPDATE] `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
     - @szktty
-- [ADD] シグナリング pong に統計情報を含める
+- [UPDATE] シグナリング pong に統計情報を含める
     - @szktty
-- [ADD] 最新のサイマルキャストの仕様に追従する
+- [UPDATE] 最新のサイマルキャストの仕様に追従する
     - @szktty
-- [ADD] サイマルキャストで VP8, H.264 (ハードウェアアクセラレーション含む) に対応する
+- [UPDATE] サイマルキャストで VP8, H.264 (ハードウェアアクセラレーション含む) に対応する
     - @szktty, @enm10k
-- [ADD] 最新のスポットライトの仕様に追従する
+- [UPDATE] 最新のスポットライトの仕様に追従する
     - @szktty
-- [ADD] スポットライトレガシーに対応する
+- [UPDATE] スポットライトレガシーに対応する
     - @szktty
-- [ADD] `SoraMediaOption.enableSimulcast()` に引数を追加する
+- [UPDATE] `SoraMediaOption.enableSimulcast()` に引数を追加する
     - @szktty
-- [ADD] `SoraMediaOption.enableSpotlight()` を追加する
+- [UPDATE] `SoraMediaOption.enableSpotlight()` を追加する
     - @szktty
-- [ADD] `SoraSpotlightOption` を追加する
+- [UPDATE] `SoraSpotlightOption` を追加する
     - @szktty
 
 ## 2020.3
