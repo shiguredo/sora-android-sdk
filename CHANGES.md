@@ -23,9 +23,9 @@
     - @szktty
 - [UPDATE] `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
     - @szktty
-- [ADD] シグナリング pong に統計情報を含める
+- [UPDATE] シグナリング pong に統計情報を含める
     - @szktty
-- [ADD] 新しい API を追加する (`jp.shiguredo.sora.sdk2`)
+- [UPDATE] より使いやすい API 対応する (`jp.shiguredo.sora.sdk2`)
     - @szktty
 
 ## 2020.3
