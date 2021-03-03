@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 88.4324.3.1 に上げる
+- [UPDATE] libwebrtc を 89.4389.5.6 に上げる
     - @enm10k
 - [UPDATE] Kotlin を 1.4.31 に上げる
     - @szktty
