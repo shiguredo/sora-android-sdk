@@ -3,8 +3,8 @@ apply plugin: "org.ajoberstar.grgit"
 apply plugin: 'org.jetbrains.dokka'
 
 buildscript {
-    ext.kotlin_version = '1.4.21'
-    ext.libwebrtc_version = '88.4324.3.1'
+    ext.kotlin_version = '1.4.31'
+    ext.libwebrtc_version = '89.4389.5.6'
 
     ext.dokka_version = '1.4.0-rc'
 

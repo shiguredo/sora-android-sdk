@@ -358,7 +358,7 @@ class Configuration(var context: Context,
             }
 
             if (simulcastEnabled) {
-                it.enableSimulcast(simulcastRid)
+                //it.enableSimulcast(simulcastRid)
             }
         }
     }
