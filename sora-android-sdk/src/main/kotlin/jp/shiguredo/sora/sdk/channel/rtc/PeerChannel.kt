@@ -295,6 +295,12 @@ class PeerChannelImpl(
     }
 
     private fun updateVideoSenderOfferEncodings() {
+        if (videoSender == null) {
+            // updateVideoSenderOfferEncodings を実行するには videoSender が初期化されている必要があることに注意
+            // setRemoteDescription の onSetSuccess が呼ばれるタイミングで updateVideoSenderOfferEncodings を呼び出すように
+            // コードを書き換えようとしたが、そのタイミングでは videoSender が初期化されていないフローがあった
+            SoraLogger.w(TAG, "updateVideoSenderOfferEncodings is called but videoSender is null")
+        }
         videoSender?.let { updateSenderOfferEncodings(it) }
     }
 
