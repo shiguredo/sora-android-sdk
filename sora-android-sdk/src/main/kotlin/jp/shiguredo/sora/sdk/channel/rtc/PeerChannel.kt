@@ -246,9 +246,8 @@ class PeerChannelImpl(
 
         return setRemoteDescription(offerSDP).flatMap {
             // active: false が無効化されてしまう問題に対応
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && offerEncodings != null) {
-                SoraLogger.d(TAG, "Reset sender.parameters")
-                updateVideoSenderOfferEncodings()
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                videoSender?.let { updateSenderOfferEncodings(it) }
             }
             return@flatMap createAnswer()
         }.flatMap {
@@ -282,8 +281,7 @@ class PeerChannelImpl(
             videoSender?.let { _senders.add(it) }
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
-                SoraLogger.d(TAG, "Modify sender.parameters")
-                updateVideoSenderOfferEncodings()
+                videoSender?.let { updateSenderOfferEncodings(it) }
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -294,20 +292,11 @@ class PeerChannelImpl(
         }
     }
 
-    private fun updateVideoSenderOfferEncodings() {
-        if (videoSender == null) {
-            // updateVideoSenderOfferEncodings を実行するには videoSender が初期化されている必要があることに注意
-            // setRemoteDescription の onSetSuccess が呼ばれるタイミングで updateVideoSenderOfferEncodings を呼び出すように
-            // コードを書き換えようとしたが、そのタイミングでは videoSender が初期化されていないフローがあった
-            SoraLogger.w(TAG, "updateVideoSenderOfferEncodings is called but videoSender is null")
-        }
-        videoSender?.let { updateSenderOfferEncodings(it) }
-    }
-
     private fun updateSenderOfferEncodings(sender: RtpSender) {
         if (offerEncodings == null)
             return
 
+        SoraLogger.d(TAG, "updateSenderOfferEncodings")
         // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
         // 変換するのでここで参照を保持しておく。
         val parameters = sender.parameters
