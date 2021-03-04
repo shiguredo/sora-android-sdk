@@ -280,7 +280,7 @@ class PeerChannelImpl(
             audioSender?.let { _senders.add(it) }
             videoSender?.let { _senders.add(it) }
 
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             }
             SoraLogger.d(TAG, "createAnswer")
