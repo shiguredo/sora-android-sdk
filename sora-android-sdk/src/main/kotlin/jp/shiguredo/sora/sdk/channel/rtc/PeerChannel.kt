@@ -245,6 +245,11 @@ class PeerChannelImpl(
                 SessionDescription(SessionDescription.Type.OFFER, offer)
 
         return setRemoteDescription(offerSDP).flatMap {
+            // active: false が無効化されてしまう問題に対応
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && offerEncodings != null) {
+                SoraLogger.d(TAG, "Reset sender.parameters")
+                updateVideoSenderOfferEncodings()
+            }
             return@flatMap createAnswer()
         }.flatMap {
             answer ->
@@ -490,12 +495,6 @@ class PeerChannelImpl(
                 }
                 override fun onSetSuccess() {
                     SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
-
-                    // active: false が無効化されてしまう問題に対応
-                    if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && offerEncodings != null) {
-                        SoraLogger.d(TAG, "Reset sender.parameters")
-                        updateVideoSenderOfferEncodings()
-                    }
                     it.onSuccess(sdp)
                 }
                 override fun onSetFailure(s: String?) {
