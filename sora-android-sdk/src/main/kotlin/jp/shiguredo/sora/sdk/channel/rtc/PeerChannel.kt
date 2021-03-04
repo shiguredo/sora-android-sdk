@@ -245,6 +245,10 @@ class PeerChannelImpl(
                 SessionDescription(SessionDescription.Type.OFFER, offer)
 
         return setRemoteDescription(offerSDP).flatMap {
+            // active: false が無効化されてしまう問題に対応
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                videoSender?.let { updateSenderOfferEncodings(it) }
+            }
             return@flatMap createAnswer()
         }.flatMap {
             answer ->
@@ -276,9 +280,8 @@ class PeerChannelImpl(
             audioSender?.let { _senders.add(it) }
             videoSender?.let { _senders.add(it) }
 
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
-                SoraLogger.d(TAG, "Modify sender.parameters")
-                updateVideoSenderOfferEncodings()
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                videoSender?.let { updateSenderOfferEncodings(it) }
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -289,14 +292,11 @@ class PeerChannelImpl(
         }
     }
 
-    private fun updateVideoSenderOfferEncodings() {
-        videoSender?.let { updateSenderOfferEncodings(it) }
-    }
-
     private fun updateSenderOfferEncodings(sender: RtpSender) {
         if (offerEncodings == null)
             return
 
+        SoraLogger.d(TAG, "updateSenderOfferEncodings")
         // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
         // 変換するのでここで参照を保持しておく。
         val parameters = sender.parameters
