@@ -37,8 +37,6 @@
     - @szktty
 - [UPDATE] `SoraSpotlightOption` を追加する
     - @szktty
-- [UPDATE] より使いやすい API 対応する (`jp.shiguredo.sora.sdk2`)
-    - @szktty
 - [FIX] スポットライトレガシーに対応する
     - @szktty
 
