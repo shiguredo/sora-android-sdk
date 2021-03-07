@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import org.webrtc.*
@@ -94,7 +95,10 @@ class SoraMediaOption {
     fun enableSpotlight(option: SoraSpotlightOption, eglContext: EglBase.Context) {
         spotlightOption = option
         multistreamEnabled = true
-        enableSimulcast(option.simulcastRid, eglContext)
+
+        if (!Sora.usesSpotlightLegacy) {
+            enableSimulcast(option.simulcastRid, eglContext)
+        }
     }
 
     /**
