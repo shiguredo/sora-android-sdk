@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
+import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
@@ -32,6 +33,10 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
         val encoderFactory = when {
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
+            mediaOption.simulcastEnabled ->
+                SimulcastVideoEncoderFactoryWrapper(mediaOption.videoUpstreamContext,
+                                true,
+                                true)
             mediaOption.videoUpstreamContext != null ->
                 DefaultVideoEncoderFactory(mediaOption.videoUpstreamContext,
                         true /* enableIntelVp8Encoder */,
