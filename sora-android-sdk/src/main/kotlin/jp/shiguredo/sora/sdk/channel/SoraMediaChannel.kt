@@ -81,7 +81,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param ms 追加されたメディアストリーム
          */
-        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream, videoSource: VideoSource?) {}
+        fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
 
         /**
          * リモートストリームが追加されたときに呼び出されるコールバック
@@ -331,9 +331,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
         }
 
-        override fun onAddLocalStream(ms: MediaStream, videoSource: VideoSource?) {
+        override fun onAddLocalStream(ms: MediaStream) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
-            listener?.onAddLocalStream(this@SoraMediaChannel, ms, videoSource)
+            listener?.onAddLocalStream(this@SoraMediaChannel, ms)
         }
 
         override fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>) {
