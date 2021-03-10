@@ -2,7 +2,9 @@ package jp.shiguredo.sora.sdk.codec
 
 import org.webrtc.*
 
-internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?, enableIntelVp8Encoder: Boolean, enableH264HighProfile: Boolean) : VideoEncoderFactory {
+internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?,
+                                                   enableIntelVp8Encoder: Boolean,
+                                                   enableH264HighProfile: Boolean) : VideoEncoderFactory {
 
     /*
      * ソフトウェアエンコーダーの利用を優先するファクトリーです。
