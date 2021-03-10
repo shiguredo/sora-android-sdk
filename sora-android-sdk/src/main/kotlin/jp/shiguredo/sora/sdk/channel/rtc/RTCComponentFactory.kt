@@ -36,7 +36,7 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
             mediaOption.simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(mediaOption.videoUpstreamContext,
                                 true,
-                                true)
+                                false)
             mediaOption.videoUpstreamContext != null ->
                 DefaultVideoEncoderFactory(mediaOption.videoUpstreamContext,
                         true /* enableIntelVp8Encoder */,
