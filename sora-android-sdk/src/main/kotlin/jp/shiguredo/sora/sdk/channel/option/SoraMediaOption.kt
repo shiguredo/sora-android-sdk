@@ -2,7 +2,6 @@ package jp.shiguredo.sora.sdk.channel.option
 
 import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
-import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import org.webrtc.*
 
 /**
@@ -81,23 +80,20 @@ class SoraMediaOption {
     /**
      * サイマルキャストを有効にします
      */
-    fun enableSimulcast(rid: SimulcastRid? = null, eglContext: EglBase.Context) {
+    fun enableSimulcast(rid: SimulcastRid? = null) {
         simulcastEnabled = true
         simulcastRid = rid
-
-        videoEncoderFactory = SimulcastVideoEncoderFactoryWrapper(eglContext, true, true)
-        videoDecoderFactory = SoftwareVideoDecoderFactory()
     }
 
     /**
      * スポットライトを有効にします
      */
-    fun enableSpotlight(option: SoraSpotlightOption, eglContext: EglBase.Context) {
+    fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
         multistreamEnabled = true
 
         if (!Sora.usesSpotlightLegacy) {
-            enableSimulcast(option.simulcastRid, eglContext)
+            enableSimulcast(option.simulcastRid)
         }
     }
 
