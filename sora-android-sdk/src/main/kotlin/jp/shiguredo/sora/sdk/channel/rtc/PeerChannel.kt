@@ -14,9 +14,6 @@ import java.util.concurrent.Executors
 
 interface PeerChannel {
 
-    var conn:    PeerConnection?
-    var factory: PeerConnectionFactory?
-
     fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
 
@@ -74,8 +71,8 @@ class PeerChannelImpl(
 
     private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
-    override var conn:    PeerConnection?        = null
-    override var factory: PeerConnectionFactory? = null
+    private var conn:    PeerConnection?        = null
+    private var factory: PeerConnectionFactory? = null
 
     private val executor =  Executors.newSingleThreadExecutor()
 
