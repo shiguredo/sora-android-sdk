@@ -106,13 +106,6 @@ class SoraMediaChannel @JvmOverloads constructor(
          */
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}
 
-        // undocumented
-        fun onAddSender(mediaChannel: SoraMediaChannel, sender: RtpSender, ms: Array<out MediaStream>) {}
-
-        fun onAddReceiver(mediaChannel: SoraMediaChannel, receiver: RtpReceiver, ms: Array<out MediaStream>) {}
-
-        fun onRemoveReceiver(mediaChannel: SoraMediaChannel, id: String) {}
-
         /**
          * Sora との接続が確立されたときに呼び出されるコールバック
          *
