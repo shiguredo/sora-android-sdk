@@ -336,21 +336,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onAddLocalStream(this@SoraMediaChannel, ms)
         }
 
-        override fun onAddSender(sender: RtpSender, ms: Array<out MediaStream>) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddSender")
-            listener?.onAddSender(this@SoraMediaChannel, sender, ms)
-        }
-
-        override fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddReceiver")
-            listener?.onAddReceiver(this@SoraMediaChannel, receiver, ms)
-        }
-
-        override fun onRemoveReceiver(id: String) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver=${id}")
-            listener?.onRemoveReceiver(this@SoraMediaChannel, id)
-        }
-
         override fun onConnect() {
             SoraLogger.d(TAG, "[channel:$role] @peer:onConnect")
             stopTimer()
