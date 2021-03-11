@@ -37,6 +37,8 @@
     - @szktty
 - [UPDATE] `SoraSpotlightOption` を追加する
     - @szktty
+- [UPDATE] `SoraMediaChannel.connectionId` を追加する
+    - @szktty
 - [FIX] スポットライトレガシーに対応する
     - @szktty
 
