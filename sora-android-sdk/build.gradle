@@ -46,16 +46,17 @@ android {
     }
 }
 
-dokkaHtml {
+dokka {
+    outputFormat = 'javadoc'
     outputDirectory = "$buildDir/dokka"
-    disableAutoconfiguration = false
-    cacheRoot = file("default")
 
-    dokkaSourceSets {
+    sourceSets {
         configureEach {
-            moduleDisplayName = 'Sora Android SDK'
-            reportUndocumented = true
+            moduleName = 'sora'
+            reportUndocumented true
             includes = ['packages.md']
+            cacheRoot = "default"
+            disableAutoconfiguration = false
 
             sourceLink {
                 path = "sora-android-sdk/src/main/kotlin"
