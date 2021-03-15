@@ -63,9 +63,24 @@ data class OpusParams(
         @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )
 
+/**
+ * サイマルキャストの rid
+ */
 enum class SimulcastRid(val value: String) {
+
+    /**
+     * r0
+     */
     R0("r0"),
+
+    /**
+     * r1
+     */
     R1("r1"),
+
+    /**
+     * r2
+     */
     R2("r2");
 
     override fun toString(): String = value

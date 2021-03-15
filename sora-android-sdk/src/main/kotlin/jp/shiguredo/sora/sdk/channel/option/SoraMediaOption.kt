@@ -78,7 +78,7 @@ class SoraMediaOption {
     }
 
     /**
-     * サイマルキャストを有効にします
+     * サイマルキャスト機能を有効にします。
      */
     fun enableSimulcast(rid: SimulcastRid? = null) {
         simulcastEnabled = true
@@ -86,7 +86,13 @@ class SoraMediaOption {
     }
 
     /**
-     * スポットライトを有効にします
+     * スポットライト機能を有効にします。
+     *
+     * スポットライト機能はサイマルキャスト機能を利用します。
+     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります。
+     *
+     * サーバがスポットライトレガシー機能を利用している場合は、
+     * [Sora.usesSpotlightLegacy] に `true` をセットしてください。
      */
     fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
@@ -116,9 +122,15 @@ class SoraMediaOption {
         audioUpstreamEnabled = true
     }
 
+    /**
+     * 音声コーデック
+     */
     var audioCodec = SoraAudioOption.Codec.OPUS
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
+    /**
+     * 音声ビットレート
+     */
     var audioBitrate: Int? = null
 
     /**

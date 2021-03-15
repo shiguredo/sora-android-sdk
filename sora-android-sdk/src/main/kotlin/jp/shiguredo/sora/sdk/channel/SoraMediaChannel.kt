@@ -64,7 +64,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
+    /**
+     * ロール
+     */
     val role = mediaOption.requiredRole
+
     var getStatsTimer: Timer? = null
 
     /**
@@ -233,6 +237,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private var closing = false
 
+    /**
+     * コネクション ID
+     */
     var connectionId: String? = null
     private set
 

@@ -2,8 +2,14 @@ package jp.shiguredo.sora.sdk.channel.option
 
 import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 
+/**
+ * スポットライト機能のオプションです。
+ */
 class SoraSpotlightOption {
 
+    /**
+     * サイマルキャストの rid
+     */
     var simulcastRid: SimulcastRid? = null
 
     /**
