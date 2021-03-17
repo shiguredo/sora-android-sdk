@@ -19,22 +19,22 @@ data class ChannelAttendeesCount(
         /**
          * sendrecv の接続数
          */
-        val numberOfSendrecv: Int,
+        val numberOfSendrecvConnections: Int,
 
         /**
          * sendonly の接続数
          */
-        val numberOfSendonly: Int,
+        val numberOfSendonlyConnections: Int,
 
         /**
          * recvonly の接続数
          */
-        val numberOfRecvonly: Int,
+        val numberOfRecvonlyConnections: Int,
 
         ) {
    /**
     * 配信者数と視聴者数の合計
     */
     val numberOfConnections: Int
-        get() = numberOfSendrecv + numberOfSendonly + numberOfRecvonly
+        get() = numberOfSendrecvConnections + numberOfSendonlyConnections + numberOfRecvonlyConnections
 }

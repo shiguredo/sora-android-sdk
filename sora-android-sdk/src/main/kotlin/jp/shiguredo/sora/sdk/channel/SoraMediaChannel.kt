@@ -279,9 +279,9 @@ class SoraMediaChannel @JvmOverloads constructor(
                     val attendees = ChannelAttendeesCount(
                             numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
                             numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
-                            numberOfSendrecv = notification.numberOfSendrecvConnections!!,
-                            numberOfSendonly = notification.numberOfSendonlyConnections!!,
-                            numberOfRecvonly = notification.numberOfRecvonlyConnections!!,
+                            numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
+                            numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
+                            numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
                     )
                     listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
                 }
