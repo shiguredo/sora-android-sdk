@@ -159,8 +159,14 @@ data class NotificationMessage(
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
         @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int?,
         @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
+        @SerializedName("channel_sendrecv_connections")   val numberOfSendrecvConnections:   Int?,
+        @SerializedName("channel_sendonly_connections")   val numberOfSendonlyConnections:   Int?,
+        @SerializedName("channel_recvonly_connections")   val numberOfRecvonlyConnections:   Int?,
         @SerializedName("unstable_level")                 val unstableLevel:                 Int?,
         @SerializedName("channel_id")                     val channelId:                     String?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
-        @SerializedName("fixed")                          val fixed:                         Boolean?
-)
+        @SerializedName("fixed")                          val fixed:                         Boolean?,
+        @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
+        @SerializedName("authz_metadata")                 val AuthzMetadata:                 Any?,
+) {
+}
