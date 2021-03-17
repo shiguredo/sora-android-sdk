@@ -167,6 +167,6 @@ data class NotificationMessage(
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
         @SerializedName("fixed")                          val fixed:                         Boolean?,
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
-        @SerializedName("authz_metadata")                 val AuthzMetadata:                 Any?,
+        @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
 ) {
 }
