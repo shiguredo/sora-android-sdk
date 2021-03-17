@@ -39,8 +39,21 @@
     - @szktty
 - [UPDATE] `SoraMediaChannel.connectionId` を追加する
     - @szktty
+- [UPDATE] 廃止予定のプロパティに Deprecated アノテーションを追加する
+  - ChannelAttendeesCount.numberOfUpstreams
+  - ChannelAttendeesCount.numberOfDownstreams
+  - NotificationMessage.numberOfUpstreamConnections
+  - NotificationMessage.numberOfDownstreamConnections
+  - @enm10k
 - [FIX] スポットライトレガシーに対応する
     - @szktty
+- [FIX] NotificationMessage に漏れていた以下のフィールドを追加する
+    - authn_metadata
+    - authz_metadata
+    - channel_sendrecv_connections
+    - channel_sendonly_connections
+    - channel_recvonly_connections
+    - @enm10k
 
 ## 2020.3
 
