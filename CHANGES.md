@@ -53,7 +53,7 @@
     - @enm10k
 - [FIX] スポットライトレガシーに対応する
     - スポットライトレガシーを利用する際は `Sora.usesSpotlightLegacy = true` を設定する必要があります
-    - スポットライトレガシーは 2012 年 12 月に予定されている Sora のアップデートで廃止されます
+    - スポットライトレガシーは 2021 年 12 月に予定されている Sora のアップデートで廃止されます
     - @szktty
 - [FIX] NotificationMessage に漏れていた以下のフィールドを追加する
     - authn_metadata
