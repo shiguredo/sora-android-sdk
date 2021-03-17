@@ -11,18 +11,24 @@
 
 ## develop
 
+- [CHANGE] 
+  - @s
 - [UPDATE] libwebrtc を 89.4389.5.6 に上げる
     - @enm10k
 - [UPDATE] Kotlin を 1.4.31 に上げる
     - @szktty
-- [UPDATE] `com.android.tools.build:gradle` を 4.1.2 に上げる
-    - @szktty
-- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
-    - @szktty
-- [UPDATE] `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
-    - @szktty
-- [UPDATE] `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
-    - @szktty
+- [UPDATE] Gradle を 6.8.3 に上げる
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+    - `com.android.tools.build:gradle` を 4.1.2 に上げる
+    - `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
+    - `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
+    - `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
+    - `com.github.ben-manes:gradle-versions-plugin` を 0.38.0 に上げる
+    - `org.ajoberstar.grgit:grgit-gradle` を 4.1.0 に上げる
+    - `com.squareup.okhttp3:okhttp` を 4.9.1 に上げる
+    - `io.reactivex.rxjava2:rxjava` を 2.2.21 に上げる
+    - @szktty @enm10k
+
 - [UPDATE] シグナリング pong に統計情報を含める
     - @szktty
 - [UPDATE] 最新のサイマルキャストの仕様に追従する
@@ -40,12 +46,14 @@
 - [UPDATE] `SoraMediaChannel.connectionId` を追加する
     - @szktty
 - [UPDATE] 廃止予定のプロパティに Deprecated アノテーションを追加する
-  - ChannelAttendeesCount.numberOfUpstreams
-  - ChannelAttendeesCount.numberOfDownstreams
-  - NotificationMessage.numberOfUpstreamConnections
-  - NotificationMessage.numberOfDownstreamConnections
-  - @enm10k
+    - ChannelAttendeesCount.numberOfUpstreams
+    - ChannelAttendeesCount.numberOfDownstreams
+    - NotificationMessage.numberOfUpstreamConnections
+    - NotificationMessage.numberOfDownstreamConnections
+    - @enm10k
 - [FIX] スポットライトレガシーに対応する
+    - スポットライトレガシーを利用する際は `Sora.usesSpotlightLegacy = true` を設定する必要があります
+    - スポットライトレガシーは 2021 年 12 月に予定されている Sora のアップデートで廃止されます
     - @szktty
 - [FIX] NotificationMessage に漏れていた以下のフィールドを追加する
     - authn_metadata
@@ -53,6 +61,8 @@
     - channel_sendrecv_connections
     - channel_sendonly_connections
     - channel_recvonly_connections
+    - @enm10k
+- [FIX] サイマルキャストのパラメーター active: false が無効化されてしまう問題を修正する
     - @enm10k
 
 ## 2020.3
