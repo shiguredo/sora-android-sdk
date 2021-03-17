@@ -7,13 +7,13 @@ data class ChannelAttendeesCount(
         /**
          * 配信者数
          */
-        @Deprecated("numberOfUpstreams は2021 年 6 月リリース予定の Sora にて廃止されます。")
+        @Deprecated("numberOfUpstreams は 2021 年 6 月リリース予定の Sora にて廃止されます。")
         val numberOfUpstreams: Int,
 
         /**
          * 視聴者数
          */
-        @Deprecated("numberOfDownstreams は2021 年 6 月リリース予定の Sora にて廃止されます。")
+        @Deprecated("numberOfDownstreams は 2021 年 6 月リリース予定の Sora にて廃止されます。")
         val numberOfDownstreams: Int,
 
         /**
