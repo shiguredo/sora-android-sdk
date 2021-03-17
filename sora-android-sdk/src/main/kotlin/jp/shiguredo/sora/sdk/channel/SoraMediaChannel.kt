@@ -69,7 +69,7 @@ class SoraMediaChannel @JvmOverloads constructor(
      */
     val role = mediaOption.requiredRole
 
-    var getStatsTimer: Timer? = null
+    private var getStatsTimer: Timer? = null
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -232,8 +232,8 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     }
 
-    var peer:            PeerChannel?      = null
-    var signaling:       SignalingChannel? = null
+    private var peer:            PeerChannel?      = null
+    private var signaling:       SignalingChannel? = null
 
     private var closing = false
 
