@@ -54,6 +54,8 @@
     - channel_sendonly_connections
     - channel_recvonly_connections
     - @enm10k
+- [FIX] サイマルキャストのパラメーター active: false が無効化されてしまう問題を修正する
+    - @enm10k
 
 ## 2020.3
 
