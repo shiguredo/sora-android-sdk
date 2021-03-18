@@ -22,8 +22,6 @@ class SoraAudioOption {
     enum class Codec {
         /** Opus */
         OPUS,
-        /** PCMU */
-        PCMU
     }
 
     /**
