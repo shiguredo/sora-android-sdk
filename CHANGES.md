@@ -30,12 +30,12 @@
     - @szktty @enm10k
 - [UPDATE] シグナリング pong に統計情報を含める
     - @szktty
-- [UPDATE] 最新のサイマルキャストの仕様に追従する
+- [UPDATE] Sora のサイマルキャスト機能に追従する
+    - @szktty
+- [UPDATE] Sora のスポットライト機能に追従する
     - @szktty
 - [UPDATE] サイマルキャストで VP8 / H.264 (ハードウェアアクセラレーション含む) に対応する
     - @szktty @enm10k
-- [UPDATE] 最新のスポットライトの仕様に追従する
-    - @szktty
 - [UPDATE] `SoraMediaOption.enableSimulcast()` に引数を追加する
     - @szktty
 - [UPDATE] `SoraMediaOption.enableSpotlight()` を追加する
