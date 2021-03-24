@@ -28,7 +28,6 @@
     - `com.squareup.okhttp3:okhttp` を 4.9.1 に上げる
     - `io.reactivex.rxjava2:rxjava` を 2.2.21 に上げる
     - @szktty @enm10k
-
 - [UPDATE] シグナリング pong に統計情報を含める
     - @szktty
 - [UPDATE] 最新のサイマルキャストの仕様に追従する
@@ -173,7 +172,6 @@
 
 - 視聴のみかつ H.264 を指定した場合に接続できない現象を修正する
   - @szktty
-
 
 ## 1.9.0
 
