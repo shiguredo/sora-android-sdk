@@ -45,11 +45,16 @@
     - @szktty
 - [UPDATE] `SoraMediaChannel.connectionId` を追加する
     - @szktty
+- [UPDATE] `NotificationMessage.data` を追加する
+    - @enm10k
 - [UPDATE] 廃止予定のプロパティに Deprecated アノテーションを追加する
     - ChannelAttendeesCount.numberOfUpstreams
     - ChannelAttendeesCount.numberOfDownstreams
     - NotificationMessage.numberOfUpstreamConnections
     - NotificationMessage.numberOfDownstreamConnections
+    - @enm10k
+- [UPDATE] 変更予定のプロパティに Deprecated アノテーションを追加する
+    - NotificationMessage.metadataList -> NotificationMessage.data に変更予定
     - @enm10k
 - [FIX] スポットライトレガシーに対応する
     - スポットライトレガシーを利用する際は `Sora.usesSpotlightLegacy = true` を設定する必要があります
