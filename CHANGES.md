@@ -13,7 +13,7 @@
 
 - [CHANGE] SoraAudioOption.Codec から PCMU を外す
     - @enm10k
-- [UPDATE] libwebrtc を 89.4389.5.6 に上げる
+- [UPDATE] libwebrtc を 89.4389.7.0 に上げる
     - @enm10k
 - [UPDATE] Kotlin を 1.4.31 に上げる
     - @szktty
