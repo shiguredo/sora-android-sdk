@@ -154,6 +154,7 @@ data class NotificationMessage(
         @SerializedName("audio")                          val audio:                         Boolean?,
         @SerializedName("video")                          val video:                         Boolean?,
         @SerializedName("metadata")                       val metadata:                      Any?,
+        @Deprecated("metadata_list は将来の Sora のリリースでフィールド名を data に変更する予定です。")
         @SerializedName("metadata_list")                  val metadataList:                  Any?,
         @SerializedName("minutes")                        val connectionTime:                Long?,
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
@@ -170,5 +171,6 @@ data class NotificationMessage(
         @SerializedName("fixed")                          val fixed:                         Boolean?,
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
         @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
+        @SerializedName("data")                           val data:                          Any?,
 ) {
 }
