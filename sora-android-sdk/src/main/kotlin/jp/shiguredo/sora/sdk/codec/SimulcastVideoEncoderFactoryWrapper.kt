@@ -80,7 +80,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
             }
             val adaptedFrame = if (frame.buffer.width == streamSettings!!.width) {
                 frame
-            }else {
+            } else {
                 val buffer = frame.buffer
                 val ratio = buffer.width / streamSettings!!.width
                 SoraLogger.d(TAG, "encode: Scaling needed, " +
@@ -89,7 +89,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
                 // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
                 // TODO(shino): I420 への変換は必要?
                 val adaptedBuffer = buffer.toI420().cropAndScale(0, 0, buffer.width, buffer.height,
-                        streamSettings!!.width, streamSettings!!.height / ratio)
+                        streamSettings!!.width, streamSettings!!.height)
                 val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
                 adaptedFrame
             }
