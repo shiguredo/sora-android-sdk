@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.codec
 
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 
 internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?,
@@ -46,14 +47,90 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
 
     }
 
-    private val primary: HardwareVideoEncoderFactory
-    private val fallback: Fallback
+    private class EncoderWrapper(private val encoder: VideoEncoder) : VideoEncoder {
+        companion object {
+            val TAG = EncoderWrapper::class.simpleName
+        }
+
+        var streamSettings: VideoEncoder.Settings? = null
+
+        override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
+            streamSettings = settings
+            SoraLogger.i(TAG, """initEncode() streamSettings:
+                |numberOfCores=${settings.numberOfCores}
+                |width=${settings.width}
+                |height=${settings.height}
+                |startBitrate=${settings.startBitrate}
+                |maxFramerate=${settings.maxFramerate}
+                |automaticResizeOn=${settings.automaticResizeOn}
+                |numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
+                |lossNotification=${settings.capabilities.lossNotification}
+            """.trimMargin())
+            return encoder.initEncode(settings, callback)
+        }
+
+        override fun release(): VideoCodecStatus {
+            return encoder.release()
+        }
+
+        override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
+
+            if (streamSettings == null) {
+                return encoder.encode(frame, encodeInfo)
+            }
+            val adaptedFrame = if (frame.buffer.width == streamSettings!!.width) {
+                frame
+            }else {
+                val buffer = frame.buffer
+                val ratio = buffer.width / streamSettings!!.width
+                SoraLogger.d(TAG, "encode: Scaling needed, " +
+                        "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                        "ratio=$ratio")
+                // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
+                // TODO(shino): I420 への変換は必要?
+                val adaptedBuffer = buffer.toI420().cropAndScale(0, 0, buffer.width, buffer.height,
+                        streamSettings!!.width, streamSettings!!.height / ratio)
+                val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
+                adaptedFrame
+            }
+            return encoder.encode(adaptedFrame, encodeInfo)
+        }
+
+        override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
+            return encoder.setRateAllocation(allocation, frameRate)
+        }
+
+        override fun getScalingSettings(): VideoEncoder.ScalingSettings {
+            return encoder.scalingSettings
+        }
+
+        override fun getImplementationName(): String {
+            return encoder.implementationName
+        }
+    }
+
+    private class FactoryWrapper(private val factory: VideoEncoderFactory) : VideoEncoderFactory {
+        override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
+            val encoder = factory.createEncoder(videoCodecInfo)
+            if (encoder == null) {
+                return null
+            }
+            return EncoderWrapper(encoder)
+        }
+
+        override fun getSupportedCodecs(): Array<VideoCodecInfo> {
+            return factory.supportedCodecs
+        }
+    }
+
+    private val primary: VideoEncoderFactory
+    private val fallback: VideoEncoderFactory
     private val native: SimulcastVideoEncoderFactory
 
     init {
         primary = HardwareVideoEncoderFactory(sharedContext, enableIntelVp8Encoder, enableH264HighProfile)
         fallback = Fallback(primary)
-        native = SimulcastVideoEncoderFactory(primary, fallback)
+        native = SimulcastVideoEncoderFactory(FactoryWrapper(primary), FactoryWrapper(fallback))
     }
 
     override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? {
