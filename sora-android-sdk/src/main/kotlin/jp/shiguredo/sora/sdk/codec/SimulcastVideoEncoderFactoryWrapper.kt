@@ -78,14 +78,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
             if (streamSettings == null) {
                 return encoder.encode(frame, encodeInfo)
             }
-            val adaptedFrame = if (frame.buffer.width == streamSettings!!.width) {
-                frame
+            if (frame.buffer.width == streamSettings!!.width) {
+                return encoder.encode(frame, encodeInfo)
             } else {
                 val buffer = frame.buffer
-                val ratio = buffer.width / streamSettings!!.width
-                SoraLogger.d(TAG, "encode: Scaling needed, " +
-                        "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
-                        "ratio=$ratio")
+                // val ratio = buffer.width / streamSettings!!.width
+                // SoraLogger.d(TAG, "encode: Scaling needed, " +
+                //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                //         "ratio=$ratio")
                 // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
                 // TODO(shino): I420 への変換は必要?
                 val i420Buffer = buffer.toI420()
@@ -93,9 +93,10 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
                         streamSettings!!.width, streamSettings!!.height)
                 i420Buffer.release()
                 val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
-                adaptedFrame
+                val result = encoder.encode(adaptedFrame, encodeInfo)
+                adaptedBuffer.release()
+                return result
             }
-            return encoder.encode(adaptedFrame, encodeInfo)
         }
 
         override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
