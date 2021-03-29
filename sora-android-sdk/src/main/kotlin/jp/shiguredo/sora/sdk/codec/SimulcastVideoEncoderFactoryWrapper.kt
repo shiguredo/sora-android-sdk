@@ -2,6 +2,8 @@ package jp.shiguredo.sora.sdk.codec
 
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
+import java.util.*
+import java.util.concurrent.*
 
 internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?,
                                                    enableIntelVp8Encoder: Boolean,
@@ -52,63 +54,71 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
             val TAG = EncoderWrapper::class.simpleName
         }
 
+        val executor: ExecutorService = Executors.newSingleThreadExecutor()
         var streamSettings: VideoEncoder.Settings? = null
 
         override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
             streamSettings = settings
-            SoraLogger.i(TAG, """initEncode() streamSettings:
-                |numberOfCores=${settings.numberOfCores}
-                |width=${settings.width}
-                |height=${settings.height}
-                |startBitrate=${settings.startBitrate}
-                |maxFramerate=${settings.maxFramerate}
-                |automaticResizeOn=${settings.automaticResizeOn}
-                |numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
-                |lossNotification=${settings.capabilities.lossNotification}
+            val future = executor.submit(Callable {
+                SoraLogger.i(TAG, """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
+                |  streamSettings:
+                |    numberOfCores=${settings.numberOfCores}
+                |    width=${settings.width}
+                |    height=${settings.height}
+                |    startBitrate=${settings.startBitrate}
+                |    maxFramerate=${settings.maxFramerate}
+                |    automaticResizeOn=${settings.automaticResizeOn}
+                |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
+                |    lossNotification=${settings.capabilities.lossNotification}
             """.trimMargin())
-            return encoder.initEncode(settings, callback)
+                return@Callable encoder.initEncode(settings, callback)
+            })
+            return future.get()
         }
 
         override fun release(): VideoCodecStatus {
-            return encoder.release()
+            val future = executor.submit(Callable { return@Callable encoder.release() })
+            return future.get()
         }
 
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-
-            if (streamSettings == null) {
-                return encoder.encode(frame, encodeInfo)
-            }
-            if (frame.buffer.width == streamSettings!!.width) {
-                return encoder.encode(frame, encodeInfo)
-            } else {
-                val buffer = frame.buffer
-                // val ratio = buffer.width / streamSettings!!.width
-                // SoraLogger.d(TAG, "encode: Scaling needed, " +
-                //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
-                //         "ratio=$ratio")
-                // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
-                // TODO(shino): I420 への変換は必要?
-                val i420Buffer = buffer.toI420()
-                val adaptedBuffer = i420Buffer.cropAndScale(0, 0, buffer.width, buffer.height,
-                        streamSettings!!.width, streamSettings!!.height)
-                i420Buffer.release()
-                val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
-                val result = encoder.encode(adaptedFrame, encodeInfo)
-                adaptedBuffer.release()
-                return result
-            }
+            val future = executor.submit(Callable {
+                // SoraLogger.d(TAG, "encode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]")
+                if (streamSettings == null) {
+                    return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
+                } else if (frame.buffer.width == streamSettings!!.width) {
+                    return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
+                } else {
+                    val buffer = frame.buffer
+                    // val ratio = buffer.width / streamSettings!!.width
+                    // SoraLogger.d(TAG, "encode: Scaling needed, " +
+                    //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                    //         "ratio=$ratio")
+                    // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
+                    val adaptedBuffer = buffer.cropAndScale(0, 0, buffer.width, buffer.height,
+                            streamSettings!!.width, streamSettings!!.height)
+                    val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
+                    val result = encoder.encode(adaptedFrame, encodeInfo)
+                    adaptedBuffer.release()
+                    return@Callable result
+                }
+            })
+            return future.get()
         }
 
         override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
-            return encoder.setRateAllocation(allocation, frameRate)
+            val future = executor.submit(Callable { return@Callable encoder.setRateAllocation(allocation, frameRate) })
+            return future.get()
         }
 
         override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-            return encoder.scalingSettings
+            val future = executor.submit(Callable { return@Callable encoder.scalingSettings })
+            return future.get()
         }
 
         override fun getImplementationName(): String {
-            return encoder.implementationName
+            val future = executor.submit(Callable { return@Callable encoder.implementationName })
+            return future.get()
         }
     }
 
