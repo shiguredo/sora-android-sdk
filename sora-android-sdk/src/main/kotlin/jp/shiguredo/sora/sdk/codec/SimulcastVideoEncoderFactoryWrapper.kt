@@ -2,7 +2,6 @@ package jp.shiguredo.sora.sdk.codec
 
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
-import java.util.*
 import java.util.concurrent.*
 
 internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?,
@@ -92,9 +91,9 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
                 // SoraLogger.d(TAG, "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} "
                 //         + "[${Thread.currentThread().id}]")
                 if (streamSettings == null) {
-                    return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
+                    return@Callable encoder.encode(frame, encodeInfo)
                 } else if (frame.buffer.width == streamSettings!!.width) {
-                    return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
+                    return@Callable encoder.encode(frame, encodeInfo)
                 } else {
                     // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
                     val originalBuffer = frame.buffer
