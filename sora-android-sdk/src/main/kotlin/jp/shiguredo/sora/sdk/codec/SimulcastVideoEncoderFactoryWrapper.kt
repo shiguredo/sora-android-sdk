@@ -49,11 +49,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
 
     }
 
-    private class EncoderWrapper(private val encoder: VideoEncoder) : VideoEncoder {
+    // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
+    // - スレッドをひとつ起動する
+    // - initEncode の width/height と frame buffer のそれが一致しない場合は事前にスケールする
+    // - 内部のエンコーダをつねにそのスレッド上で呼び出す
+    private class StreamEncoderWrapper(private val encoder: VideoEncoder) : VideoEncoder {
         companion object {
-            val TAG = EncoderWrapper::class.simpleName
+            val TAG = StreamEncoderWrapper::class.simpleName
         }
 
+        // 単一スレッドで実行するための ExecutorService
+        // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
         var streamSettings: VideoEncoder.Settings? = null
 
@@ -83,19 +89,21 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
 
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
             val future = executor.submit(Callable {
-                // SoraLogger.d(TAG, "encode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]")
+                // SoraLogger.d(TAG, "encode() buffer=${frame.buffe}, thread=${Thread.currentThread().name} "
+                //         + "[${Thread.currentThread().id}]")
                 if (streamSettings == null) {
                     return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
                 } else if (frame.buffer.width == streamSettings!!.width) {
                     return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
                 } else {
-                    val buffer = frame.buffer
-                    // val ratio = buffer.width / streamSettings!!.width
+                    // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
+                    val originalBuffer = frame.buffer
+                    // val ratio = originalBuffer.width / streamSettings!!.width
                     // SoraLogger.d(TAG, "encode: Scaling needed, " +
                     //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
                     //         "ratio=$ratio")
                     // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
-                    val adaptedBuffer = buffer.cropAndScale(0, 0, buffer.width, buffer.height,
+                    val adaptedBuffer = originalBuffer.cropAndScale(0, 0, originalBuffer.width, originalBuffer.height,
                             streamSettings!!.width, streamSettings!!.height)
                     val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
                     val result = encoder.encode(adaptedFrame, encodeInfo)
@@ -122,13 +130,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
         }
     }
 
-    private class FactoryWrapper(private val factory: VideoEncoderFactory) : VideoEncoderFactory {
+    private class StreamEncoderWrapperFactory(private val factory: VideoEncoderFactory) : VideoEncoderFactory {
         override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
             val encoder = factory.createEncoder(videoCodecInfo)
             if (encoder == null) {
                 return null
             }
-            return EncoderWrapper(encoder)
+            return StreamEncoderWrapper(encoder)
         }
 
         override fun getSupportedCodecs(): Array<VideoCodecInfo> {
@@ -136,14 +144,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
         }
     }
 
+
     private val primary: VideoEncoderFactory
     private val fallback: VideoEncoderFactory
     private val native: SimulcastVideoEncoderFactory
 
     init {
-        primary = HardwareVideoEncoderFactory(sharedContext, enableIntelVp8Encoder, enableH264HighProfile)
-        fallback = Fallback(primary)
-        native = SimulcastVideoEncoderFactory(FactoryWrapper(primary), FactoryWrapper(fallback))
+        val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
+                sharedContext, enableIntelVp8Encoder, enableH264HighProfile)
+        primary = StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
+        fallback = StreamEncoderWrapperFactory(Fallback(primary))
+        native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 
     override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? {
