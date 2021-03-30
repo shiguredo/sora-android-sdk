@@ -89,7 +89,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
 
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
             val future = executor.submit(Callable {
-                // SoraLogger.d(TAG, "encode() buffer=${frame.buffe}, thread=${Thread.currentThread().name} "
+                // SoraLogger.d(TAG, "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} "
                 //         + "[${Thread.currentThread().id}]")
                 if (streamSettings == null) {
                     return@Callable encoder.encode(frame, encodeInfo) as VideoCodecStatus
