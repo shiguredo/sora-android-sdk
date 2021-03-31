@@ -56,16 +56,20 @@ class SoraMediaChannel @JvmOverloads constructor(
         private var listener:                Listener?,
         private val clientId:                String?              = null,
         private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()) {
-
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
+) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
     }
 
+    /**
+     * ロール
+     */
     val role = mediaOption.requiredRole
-    var getStatsTimer: Timer? = null
+
+    private var getStatsTimer: Timer? = null
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -233,6 +237,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private var closing = false
 
+    /**
+     * コネクション ID
+     */
     var connectionId: String? = null
     private set
 
@@ -270,8 +277,11 @@ class SoraMediaChannel @JvmOverloads constructor(
             when (notification.eventType) {
                 "connection.created", "connection.destroyed" -> {
                     val attendees = ChannelAttendeesCount(
-                            numberOfDownstreams = notification.numberOfDownstreamConnections!!,
-                            numberOfUpstreams = notification.numberOfUpstreamConnections!!
+                            numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
+                            numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
+                            numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
+                            numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
+                            numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
                     )
                     listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
                 }
@@ -285,8 +295,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onError(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason")
             listener?.onError(this@SoraMediaChannel, reason)
         }
+
+        override fun getStats(handler: (RTCStatsReport?) -> Unit) {
+            if (peer != null) {
+                peer!!.getStats(handler)
+            } else {
+                handler(null)
+            }
+        }
+
     }
 
     private val peerListener = object : PeerChannel.Listener {
@@ -319,14 +339,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onAddLocalStream(this@SoraMediaChannel, ms)
         }
 
-        override fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onAddReceiver")
-        }
-
-        override fun onRemoveReceiver(id: String) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveReceiver=${id}")
-        }
-
         override fun onConnect() {
             SoraLogger.d(TAG, "[channel:$role] @peer:onConnect")
             stopTimer()
@@ -339,18 +351,22 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onError(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason")
             listener?.onError(this@SoraMediaChannel, reason)
         }
 
         override fun onError(reason: SoraErrorReason, message: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason:$message")
             listener?.onError(this@SoraMediaChannel, reason, message)
         }
 
         override fun onWarning(reason: SoraErrorReason) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onWarning:$reason")
             listener?.onWarning(this@SoraMediaChannel, reason)
         }
 
         override fun onWarning(reason: SoraErrorReason, message: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onWarning:$reason:$message")
             listener?.onWarning(this@SoraMediaChannel, reason, message)
         }
 
@@ -380,6 +396,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         SoraLogger.d(TAG, """connect: SoraMediaOption
+            |requiredRole            = ${mediaOption.requiredRole}
             |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
             |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
             |multistreamEnabled      = ${mediaOption.multistreamEnabled}
@@ -393,12 +410,18 @@ class SoraMediaChannel @JvmOverloads constructor(
             |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
             |videoIsRequired         = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
+            |videoUpstreamContext    = ${mediaOption.videoUpstreamContext}
             |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
+            |videoDownstreamContext  = ${mediaOption.videoDownstreamContext}
+            |videoEncoderFactory     = ${mediaOption.videoEncoderFactory}
+            |videoDecoderFactory     = ${mediaOption.videoDecoderFactory}
             |videoCodec              = ${mediaOption.videoCodec}
             |videoBitRate            = ${mediaOption.videoBitrate}
-            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
             |videoCapturer           = ${mediaOption.videoCapturer}
-            |spotlight               = ${mediaOption.spotlight}
+            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
+            |simulcastRid            = ${mediaOption.simulcastRid}
+            |spotlightEnabled        = ${mediaOption.spotlightEnabled}
+            |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin())

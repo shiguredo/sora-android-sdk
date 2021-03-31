@@ -24,13 +24,12 @@ interface PeerChannel {
     fun disconnect()
 
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
+    fun getStats(handler: (RTCStatsReport?) -> Unit)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
         fun onAddRemoteStream(ms: MediaStream)
         fun onAddLocalStream(ms: MediaStream)
-        fun onAddReceiver(receiver: RtpReceiver, ms: Array<out MediaStream>)
-        fun onRemoveReceiver(id: String)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
@@ -88,6 +87,12 @@ class PeerChannelImpl(
 
     private var closing = false
 
+    // offer 時に受け取った encodings を保持しておく
+    // sender に encodings をセット後、
+    // setRemoteDescription() を実行すると encodings が変更前に戻ってしまう
+    // そのため re-offer, update 時に再度 encodings をセットする
+    private var offerEncodings: List<Encoding>? = null
+
     private val connectionObserver = object : PeerConnection.Observer {
 
         override fun onSignalingChange(state: PeerConnection.SignalingState?) {
@@ -114,12 +119,10 @@ class PeerChannelImpl(
 
         override fun onAddTrack(receiver: RtpReceiver?, ms: Array<out MediaStream>?) {
             SoraLogger.d(TAG, "[rtc] @onAddTrack")
-            receiver?.let { listener?.onAddReceiver(receiver, ms!!) }
         }
 
         override fun onRemoveTrack(receiver: RtpReceiver?) {
             SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
-            receiver?.let { listener?.onRemoveReceiver(receiver.id()) }
         }
 
         override  fun onTrack(transceiver: RtpTransceiver) {
@@ -136,7 +139,7 @@ class PeerChannelImpl(
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
-            SoraLogger.d(TAG, "[rtc] @onIceConnectionChange")
+            SoraLogger.d(TAG, "[rtc] @onIceConnectionChange:$state")
             state?.let {
                SoraLogger.d(TAG, "[rtc] @ice:${it.name}")
                when (it) {
@@ -166,11 +169,21 @@ class PeerChannelImpl(
         }
 
         override fun onIceConnectionReceivingChange(received: Boolean) {
-            SoraLogger.d(TAG, "[rtc] @onIceConnectionReceivingChange")
+            SoraLogger.d(TAG, "[rtc] @onIceConnectionReceivingChange:$received")
         }
 
         override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
-            SoraLogger.d(TAG, "[rtc] @onIceGatheringChange")
+            SoraLogger.d(TAG, "[rtc] @onIceGatheringChange:$state")
+        }
+
+        override fun onStandardizedIceConnectionChange(newState: PeerConnection.IceConnectionState?) {
+            super.onStandardizedIceConnectionChange(newState)
+            SoraLogger.d(TAG, "[rtc] @onStandardizedIceConnectionChange:$newState")
+        }
+
+        override fun onConnectionChange(newState: PeerConnection.PeerConnectionState?) {
+            super.onConnectionChange(newState)
+            SoraLogger.d(TAG, "[rtc] @onConnectionChange:$newState")
         }
 
         override fun onRemoveStream(ms: MediaStream?) {
@@ -202,6 +215,10 @@ class PeerChannelImpl(
                 SessionDescription(SessionDescription.Type.OFFER, offer)
 
         return setRemoteDescription(offerSDP).flatMap {
+            // active: false が無効化されてしまう問題に対応
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                videoSender?.let { updateSenderOfferEncodings(it) }
+            }
             return@flatMap createAnswer()
         }.flatMap {
             answer ->
@@ -212,6 +229,7 @@ class PeerChannelImpl(
     override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
+        offerEncodings = encodings
 
         return setup().flatMap {
             SoraLogger.d(TAG, "setRemoteDescription")
@@ -229,32 +247,8 @@ class PeerChannelImpl(
                 conn!!.addTrack(it, mediaStreamLabels)
             }
 
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled && encodings != null) {
-                SoraLogger.d(TAG, "Modify sender.parameters")
-
-                videoSender?.let { sender ->
-                    // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
-                    // 変換するのでここで参照を保持しておく。
-                    val parameters = sender.parameters
-                    parameters.encodings.zip(encodings).forEach { (senderEncoding, offerEncoding) ->
-                        offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
-                        offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
-                        offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
-                    }
-
-                    // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
-                    listener?.onSenderEncodings(parameters.encodings)
-                    parameters.encodings.forEach {
-                        with(it) {
-                            SoraLogger.d(TAG, "Sender encoding: sender=${sender.id()} rid=$rid, active=$active, " +
-                                    "scaleResolutionDownBy=$scaleResolutionDownBy, maxFramerate=$maxFramerate, " +
-                                    "maxBitrateBps=$maxBitrateBps, ssrc=$ssrc")
-                        }
-                    }
-
-                    // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
-                    sender.parameters = parameters
-                }
+            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                videoSender?.let { updateSenderOfferEncodings(it) }
             }
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
@@ -263,6 +257,40 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "setLocalDescription")
             return@flatMap setLocalDescription(answer)
         }
+    }
+
+    private fun updateSenderOfferEncodings(sender: RtpSender) {
+        if (offerEncodings == null)
+            return
+
+        SoraLogger.d(TAG, "updateSenderOfferEncodings")
+        // RtpSender#getParameters はフィールド参照ではなく native から Java インスタンスに
+        // 変換するのでここで参照を保持しておく。
+        val parameters = sender.parameters
+        parameters.encodings.zip(offerEncodings!!).forEach { (senderEncoding, offerEncoding) ->
+            offerEncoding.active?.also { senderEncoding.active = it }
+            offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
+            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+            offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+        }
+
+        // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
+        listener?.onSenderEncodings(parameters.encodings)
+        parameters.encodings.forEach {
+            with(it) {
+                SoraLogger.d(TAG, "update sender encoding: " +
+                        "id=${sender.id()}, " +
+                        "rid=$rid, " +
+                        "active=$active, " +
+                        "scaleResolutionDownBy=$scaleResolutionDownBy, " +
+                        "maxFramerate=$maxFramerate, " +
+                        "maxBitrateBps=$maxBitrateBps, " +
+                        "ssrc=$ssrc")
+            }
+        }
+
+        // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
+        sender.parameters = parameters
     }
 
     override fun requestClientOfferSdp(): Single<Result<SessionDescription>> {
@@ -277,6 +305,7 @@ class PeerChannelImpl(
 
             val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
                     RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+
             conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
             conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
 
@@ -310,8 +339,10 @@ class PeerChannelImpl(
                 networkConfig.createConfiguration(),
                 connectionObserver)
 
-        SoraLogger.d(TAG, "local managers' initTrack")
+        SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+
+        SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
 
         SoraLogger.d(TAG, "setup local media stream")
@@ -320,6 +351,8 @@ class PeerChannelImpl(
 
         localAudioManager.attachTrackToStream(localStream!!)
         localVideoManager.attachTrackToStream(localStream!!)
+        SoraLogger.d(TAG, "attached video sender => $videoSender")
+
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
@@ -395,18 +428,18 @@ class PeerChannelImpl(
         }).subscribeOn(Schedulers.from(executor))
 
     private fun closeInternal() {
-        SoraLogger.d(TAG, "closeInternal")
         if (closing)
             return
+        SoraLogger.d(TAG, "disconnect")
         closing = true
         listener?.onDisconnect()
         listener = null
-        SoraLogger.d(TAG, "conn.dispose")
+        SoraLogger.d(TAG, "dispose peer connection")
         conn?.dispose()
         conn = null
         localAudioManager.dispose()
         localVideoManager.dispose()
-        SoraLogger.d(TAG, "factory.dispose")
+        SoraLogger.d(TAG, "dispose peer connection factory")
         factory?.dispose()
         factory = null
 
@@ -419,4 +452,13 @@ class PeerChannelImpl(
     override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
         conn?.getStats(statsCollectorCallback)
     }
+
+    override fun getStats(handler: (RTCStatsReport?) -> Unit) {
+        if (conn != null) {
+            conn!!.getStats(handler)
+        } else {
+            handler(null)
+        }
+    }
+
 }

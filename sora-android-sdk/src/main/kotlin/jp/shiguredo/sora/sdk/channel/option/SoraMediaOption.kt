@@ -1,5 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import jp.shiguredo.sora.sdk.Sora
+import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 import org.webrtc.*
 
 /**
@@ -16,28 +18,12 @@ class SoraMediaOption {
     internal var videoDownstreamEnabled = false
     internal var videoUpstreamEnabled   = false
     internal var multistreamEnabled     = false
+    internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled       = false
+    internal var simulcastRid: SimulcastRid? = null
 
-    var spotlight : Int        = 0
-
-    /**
-     * スポットライト機能のアクティブな配信数を指定します
-     *
-     * cf.
-     * - Sora ドキュメントのスポットライト機能
-     *   [](https://sora.shiguredo.jp/doc/SPOTLIGHT.html)
-     */
-    set(value) {
-        if (0 < value) {
-            multistreamEnabled = true
-        }
-        field = value
-    }
-
-    /**
-     * スポットライトが有効か否かを返します
-     */
-    fun isSpotlight() = spotlight > 0
+    internal val spotlightEnabled: Boolean
+        get() = spotlightOption != null
 
     /**
      * 利用する VideoEncoderFactory を指定します
@@ -92,10 +78,29 @@ class SoraMediaOption {
     }
 
     /**
-     * サイマルキャストを有効にします
+     * サイマルキャスト機能を有効にします。
      */
-    fun enableSimulcast() {
+    fun enableSimulcast(rid: SimulcastRid? = null) {
         simulcastEnabled = true
+        simulcastRid = rid
+    }
+
+    /**
+     * スポットライト機能を有効にします。
+     *
+     * スポットライト機能はサイマルキャスト機能を利用します。
+     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります。
+     *
+     * サーバがスポットライトレガシー機能を利用している場合は、
+     * [Sora.usesSpotlightLegacy] に `true` をセットしてください。
+     */
+    fun enableSpotlight(option: SoraSpotlightOption) {
+        spotlightOption = option
+        multistreamEnabled = true
+
+        if (!Sora.usesSpotlightLegacy) {
+            enableSimulcast(option.simulcastRid)
+        }
     }
 
     /**
@@ -117,9 +122,15 @@ class SoraMediaOption {
         audioUpstreamEnabled = true
     }
 
+    /**
+     * 音声コーデック
+     */
     var audioCodec = SoraAudioOption.Codec.OPUS
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
+    /**
+     * 音声ビットレート
+     */
     var audioBitrate: Int? = null
 
     /**
@@ -149,13 +160,23 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
     get() = audioUpstreamEnabled || videoUpstreamEnabled
 
-    internal val multistreamIsRequired: Boolean
-    get() = if (downstreamIsRequired && upstreamIsRequired) {
-            // 双方向通信の場合は multistream フラグを立てる
-            true
-        } else {
-            multistreamEnabled
+    internal var _multistreamIsRequired: Boolean? = null
+
+    internal var multistreamIsRequired: Boolean
+        get() = when {
+            _multistreamIsRequired != null ->
+                _multistreamIsRequired!!
+            downstreamIsRequired && upstreamIsRequired ->
+                // 双方向通信の場合は multistream フラグを立てる
+                true
+            else ->
+                multistreamEnabled
         }
+        set(value) {
+            _multistreamIsRequired = value
+        }
+
+    internal var _requiredRole: SoraChannelRole? = null
 
     internal val requiredRole: SoraChannelRole
     get() = if (upstreamIsRequired && downstreamIsRequired)
@@ -179,5 +200,5 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED
-
 }
+

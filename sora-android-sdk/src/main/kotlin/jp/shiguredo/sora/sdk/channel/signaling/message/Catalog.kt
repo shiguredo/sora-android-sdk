@@ -9,8 +9,14 @@ data class MessageCommonPart(
         @SerializedName("type") val type: String?
 )
 
+data class PingMessage(
+        @SerializedName("type") val type: String = "ping",
+        @SerializedName("stats") val stats: Boolean?
+)
+
 data class PongMessage(
-        @SerializedName("type") val type: String = "pong"
+        @SerializedName("type") val type: String = "pong",
+        @SerializedName("stats") val stats: Any? = null
 )
 
 data class ConnectMessage(
@@ -22,8 +28,10 @@ data class ConnectMessage(
         @SerializedName("signaling_notify_metadata")
                                        val signalingNotifyMetadata: Any? = null,
         @SerializedName("multistream") val multistream:             Boolean = false,
-        @SerializedName("spotlight")   var spotlight:               Int? = null,
-        @SerializedName("simulcast")   var simulcast:               Any? = null,
+        @SerializedName("spotlight")   var spotlight:               Any? = null,
+        @SerializedName("spotlight_number") var spotlightNumber: Int? = null,
+        @SerializedName("simulcast")   var simulcast:               Boolean? = false,
+        @SerializedName("simulcast_rid") var simulcastRid: SimulcastRid? = null,
         @SerializedName("video")       var video:                   Any? = null,
         @SerializedName("audio")       var audio:                   Any? = null,
         @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
@@ -55,6 +63,29 @@ data class OpusParams(
         @SerializedName("usedtx")          var usedtx:          Boolean? = null
 )
 
+/**
+ * サイマルキャストの rid
+ */
+enum class SimulcastRid(val value: String) {
+
+    /**
+     * r0
+     */
+    R0("r0"),
+
+    /**
+     * r1
+     */
+    R1("r1"),
+
+    /**
+     * r2
+     */
+    R2("r2");
+
+    override fun toString(): String = value
+}
+
 data class IceServer(
         @SerializedName("urls")       val urls:       List<String>,
         @SerializedName("credential") val credential: String,
@@ -68,6 +99,7 @@ data class OfferConfig(
 
 data class Encoding(
         @SerializedName("rid")                   val rid:                   String?,
+        @SerializedName("active")                val active:                Boolean?,
         @SerializedName("maxBitrate")            val maxBitrate:            Int?,
         @SerializedName("maxFramerate")          val maxFramerate:          Int?,
         @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
@@ -122,13 +154,23 @@ data class NotificationMessage(
         @SerializedName("audio")                          val audio:                         Boolean?,
         @SerializedName("video")                          val video:                         Boolean?,
         @SerializedName("metadata")                       val metadata:                      Any?,
+        @Deprecated("metadata_list は将来の Sora のリリースでフィールド名を data に変更する予定です。")
         @SerializedName("metadata_list")                  val metadataList:                  Any?,
         @SerializedName("minutes")                        val connectionTime:                Long?,
         @SerializedName("channel_connections")            val numberOfConnections:           Int?,
+        @Deprecated("numberOfUpstreamConnections は 2021 年 6 月リリース予定の Sora にて廃止されます。")
         @SerializedName("channel_upstream_connections")   val numberOfUpstreamConnections:   Int?,
+        @Deprecated("numberOfDownstreamConnections は 2021 年 6 月リリース予定の Sora にて廃止されます。")
         @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
+        @SerializedName("channel_sendrecv_connections")   val numberOfSendrecvConnections:   Int?,
+        @SerializedName("channel_sendonly_connections")   val numberOfSendonlyConnections:   Int?,
+        @SerializedName("channel_recvonly_connections")   val numberOfRecvonlyConnections:   Int?,
         @SerializedName("unstable_level")                 val unstableLevel:                 Int?,
         @SerializedName("channel_id")                     val channelId:                     String?,
         @SerializedName("spotlight_id")                   val spotlightId:                   String?,
-        @SerializedName("fixed")                          val fixed:                         Boolean?
-)
+        @SerializedName("fixed")                          val fixed:                         Boolean?,
+        @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
+        @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
+        @SerializedName("data")                           val data:                          Any?,
+) {
+}

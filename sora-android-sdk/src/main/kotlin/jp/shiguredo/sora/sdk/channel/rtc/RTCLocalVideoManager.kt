@@ -42,6 +42,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
         val trackId = UUID.randomUUID().toString()
         track = factory.createVideoTrack(trackId, source)
         track!!.setEnabled(true)
+        SoraLogger.d(TAG, "created track => $trackId, $track")
     }
 
     override fun attachTrackToStream(stream: MediaStream) {
@@ -59,4 +60,3 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
         source?.dispose()
     }
 }
-

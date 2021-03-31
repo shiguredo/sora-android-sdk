@@ -1,82 +1,135 @@
 # 変更履歴
 
+- CHANGE
+    - 下位互換のない変更
 - UPDATE
     - 下位互換がある変更
 - ADD
     - 下位互換がある追加
-- CHANGE
-    - 下位互換のない変更
 - FIX
     - バグ修正
 
+## 2021.1
+
+- [CHANGE] SoraAudioOption.Codec から PCMU を外す
+    - @enm10k
+- [UPDATE] libwebrtc を 89.4389.7.0 に上げる
+    - @enm10k
+- [UPDATE] Kotlin を 1.4.31 に上げる
+    - @szktty
+- [UPDATE] Gradle を 6.8.3 に上げる
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+    - `com.android.tools.build:gradle` を 4.1.2 に上げる
+    - `com.squareup.okhttp3:okhttp` を 4.8.1 に上げる
+    - `io.reactivex.rxjava2:rxjava` を 2.2.19 に上げる
+    - `io.reactivex.rxjava2:rxkotlin` を 2.4.0 に上げる
+    - `com.github.ben-manes:gradle-versions-plugin` を 0.38.0 に上げる
+    - `org.ajoberstar.grgit:grgit-gradle` を 4.1.0 に上げる
+    - `com.squareup.okhttp3:okhttp` を 4.9.1 に上げる
+    - `io.reactivex.rxjava2:rxjava` を 2.2.21 に上げる
+    - @szktty @enm10k
+- [UPDATE] シグナリング pong に統計情報を含める
+    - @szktty
+- [UPDATE] Sora のサイマルキャスト機能に追従する
+    - @szktty
+- [UPDATE] Sora のスポットライト機能に追従する
+    - @szktty
+- [UPDATE] サイマルキャストで VP8 / H.264 (ハードウェアアクセラレーション含む) に対応する
+    - @szktty @enm10k
+- [UPDATE] `SoraMediaOption.enableSimulcast()` に引数を追加する
+    - @szktty
+- [UPDATE] `SoraMediaOption.enableSpotlight()` を追加する
+    - @szktty
+- [UPDATE] `SoraSpotlightOption` を追加する
+    - @szktty
+- [UPDATE] `SoraMediaChannel.connectionId` を追加する
+    - @szktty
+- [UPDATE] `NotificationMessage.data` を追加する
+    - @enm10k
+- [UPDATE] 廃止予定のプロパティに Deprecated アノテーションを追加する
+    - ChannelAttendeesCount.numberOfUpstreams
+    - ChannelAttendeesCount.numberOfDownstreams
+    - NotificationMessage.numberOfUpstreamConnections
+    - NotificationMessage.numberOfDownstreamConnections
+    - @enm10k
+- [UPDATE] 変更予定のプロパティに Deprecated アノテーションを追加する
+    - NotificationMessage.metadataList -> NotificationMessage.data に変更予定
+    - @enm10k
+- [FIX] スポットライトレガシーに対応する
+    - スポットライトレガシーを利用する際は `Sora.usesSpotlightLegacy = true` を設定する必要があります
+    - スポットライトレガシーは 2021 年 12 月に予定されている Sora のアップデートで廃止されます
+    - @szktty
+- [FIX] NotificationMessage に漏れていた以下のフィールドを追加する
+    - authn_metadata
+    - authz_metadata
+    - channel_sendrecv_connections
+    - channel_sendonly_connections
+    - channel_recvonly_connections
+    - @enm10k
+- [FIX] サイマルキャストのパラメーター active: false が無効化されてしまう問題を修正する
+    - @enm10k
+- [FIX] サイマルキャストで TextureBuffer のエンコードに対応する
+    - TextureBuffer と HardwareVideoEncoder の場合にはスケーリング処理が simulcast_encoder_adapter で
+      行われないため、initEncode の情報を元にスケーリングを処理するレイヤを追加
+    - 同じレイヤでストリームごとにスレッドを起こし、そのスレッド上で内部エンコーダに移譲するように変更
+    - @shino
+
 ## 2020.3
 
-### CHANGE
-
-- libwebrtc を 83.4103.12.2 に上げる
-  - @szktty
-- `com.android.tools.build:gradle` を 4.0.0 に上げる
-  - @szktty
-- `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
-  - @szktty
-- 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
-  - @szktty
-- 古いロール (`upstream`, `downstream`) を削除する
-  - @szktty
-- `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
-  - @szktty
+- [UPDATE] libwebrtc を 83.4103.12.2 に上げる
+    - @szktty
+- [UPDATE] `com.android.tools.build:gradle` を 4.0.0 に上げる
+    - @szktty
+- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
+    - @szktty
+- [ADD] 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
+    - @szktty
+- [CHANGE] 古いロール (`upstream`, `downstream`) を削除する
+    - @szktty
+- [CHANGE] `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
+    - @szktty
 
 ## 2020.2
 
-### CHANGE
-
-- `compileSdkVersion` を 29 に上げる
-  - @szktty
-- `targetSdkVersion` を 29 に上げる
-  - @szktty
-- Kotlin を 1.3.72 に上げる
-  - @szktty
-- Dokka を 0.10.1 に上げる
-  - @szktty
-- libwebrtc を 79.5.1 に上げる
-  - @szktty
-- `com.android.tools.build:gradle` を 3.6.3 に上げる
-  - @szktty
-- `com.squareup.okhttp3:okhttp` を 4.6.0 に上げる
-  - @szktty
-- `junit:junit` を `4.13` に上げる
-  - @szktty
-- Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
-  - @szktty
-- シグナリング connect に含めるクライアント情報を変更する
-  - @szktty
+- [CHANGE] `compileSdkVersion` を 29 に上げる
+    - @szktty
+- [CHANGE] `targetSdkVersion` を 29 に上げる
+    - @szktty
+- [CHANGE] シグナリング connect に含めるクライアント情報を変更する
+    - @szktty
+- [UPDATE] Kotlin を 1.3.72 に上げる
+    - @szktty
+- [UPDATE] Dokka を 0.10.1 に上げる
+    - @szktty
+- [UPDATE] libwebrtc を 79.5.1 に上げる
+    - @szktty
+- [UPDATE] `com.android.tools.build:gradle` を 3.6.3 に上げる
+    - @szktty
+- [UPDATE] `com.squareup.okhttp3:okhttp` を 4.6.0 に上げる
+    - @szktty
+- [UPDATE] `junit:junit` を `4.13` に上げる
+    - @szktty
+- [ADD] Offer SDP 生成失敗時、エラーメッセージをシグナリング connect の `sdp_error` に含めて送信する
+    - @szktty
 
 ## 2020.1
 
-### ADD
-
-- `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加する
-  - @shino
-- サイマルキャスト配信のエンコーダ設定変更用コールバックを追加する
-  - `SoraMediaChannel.Listener#onSenderEncodings()`
-  - @shino
-- 定数 `SoraErrorReason.ICE_DISCONNECTED` を追加する
-  - @shino
-- `SoraMediaChannel.Listener` に `onWarning` メソッドを追加する
-  - このバージョンでは `ICE_DISCONNECTED` の通知のみに利用している
-  - 想定ユースケースは、ネットワークが不安定であることを UI に伝えること
-  - デフォルト実装は処理なしである
-  - @shino
-
-### UPDATE
-
-- `com.android.tools.build:gradle` を 3.5.3 に上げる
-  - @shino
-
-### FIX
-
-- IceConnectionState = disconnected では切断処理を行わないよう変更する
-  - @shino
+- [ADD] `CameraCapturerFactory` にフロント/リアカメラの優先順位のオプションを追加する
+    - @shino
+- [ADD] サイマルキャスト配信のエンコーダ設定変更用コールバックを追加する
+    - `SoraMediaChannel.Listener#onSenderEncodings()`
+    - @shino
+- [ADD] 定数 `SoraErrorReason.ICE_DISCONNECTED` を追加する
+    - @shino
+- [ADD] `SoraMediaChannel.Listener` に `onWarning` メソッドを追加する
+    - このバージョンでは `ICE_DISCONNECTED` の通知のみに利用している
+    - 想定ユースケースは、ネットワークが不安定であることを UI に伝えること
+    - デフォルト実装は処理なしである
+    - @shino
+- [UPDATE] `com.android.tools.build:gradle` を 3.5.3 に上げる
+    - @shino
+- [FIX] IceConnectionState = disconnected では切断処理を行わないよう変更する
+    - @shino
 
 ## 1.10.0
 
@@ -129,7 +182,6 @@
 
 - 視聴のみかつ H.264 を指定した場合に接続できない現象を修正する
   - @szktty
-
 
 ## 1.9.0
 
@@ -554,5 +606,5 @@
 
 ## 1.0.0
 
-最初のリリース
+- 最初のリリース
   - @shino

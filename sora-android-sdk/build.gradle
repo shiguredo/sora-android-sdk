@@ -2,19 +2,18 @@ apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'org.jetbrains.dokka'
 
 group = 'com.github.shiguredo'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 29
-        versionName "${grgit.describe().split("-").first()}"
+        targetSdkVersion 30
 
+        buildConfigField("String", "VERSION_NAME", "\"${grgit.describe()}\"")
         buildConfigField("String", "REVISION", "\"${grgit.head().abbreviatedId}\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libwebrtc_version}\"")
     }
@@ -41,18 +40,29 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
 dokka {
     outputFormat = 'javadoc'
+    outputDirectory = "$buildDir/dokka"
 
-    configuration {
-        moduleName = 'sora'
+    sourceSets {
+        configureEach {
+            moduleName = 'sora'
+            reportUndocumented true
+            includes = ['packages.md']
+            cacheRoot = "default"
+            disableAutoconfiguration = false
 
-        sourceLink {
-            path = "sora-android-sdk/src/main/kotlin"
-            url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
-            lineSuffix = "#L"
+            sourceLink {
+                path = "sora-android-sdk/src/main/kotlin"
+                url = "https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"
+                lineSuffix = "#L"
+            }
         }
     }
 }
@@ -65,16 +75,16 @@ dependencies {
 
     // required by "signaling" part
     implementation 'com.google.code.gson:gson:2.8.6'
-    implementation 'com.squareup.okhttp3:okhttp:4.7.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.1'
 
     // required by "rtc" part
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.10'
-    implementation 'io.reactivex.rxjava2:rxkotlin:2.3.0'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.21'
+    implementation 'io.reactivex.rxjava2:rxkotlin:2.4.0'
 
-    testImplementation 'junit:junit:4.13'
-    testImplementation 'androidx.test:core:1.2.0'
-    testImplementation('org.robolectric:robolectric:4.3.1') {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'androidx.test:core:1.3.0'
+    testImplementation('org.robolectric:robolectric:4.5.1') {
         exclude group: 'com.google.auto.service', module: 'auto-service'
     }
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
