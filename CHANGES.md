@@ -68,6 +68,11 @@
     - @enm10k
 - [FIX] サイマルキャストのパラメーター active: false が無効化されてしまう問題を修正する
     - @enm10k
+- [FIX] サイマルキャストで TextureBuffer のエンコードに対応する
+    - TextureBuffer と HardwareVideoEncoder の場合にはスケーリング処理が simulcast_encoder_adapter で
+      行われないため、initEncode の情報を元にスケーリングを処理するレイヤを追加
+    - 同じレイヤでストリームごとにスレッドを起こし、そのスレッド上で内部エンコーダに移譲するように変更
+    - @shino
 
 ## 2020.3
 
