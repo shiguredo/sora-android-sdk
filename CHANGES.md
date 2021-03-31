@@ -9,7 +9,7 @@
 - FIX
     - バグ修正
 
-## develop
+## 2021.1
 
 - [CHANGE] SoraAudioOption.Codec から PCMU を外す
     - @enm10k
