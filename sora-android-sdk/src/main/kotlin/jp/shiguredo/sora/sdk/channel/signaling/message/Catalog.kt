@@ -38,7 +38,11 @@ data class ConnectMessage(
         @SerializedName("libwebrtc")   val libwebrtc:               String = SDKInfo.libwebrtcInfo(),
         @SerializedName("environment") val environment:             String = SDKInfo.deviceInfo(),
         @SerializedName("sdp")         val sdp:                     String? = null,
-        @SerializedName("sdp_error")   val sdp_error:               String? = null
+        @SerializedName("sdp_error")   val sdp_error:               String? = null,
+        @SerializedName("data_channel_signaling")
+                                       val dataChannelSignaling:    Boolean? = null,
+        @SerializedName("ignore_disconnect_websocket")
+                                       val ignoreDisconnectWebsocket: Boolean? = null
 )
 
 data class VideoSetting(
@@ -112,7 +116,11 @@ data class OfferMessage(
         @SerializedName("connection_id") val connectionId: String?,
         @SerializedName("metadata")      val metadata:     Any?,
         @SerializedName("config")        val config:       OfferConfig? = null,
-        @SerializedName("encodings")     val encodings:    List<Encoding>?
+        @SerializedName("encodings")     val encodings:    List<Encoding>?,
+        @SerializedName("data_channel_signaling")
+                                         val dataChannelSignaling:    Boolean? = null,
+        @SerializedName("ignore_disconnect_websocket")
+                                         val ignoreDisconnectWebsocket: Boolean? = null
 )
 
 data class UpdateMessage(

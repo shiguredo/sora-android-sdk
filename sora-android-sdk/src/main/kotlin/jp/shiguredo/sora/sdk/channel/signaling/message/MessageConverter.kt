@@ -28,6 +28,8 @@ class MessageConverter {
             val msg = ConnectMessage(
                     role = role.signaling,
                     channelId = channelId,
+                    dataChannelSignaling = mediaOption.dataChannelSignaling,
+                    ignoreDisconnectWebsocket = mediaOption.ignoreDisconnectWebSocket,
                     metadata = metadata,
                     multistream = mediaOption.multistreamIsRequired,
                     spotlight = mediaOption.spotlightOption?.let {

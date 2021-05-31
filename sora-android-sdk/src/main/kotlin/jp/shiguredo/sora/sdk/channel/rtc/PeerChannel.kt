@@ -134,8 +134,8 @@ class PeerChannelImpl(
             // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
         }
 
-        override fun onDataChannel(channel: DataChannel?) {
-            SoraLogger.d(TAG, "[rtc] @onDataChannel")
+        override fun onDataChannel(dataChannel: DataChannel) {
+            SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}")
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
