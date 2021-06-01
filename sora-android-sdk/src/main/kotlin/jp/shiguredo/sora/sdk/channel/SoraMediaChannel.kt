@@ -288,19 +288,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onNotificationMessage(notification: NotificationMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onNotificationMessage")
-            when (notification.eventType) {
-                "connection.created", "connection.destroyed" -> {
-                    val attendees = ChannelAttendeesCount(
-                            numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
-                            numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
-                            numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
-                            numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
-                            numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
-                    )
-                    listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
-                }
-            }
-            listener?.onNotificationMessage(this@SoraMediaChannel, notification)
+            handleNotificationMessage(notification)
         }
 
         override fun onPushMessage(push: PushMessage) {
@@ -382,13 +370,29 @@ class SoraMediaChannel @JvmOverloads constructor(
                     }
                 }
                 "notify" -> {
-                    // TODO: 実装
+                    MessageConverter.parseType(messageData)?.let {
+                        when (it) {
+                            "notify" -> {
+                                val notificationMessage = MessageConverter.parseNotificationMessage(messageData)
+                                handleNotificationMessage(notificationMessage)
+                            }
+                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
+                        }
+                    }
                 }
                 "push" -> {
-                    // TODO: 実装
+                    MessageConverter.parseType(messageData)?.let {
+                        when (it) {
+                            "push" -> {
+                                val pushMessage = MessageConverter.parsePushMessage(messageData)
+                                listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+                            }
+                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
+                        }
+                    }
                 }
                 "e2ee" -> {
-                    // TODO: 実装
+                    // TODO: 未実装
                 }
                 "stats" -> {
                     MessageConverter.parseType(messageData)?.let {
@@ -697,6 +701,22 @@ class SoraMediaChannel @JvmOverloads constructor(
                 peer?.sendStats(dataChannel, reports.statsMap)
             }
         }
+    }
+
+    private fun handleNotificationMessage(notification: NotificationMessage) {
+        when (notification.eventType) {
+            "connection.created", "connection.destroyed" -> {
+                val attendees = ChannelAttendeesCount(
+                        numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
+                        numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
+                        numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
+                        numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
+                        numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
+                )
+                listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
+            }
+        }
+        listener?.onNotificationMessage(this@SoraMediaChannel, notification)
     }
 
     /**
