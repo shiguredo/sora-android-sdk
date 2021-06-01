@@ -123,6 +123,10 @@ data class OfferMessage(
                                          val ignoreDisconnectWebsocket: Boolean? = null
 )
 
+data class SwitchMessage(
+        @SerializedName("type")  val type: String = "switch",
+)
+
 data class UpdateMessage(
         @SerializedName("type") val type: String = "update",
         @SerializedName("sdp")  val sdp:  String

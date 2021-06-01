@@ -192,7 +192,7 @@ class SoraMediaOption {
     var dataChannelSignaling: Boolean? = null
 
     /**
-     * シグナリング connect で送信する ignore_disconnect_websocket の値を指定します。
+     * シグナリング connect で送信する data_channel_signaling の値を指定します。
      */
     var ignoreDisconnectWebSocket: Boolean? = null
 

@@ -24,6 +24,7 @@ interface SignalingChannel {
         fun onConnect()
         fun onDisconnect()
         fun onInitialOffer(offerMessage: OfferMessage)
+        fun onSwitch(switchMessage: SwitchMessage)
         fun onUpdatedOffer(sdp: String)
         fun onReOffer(sdp: String)
         fun onError(reason: SoraErrorReason)
@@ -171,6 +172,13 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onInitialOffer(offerMessage)
     }
 
+    private fun onSwitchMessage(text: String) {
+        val switchMessage = MessageConverter.parseSwitchMessage(text)
+        SoraLogger.d(TAG, "[signaling:$role] <- switch ${switchMessage}")
+
+        listener?.onSwitch(switchMessage)
+    }
+
     private fun onUpdateMessage(text: String) {
         val update = MessageConverter.parseUpdateMessage(text)
         // TODO message validation
@@ -275,6 +283,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     MessageConverter.parseType(json)?.let {
                         when (it) {
                             "offer"    -> onOfferMessage(json)
+                            "switch"   -> onSwitchMessage(json)
                             "ping"     -> onPingMessage(json)
                             "update"   -> onUpdateMessage(json)
                             "re-offer" -> onReOfferMessage(json)

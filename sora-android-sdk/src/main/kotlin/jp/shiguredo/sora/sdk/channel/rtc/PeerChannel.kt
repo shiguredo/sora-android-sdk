@@ -85,6 +85,8 @@ class PeerChannelImpl(
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
 
+    private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
+
     private var closing = false
 
     // offer 時に受け取った encodings を保持しておく
@@ -135,7 +137,30 @@ class PeerChannelImpl(
         }
 
         override fun onDataChannel(dataChannel: DataChannel) {
-            SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}")
+            SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}"
+                    + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}")
+
+            dataChannels[dataChannel.label()] = dataChannel
+            dataChannel.registerObserver(object : DataChannel.Observer {
+                override fun onBufferedAmountChange(previouAmount: Long) {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onBufferedAmountChange"
+                            + " label=${dataChannel.label()}, id=${dataChannel.id()}"
+                            + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()},"
+                            + " previousAmount=$previouAmount)")
+                }
+
+                override fun onStateChange() {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onStateChange"
+                            + " label=${dataChannel.label()}, id=${dataChannel.id()}, state=${dataChannel.state()}")
+                }
+
+                override fun onMessage(buffer: DataChannel.Buffer?) {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
+                            + " label=${dataChannel.label()}, state=${dataChannel.state()}")
+                    // TODO: 実装
+                }
+
+            })
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
