@@ -70,6 +70,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     val role = mediaOption.requiredRole
 
     private var getStatsTimer: Timer? = null
+    private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -361,6 +362,19 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @peer:onConnect")
             stopTimer()
             listener?.onConnect(this@SoraMediaChannel)
+        }
+
+        override fun onDataChannelOpen(label: String, dataChannel: DataChannel) {
+            dataChannels[label] = dataChannel
+        }
+
+        override fun onDataChannelMessage(label: String, buffer: DataChannel.Buffer) {
+            // TODO("Not yet implemented")
+        }
+
+        override fun onDataChannelClosed(label: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
+            disconnect()
         }
 
         override fun onSenderEncodings(encodings: List<RtpParameters.Encoding>) {

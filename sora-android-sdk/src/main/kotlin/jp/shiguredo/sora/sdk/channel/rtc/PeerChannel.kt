@@ -33,6 +33,9 @@ interface PeerChannel {
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
+        fun onDataChannelOpen(label: String, dataChannel: DataChannel)
+        fun onDataChannelMessage(label: String, buffer: DataChannel.Buffer)
+        fun onDataChannelClosed(label: String)
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
@@ -84,8 +87,6 @@ class PeerChannelImpl(
 
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
-
-    private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
 
     private var closing = false
 
@@ -140,27 +141,33 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}"
                     + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}")
 
-            dataChannels[dataChannel.label()] = dataChannel
             dataChannel.registerObserver(object : DataChannel.Observer {
+                val label = dataChannel.label()
+
                 override fun onBufferedAmountChange(previouAmount: Long) {
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onBufferedAmountChange"
-                            + " label=${dataChannel.label()}, id=${dataChannel.id()}"
+                            + " label=$label, id=${dataChannel.id()}"
                             + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()},"
                             + " previousAmount=$previouAmount)")
                 }
 
                 override fun onStateChange() {
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onStateChange"
-                            + " label=${dataChannel.label()}, id=${dataChannel.id()}, state=${dataChannel.state()}")
+                            + " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}")
+                    if (dataChannel.state() == DataChannel.State.CLOSED) {
+                        listener?.onDataChannelClosed(dataChannel.label())
+                    }
                 }
 
-                override fun onMessage(buffer: DataChannel.Buffer?) {
+                override fun onMessage(buffer: DataChannel.Buffer) {
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
-                            + " label=${dataChannel.label()}, state=${dataChannel.state()}")
-                    // TODO: 実装
+                            + " label=$label, state=${dataChannel.state()}")
+                    listener?.onDataChannelMessage(dataChannel.label(), buffer)
                 }
 
             })
+
+            listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
