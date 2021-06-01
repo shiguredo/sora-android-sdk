@@ -6,9 +6,12 @@ import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
+import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
+import java.nio.CharBuffer
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -25,6 +28,7 @@ interface PeerChannel {
 
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
+    fun sendReAnswer(dataChannel: DataChannel, description: String)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -34,8 +38,8 @@ interface PeerChannel {
         fun onConnect()
         fun onDisconnect()
         fun onDataChannelOpen(label: String, dataChannel: DataChannel)
-        fun onDataChannelMessage(label: String, buffer: DataChannel.Buffer)
-        fun onDataChannelClosed(label: String)
+        fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String)
+        fun onDataChannelClosed(label: String, dataChannel: DataChannel)
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
@@ -87,6 +91,10 @@ class PeerChannelImpl(
 
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
+
+    private val utf8Charset = StandardCharsets.UTF_8
+    private val utf8Encoder = utf8Charset.newEncoder()
+    private val utf8Decoder = utf8Charset.newDecoder()
 
     private var closing = false
 
@@ -155,14 +163,15 @@ class PeerChannelImpl(
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onStateChange"
                             + " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}")
                     if (dataChannel.state() == DataChannel.State.CLOSED) {
-                        listener?.onDataChannelClosed(dataChannel.label())
+                        listener?.onDataChannelClosed(dataChannel.label(), dataChannel)
                     }
                 }
 
                 override fun onMessage(buffer: DataChannel.Buffer) {
+                    val messageData = dataChannelBufferToString(buffer)
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
-                            + " label=$label, state=${dataChannel.state()}")
-                    listener?.onDataChannelMessage(dataChannel.label(), buffer)
+                            + " label=$label, state=${dataChannel.state()}, message=$messageData")
+                    listener?.onDataChannelMessage(dataChannel.label(), dataChannel, messageData)
                 }
 
             })
@@ -396,6 +405,21 @@ class PeerChannelImpl(
         executor.execute {
             closeInternal()
         }
+    }
+
+    override fun sendReAnswer(dataChannel: DataChannel, description: String) {
+        val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
+        dataChannel.send(stringToDataChannelBuffer(reAnswerMessage))
+    }
+
+    private fun stringToDataChannelBuffer(data: String) : DataChannel.Buffer {
+        val byteBuffer = utf8Encoder.encode(CharBuffer.wrap(data))
+        return DataChannel.Buffer(byteBuffer, false)
+    }
+
+    private fun dataChannelBufferToString(buffer: DataChannel.Buffer) : String {
+        val charBuffer = utf8Decoder.decode(buffer.data)
+        return charBuffer.toString()
     }
 
     private fun createAnswer(): Single<SessionDescription> =

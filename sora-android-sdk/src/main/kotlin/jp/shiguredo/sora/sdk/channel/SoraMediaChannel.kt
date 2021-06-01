@@ -368,11 +368,39 @@ class SoraMediaChannel @JvmOverloads constructor(
             dataChannels[label] = dataChannel
         }
 
-        override fun onDataChannelMessage(label: String, buffer: DataChannel.Buffer) {
+        override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
+            when(label) {
+                "signaling" -> {
+                    MessageConverter.parseType(messageData)?.let {
+                        when (it) {
+                            "re-offer" -> {
+                                val reOfferMessage = MessageConverter.parseReOfferMessage(messageData)
+                                handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+                            }
+                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
+                        }
+                    }
+                }
+                "notify" -> {
+                    // TODO: 実装
+                }
+                "push" -> {
+                    // TODO: 実装
+                }
+                "e2ee" -> {
+                    // TODO: 実装
+                }
+                "stats" -> {
+                    // TODO: 実装
+                }
+                else ->
+                    SoraLogger.d(TAG, "[channel:$role] Unknown dataChannel message: "
+                            + "label=$label, messageData=$messageData")
+            }
             // TODO("Not yet implemented")
         }
 
-        override fun onDataChannelClosed(label: String) {
+        override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
             disconnect()
         }
@@ -626,6 +654,25 @@ class SoraMediaChannel @JvmOverloads constructor(
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:about to send re-answer")
                                 signaling?.sendReAnswer(it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle re-offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleReOfferViaDataChannel(dataChannel: DataChannel, sdp: String) {
+        peer?.run {
+            val subscription = handleUpdatedRemoteOffer(sdp)
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send re-answer")
+                                peer?.sendReAnswer(dataChannel, it.description)
                             },
                             onError = {
                                 val msg = "[channel:$role] failed handle re-offer: ${it.message}"
