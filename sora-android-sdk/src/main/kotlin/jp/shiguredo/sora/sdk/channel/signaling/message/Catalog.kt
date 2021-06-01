@@ -157,6 +157,15 @@ data class PushMessage(
         @SerializedName("data") var data: Any?   = null
 )
 
+data class ReqStatsMessage(
+        @SerializedName("type") val type: String = "req-stats"
+)
+
+data class StatsMessage(
+        @SerializedName("type")    val type: String = "stats",
+        @SerializedName("reports") val reports: Any
+)
+
 data class NotificationMessage(
         @SerializedName("type")                           val type:                          String = "notify",
         @SerializedName("event_type")                     val eventType:                     String,

@@ -391,13 +391,20 @@ class SoraMediaChannel @JvmOverloads constructor(
                     // TODO: 実装
                 }
                 "stats" -> {
-                    // TODO: 実装
+                    MessageConverter.parseType(messageData)?.let {
+                        when (it) {
+                            "req-stats" -> {
+                                val reqStatsMessage = MessageConverter.parseReqStatsMessage(messageData)
+                                handleReqStats(dataChannel, reqStatsMessage)
+                            }
+                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
+                        }
+                    }
                 }
                 else ->
                     SoraLogger.d(TAG, "[channel:$role] Unknown dataChannel message: "
                             + "label=$label, messageData=$messageData")
             }
-            // TODO("Not yet implemented")
         }
 
         override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
@@ -681,6 +688,14 @@ class SoraMediaChannel @JvmOverloads constructor(
                             }
                     )
             compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleReqStats(dataChannel: DataChannel, reqStatsMessage: ReqStatsMessage) {
+        peer?.getStats {
+            it?.let { reports ->
+                peer?.sendStats(dataChannel, reports.statsMap)
+            }
         }
     }
 

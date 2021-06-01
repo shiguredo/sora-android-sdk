@@ -29,6 +29,7 @@ interface PeerChannel {
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
+    fun sendStats(dataChannel: DataChannel, report: Any)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -410,6 +411,11 @@ class PeerChannelImpl(
     override fun sendReAnswer(dataChannel: DataChannel, description: String) {
         val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
         dataChannel.send(stringToDataChannelBuffer(reAnswerMessage))
+    }
+
+    override fun sendStats(dataChannel: DataChannel, report: Any) {
+        val statsMessage = MessageConverter.buildStatsMessage(report)
+        dataChannel.send(stringToDataChannelBuffer(statsMessage))
     }
 
     private fun stringToDataChannelBuffer(data: String) : DataChannel.Buffer {

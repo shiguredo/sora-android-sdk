@@ -122,6 +122,10 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
+        fun buildStatsMessage(reports: Any): String {
+            return gson.toJson(StatsMessage(reports = reports))
+        }
+
         fun parseType(text: String): String? {
             val part = gson.fromJson(text, MessageCommonPart::class.java)
             return part.type
@@ -153,6 +157,10 @@ class MessageConverter {
 
         fun parsePingMessage(text: String): PingMessage {
             return gson.fromJson(text, PingMessage::class.java)
+        }
+
+        fun parseReqStatsMessage(text: String): ReqStatsMessage {
+            return gson.fromJson(text, ReqStatsMessage::class.java)
         }
     }
 }
