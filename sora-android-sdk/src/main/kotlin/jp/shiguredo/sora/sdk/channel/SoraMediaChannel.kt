@@ -357,57 +357,46 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
-            when(label) {
-                "signaling" -> {
-                    MessageConverter.parseType(messageData)?.let {
-                        when (it) {
-                            "re-offer" -> {
+
+            val expectedType = when (label) {
+                "signaling" -> "re-offer"
+                "notify" -> "notify"
+                "push" -> "push"
+                "stats" -> "req-stats"
+                "e2ee" -> "e2ee"
+                else -> label         // 追加が発生した時に備えて許容する
+            }
+
+            MessageConverter.parseType(messageData)?.let { type ->
+                when (type) {
+                    expectedType -> {
+                        when (label) {
+                            "signaling" -> {
                                 val reOfferMessage = MessageConverter.parseReOfferMessage(messageData)
                                 handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
-                        }
-                    }
-                }
-                "notify" -> {
-                    MessageConverter.parseType(messageData)?.let {
-                        when (it) {
                             "notify" -> {
                                 val notificationMessage = MessageConverter.parseNotificationMessage(messageData)
                                 handleNotificationMessage(notificationMessage)
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
-                        }
-                    }
-                }
-                "push" -> {
-                    MessageConverter.parseType(messageData)?.let {
-                        when (it) {
                             "push" -> {
                                 val pushMessage = MessageConverter.parsePushMessage(messageData)
                                 listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
-                        }
-                    }
-                }
-                "e2ee" -> {
-                    // TODO: 未実装
-                }
-                "stats" -> {
-                    MessageConverter.parseType(messageData)?.let {
-                        when (it) {
-                            "req-stats" -> {
+                            "stats" -> {
                                 val reqStatsMessage = MessageConverter.parseReqStatsMessage(messageData)
                                 handleReqStats(dataChannel, reqStatsMessage)
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: type=$it, message=$messageData")
+                            "e2ee" -> {
+                                // TODO: 未実装
+                            }
+                            else ->
+                                SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$messageData")
                         }
+
                     }
+                    else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$messageData")
                 }
-                else ->
-                    SoraLogger.d(TAG, "[channel:$role] Unknown dataChannel message: "
-                            + "label=$label, messageData=$messageData")
             }
         }
 
