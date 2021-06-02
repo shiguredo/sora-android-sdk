@@ -126,6 +126,10 @@ class MessageConverter {
             return gson.toJson(StatsMessage(reports = reports))
         }
 
+        fun buildDisconnectMessage(): String {
+            return gson.toJson(DisconnectMessage())
+        }
+
         fun parseType(text: String): String? {
             val part = gson.fromJson(text, MessageCommonPart::class.java)
             return part.type

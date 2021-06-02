@@ -30,6 +30,7 @@ interface PeerChannel {
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
     fun sendStats(dataChannel: DataChannel, report: Any)
+    fun sendDisconnectMessage(dataChannel: DataChannel)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -416,6 +417,12 @@ class PeerChannelImpl(
     override fun sendStats(dataChannel: DataChannel, report: Any) {
         val statsMessage = MessageConverter.buildStatsMessage(report)
         dataChannel.send(stringToDataChannelBuffer(statsMessage))
+    }
+
+    override fun sendDisconnectMessage(dataChannel: DataChannel) {
+        SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
+        val disconnectMessage = MessageConverter.buildDisconnectMessage()
+        dataChannel.send(stringToDataChannelBuffer(disconnectMessage))
     }
 
     private fun stringToDataChannelBuffer(data: String) : DataChannel.Buffer {

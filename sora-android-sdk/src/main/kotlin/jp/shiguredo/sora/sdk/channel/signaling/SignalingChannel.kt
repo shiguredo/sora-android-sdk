@@ -18,6 +18,7 @@ interface SignalingChannel {
     fun sendUpdateAnswer(sdp: String)
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
+    fun sendDisconnectMessage()
     fun disconnect()
 
     interface Listener {
@@ -123,6 +124,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
         webSocket?.let {
             val msg = MessageConverter.buildCandidateMessage(sdp)
             it.send(msg)
+        }
+    }
+
+    override fun sendDisconnectMessage() {
+        SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$webSocket")
+        webSocket?.let {
+            val disconnectMessage = MessageConverter.buildDisconnectMessage()
+            it.send(disconnectMessage)
         }
     }
 

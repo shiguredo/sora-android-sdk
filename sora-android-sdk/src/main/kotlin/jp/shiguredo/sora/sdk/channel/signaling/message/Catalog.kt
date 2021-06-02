@@ -193,5 +193,8 @@ data class NotificationMessage(
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
         @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
         @SerializedName("data")                           val data:                          Any?,
-) {
-}
+)
+
+data class DisconnectMessage(
+        @SerializedName("type")    val type: String = "disconnect"
+)

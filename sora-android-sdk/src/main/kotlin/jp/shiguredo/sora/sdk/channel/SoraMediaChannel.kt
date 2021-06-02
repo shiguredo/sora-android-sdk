@@ -719,6 +719,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         closing = true
 
         stopTimer()
+        sendDisconnectMessage()
         compositeDisposable.dispose()
 
         listener?.onClose(this)
@@ -732,5 +733,14 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         peer?.disconnect()
         peer = null
+    }
+
+    private fun sendDisconnectMessage() {
+        val dataChannel = dataChannels["signaling"]
+        if (switchReceived && dataChannel != null) {
+            peer?.sendDisconnectMessage(dataChannel)
+        } else {
+            signaling?.sendDisconnectMessage()
+        }
     }
 }
