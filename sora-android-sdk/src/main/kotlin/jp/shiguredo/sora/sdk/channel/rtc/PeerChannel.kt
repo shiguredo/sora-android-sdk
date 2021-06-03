@@ -416,6 +416,7 @@ class PeerChannelImpl(
 
     override fun sendStats(dataChannel: DataChannel, report: Any) {
         val statsMessage = MessageConverter.buildStatsMessage(report)
+        SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         dataChannel.send(stringToDataChannelBuffer(statsMessage))
     }
 
