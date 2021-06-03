@@ -571,6 +571,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 endpoint                = signalingEndpoint,
                 role                    = role,
                 channelId               = channelId,
+                connectDataChannelSignaling      = dataChannelSignaling,
+                connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket,
                 mediaOption             = mediaOption,
                 connectMetadata         = signalingMetadata,
                 listener                = signalingListener,
