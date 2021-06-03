@@ -568,18 +568,18 @@ class SoraMediaChannel @JvmOverloads constructor(
     private fun connectSignalingChannel(clientOfferSdp : SessionDescription?,
                                         clientOfferSdpError: String?) {
         signaling = SignalingChannelImpl(
-                endpoint                = signalingEndpoint,
-                role                    = role,
-                channelId               = channelId,
+                endpoint                         = signalingEndpoint,
+                role                             = role,
+                channelId                        = channelId,
                 connectDataChannelSignaling      = dataChannelSignaling,
                 connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket,
-                mediaOption             = mediaOption,
-                connectMetadata         = signalingMetadata,
-                listener                = signalingListener,
-                clientOfferSdp          = clientOfferSdp,
-                clientOfferSdpError     = clientOfferSdpError,
-                clientId                = clientId,
-                signalingNotifyMetadata = signalingNotifyMetadata
+                mediaOption                      = mediaOption,
+                connectMetadata                  = signalingMetadata,
+                listener                         = signalingListener,
+                clientOfferSdp                   = clientOfferSdp,
+                clientOfferSdpError              = clientOfferSdpError,
+                clientId                         = clientId,
+                signalingNotifyMetadata          = signalingNotifyMetadata
         )
         signaling!!.connect()
     }
