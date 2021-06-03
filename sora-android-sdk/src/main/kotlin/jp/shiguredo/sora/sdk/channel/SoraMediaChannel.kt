@@ -49,18 +49,18 @@ import kotlin.concurrent.schedule
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  */
 class SoraMediaChannel @JvmOverloads constructor(
-        private val context:                 Context,
-        private val signalingEndpoint:       String,
-        private val channelId:               String?,
-        private val signalingMetadata:       Any?                 = "",
-        private val mediaOption:             SoraMediaOption,
-        private val timeoutSeconds:          Long                 = DEFAULT_TIMEOUT_SECONDS,
-        private var listener:                Listener?,
-        private val clientId:                String?              = null,
-        private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption(),
-        private var dataChannelSignaling:      Boolean? = null,
-        private var ignoreDisconnectWebSocket: Boolean? = null
+        private val context:                   Context,
+        private val signalingEndpoint:         String,
+        private val channelId:                 String?,
+        private val signalingMetadata:         Any?                 = "",
+        private val mediaOption:               SoraMediaOption,
+        private val timeoutSeconds:            Long                 = DEFAULT_TIMEOUT_SECONDS,
+        private var listener:                  Listener?,
+        private val clientId:                  String?              = null,
+        private val signalingNotifyMetadata:   Any?                 = null,
+        private val peerConnectionOption:      PeerConnectionOption = PeerConnectionOption(),
+        private var dataChannelSignaling:      Boolean?             = null,
+        private var ignoreDisconnectWebSocket: Boolean?             = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName

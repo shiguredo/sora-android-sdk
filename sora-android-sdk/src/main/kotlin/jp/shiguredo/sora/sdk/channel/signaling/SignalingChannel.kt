@@ -36,18 +36,19 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
-        private val endpoint:                String,
-        private val role:                    SoraChannelRole,
-        private val channelId:               String?,
-        private val connectDataChannelSignaling: Boolean? = null,
-        private val connectIgnoreDisconnectWebSocket: Boolean? = null,
-        private val mediaOption:             SoraMediaOption,
-        private val connectMetadata:         Any?,
-        private var listener:                SignalingChannel.Listener?,
-        private val clientOfferSdp:          SessionDescription?,
-        private val clientOfferSdpError:     String?                     = null,
-        private val clientId:                String?                     = null,
-        private val signalingNotifyMetadata: Any?                        = null) : SignalingChannel {
+        private val endpoint:                         String,
+        private val role:                             SoraChannelRole,
+        private val channelId:                        String?,
+        private val connectDataChannelSignaling:      Boolean?                    = null,
+        private val connectIgnoreDisconnectWebSocket: Boolean?                    = null,
+        private val mediaOption:                      SoraMediaOption,
+        private val connectMetadata:                  Any?,
+        private var listener:                         SignalingChannel.Listener?,
+        private val clientOfferSdp:                   SessionDescription?,
+        private val clientOfferSdpError:              String?                     = null,
+        private val clientId:                         String?                     = null,
+        private val signalingNotifyMetadata:          Any?                        = null
+) : SignalingChannel {
 
     companion object {
         private val TAG = SignalingChannelImpl::class.simpleName
@@ -155,16 +156,16 @@ class SignalingChannelImpl @JvmOverloads constructor(
         webSocket?.let {
             SoraLogger.d(TAG, "[signaling:$role] -> connect")
             val message = MessageConverter.buildConnectMessage(
-                    role                    = role,
-                    channelId               = channelId,
-                    dataChannelSignaling    = connectDataChannelSignaling,
+                    role                      = role,
+                    channelId                 = channelId,
+                    dataChannelSignaling      = connectDataChannelSignaling,
                     ignoreDisconnectWebSocket = connectIgnoreDisconnectWebSocket,
-                    mediaOption             = mediaOption,
-                    metadata                = connectMetadata,
-                    sdp                     = clientOfferSdp?.description,
-                    sdpError                = clientOfferSdpError,
-                    clientId                = clientId,
-                    signalingNotifyMetadata = signalingNotifyMetadata
+                    mediaOption               = mediaOption,
+                    metadata                  = connectMetadata,
+                    sdp                       = clientOfferSdp?.description,
+                    sdpError                  = clientOfferSdpError,
+                    clientId                  = clientId,
+                    signalingNotifyMetadata   = signalingNotifyMetadata
             )
             it.send(message)
         }
