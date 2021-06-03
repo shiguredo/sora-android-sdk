@@ -45,6 +45,8 @@ import kotlin.concurrent.schedule
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
+ * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  */
 class SoraMediaChannel @JvmOverloads constructor(
         private val context:                 Context,
@@ -56,7 +58,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         private var listener:                Listener?,
         private val clientId:                String?              = null,
         private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
+        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption(),
+        private var dataChannelSignaling:      Boolean? = null,
+        private var ignoreDisconnectWebSocket: Boolean? = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -236,7 +240,6 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var peer:            PeerChannel?      = null
     private var signaling:       SignalingChannel? = null
 
-    private var ignoreDisconnectWebSocket = false
     private var switchReceived = false
     private var closing = false
 
@@ -252,8 +255,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onDisconnect() {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect"
-                    + "switchReceived=$switchReceived, ignoreDisconnectWebSocket=$ignoreDisconnectWebSocket" )
-            if (switchReceived && ignoreDisconnectWebSocket) {
+                    + "switchReceived=$switchReceived, DisconnectWebSocket=$ignoreDisconnectWebSocket" )
+            val ignoreDisconnect = ignoreDisconnectWebSocket ?: false
+            if (switchReceived && ignoreDisconnect) {
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
@@ -298,7 +302,8 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onError(reason: SoraErrorReason) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason")
-            if (switchReceived && ignoreDisconnectWebSocket) {
+            val ignoreError = ignoreDisconnectWebSocket ?: false
+            if (switchReceived && ignoreError) {
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
@@ -622,7 +627,8 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun handleSwitch() {
         switchReceived = true
-        if (ignoreDisconnectWebSocket) {
+        val earlyCloseWebSocket = ignoreDisconnectWebSocket ?: false
+        if (earlyCloseWebSocket) {
             signaling?.disconnect()
         }
     }

@@ -187,16 +187,6 @@ class SoraMediaOption {
         SoraChannelRole.RECVONLY
 
     /**
-     * シグナリング connect で送信する data_channel_signaling の値を指定します。
-     */
-    var dataChannelSignaling: Boolean? = null
-
-    /**
-     * シグナリング connect で送信する data_channel_signaling の値を指定します。
-     */
-    var ignoreDisconnectWebSocket: Boolean? = null
-
-    /**
      * enableCpuOveruseDetection
      *
      * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です。

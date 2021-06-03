@@ -17,6 +17,8 @@ class MessageConverter {
         @JvmOverloads
         fun buildConnectMessage(role: SoraChannelRole,
                                 channelId: String?,
+                                dataChannelSignaling: Boolean?,
+                                ignoreDisconnectWebSocket: Boolean?,
                                 mediaOption: SoraMediaOption,
                                 metadata: Any?,
                                 sdp: String? = null,
@@ -28,8 +30,8 @@ class MessageConverter {
             val msg = ConnectMessage(
                     role = role.signaling,
                     channelId = channelId,
-                    dataChannelSignaling = mediaOption.dataChannelSignaling,
-                    ignoreDisconnectWebsocket = mediaOption.ignoreDisconnectWebSocket,
+                    dataChannelSignaling = dataChannelSignaling,
+                    ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                     metadata = metadata,
                     multistream = mediaOption.multistreamIsRequired,
                     spotlight = mediaOption.spotlightOption?.let {
