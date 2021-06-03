@@ -9,6 +9,18 @@
 - FIX
     - バグ修正
 
+## develop
+
+- [ADD] データチャネルシグナリングに対応する
+  - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
+  - onDataChannel コールバックを実装する
+  - 各 label に対応するデータチャネル関係のコールバックを実装する
+  - WebSocket 側の `type:switch` 受信の処理を追加する
+  - @shino
+- [FIX] 終了前にシグナリング Disconnect メッセージ送信を追加する
+  - 状態により WebSocket, DataChannel どちらかで送信する
+  - @shino
+
 ## 2021.1
 
 - [CHANGE] SoraAudioOption.Codec から PCMU を外す
