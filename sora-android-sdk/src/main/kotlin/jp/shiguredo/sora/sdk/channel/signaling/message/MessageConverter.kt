@@ -141,8 +141,8 @@ class MessageConverter {
             return gson.fromJson(text, OfferMessage::class.java)
         }
 
-        fun parseSwitchMessage(text: String): SwitchMessage {
-            return gson.fromJson(text, SwitchMessage::class.java)
+        fun parseSwitchMessage(text: String): SwitchedMessage {
+            return gson.fromJson(text, SwitchedMessage::class.java)
         }
 
         fun parseUpdateMessage(text: String): UpdateMessage {

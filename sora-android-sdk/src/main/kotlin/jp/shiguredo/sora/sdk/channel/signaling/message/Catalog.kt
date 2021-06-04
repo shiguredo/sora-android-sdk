@@ -118,15 +118,12 @@ data class OfferMessage(
         @SerializedName("connection_id") val connectionId:              String?,
         @SerializedName("metadata")      val metadata:                  Any?,
         @SerializedName("config")        val config:                    OfferConfig? = null,
-        @SerializedName("encodings")     val encodings:                 List<Encoding>?,
-        @SerializedName("data_channel_signaling")
-                                         val dataChannelSignaling:      Boolean? = null,
-        @SerializedName("ignore_disconnect_websocket")
-                                         val ignoreDisconnectWebsocket: Boolean? = null
+        @SerializedName("encodings")     val encodings:                 List<Encoding>?
 )
 
-data class SwitchMessage(
-        @SerializedName("type") val type: String = "switch",
+data class SwitchedMessage(
+        @SerializedName("type")                        val type:                      String = "switched",
+        @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null
 )
 
 data class UpdateMessage(
