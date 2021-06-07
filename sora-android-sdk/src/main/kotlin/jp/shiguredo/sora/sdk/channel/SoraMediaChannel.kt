@@ -591,13 +591,14 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         SoraLogger.d(TAG, "[channel:$role] @peer:starting")
         peer = PeerChannelImpl(
-                appContext    = context,
-                networkConfig = PeerNetworkConfig(
+                appContext         = context,
+                networkConfig      = PeerNetworkConfig(
                         serverConfig = offerMessage.config,
                         mediaOption  = mediaOption
                 ),
-                mediaOption   = mediaOption,
-                listener      = peerListener
+                mediaOption        = mediaOption,
+                dataChannelConfigs = offerMessage.dataChannels,
+                listener           = peerListener
         )
 
         if (0 < peerConnectionOption.getStatsIntervalMSec) {

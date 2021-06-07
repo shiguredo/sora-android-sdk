@@ -185,7 +185,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onInitialOffer(offerMessage)
     }
 
-    private fun onSwitchMessage(text: String) {
+    private fun onSwitchedMessage(text: String) {
         val switchMessage = MessageConverter.parseSwitchMessage(text)
         SoraLogger.d(TAG, "[signaling:$role] <- switch ${switchMessage}")
 
@@ -296,7 +296,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     MessageConverter.parseType(json)?.let {
                         when (it) {
                             "offer"    -> onOfferMessage(json)
-                            "switched" -> onSwitchMessage(json)
+                            "switched" -> onSwitchedMessage(json)
                             "ping"     -> onPingMessage(json)
                             "update"   -> onUpdateMessage(json)
                             "re-offer" -> onReOfferMessage(json)

@@ -8,12 +8,16 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
+import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.zip.*
 
 interface PeerChannel {
 
@@ -51,11 +55,12 @@ interface PeerChannel {
 }
 
 class PeerChannelImpl(
-        private val appContext:    Context,
-        private val networkConfig: PeerNetworkConfig,
-        private val mediaOption:   SoraMediaOption,
-        private var listener:      PeerChannel.Listener?,
-        private var useTracer:     Boolean = false
+        private val appContext:         Context,
+        private val networkConfig:      PeerNetworkConfig,
+        private val mediaOption:        SoraMediaOption,
+        private val dataChannelConfigs: List<Map<String, Any>> = emptyList(),
+        private var listener:           PeerChannel.Listener?,
+        private var useTracer:          Boolean = false
 ): PeerChannel {
 
     companion object {
@@ -97,6 +102,9 @@ class PeerChannelImpl(
     private val utf8Charset = StandardCharsets.UTF_8
     private val utf8Encoder = utf8Charset.newEncoder()
     private val utf8Decoder = utf8Charset.newDecoder()
+
+    private val compressLabels: List<String> =
+            dataChannelConfigs.filter { (it["compress"] ?: false) == true }.map { it["label"] as String }
 
     private var closing = false
 
@@ -170,9 +178,9 @@ class PeerChannelImpl(
                 }
 
                 override fun onMessage(buffer: DataChannel.Buffer) {
-                    val messageData = dataChannelBufferToString(buffer)
                     SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
-                            + " label=$label, state=${dataChannel.state()}, message=$messageData")
+                            + " label=$label, state=${dataChannel.state()}, binary=${buffer.binary}")
+                    val messageData = dataChannelBufferToString(label, buffer)
                     listener?.onDataChannelMessage(dataChannel.label(), dataChannel, messageData)
                 }
 
@@ -411,29 +419,42 @@ class PeerChannelImpl(
 
     override fun sendReAnswer(dataChannel: DataChannel, description: String) {
         val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
-        dataChannel.send(stringToDataChannelBuffer(reAnswerMessage))
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
     }
 
     override fun sendStats(dataChannel: DataChannel, report: Any) {
         val statsMessage = MessageConverter.buildStatsMessage(report)
         SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
-        dataChannel.send(stringToDataChannelBuffer(statsMessage))
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }
 
     override fun sendDisconnectMessage(dataChannel: DataChannel) {
         SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
         val disconnectMessage = MessageConverter.buildDisconnectMessage()
-        dataChannel.send(stringToDataChannelBuffer(disconnectMessage))
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
     }
 
-    private fun stringToDataChannelBuffer(data: String) : DataChannel.Buffer {
-        val byteBuffer = utf8Encoder.encode(CharBuffer.wrap(data))
-        return DataChannel.Buffer(byteBuffer, false)
+    private fun stringToDataChannelBuffer(label: String, data: String) : DataChannel.Buffer {
+        if (compressLabels.contains(label)) {
+            val inStream = DeflaterInputStream(ByteArrayInputStream(data.toByteArray()))
+            val byteArray = inStream.readBytes()
+            val byteBuffer = ByteBuffer.wrap(byteArray)
+            return DataChannel.Buffer(byteBuffer, true)
+        } else {
+            val byteBuffer = utf8Encoder.encode(CharBuffer.wrap(data))
+            return DataChannel.Buffer(byteBuffer, false)
+        }
     }
 
-    private fun dataChannelBufferToString(buffer: DataChannel.Buffer) : String {
-        val charBuffer = utf8Decoder.decode(buffer.data)
-        return charBuffer.toString()
+    private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer) : String {
+        return if (compressLabels.contains(label)) {
+            val inStream = InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
+            val reader = inStream.reader(utf8Charset)
+            reader.readText()
+        } else {
+            val charBuffer = utf8Decoder.decode(buffer.data)
+            charBuffer.toString()
+        }
     }
 
     private fun createAnswer(): Single<SessionDescription> =
