@@ -13,7 +13,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
-import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.Executors
