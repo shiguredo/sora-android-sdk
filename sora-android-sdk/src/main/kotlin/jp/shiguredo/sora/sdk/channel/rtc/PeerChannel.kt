@@ -13,7 +13,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.zip.*
@@ -448,7 +447,7 @@ class PeerChannelImpl(
             false ->
                 ByteBufferBackedInputStream(buffer.data)
         }
-        return inStream.reader(StandardCharsets.UTF_8).readText()
+        return inStream.reader().readText()
     }
 
     private fun createAnswer(): Single<SessionDescription> =
