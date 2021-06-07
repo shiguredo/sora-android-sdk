@@ -99,10 +99,7 @@ class PeerChannelImpl(
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
 
-    private val utf8Charset = StandardCharsets.UTF_8
-    private val utf8Encoder = utf8Charset.newEncoder()
-    private val utf8Decoder = utf8Charset.newDecoder()
-
+    // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private val compressLabels: List<String> =
             dataChannelConfigs.filter { (it["compress"] ?: false) == true }.map { it["label"] as String }
 
@@ -435,26 +432,24 @@ class PeerChannelImpl(
     }
 
     private fun stringToDataChannelBuffer(label: String, data: String) : DataChannel.Buffer {
-        if (compressLabels.contains(label)) {
-            val inStream = DeflaterInputStream(ByteArrayInputStream(data.toByteArray()))
-            val byteArray = inStream.readBytes()
-            val byteBuffer = ByteBuffer.wrap(byteArray)
-            return DataChannel.Buffer(byteBuffer, true)
-        } else {
-            val byteBuffer = utf8Encoder.encode(CharBuffer.wrap(data))
-            return DataChannel.Buffer(byteBuffer, false)
+        val inStream = when (compressLabels.contains(label)) {
+            true ->
+                DeflaterInputStream(ByteArrayInputStream(data.toByteArray()))
+            false ->
+                ByteArrayInputStream(data.toByteArray())
         }
+        val byteBuffer = ByteBuffer.wrap(inStream.readBytes())
+        return DataChannel.Buffer(byteBuffer, true)
     }
 
     private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer) : String {
-        return if (compressLabels.contains(label)) {
-            val inStream = InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
-            val reader = inStream.reader(utf8Charset)
-            reader.readText()
-        } else {
-            val charBuffer = utf8Decoder.decode(buffer.data)
-            charBuffer.toString()
+        val inStream = when (compressLabels.contains(label)) {
+            true ->
+                InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
+            false ->
+                ByteBufferBackedInputStream(buffer.data)
         }
+        return inStream.reader(StandardCharsets.UTF_8).readText()
     }
 
     private fun createAnswer(): Single<SessionDescription> =
