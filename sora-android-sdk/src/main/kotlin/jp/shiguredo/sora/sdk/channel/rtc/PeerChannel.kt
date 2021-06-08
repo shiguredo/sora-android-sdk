@@ -6,11 +6,16 @@ import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
+import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
+import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.zip.*
 
 interface PeerChannel {
 
@@ -25,6 +30,9 @@ interface PeerChannel {
 
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
+    fun sendReAnswer(dataChannel: DataChannel, description: String)
+    fun sendStats(dataChannel: DataChannel, report: Any)
+    fun sendDisconnectMessage(dataChannel: DataChannel)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -33,6 +41,9 @@ interface PeerChannel {
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
         fun onDisconnect()
+        fun onDataChannelOpen(label: String, dataChannel: DataChannel)
+        fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String)
+        fun onDataChannelClosed(label: String, dataChannel: DataChannel)
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
         fun onError(reason: SoraErrorReason, message: String)
@@ -42,11 +53,12 @@ interface PeerChannel {
 }
 
 class PeerChannelImpl(
-        private val appContext:    Context,
-        private val networkConfig: PeerNetworkConfig,
-        private val mediaOption:   SoraMediaOption,
-        private var listener:      PeerChannel.Listener?,
-        private var useTracer:     Boolean = false
+        private val appContext:         Context,
+        private val networkConfig:      PeerNetworkConfig,
+        private val mediaOption:        SoraMediaOption,
+        private val dataChannelConfigs: List<Map<String, Any>> = emptyList(),
+        private var listener:           PeerChannel.Listener?,
+        private var useTracer:          Boolean = false
 ): PeerChannel {
 
     companion object {
@@ -84,6 +96,10 @@ class PeerChannelImpl(
 
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
+
+    // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
+    private val compressLabels: List<String> =
+            dataChannelConfigs.filter { (it["compress"] ?: false) == true }.map { it["label"] as String }
 
     private var closing = false
 
@@ -134,8 +150,38 @@ class PeerChannelImpl(
             // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
         }
 
-        override fun onDataChannel(channel: DataChannel?) {
-            SoraLogger.d(TAG, "[rtc] @onDataChannel")
+        override fun onDataChannel(dataChannel: DataChannel) {
+            SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}"
+                    + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}")
+
+            dataChannel.registerObserver(object : DataChannel.Observer {
+                val label = dataChannel.label()
+
+                override fun onBufferedAmountChange(previouAmount: Long) {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onBufferedAmountChange"
+                            + " label=$label, id=${dataChannel.id()}"
+                            + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()},"
+                            + " previousAmount=$previouAmount)")
+                }
+
+                override fun onStateChange() {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onStateChange"
+                            + " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}")
+                    if (dataChannel.state() == DataChannel.State.CLOSED) {
+                        listener?.onDataChannelClosed(dataChannel.label(), dataChannel)
+                    }
+                }
+
+                override fun onMessage(buffer: DataChannel.Buffer) {
+                    SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
+                            + " label=$label, state=${dataChannel.state()}, binary=${buffer.binary}")
+                    val messageData = dataChannelBufferToString(label, buffer)
+                    listener?.onDataChannelMessage(dataChannel.label(), dataChannel, messageData)
+                }
+
+            })
+
+            listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
         }
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
@@ -364,6 +410,44 @@ class PeerChannelImpl(
         executor.execute {
             closeInternal()
         }
+    }
+
+    override fun sendReAnswer(dataChannel: DataChannel, description: String) {
+        val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
+    }
+
+    override fun sendStats(dataChannel: DataChannel, report: Any) {
+        val statsMessage = MessageConverter.buildStatsMessage(report)
+        SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
+    }
+
+    override fun sendDisconnectMessage(dataChannel: DataChannel) {
+        SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
+        val disconnectMessage = MessageConverter.buildDisconnectMessage()
+        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+    }
+
+    private fun stringToDataChannelBuffer(label: String, data: String) : DataChannel.Buffer {
+        val inStream = when (compressLabels.contains(label)) {
+            true ->
+                DeflaterInputStream(ByteArrayInputStream(data.toByteArray()))
+            false ->
+                ByteArrayInputStream(data.toByteArray())
+        }
+        val byteBuffer = ByteBuffer.wrap(inStream.readBytes())
+        return DataChannel.Buffer(byteBuffer, true)
+    }
+
+    private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer) : String {
+        val inStream = when (compressLabels.contains(label)) {
+            true ->
+                InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
+            false ->
+                ByteBufferBackedInputStream(buffer.data)
+        }
+        return inStream.reader().readText()
     }
 
     private fun createAnswer(): Single<SessionDescription> =

@@ -17,6 +17,8 @@ class MessageConverter {
         @JvmOverloads
         fun buildConnectMessage(role: SoraChannelRole,
                                 channelId: String?,
+                                dataChannelSignaling: Boolean?,
+                                ignoreDisconnectWebSocket: Boolean?,
                                 mediaOption: SoraMediaOption,
                                 metadata: Any?,
                                 sdp: String? = null,
@@ -28,6 +30,8 @@ class MessageConverter {
             val msg = ConnectMessage(
                     role = role.signaling,
                     channelId = channelId,
+                    dataChannelSignaling = dataChannelSignaling,
+                    ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                     metadata = metadata,
                     multistream = mediaOption.multistreamIsRequired,
                     spotlight = mediaOption.spotlightOption?.let {
@@ -120,6 +124,14 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
+        fun buildStatsMessage(reports: Any): String {
+            return gson.toJson(StatsMessage(reports = reports))
+        }
+
+        fun buildDisconnectMessage(): String {
+            return gson.toJson(DisconnectMessage())
+        }
+
         fun parseType(text: String): String? {
             val part = gson.fromJson(text, MessageCommonPart::class.java)
             return part.type
@@ -127,6 +139,10 @@ class MessageConverter {
 
         fun parseOfferMessage(text: String): OfferMessage {
             return gson.fromJson(text, OfferMessage::class.java)
+        }
+
+        fun parseSwitchMessage(text: String): SwitchedMessage {
+            return gson.fromJson(text, SwitchedMessage::class.java)
         }
 
         fun parseUpdateMessage(text: String): UpdateMessage {
@@ -147,6 +163,10 @@ class MessageConverter {
 
         fun parsePingMessage(text: String): PingMessage {
             return gson.fromJson(text, PingMessage::class.java)
+        }
+
+        fun parseReqStatsMessage(text: String): ReqStatsMessage {
+            return gson.fromJson(text, ReqStatsMessage::class.java)
         }
     }
 }
