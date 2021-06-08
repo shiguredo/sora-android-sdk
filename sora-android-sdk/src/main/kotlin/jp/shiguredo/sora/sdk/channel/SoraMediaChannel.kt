@@ -370,7 +370,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 "notify" -> "notify"
                 "push" -> "push"
                 "stats" -> "req-stats"
-                "e2ee" -> "e2ee"
+                "e2ee" -> "NOT-IMPLEMENTED"
                 else -> label         // 追加が発生した時に備えて許容する
             }
 
@@ -395,7 +395,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                                 handleReqStats(dataChannel)
                             }
                             "e2ee" -> {
-                                // TODO: 未実装
+                                SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$messageData")
                             }
                             else ->
                                 SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$messageData")
