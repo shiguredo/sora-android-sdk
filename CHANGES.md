@@ -20,6 +20,8 @@
 - [FIX] 終了前にシグナリング Disconnect メッセージ送信を追加する
   - 状態により WebSocket, DataChannel どちらかで送信する
   - @shino
+- [FIX] offer に data_channels が含まれない場合に対応する
+  - @shino
 
 ## 2021.1
 

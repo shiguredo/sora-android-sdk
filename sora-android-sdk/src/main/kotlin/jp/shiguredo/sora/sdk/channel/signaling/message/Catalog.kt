@@ -119,7 +119,7 @@ data class OfferMessage(
         @SerializedName("metadata")      val metadata:                  Any?,
         @SerializedName("config")        val config:                    OfferConfig? = null,
         @SerializedName("encodings")     val encodings:                 List<Encoding>?,
-        @SerializedName("data_channels") val dataChannels:              List<Map<String, Any>> = emptyList()
+        @SerializedName("data_channels") val dataChannels:              List<Map<String, Any>>? = null
 )
 
 data class SwitchedMessage(

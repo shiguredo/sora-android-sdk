@@ -56,7 +56,7 @@ class PeerChannelImpl(
         private val appContext:         Context,
         private val networkConfig:      PeerNetworkConfig,
         private val mediaOption:        SoraMediaOption,
-        private val dataChannelConfigs: List<Map<String, Any>> = emptyList(),
+                    dataChannelConfigs: List<Map<String, Any>>? = null,
         private var listener:           PeerChannel.Listener?,
         private var useTracer:          Boolean = false
 ): PeerChannel {
@@ -98,8 +98,7 @@ class PeerChannelImpl(
     private var audioSender: RtpSender? = null
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
-    private val compressLabels: List<String> =
-            dataChannelConfigs.filter { (it["compress"] ?: false) == true }.map { it["label"] as String }
+    private val compressLabels: List<String>
 
     private var closing = false
 
@@ -108,6 +107,13 @@ class PeerChannelImpl(
     // setRemoteDescription() を実行すると encodings が変更前に戻ってしまう
     // そのため re-offer, update 時に再度 encodings をセットする
     private var offerEncodings: List<Encoding>? = null
+
+    init {
+        val compressedDataChannels = (dataChannelConfigs ?: emptyList())
+                .filter { (it["compress"] ?: false) == true }
+        compressLabels = compressedDataChannels.map { it["label"] as String }
+        SoraLogger.d(TAG, "[rtc] compressedLabels=$compressLabels, dataChannelConfigs=$dataChannelConfigs")
+    }
 
     private val connectionObserver = object : PeerConnection.Observer {
 
