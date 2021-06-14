@@ -19,7 +19,9 @@ import java.util.zip.*
 
 interface PeerChannel {
 
-    fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
+    fun handleInitialRemoteOffer(offer: String,
+                                 mid: Map<String, String>?,
+                                 encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
 
     // 失敗しても問題のない処理が含まれる (client offer SDP は生成に失敗しても問題ない) ので、
@@ -33,6 +35,8 @@ interface PeerChannel {
     fun sendReAnswer(dataChannel: DataChannel, description: String)
     fun sendStats(dataChannel: DataChannel, report: Any)
     fun sendDisconnectMessage(dataChannel: DataChannel)
+    fun attachAudioTrack()
+    fun detachAudioTrack()
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -278,7 +282,8 @@ class PeerChannelImpl(
         }
     }
 
-    override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
+    override fun handleInitialRemoteOffer(offer: String, mid: Map<String, String>?,
+                                          encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
@@ -292,9 +297,15 @@ class PeerChannelImpl(
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
 
-            audioSender = localStream!!.audioTracks.firstOrNull()?.let {
-                conn!!.addTrack(it, mediaStreamLabels)
+            mid?.get("audio")?.let { audioMid ->
+                val audioTransceiver =  this.conn?.transceivers!!.find { it.mid == audioMid }
+                audioTransceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                audioSender = audioTransceiver?.sender
+                SoraLogger.d(TAG, "audioMid=${audioMid}, audioTransceiver=${audioTransceiver}")
             }
+            // audioSender = localStream!!.audioTracks.firstOrNull()?.let {
+            //     conn!!.addTrack(it, mediaStreamLabels)
+            // }
             videoSender = localStream!!.videoTracks.firstOrNull()?.let {
                 conn!!.addTrack(it, mediaStreamLabels)
             }
@@ -391,8 +402,8 @@ class PeerChannelImpl(
                 networkConfig.createConfiguration(),
                 connectionObserver)
 
-        SoraLogger.d(TAG, "local managers' initTrack: audio")
-        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+        // SoraLogger.d(TAG, "local managers' initTrack: audio")
+        // localAudioManager.initTrack(factory!!, mediaOption.audioOption)
 
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
         localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
@@ -401,7 +412,7 @@ class PeerChannelImpl(
         val streamId = UUID.randomUUID().toString()
         localStream = factory!!.createLocalMediaStream(streamId)
 
-        localAudioManager.attachTrackToStream(localStream!!)
+        // localAudioManager.attachTrackToStream(localStream!!)
         localVideoManager.attachTrackToStream(localStream!!)
         SoraLogger.d(TAG, "attached video sender => $videoSender")
 
@@ -516,6 +527,26 @@ class PeerChannelImpl(
                 }
             }, sdp)
         }).subscribeOn(Schedulers.from(executor))
+
+    override fun attachAudioTrack() {
+        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+        localAudioManager.attachTrackToStream(localStream!!)
+        localStream!!.audioTracks.forEach {
+            it.setEnabled(true)
+            SoraLogger.d(TAG, "attachAudioTrack() track=$it, enabled=${it.enabled()}")
+            audioSender?.setTrack(it, false)
+        }
+    }
+
+    override fun detachAudioTrack(){
+        val audioTrack = audioSender?.track()
+        audioSender?.setTrack(null, false)
+        SoraLogger.d(TAG, "detachAudioTrack() track=$audioTrack, enabled=${audioTrack?.enabled()}")
+        localStream!!.audioTracks.forEach {
+            localStream!!.removeTrack(it)
+        }
+        audioTrack?.dispose()
+    }
 
     private fun closeInternal() {
         if (closing)
