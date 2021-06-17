@@ -11,6 +11,10 @@
 
 ## develop
 
+- [CHANGE] ConnectMessage.channelId の型を String? から String に変更する
+  - @enm10k
+- [UPDATE] NotificationMessage に turnTransportType を追加する
+  - @enm10k
 - [ADD] データチャネルシグナリングに対応する
   - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
   - onDataChannel コールバックを実装する
