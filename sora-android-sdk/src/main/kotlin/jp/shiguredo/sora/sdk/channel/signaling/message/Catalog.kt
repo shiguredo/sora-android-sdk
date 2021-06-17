@@ -193,6 +193,7 @@ data class NotificationMessage(
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
         @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
         @SerializedName("data")                           val data:                          Any?,
+        @SerializedName("turn_transport_type")            val turnTransportType:             String?,
 )
 
 data class DisconnectMessage(
