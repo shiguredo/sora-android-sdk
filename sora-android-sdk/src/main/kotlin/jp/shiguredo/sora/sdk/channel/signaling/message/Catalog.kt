@@ -22,7 +22,7 @@ data class PongMessage(
 data class ConnectMessage(
         @SerializedName("type")        val type:                      String = "connect",
         @SerializedName("role")        var role:                      String,
-        @SerializedName("channel_id")  val channelId:                 String?,
+        @SerializedName("channel_id")  val channelId:                 String,
         @SerializedName("client_id")   val clientId:                  String? = null,
         @SerializedName("metadata")    val metadata:                  Any? = null,
         @SerializedName("signaling_notify_metadata")
@@ -193,6 +193,7 @@ data class NotificationMessage(
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
         @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
         @SerializedName("data")                           val data:                          Any?,
+        @SerializedName("turn_transport_type")            val turnTransportType:             String?,
 )
 
 data class DisconnectMessage(

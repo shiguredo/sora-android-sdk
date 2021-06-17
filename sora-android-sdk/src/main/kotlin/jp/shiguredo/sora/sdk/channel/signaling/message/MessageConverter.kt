@@ -16,7 +16,7 @@ class MessageConverter {
 
         @JvmOverloads
         fun buildConnectMessage(role: SoraChannelRole,
-                                channelId: String?,
+                                channelId: String,
                                 dataChannelSignaling: Boolean?,
                                 ignoreDisconnectWebSocket: Boolean?,
                                 mediaOption: SoraMediaOption,
