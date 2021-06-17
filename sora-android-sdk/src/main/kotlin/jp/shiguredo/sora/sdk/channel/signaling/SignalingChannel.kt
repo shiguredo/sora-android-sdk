@@ -38,7 +38,7 @@ interface SignalingChannel {
 class SignalingChannelImpl @JvmOverloads constructor(
         private val endpoint:                         String,
         private val role:                             SoraChannelRole,
-        private val channelId:                        String?,
+        private val channelId:                        String,
         private val connectDataChannelSignaling:      Boolean?                    = null,
         private val connectIgnoreDisconnectWebSocket: Boolean?                    = null,
         private val mediaOption:                      SoraMediaOption,

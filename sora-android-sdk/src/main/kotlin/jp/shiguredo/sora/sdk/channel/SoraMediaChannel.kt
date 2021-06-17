@@ -51,7 +51,7 @@ import kotlin.concurrent.schedule
 class SoraMediaChannel @JvmOverloads constructor(
         private val context:                   Context,
         private val signalingEndpoint:         String,
-        private val channelId:                 String?,
+        private val channelId:                 String,
         private val signalingMetadata:         Any?                 = "",
         private val mediaOption:               SoraMediaOption,
         private val timeoutSeconds:            Long                 = DEFAULT_TIMEOUT_SECONDS,
