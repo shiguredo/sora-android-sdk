@@ -1,7 +1,5 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import jp.shiguredo.sora.sdk.channel.option.SoraSimulcastOption
-
 /**
  * スポットライト機能のオプションです。
  */
