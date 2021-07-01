@@ -12,6 +12,7 @@
 ## 2021.1.1
 
 - [FIX] Sora への接続時に simulcast_rid を指定するとエラーになる現象を修正する
+  - enum class SimulcastRid の定義を `jp.shiguredo.sora.sdk.channel.signaling.message` から `jp.shiguredo.sora.sdk.channel.option.SoraVideoOption` に移動しました
   - @enm10k
 
 ## 2021.1
