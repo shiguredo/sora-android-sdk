@@ -1,7 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 /**
- * スポットライト機能のオプションです。
+ * サイマルキャスト機能のオプションです。
  */
 class SoraSimulcastOption {
         enum class SimulcastRid(private val value: String) {
