@@ -1,7 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.annotations.SerializedName
-import jp.shiguredo.sora.sdk.channel.option.SoraSimulcastOption
 import jp.shiguredo.sora.sdk.util.SDKInfo
 
 data class MessageCommonPart(

@@ -92,7 +92,7 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = mediaOption.simulcastEnabled
-                msg.simulcastRid = mediaOption.simulcastRid.toString()
+                msg.simulcastRid = mediaOption.simulcastRid?.toString()
             }
 
             val jsonMsg = gson.toJson(msg)
