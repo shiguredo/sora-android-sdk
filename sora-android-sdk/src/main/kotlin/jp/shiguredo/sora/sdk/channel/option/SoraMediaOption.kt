@@ -1,7 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import jp.shiguredo.sora.sdk.Sora
-import jp.shiguredo.sora.sdk.channel.signaling.message.SimulcastRid
 import org.webrtc.*
 
 /**
@@ -20,7 +19,7 @@ class SoraMediaOption {
     internal var multistreamEnabled     = false
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled       = false
-    internal var simulcastRid: SimulcastRid? = null
+    internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
@@ -80,7 +79,7 @@ class SoraMediaOption {
     /**
      * サイマルキャスト機能を有効にします。
      */
-    fun enableSimulcast(rid: SimulcastRid? = null) {
+    fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
         simulcastEnabled = true
         simulcastRid = rid
     }
