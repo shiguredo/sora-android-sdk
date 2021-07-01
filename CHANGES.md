@@ -9,6 +9,11 @@
 - FIX
     - バグ修正
 
+## 2021.1.1
+
+- [FIX] Sora への接続時に simulcast_rid を指定するとエラーになる現象を修正する
+  - @enm10k
+
 ## 2021.1
 
 - [CHANGE] SoraAudioOption.Codec から PCMU を外す
