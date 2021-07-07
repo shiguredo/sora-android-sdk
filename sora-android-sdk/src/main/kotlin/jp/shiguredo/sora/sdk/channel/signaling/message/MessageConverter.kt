@@ -99,6 +99,11 @@ class MessageConverter {
                 msg.simulcastRid = mediaOption.simulcastRid?.toString()
             }
 
+            if (mediaOption.spotlightOption != null && !Sora.usesSpotlightLegacy) {
+                msg.spotlightFocusRid = mediaOption.spotlightOption?.spotlightFocusRid?.toString()
+                msg.spotlightUnfocusRid = mediaOption.spotlightOption?.spotlightUnfocusRid?.toString()
+            }
+
             val jsonMsg = gson.toJson(msg)
             SoraLogger.d(TAG, "connect: message=$jsonMsg")
             return jsonMsg

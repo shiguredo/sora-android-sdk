@@ -106,4 +106,28 @@ class SoraVideoOption {
 
         override fun toString(): String = value
     }
+
+    enum class SpotlightRid(private val value: String) {
+        /**
+         * none
+         */
+        NONE("none"),
+
+        /**
+         * r0
+         */
+        R0("r0"),
+
+        /**
+         * r1
+         */
+        R1("r1"),
+
+        /**
+         * r2
+         */
+        R2("r2");
+
+        override fun toString(): String = value
+    }
 }
