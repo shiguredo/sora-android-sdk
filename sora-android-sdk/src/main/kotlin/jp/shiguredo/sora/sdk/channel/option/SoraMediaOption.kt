@@ -98,7 +98,7 @@ class SoraMediaOption {
         multistreamEnabled = true
 
         if (!Sora.usesSpotlightLegacy) {
-            enableSimulcast(option.simulcastRid)
+            enableSimulcast()
         }
     }
 

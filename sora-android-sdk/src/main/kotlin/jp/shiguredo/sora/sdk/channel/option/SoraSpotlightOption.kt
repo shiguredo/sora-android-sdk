@@ -6,11 +6,6 @@ package jp.shiguredo.sora.sdk.channel.option
 class SoraSpotlightOption {
 
     /**
-     * サイマルキャストの rid
-     */
-    var simulcastRid: SoraVideoOption.SimulcastRid? = null
-
-    /**
      * スポットライト機能のアクティブな配信数を指定します
      *
      * cf.
