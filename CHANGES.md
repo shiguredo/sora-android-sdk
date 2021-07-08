@@ -15,6 +15,9 @@
   - @enm10k
 - [UPDATE] スポットライト接続時に spotlight_focus_rid / spotlight_unfocus_rid を指定できるようにする
   - @enm10k
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - `com.android.tools.build:gradle` を 4.2.2 に上げる
+  - @enm10k
 - [ADD] データチャネルシグナリングに対応する
   - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
   - onDataChannel コールバックを実装する
