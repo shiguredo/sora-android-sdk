@@ -13,6 +13,8 @@
 
 - [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する
   - @enm10k
+- [UPDATE] スポットライト接続時に spotlight_focus_rid / spotlight_unfocus_rid を指定できるようにする
+  - @enm10k
 - [ADD] データチャネルシグナリングに対応する
   - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
   - onDataChannel コールバックを実装する
@@ -25,6 +27,9 @@
 - [FIX] offer に data_channels が含まれない場合に対応する
   - @shino
 - [FIX] NotificationMessage に turnTransportType を追加する
+  - @enm10k
+- [FIX] SoraSpotlightOption から simulcastRid を削除する
+  - スポットライトでは simulcast_rid を指定しても動作しない
   - @enm10k
 
 ## 2021.1.1

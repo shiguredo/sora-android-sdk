@@ -29,6 +29,8 @@ data class ConnectMessage(
         @SerializedName("spotlight")   var spotlight:                 Any? = null,
         @SerializedName("spotlight_number")
                                        var spotlightNumber:           Int? = null,
+        @SerializedName("spotlight_focus_rid") var spotlightFocusRid: String? = null,
+        @SerializedName("spotlight_unfocus_rid") var spotlightUnfocusRid: String? = null,
         @SerializedName("simulcast")   var simulcast:                 Boolean? = false,
         @SerializedName("simulcast_rid")
                                        var simulcastRid:              String? = null,
