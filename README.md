@@ -131,13 +131,19 @@ JitPack 上でビルドされた AAR や POM、およびログは次のように
 
 sora-android-sdk と sora-android-sdk-samples が同じディレクトリ以下に clone されているとします。
 
-1.  `include_app_dir.txt` に sora-android-sdk-samples のディレクトリパスを書く
+1. `include_app_dir.txt` に sora-android-sdk-samples のディレクトリパスを書く
 
 ```
 $ echo '../sora-android-sdk-samples' > include_app_dir.txt
 ```
 
-2. (optional) top level の gradle.properties に設定を足す
+2. top level の gradle.properties に設定を足す
+
+```
+usesCleartextTraffic = false
+```
+
+3. (optional) top level の gradle.properties に設定を足す
 
 ```
 signaling_endpoint=wss://sora.example.com/signaling
