@@ -45,7 +45,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         private val connectMetadata:                  Any?,
         private var listener:                         SignalingChannel.Listener?,
         private val clientOfferSdp:                   SessionDescription?,
-        private val clientOfferSdpError:              String?                     = null,
         private val clientId:                         String?                     = null,
         private val signalingNotifyMetadata:          Any?                        = null
 ) : SignalingChannel {
@@ -163,7 +162,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     mediaOption               = mediaOption,
                     metadata                  = connectMetadata,
                     sdp                       = clientOfferSdp?.description,
-                    sdpError                  = clientOfferSdpError,
                     clientId                  = clientId,
                     signalingNotifyMetadata   = signalingNotifyMetadata
             )
