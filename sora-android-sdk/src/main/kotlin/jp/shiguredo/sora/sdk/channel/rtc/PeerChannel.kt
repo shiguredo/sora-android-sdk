@@ -299,10 +299,10 @@ class PeerChannelImpl(
             val audioMid = mid?.get("audio")
             if (audioMid != null) {
                 mid?.get("audio")?.let { audioMid ->
-                    val transceiver =  this.conn?.transceivers!!.find { it.mid == audioMid }
-                    transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                    val transceiver =  this.conn?.transceivers?.find { it.mid == audioMid }
+                    transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
                     SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
-                    audioSender = transceiver.sender
+                    audioSender = transceiver?.sender
 
                     localStream!!.audioTracks.firstOrNull()?.let {
                         SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
@@ -311,16 +311,16 @@ class PeerChannelImpl(
                 }
             } else {
                 audioSender = localStream!!.audioTracks.firstOrNull()?.let {
-                    conn!!.addTrack(it, mediaStreamLabels)
+                    conn?.addTrack(it, mediaStreamLabels)
                 }
             }
 
             val videoMid = mid?.get("video")
             if (videoMid != null) {
                 val transceiver = this.conn?.transceivers?.find { it.mid == videoMid }
-                transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
                 SoraLogger.d(TAG, "set video sender: mid=${mid}, transceiver=${transceiver} ")
-                videoSender = transceiver.sender
+                videoSender = transceiver?.sender
 
                 localStream!!.videoTracks.firstOrNull()?.let {
                     SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
@@ -328,7 +328,7 @@ class PeerChannelImpl(
                 }
             } else {
                 videoSender = localStream!!.videoTracks.firstOrNull()?.let {
-                    conn!!.addTrack(it, mediaStreamLabels)
+                    conn?.addTrack(it, mediaStreamLabels)
                 }
             }
 
