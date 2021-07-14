@@ -302,7 +302,7 @@ class PeerChannelImpl(
                 transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
                 SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
                 audioSender = transceiver?.sender
-                audioSender?.streams = arrayOf(localStream!!.id).toMutableList()
+                audioSender?.streams = listOf(localStream!!.id)
 
                 localStream!!.audioTracks.firstOrNull()?.let {
                     SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
@@ -320,7 +320,7 @@ class PeerChannelImpl(
                 transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
                 SoraLogger.d(TAG, "set video sender: mid=${mid}, transceiver=${transceiver} ")
                 videoSender = transceiver?.sender
-                videoSender?.streams = arrayOf(localStream!!.id).toMutableList()
+                videoSender?.streams = listOf(localStream!!.id)
 
                 localStream!!.videoTracks.firstOrNull()?.let {
                     SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
