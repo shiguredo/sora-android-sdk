@@ -40,7 +40,6 @@ data class ConnectMessage(
         @SerializedName("libwebrtc")   val libwebrtc:                 String = SDKInfo.libwebrtcInfo(),
         @SerializedName("environment") val environment:               String = SDKInfo.deviceInfo(),
         @SerializedName("sdp")         val sdp:                       String? = null,
-        @SerializedName("sdp_error")   val sdp_error:                 String? = null,
         @SerializedName("data_channel_signaling")
                                        val dataChannelSignaling:      Boolean? = null,
         @SerializedName("ignore_disconnect_websocket")

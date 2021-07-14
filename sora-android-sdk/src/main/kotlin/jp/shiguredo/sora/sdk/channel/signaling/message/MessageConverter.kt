@@ -22,7 +22,6 @@ class MessageConverter {
                                 mediaOption: SoraMediaOption,
                                 metadata: Any?,
                                 sdp: String? = null,
-                                sdpError: String? = null,
                                 clientId: String? = null,
                                 signalingNotifyMetadata: Any? = null
         ): String {
@@ -47,7 +46,6 @@ class MessageConverter {
                             it.spotlightNumber
                     },
                     sdp = sdp,
-                    sdp_error = sdpError,
                     clientId = clientId,
                     signalingNotifyMetadata = signalingNotifyMetadata
             )

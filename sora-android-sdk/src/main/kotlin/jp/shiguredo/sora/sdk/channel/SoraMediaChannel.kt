@@ -553,7 +553,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                                 }
                                 val handler = Handler(Looper.getMainLooper())
                                 handler.post() {
-                                    connectSignalingChannel(it.getOrNull(), it.exceptionOrNull()?.message)
+                                    connectSignalingChannel(it.getOrNull())
                                 }
                             },
                             onError = {
@@ -567,8 +567,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?,
-                                        clientOfferSdpError: String?) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?) {
         signaling = SignalingChannelImpl(
                 endpoint                         = signalingEndpoint,
                 role                             = role,
@@ -579,7 +578,6 @@ class SoraMediaChannel @JvmOverloads constructor(
                 connectMetadata                  = signalingMetadata,
                 listener                         = signalingListener,
                 clientOfferSdp                   = clientOfferSdp,
-                clientOfferSdpError              = clientOfferSdpError,
                 clientId                         = clientId,
                 signalingNotifyMetadata          = signalingNotifyMetadata
         )
