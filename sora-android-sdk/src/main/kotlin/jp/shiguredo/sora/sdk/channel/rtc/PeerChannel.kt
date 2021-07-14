@@ -298,16 +298,14 @@ class PeerChannelImpl(
 
             val audioMid = mid?.get("audio")
             if (audioMid != null) {
-                mid?.get("audio")?.let { audioMid ->
-                    val transceiver =  this.conn?.transceivers?.find { it.mid == audioMid }
-                    transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                    SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
-                    audioSender = transceiver?.sender
+                val transceiver =  this.conn?.transceivers?.find { it.mid == audioMid }
+                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
+                audioSender = transceiver?.sender
 
-                    localStream!!.audioTracks.firstOrNull()?.let {
-                        SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
-                        audioSender?.setTrack(it, false)
-                    }
+                localStream!!.audioTracks.firstOrNull()?.let {
+                    SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
+                    audioSender?.setTrack(it, false)
                 }
             } else {
                 audioSender = localStream!!.audioTracks.firstOrNull()?.let {
