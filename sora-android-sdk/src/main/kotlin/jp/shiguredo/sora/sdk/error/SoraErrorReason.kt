@@ -10,7 +10,6 @@ enum class SoraErrorReason {
     ICE_CLOSED_BY_SERVER,
     PEER_CONNECTION_FAILURE,
     PEER_CONNECTION_CLOSED_BY_SERVER,
-
     TIMEOUT,
 
     // Sora との接続の警告
