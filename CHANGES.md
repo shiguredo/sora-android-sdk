@@ -33,6 +33,13 @@
   - @shino
 - [FIX] offer に data_channels が含まれない場合に対応する
   - @shino
+- [FIX] 切断を検知する処理を改善する
+  - 修正前は IceConnectionState を参照していたが、 PeerConnectionState を参照するように修正する
+  - SoraErrorReason の以下の値を参照するコードは修正が必要となる
+    - ICE_FAILURE          => PEER_CONNECTION_FAILED
+    - ICE_CLOSED_BY_SERVER => PEER_CONNECTION_CLOSED
+    - ICE_DISCONNECTED     => PEER_CONNECTION_DISCONNECTED
+  - @enm10k
 - [FIX] NotificationMessage に turnTransportType を追加する
   - @enm10k
 - [FIX] SoraSpotlightOption から simulcastRid を削除する
