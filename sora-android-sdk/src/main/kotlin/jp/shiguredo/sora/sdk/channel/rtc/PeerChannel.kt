@@ -219,7 +219,7 @@ class PeerChannelImpl(
                         listener?.onConnect()
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
-                        listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILURE)
+                        listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILED)
                         disconnect()
                     }
                     PeerConnection.PeerConnectionState.DISCONNECTED -> {
@@ -231,7 +231,7 @@ class PeerChannelImpl(
                     }
                     PeerConnection.PeerConnectionState.CLOSED -> {
                         if (!closing) {
-                            listener?.onError(SoraErrorReason.PEER_CONNECTION_CLOSED_BY_SERVER)
+                            listener?.onError(SoraErrorReason.PEER_CONNECTION_CLOSED)
                         }
                         disconnect()
                     }

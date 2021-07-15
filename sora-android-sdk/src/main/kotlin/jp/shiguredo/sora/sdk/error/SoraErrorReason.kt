@@ -5,11 +5,15 @@ package jp.shiguredo.sora.sdk.error
  */
 enum class SoraErrorReason {
     // Sora との接続のエラー
+    // TODO: 名称を見直す
+    // - SIGNALING_FAILED
+    // - ICE_FAILED
+    // - ICE_CLOSED
     SIGNALING_FAILURE,
     ICE_FAILURE,
     ICE_CLOSED_BY_SERVER,
-    PEER_CONNECTION_FAILURE,
-    PEER_CONNECTION_CLOSED_BY_SERVER,
+    PEER_CONNECTION_FAILED,
+    PEER_CONNECTION_CLOSED,
     TIMEOUT,
 
     // Sora との接続の警告
