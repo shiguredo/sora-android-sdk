@@ -8,10 +8,14 @@ enum class SoraErrorReason {
     SIGNALING_FAILURE,
     ICE_FAILURE,
     ICE_CLOSED_BY_SERVER,
+    PC_FAILURE,
+    PC_CLOSED_BY_SERVER,
+
     TIMEOUT,
 
     // Sora との接続の警告
     ICE_DISCONNECTED,
+    PC_DISCONNECTED,
 
     // audio track 関連のエラー
     // cf. JavaAudioDeviceModule.AudioTrackErrorCallback

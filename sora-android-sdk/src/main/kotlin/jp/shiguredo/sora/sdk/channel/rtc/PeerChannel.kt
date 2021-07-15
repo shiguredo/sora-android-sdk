@@ -238,6 +238,29 @@ class PeerChannelImpl(
         override fun onConnectionChange(newState: PeerConnection.PeerConnectionState?) {
             super.onConnectionChange(newState)
             SoraLogger.d(TAG, "[rtc] @onConnectionChange:$newState")
+            newState?.let {
+                SoraLogger.d(TAG, "[rtc] @ice:${it.name}")
+                when (it) {
+                    PeerConnection.PeerConnectionState.CONNECTED -> {}
+                    PeerConnection.PeerConnectionState.FAILED -> {
+                        listener?.onError(SoraErrorReason.PC_FAILURE)
+                        disconnect()
+                    }
+                    PeerConnection.PeerConnectionState.DISCONNECTED -> {
+                        if (closing) return
+
+                        // onIceConnectionChange と同様に、 disconnected の場合は listener への通知に留める
+                        listener?.onWarning(SoraErrorReason.PC_DISCONNECTED)
+                    }
+                    PeerConnection.PeerConnectionState.CLOSED -> {
+                        if (!closing) {
+                            listener?.onError(SoraErrorReason.PC_CLOSED_BY_SERVER)
+                        }
+                        disconnect()
+                    }
+                    else -> {}
+                }
+            }
         }
 
         override fun onRemoveStream(ms: MediaStream?) {
