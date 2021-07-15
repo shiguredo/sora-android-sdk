@@ -13,7 +13,9 @@
 
 - [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する
   - @enm10k
-- [CHANGE] connect メッセージから sdp_error を削除する
+- [CHANGE] connect メッセージの定義を見直す
+  - connectionId の型を String? から String に変更する
+  - sdp_error を削除する
   - @enm10k
 - [UPDATE] スポットライト接続時に spotlight_focus_rid / spotlight_unfocus_rid を指定できるようにする
   - @enm10k
