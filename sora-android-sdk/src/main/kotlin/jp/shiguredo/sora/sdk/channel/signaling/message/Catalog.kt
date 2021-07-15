@@ -91,7 +91,7 @@ data class OfferMessage(
         @SerializedName("type")          val type:                      String = "offer",
         @SerializedName("sdp")           val sdp:                       String,
         @SerializedName("client_id")     val clientId:                  String,
-        @SerializedName("connection_id") val connectionId:              String?,
+        @SerializedName("connection_id") val connectionId:              String,
         @SerializedName("metadata")      val metadata:                  Any?,
         @SerializedName("config")        val config:                    OfferConfig? = null,
         @SerializedName("mid")           val mid:                       Map<String, String>? = null,
