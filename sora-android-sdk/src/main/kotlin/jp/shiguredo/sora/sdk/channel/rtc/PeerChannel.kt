@@ -19,7 +19,9 @@ import java.util.zip.*
 
 interface PeerChannel {
 
-    fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription>
+    fun handleInitialRemoteOffer(offer: String,
+                                 mid: Map<String, String>?,
+                                 encodings: List<Encoding>?): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
 
     // 失敗しても問題のない処理が含まれる (client offer SDP は生成に失敗しても問題ない) ので、
@@ -278,7 +280,9 @@ class PeerChannelImpl(
         }
     }
 
-    override fun handleInitialRemoteOffer(offer: String, encodings: List<Encoding>?): Single<SessionDescription> {
+    override fun handleInitialRemoteOffer(offer: String,
+                                          mid: Map<String, String>?,
+                                          encodings: List<Encoding>?): Single<SessionDescription> {
 
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
@@ -292,11 +296,40 @@ class PeerChannelImpl(
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             val mediaStreamLabels = listOf(localStream!!.id)
 
-            audioSender = localStream!!.audioTracks.firstOrNull()?.let {
-                conn!!.addTrack(it, mediaStreamLabels)
+            val audioMid = mid?.get("audio")
+            if (audioMid != null) {
+                val transceiver =  this.conn?.transceivers?.find { it.mid == audioMid }
+                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
+                audioSender = transceiver?.sender
+                audioSender?.streams = listOf(localStream!!.id)
+
+                localStream!!.audioTracks.firstOrNull()?.let {
+                    SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
+                    audioSender?.setTrack(it, false)
+                }
+            } else {
+                audioSender = localStream!!.audioTracks.firstOrNull()?.let {
+                    conn?.addTrack(it, mediaStreamLabels)
+                }
             }
-            videoSender = localStream!!.videoTracks.firstOrNull()?.let {
-                conn!!.addTrack(it, mediaStreamLabels)
+
+            val videoMid = mid?.get("video")
+            if (videoMid != null) {
+                val transceiver = this.conn?.transceivers?.find { it.mid == videoMid }
+                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                SoraLogger.d(TAG, "set video sender: mid=${mid}, transceiver=${transceiver} ")
+                videoSender = transceiver?.sender
+                videoSender?.streams = listOf(localStream!!.id)
+
+                localStream!!.videoTracks.firstOrNull()?.let {
+                    SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
+                    videoSender?.setTrack(it, false)
+                }
+            } else {
+                videoSender = localStream!!.videoTracks.firstOrNull()?.let {
+                    conn?.addTrack(it, mediaStreamLabels)
+                }
             }
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
