@@ -194,32 +194,6 @@ class PeerChannelImpl(
 
         override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
             SoraLogger.d(TAG, "[rtc] @onIceConnectionChange:$state")
-            state?.let {
-               SoraLogger.d(TAG, "[rtc] @ice:${it.name}")
-               when (it) {
-                   PeerConnection.IceConnectionState.CONNECTED -> {
-                       listener?.onConnect()
-                   }
-                   PeerConnection.IceConnectionState.FAILED -> {
-                       listener?.onError(SoraErrorReason.ICE_FAILURE)
-                       disconnect()
-                   }
-                   PeerConnection.IceConnectionState.DISCONNECTED -> {
-                       if (closing) return
-
-                       // disconnected はなにもしない、ネットワークが不安定な場合は
-                       // failed に遷移して上の節で捕まえられるため、listener 通知のみ行う。
-                       listener?.onWarning(SoraErrorReason.ICE_DISCONNECTED)
-                   }
-                   PeerConnection.IceConnectionState.CLOSED -> {
-                       if (!closing) {
-                            listener?.onError(SoraErrorReason.ICE_CLOSED_BY_SERVER)
-                       }
-                       disconnect()
-                   }
-                   else -> {}
-               }
-            }
         }
 
         override fun onIceConnectionReceivingChange(received: Boolean) {
@@ -239,22 +213,25 @@ class PeerChannelImpl(
             super.onConnectionChange(newState)
             SoraLogger.d(TAG, "[rtc] @onConnectionChange:$newState")
             newState?.let {
-                SoraLogger.d(TAG, "[rtc] @ice:${it.name}")
+                SoraLogger.d(TAG, "[rtc] @pc:${it.name}")
                 when (it) {
-                    PeerConnection.PeerConnectionState.CONNECTED -> {}
+                    PeerConnection.PeerConnectionState.CONNECTED -> {
+                        listener?.onConnect()
+                    }
                     PeerConnection.PeerConnectionState.FAILED -> {
-                        listener?.onError(SoraErrorReason.PC_FAILURE)
+                        listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILURE)
                         disconnect()
                     }
                     PeerConnection.PeerConnectionState.DISCONNECTED -> {
                         if (closing) return
 
-                        // onIceConnectionChange と同様に、 disconnected の場合は listener への通知に留める
-                        listener?.onWarning(SoraErrorReason.PC_DISCONNECTED)
+                        // disconnected はなにもしない、ネットワークが不安定な場合は
+                        // failed に遷移して上の節で捕まえられるため、listener 通知のみ行う。
+                        listener?.onWarning(SoraErrorReason.PEER_CONNECTION_DISCONNECTED)
                     }
                     PeerConnection.PeerConnectionState.CLOSED -> {
                         if (!closing) {
-                            listener?.onError(SoraErrorReason.PC_CLOSED_BY_SERVER)
+                            listener?.onError(SoraErrorReason.PEER_CONNECTION_CLOSED_BY_SERVER)
                         }
                         disconnect()
                     }
