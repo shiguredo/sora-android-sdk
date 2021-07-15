@@ -33,7 +33,7 @@
   - @shino
 - [FIX] offer に data_channels が含まれない場合に対応する
   - @shino
-- [FIX] 切断を検知する処理を改善する
+- [FIX] 接続 / 切断を検知する処理を改善する
   - 修正前は IceConnectionState を参照していたが、 PeerConnectionState を参照するように修正する
   - SoraErrorReason の以下の値を参照するコードは修正が必要となる
     - ICE_FAILURE          => PEER_CONNECTION_FAILED
