@@ -213,7 +213,6 @@ class PeerChannelImpl(
             super.onConnectionChange(newState)
             SoraLogger.d(TAG, "[rtc] @onConnectionChange:$newState")
             newState?.let {
-                SoraLogger.d(TAG, "[rtc] @pc:${it.name}")
                 when (it) {
                     PeerConnection.PeerConnectionState.CONNECTED -> {
                         listener?.onConnect()
