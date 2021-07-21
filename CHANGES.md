@@ -21,6 +21,8 @@
   - @enm10k
 - [UPDATE] offer に mid が含まれる場合は、 mid を利用して sender を設定する
   - @enm10k
+- [UPDATE] libwebrtc を 92.4515.9.1 に上げる
+  - @enm10k
 - [UPDATE] 依存ライブラリーのバージョンを上げる
   - `com.android.tools.build:gradle` を 4.2.2 に上げる
   - @enm10k
