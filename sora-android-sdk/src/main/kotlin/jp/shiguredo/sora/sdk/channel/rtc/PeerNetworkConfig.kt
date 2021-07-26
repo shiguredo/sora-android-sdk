@@ -3,7 +3,6 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import org.webrtc.CryptoOptions
-import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnection
 
 class PeerNetworkConfig(
@@ -28,7 +27,7 @@ class PeerNetworkConfig(
             .setEnableGcmCryptoSuites(true)
             .createCryptoOptions()
         conf.cryptoOptions = cryptoOptions
-        conf.enableDtlsSrtp = true;
+        conf.enableDtlsSrtp = true
         conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
         conf.tcpCandidatePolicy = mediaOption.tcpCandidatePolicy
