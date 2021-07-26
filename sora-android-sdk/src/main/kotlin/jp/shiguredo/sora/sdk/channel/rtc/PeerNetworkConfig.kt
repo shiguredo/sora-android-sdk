@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
+import org.webrtc.CryptoOptions
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnection
 
@@ -23,7 +24,10 @@ class PeerNetworkConfig(
         conf.rtcpMuxPolicy            = PeerConnection.RtcpMuxPolicy.REQUIRE
         conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
         conf.keyType                  = PeerConnection.KeyType.ECDSA
-
+        val cryptoOptions = CryptoOptions.builder()
+            .setEnableGcmCryptoSuites(true)
+            .createCryptoOptions()
+        conf.cryptoOptions = cryptoOptions
         conf.enableDtlsSrtp = true;
         conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
