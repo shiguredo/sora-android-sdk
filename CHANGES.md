@@ -28,6 +28,8 @@
   - @enm10k
 - [UPDATE] JCenter への参照を取り除く
   - @enm10k
+- [UPDATE] AES-GCM を有効にする
+  - @miosakuma
 - [ADD] データチャネルシグナリングに対応する
   - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
   - onDataChannel コールバックを実装する
