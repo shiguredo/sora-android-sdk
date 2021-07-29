@@ -102,6 +102,9 @@ class PeerChannelImpl(
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private val compressLabels: List<String>
 
+    // PeerChannel は再利用されないため、
+    // connected が一度 true になった後、再度 false になることはない
+    private var connected = false
     private var closing = false
 
     // offer 時に受け取った encodings を保持しておく
@@ -215,6 +218,11 @@ class PeerChannelImpl(
             newState?.let {
                 when (it) {
                     PeerConnection.PeerConnectionState.CONNECTED -> {
+                        // PeerConnectionState が複数回 CONNECTED に遷移する可能性があるが、
+                        // 初回の CONNECTED のみで onConnect を実行したい
+                        if (connected) return
+
+                        connected = true
                         listener?.onConnect()
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {

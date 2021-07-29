@@ -53,6 +53,10 @@
 - [FIX] SoraSpotlightOption から simulcastRid を削除する
   - スポットライトでは simulcast_rid を指定しても動作しない
   - @enm10k
+- [FIX] 接続成功時のコールバックが複数回実行されないように修正する
+  - 修正前は、 PeerConnectionState が CONNECTED に遷移する度に PeerChannel.Listener.onConnect が実行される可能性があった
+  - 初回のみコールバックが実行されるように修正する
+  - @enm10k
 
 ## 2021.1.1
 
