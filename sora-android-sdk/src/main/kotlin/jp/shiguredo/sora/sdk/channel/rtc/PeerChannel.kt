@@ -102,6 +102,7 @@ class PeerChannelImpl(
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private val compressLabels: List<String>
 
+    private var connected = false
     private var closing = false
 
     // offer 時に受け取った encodings を保持しておく
@@ -215,7 +216,12 @@ class PeerChannelImpl(
             newState?.let {
                 when (it) {
                     PeerConnection.PeerConnectionState.CONNECTED -> {
-                        listener?.onConnect()
+                        // PeerConnectionState が複数回 CONNECTED に遷移する可能性があるが、
+                        // 初回の CONNECTED のみで onConnect を実行したい
+                        if (!connected) {
+                            listener?.onConnect()
+                        }
+                        connected = true
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
                         listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILED)
@@ -553,6 +559,7 @@ class PeerChannelImpl(
         if (closing)
             return
         SoraLogger.d(TAG, "disconnect")
+        connected = false
         closing = true
         listener?.onDisconnect()
         listener = null
