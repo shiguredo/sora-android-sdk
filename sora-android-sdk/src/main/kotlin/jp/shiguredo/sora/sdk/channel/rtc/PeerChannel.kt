@@ -102,6 +102,8 @@ class PeerChannelImpl(
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private val compressLabels: List<String>
 
+    // PeerChannel は再利用されないため、
+    // connected が一度 true になった後、再度 false になることはない
     private var connected = false
     private var closing = false
 
@@ -559,7 +561,6 @@ class PeerChannelImpl(
         if (closing)
             return
         SoraLogger.d(TAG, "disconnect")
-        connected = false
         closing = true
         listener?.onDisconnect()
         listener = null
