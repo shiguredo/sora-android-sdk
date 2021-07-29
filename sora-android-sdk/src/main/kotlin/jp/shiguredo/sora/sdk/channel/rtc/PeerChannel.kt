@@ -222,8 +222,8 @@ class PeerChannelImpl(
                         // 初回の CONNECTED のみで onConnect を実行したい
                         if (connected) return
 
-                        listener?.onConnect()
                         connected = true
+                        listener?.onConnect()
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
                         listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILED)
