@@ -218,9 +218,9 @@ class PeerChannelImpl(
                     PeerConnection.PeerConnectionState.CONNECTED -> {
                         // PeerConnectionState が複数回 CONNECTED に遷移する可能性があるが、
                         // 初回の CONNECTED のみで onConnect を実行したい
-                        if (!connected) {
-                            listener?.onConnect()
-                        }
+                        if (connected) return
+
+                        listener?.onConnect()
                         connected = true
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
