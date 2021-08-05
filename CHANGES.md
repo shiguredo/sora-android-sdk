@@ -9,7 +9,7 @@
 - FIX
     - バグ修正
 
-## develop
+##  2021.2
 
 - [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する
   - @enm10k
