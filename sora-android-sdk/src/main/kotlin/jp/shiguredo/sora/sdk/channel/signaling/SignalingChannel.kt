@@ -178,7 +178,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         val offerMessage = MessageConverter.parseOfferMessage(text)
         SoraLogger.d(TAG, """[signaling:$role] <- offer
             |${offerMessage.sdp}""".trimMargin())
-        // TODO message validation
 
         listener?.onInitialOffer(offerMessage)
     }
@@ -192,7 +191,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onUpdateMessage(text: String) {
         val update = MessageConverter.parseUpdateMessage(text)
-        // TODO message validation
 
         SoraLogger.d(TAG, "[signaling:$role] <- re-offer(update)")
 
@@ -202,7 +200,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onReOfferMessage(text: String) {
         val update = MessageConverter.parseReOfferMessage(text)
-        // TODO message validation
 
         SoraLogger.d(TAG, "[signaling:$role] <- re-offer")
 
@@ -214,7 +211,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         SoraLogger.d(TAG, "[signaling:$role] <- notify")
 
         val notification = MessageConverter.parseNotificationMessage(text)
-        // TODO message validation
         listener?.onNotificationMessage(notification)
     }
 
