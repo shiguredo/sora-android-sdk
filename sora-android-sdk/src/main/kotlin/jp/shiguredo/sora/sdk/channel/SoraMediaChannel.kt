@@ -45,18 +45,22 @@ import kotlin.concurrent.schedule
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
+ * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  */
 class SoraMediaChannel @JvmOverloads constructor(
-        private val context:                 Context,
-        private val signalingEndpoint:       String,
-        private val channelId:               String?,
-        private val signalingMetadata:       Any?                 = "",
-        private val mediaOption:             SoraMediaOption,
-        private val timeoutSeconds:          Long                 = DEFAULT_TIMEOUT_SECONDS,
-        private var listener:                Listener?,
-        private val clientId:                String?              = null,
-        private val signalingNotifyMetadata: Any?                 = null,
-        private val peerConnectionOption:    PeerConnectionOption = PeerConnectionOption()
+        private val context:                   Context,
+        private val signalingEndpoint:         String,
+        private val channelId:                 String,
+        private val signalingMetadata:         Any?                 = "",
+        private val mediaOption:               SoraMediaOption,
+        private val timeoutSeconds:            Long                 = DEFAULT_TIMEOUT_SECONDS,
+        private var listener:                  Listener?,
+        private val clientId:                  String?              = null,
+        private val signalingNotifyMetadata:   Any?                 = null,
+        private val peerConnectionOption:      PeerConnectionOption = PeerConnectionOption(),
+        private val dataChannelSignaling:      Boolean?             = null,
+        private var ignoreDisconnectWebSocket: Boolean?             = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -70,6 +74,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     val role = mediaOption.requiredRole
 
     private var getStatsTimer: Timer? = null
+    private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
 
     /**
      * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -235,6 +240,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var peer:            PeerChannel?      = null
     private var signaling:       SignalingChannel? = null
 
+    private var switchedToDataChannel = false
     private var closing = false
 
     /**
@@ -248,8 +254,16 @@ class SoraMediaChannel @JvmOverloads constructor(
     private val signalingListener = object : SignalingChannel.Listener {
 
         override fun onDisconnect() {
-            SoraLogger.d(TAG, "[channel:$role] @signaling:onClose")
-            disconnect()
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect "
+                    + "switchedToDataChannel=$switchedToDataChannel, "
+                    + "ignoreDisconnectWebSocket=$ignoreDisconnectWebSocket" )
+            val ignoreDisconnect = ignoreDisconnectWebSocket ?: false
+            if (switchedToDataChannel && ignoreDisconnect) {
+                // なにもしない
+                SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
+            } else {
+                disconnect()
+            }
         }
 
         override fun onConnect() {
@@ -260,6 +274,12 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
             this@SoraMediaChannel.connectionId = offerMessage.connectionId
             handleInitialOffer(offerMessage)
+        }
+
+        override fun onSwitched(switchedMessage: SwitchedMessage) {
+            SoraLogger.d(TAG, "[channel:$role] @signaling:onSwitched")
+            ignoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket
+            handleSwitched(switchedMessage)
         }
 
         override fun onUpdatedOffer(sdp: String) {
@@ -274,19 +294,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onNotificationMessage(notification: NotificationMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onNotificationMessage")
-            when (notification.eventType) {
-                "connection.created", "connection.destroyed" -> {
-                    val attendees = ChannelAttendeesCount(
-                            numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
-                            numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
-                            numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
-                            numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
-                            numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
-                    )
-                    listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
-                }
-            }
-            listener?.onNotificationMessage(this@SoraMediaChannel, notification)
+            handleNotificationMessage(notification)
         }
 
         override fun onPushMessage(push: PushMessage) {
@@ -296,7 +304,13 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onError(reason: SoraErrorReason) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason")
-            listener?.onError(this@SoraMediaChannel, reason)
+            val ignoreError = ignoreDisconnectWebSocket ?: false
+            if (switchedToDataChannel && ignoreError) {
+                // なにもしない
+                SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
+            } else {
+                listener?.onError(this@SoraMediaChannel, reason)
+            }
         }
 
         override fun getStats(handler: (RTCStatsReport?) -> Unit) {
@@ -343,6 +357,59 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @peer:onConnect")
             stopTimer()
             listener?.onConnect(this@SoraMediaChannel)
+        }
+
+        override fun onDataChannelOpen(label: String, dataChannel: DataChannel) {
+            dataChannels[label] = dataChannel
+        }
+
+        override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
+
+            val expectedType = when (label) {
+                "signaling" -> "re-offer"
+                "notify" -> "notify"
+                "push" -> "push"
+                "stats" -> "req-stats"
+                "e2ee" -> "NOT-IMPLEMENTED"
+                else -> label         // 追加が発生した時に備えて許容する
+            }
+
+            MessageConverter.parseType(messageData)?.let { type ->
+                when (type) {
+                    expectedType -> {
+                        when (label) {
+                            "signaling" -> {
+                                val reOfferMessage = MessageConverter.parseReOfferMessage(messageData)
+                                handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+                            }
+                            "notify" -> {
+                                val notificationMessage = MessageConverter.parseNotificationMessage(messageData)
+                                handleNotificationMessage(notificationMessage)
+                            }
+                            "push" -> {
+                                val pushMessage = MessageConverter.parsePushMessage(messageData)
+                                listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+                            }
+                            "stats" -> {
+                                // req-stats は type しかないので parse しない
+                                handleReqStats(dataChannel)
+                            }
+                            "e2ee" -> {
+                                SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$messageData")
+                            }
+                            else ->
+                                SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$messageData")
+                        }
+
+                    }
+                    else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$messageData")
+                }
+            }
+        }
+
+        override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
+            disconnect()
         }
 
         override fun onSenderEncodings(encodings: List<RtpParameters.Encoding>) {
@@ -486,7 +553,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                                 }
                                 val handler = Handler(Looper.getMainLooper())
                                 handler.post() {
-                                    connectSignalingChannel(it.getOrNull(), it.exceptionOrNull()?.message)
+                                    connectSignalingChannel(it.getOrNull())
                                 }
                             },
                             onError = {
@@ -500,39 +567,41 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?,
-                                        clientOfferSdpError: String?) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?) {
         signaling = SignalingChannelImpl(
-                endpoint                = signalingEndpoint,
-                role                    = role,
-                channelId               = channelId,
-                mediaOption             = mediaOption,
-                connectMetadata         = signalingMetadata,
-                listener                = signalingListener,
-                clientOfferSdp          = clientOfferSdp,
-                clientOfferSdpError     = clientOfferSdpError,
-                clientId                = clientId,
-                signalingNotifyMetadata = signalingNotifyMetadata
+                endpoint                         = signalingEndpoint,
+                role                             = role,
+                channelId                        = channelId,
+                connectDataChannelSignaling      = dataChannelSignaling,
+                connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket,
+                mediaOption                      = mediaOption,
+                connectMetadata                  = signalingMetadata,
+                listener                         = signalingListener,
+                clientOfferSdp                   = clientOfferSdp,
+                clientId                         = clientId,
+                signalingNotifyMetadata          = signalingNotifyMetadata
         )
         signaling!!.connect()
     }
 
     private fun handleInitialOffer(offerMessage: OfferMessage) {
-        SoraLogger.d(TAG, "[channel:$role] @peer:start")
+        SoraLogger.d(TAG, "[channel:$role] initial offer")
 
+        SoraLogger.d(TAG, "[channel:$role] @peer:starting")
         peer = PeerChannelImpl(
-                appContext    = context,
-                networkConfig = PeerNetworkConfig(
+                appContext         = context,
+                networkConfig      = PeerNetworkConfig(
                         serverConfig = offerMessage.config,
                         mediaOption  = mediaOption
                 ),
-                mediaOption   = mediaOption,
-                listener      = peerListener
+                mediaOption        = mediaOption,
+                dataChannelConfigs = offerMessage.dataChannels,
+                listener           = peerListener
         )
 
         if (0 < peerConnectionOption.getStatsIntervalMSec) {
             getStatsTimer = Timer()
-            SoraLogger.d(TAG, "Schedule getStats with inteval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
+            SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
             getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
                 peer?.getStats(RTCStatsCollectorCallback {
                     listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
@@ -540,7 +609,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
         }
         peer?.run {
-            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.encodings)
+            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.mid, offerMessage.encodings)
                     .observeOn(Schedulers.io())
                     .subscribeBy(
                             onSuccess = {
@@ -554,6 +623,15 @@ class SoraMediaChannel @JvmOverloads constructor(
                             }
                     )
             compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleSwitched(switchedMessage: SwitchedMessage) {
+        switchedToDataChannel = true
+        ignoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket
+        val earlyCloseWebSocket = ignoreDisconnectWebSocket ?: false
+        if (earlyCloseWebSocket) {
+            signaling?.disconnect()
         }
     }
 
@@ -595,6 +673,49 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
+    private fun handleReOfferViaDataChannel(dataChannel: DataChannel, sdp: String) {
+        peer?.run {
+            val subscription = handleUpdatedRemoteOffer(sdp)
+                    .observeOn(Schedulers.io())
+                    .subscribeBy(
+                            onSuccess = {
+                                SoraLogger.d(TAG, "[channel:$role] @peer:about to send re-answer")
+                                peer?.sendReAnswer(dataChannel, it.description)
+                            },
+                            onError = {
+                                val msg = "[channel:$role] failed handle re-offer: ${it.message}"
+                                SoraLogger.w(TAG, msg)
+                                disconnect()
+                            }
+                    )
+            compositeDisposable.add(subscription)
+        }
+    }
+
+    private fun handleReqStats(dataChannel: DataChannel) {
+        peer?.getStats {
+            it?.let { reports ->
+                peer?.sendStats(dataChannel, reports.statsMap)
+            }
+        }
+    }
+
+    private fun handleNotificationMessage(notification: NotificationMessage) {
+        when (notification.eventType) {
+            "connection.created", "connection.destroyed" -> {
+                val attendees = ChannelAttendeesCount(
+                        numberOfDownstreams = notification.numberOfDownstreamConnections?: 0,
+                        numberOfUpstreams = notification.numberOfUpstreamConnections?: 0,
+                        numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
+                        numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
+                        numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
+                )
+                listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
+            }
+        }
+        listener?.onNotificationMessage(this@SoraMediaChannel, notification)
+    }
+
     /**
      * Sora への接続を切断します。
      *
@@ -606,6 +727,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         closing = true
 
         stopTimer()
+        sendDisconnectMessage()
         compositeDisposable.dispose()
 
         listener?.onClose(this)
@@ -619,5 +741,16 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         peer?.disconnect()
         peer = null
+    }
+
+    private fun sendDisconnectMessage() {
+        val dataChannel = dataChannels["signaling"]
+        SoraLogger.d(TAG, "[channel:$role] sendDisconnectMessage switched=$switchedToDataChannel, "
+                + "dataChannel.label=${dataChannel?.label()}")
+        if (switchedToDataChannel && dataChannel != null) {
+            peer?.sendDisconnectMessage(dataChannel)
+        } else {
+            signaling?.sendDisconnectMessage()
+        }
     }
 }

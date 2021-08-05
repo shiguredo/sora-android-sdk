@@ -9,6 +9,55 @@
 - FIX
     - バグ修正
 
+##  2021.2
+
+- [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する
+  - @enm10k
+- [CHANGE] connect メッセージの定義を見直す
+  - connectionId の型を String? から String に変更する
+  - sdp_error を削除する
+  - @enm10k
+- [UPDATE] スポットライト接続時に spotlight_focus_rid / spotlight_unfocus_rid を指定できるようにする
+  - @enm10k
+- [UPDATE] offer に mid が含まれる場合は、 mid を利用して sender を設定する
+  - @enm10k
+- [UPDATE] libwebrtc を 92.4515.9.1 に上げる
+  - @enm10k
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - `com.android.tools.build:gradle` を 4.2.2 に上げる
+  - @enm10k
+- [UPDATE] JCenter への参照を取り除く
+  - @enm10k
+- [UPDATE] AES-GCM を有効にする
+  - @miosakuma
+- [ADD] データチャネルシグナリングに対応する
+  - data_channel_signlaing, ignore_disconnect_websocket パラメータ設定を追加する
+  - onDataChannel コールバックを実装する
+  - 各 label に対応するデータチャネル関係のコールバックを実装する
+  - WebSocket 側の `type:switched` 受信の処理を追加する
+  - @shino
+- [FIX] 終了前にシグナリング Disconnect メッセージ送信を追加する
+  - 状態により WebSocket, DataChannel どちらかで送信する
+  - @shino
+- [FIX] offer に data_channels が含まれない場合に対応する
+  - @shino
+- [FIX] 接続 / 切断を検知する処理を改善する
+  - 修正前は IceConnectionState を参照していたが、 PeerConnectionState を参照するように修正する
+  - SoraErrorReason の以下の値を参照するコードは修正が必要となる
+    - ICE_FAILURE          => PEER_CONNECTION_FAILED
+    - ICE_CLOSED_BY_SERVER => PEER_CONNECTION_CLOSED
+    - ICE_DISCONNECTED     => PEER_CONNECTION_DISCONNECTED
+  - @enm10k
+- [FIX] NotificationMessage に turnTransportType を追加する
+  - @enm10k
+- [FIX] SoraSpotlightOption から simulcastRid を削除する
+  - スポットライトでは simulcast_rid を指定しても動作しない
+  - @enm10k
+- [FIX] 接続成功時のコールバックが複数回実行されないように修正する
+  - 修正前は、 PeerConnectionState が CONNECTED に遷移する度に PeerChannel.Listener.onConnect が実行される可能性があった
+  - 初回のみコールバックが実行されるように修正する
+  - @enm10k
+
 ## 2021.1.1
 
 - [FIX] Sora への接続時に simulcast_rid を指定するとエラーになる現象を修正する

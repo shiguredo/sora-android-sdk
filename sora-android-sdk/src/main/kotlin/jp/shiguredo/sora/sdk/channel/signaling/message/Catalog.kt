@@ -18,25 +18,32 @@ data class PongMessage(
 )
 
 data class ConnectMessage(
-        @SerializedName("type")        val type:                    String = "connect",
-        @SerializedName("role")        var role:                    String,
-        @SerializedName("channel_id")  val channelId:               String?,
-        @SerializedName("client_id")   val clientId:                String? = null,
-        @SerializedName("metadata")    val metadata:                Any? = null,
+        @SerializedName("type")        val type:                      String = "connect",
+        @SerializedName("role")        var role:                      String,
+        @SerializedName("channel_id")  val channelId:                 String,
+        @SerializedName("client_id")   val clientId:                  String? = null,
+        @SerializedName("metadata")    val metadata:                  Any? = null,
         @SerializedName("signaling_notify_metadata")
-                                       val signalingNotifyMetadata: Any? = null,
-        @SerializedName("multistream") val multistream:             Boolean = false,
-        @SerializedName("spotlight")   var spotlight:               Any? = null,
-        @SerializedName("spotlight_number") var spotlightNumber: Int? = null,
-        @SerializedName("simulcast")   var simulcast:               Boolean? = false,
-        @SerializedName("simulcast_rid") var simulcastRid: String? = null,
-        @SerializedName("video")       var video:                   Any? = null,
-        @SerializedName("audio")       var audio:                   Any? = null,
-        @SerializedName("sora_client") val soraClient:              String = SDKInfo.sdkInfo(),
-        @SerializedName("libwebrtc")   val libwebrtc:               String = SDKInfo.libwebrtcInfo(),
-        @SerializedName("environment") val environment:             String = SDKInfo.deviceInfo(),
-        @SerializedName("sdp")         val sdp:                     String? = null,
-        @SerializedName("sdp_error")   val sdp_error:               String? = null
+                                       val signalingNotifyMetadata:   Any? = null,
+        @SerializedName("multistream") val multistream:               Boolean = false,
+        @SerializedName("spotlight")   var spotlight:                 Any? = null,
+        @SerializedName("spotlight_number")
+                                       var spotlightNumber:           Int? = null,
+        @SerializedName("spotlight_focus_rid") var spotlightFocusRid: String? = null,
+        @SerializedName("spotlight_unfocus_rid") var spotlightUnfocusRid: String? = null,
+        @SerializedName("simulcast")   var simulcast:                 Boolean? = false,
+        @SerializedName("simulcast_rid")
+                                       var simulcastRid:              String? = null,
+        @SerializedName("video")       var video:                     Any? = null,
+        @SerializedName("audio")       var audio:                     Any? = null,
+        @SerializedName("sora_client") val soraClient:                String = SDKInfo.sdkInfo(),
+        @SerializedName("libwebrtc")   val libwebrtc:                 String = SDKInfo.libwebrtcInfo(),
+        @SerializedName("environment") val environment:               String = SDKInfo.deviceInfo(),
+        @SerializedName("sdp")         val sdp:                       String? = null,
+        @SerializedName("data_channel_signaling")
+                                       val dataChannelSignaling:      Boolean? = null,
+        @SerializedName("ignore_disconnect_websocket")
+                                       val ignoreDisconnectWebsocket: Boolean? = null
 )
 
 data class VideoSetting(
@@ -81,13 +88,20 @@ data class Encoding(
 )
 
 data class OfferMessage(
-        @SerializedName("type")          val type:         String = "offer",
-        @SerializedName("sdp")           val sdp:          String,
-        @SerializedName("client_id")     val clientId:     String,
-        @SerializedName("connection_id") val connectionId: String?,
-        @SerializedName("metadata")      val metadata:     Any?,
-        @SerializedName("config")        val config:       OfferConfig? = null,
-        @SerializedName("encodings")     val encodings:    List<Encoding>?
+        @SerializedName("type")          val type:                      String = "offer",
+        @SerializedName("sdp")           val sdp:                       String,
+        @SerializedName("client_id")     val clientId:                  String,
+        @SerializedName("connection_id") val connectionId:              String,
+        @SerializedName("metadata")      val metadata:                  Any?,
+        @SerializedName("config")        val config:                    OfferConfig? = null,
+        @SerializedName("mid")           val mid:                       Map<String, String>? = null,
+        @SerializedName("encodings")     val encodings:                 List<Encoding>?,
+        @SerializedName("data_channels") val dataChannels:              List<Map<String, Any>>? = null
+)
+
+data class SwitchedMessage(
+        @SerializedName("type")                        val type:                      String = "switched",
+        @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null
 )
 
 data class UpdateMessage(
@@ -120,6 +134,15 @@ data class PushMessage(
         @SerializedName("data") var data: Any?   = null
 )
 
+data class ReqStatsMessage(
+        @SerializedName("type") val type: String = "req-stats"
+)
+
+data class StatsMessage(
+        @SerializedName("type")    val type: String = "stats",
+        @SerializedName("reports") val reports: Any
+)
+
 data class NotificationMessage(
         @SerializedName("type")                           val type:                          String = "notify",
         @SerializedName("event_type")                     val eventType:                     String,
@@ -147,5 +170,9 @@ data class NotificationMessage(
         @SerializedName("authn_metadata")                 val authnMetadata:                 Any?,
         @SerializedName("authz_metadata")                 val authzMetadata:                 Any?,
         @SerializedName("data")                           val data:                          Any?,
-) {
-}
+        @SerializedName("turn_transport_type")            val turnTransportType:             String?,
+)
+
+data class DisconnectMessage(
+        @SerializedName("type") val type: String = "disconnect"
+)
