@@ -2,7 +2,7 @@ package jp.shiguredo.sora.sdk.util
 
 import org.webrtc.RTCStatsReport
 
-fun convertStats(report: RTCStatsReport): Any {
+fun convertStats(report: RTCStatsReport): List<Any> {
     var entries = mutableListOf<Any>()
     for ((_, stats) in report.statsMap) {
         val entry = mutableMapOf<String, Any>()
