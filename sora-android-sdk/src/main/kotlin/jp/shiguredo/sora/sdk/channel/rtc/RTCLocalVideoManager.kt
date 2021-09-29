@@ -22,6 +22,24 @@ class RTCNullLocalVideoManager: RTCLocalVideoManager {
     override fun dispose() {}
 }
 
+class CapturerObserverWrapper(capturerObserver: CapturerObserver): CapturerObserver {
+    private val TAG = CapturerObserver::class.simpleName
+    private val capturerObserver = capturerObserver
+
+    override fun onCapturerStarted(succeess: Boolean) {
+        capturerObserver.onCapturerStarted(succeess)
+    }
+
+    override fun onCapturerStopped() {
+        capturerObserver.onCapturerStopped()
+    }
+
+    override fun onFrameCaptured(frame: VideoFrame?) {
+        SoraLogger.d(TAG, "onFrameCaptured: rotation => ${frame?.rotation}")
+        capturerObserver.onFrameCaptured(frame)
+    }
+}
+
 class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVideoManager {
 
     companion object {
@@ -37,7 +55,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer): RTCLocalVid
         surfaceTextureHelper =
                 SurfaceTextureHelper.create("CaptureThread", eglContext);
         source = factory.createVideoSource(capturer.isScreencast);
-        capturer.initialize(surfaceTextureHelper, appContext, source!!.capturerObserver);
+        capturer.initialize(surfaceTextureHelper, appContext, CapturerObserverWrapper(source!!.capturerObserver));
 
         val trackId = UUID.randomUUID().toString()
         track = factory.createVideoTrack(trackId, source)
