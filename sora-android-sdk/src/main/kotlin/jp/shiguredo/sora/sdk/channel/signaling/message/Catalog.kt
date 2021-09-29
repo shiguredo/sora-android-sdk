@@ -140,7 +140,7 @@ data class ReqStatsMessage(
 
 data class StatsMessage(
         @SerializedName("type")    val type: String = "stats",
-        @SerializedName("reports") val reports: Any
+        @SerializedName("reports") val reports: Any?
 )
 
 data class NotificationMessage(

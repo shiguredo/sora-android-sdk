@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import jp.shiguredo.sora.sdk.util.convertStats
 import org.webrtc.*
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
@@ -33,7 +34,7 @@ interface PeerChannel {
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
-    fun sendStats(dataChannel: DataChannel, report: Any)
+    fun sendStats(dataChannel: DataChannel, report: RTCStatsReport)
     fun sendDisconnectMessage(dataChannel: DataChannel)
 
     interface Listener {
@@ -463,8 +464,8 @@ class PeerChannelImpl(
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
     }
 
-    override fun sendStats(dataChannel: DataChannel, report: Any) {
-        val statsMessage = MessageConverter.buildStatsMessage(report)
+    override fun sendStats(dataChannel: DataChannel, report: RTCStatsReport) {
+        val statsMessage = MessageConverter.buildStatsMessage(convertStats(report))
         SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }

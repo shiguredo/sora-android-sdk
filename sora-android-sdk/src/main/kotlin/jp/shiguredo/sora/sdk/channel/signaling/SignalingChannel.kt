@@ -5,6 +5,7 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import jp.shiguredo.sora.sdk.util.convertStats
 import okhttp3.*
 import okio.ByteString
 import org.webrtc.RTCStatsReport
@@ -236,24 +237,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun sendPongMessage(report: RTCStatsReport?) {
         webSocket?.let { ws ->
-            val stats = report?.let { createStats(it) }
+            val stats = report?.let { convertStats(it) }
             val msg = MessageConverter.buildPongMessage(stats)
             SoraLogger.d(TAG, msg)
             ws.send(msg)
         }
-    }
-
-    private fun createStats(report: RTCStatsReport): Any? {
-        var entries = mutableListOf<Any>()
-        for ((_, stats) in report.statsMap) {
-            val entry = mutableMapOf<String, Any>()
-            entry["id"] = stats.id
-            entry["type"] = stats.type
-            entry["timestamp"] = stats.timestampUs
-            entry.putAll(stats.members)
-            entries.add(entry)
-        }
-        return entries
     }
 
     private val webSocketListener = object : WebSocketListener() {
