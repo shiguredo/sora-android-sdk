@@ -5,6 +5,15 @@ import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import org.webrtc.RTCStats
+import org.webrtc.RTCStatsReport
+
+class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
+    constructor(stats: RTCStats) : this(mapOf(
+        "id" to stats.id,
+        "type" to stats.type,
+        "timestamp" to stats.timestampUs) + stats.members) {}
+}
 
 class MessageConverter {
 
@@ -107,8 +116,10 @@ class MessageConverter {
             return jsonMsg
         }
 
-        fun buildPongMessage(stats: Any?): String {
-            return gson.toJson(PongMessage(stats = stats))
+        fun buildPongMessage(stats: RTCStatsReport?): String {
+            return gson.toJson(PongMessage(stats = stats?.let {
+                stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
+            }))
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
@@ -127,8 +138,8 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
-        fun buildStatsMessage(reports: Any): String {
-            return gson.toJson(StatsMessage(reports = reports))
+        fun buildStatsMessage(reports: RTCStatsReport): String {
+            return gson.toJson(StatsMessage(reports = reports.statsMap.values.map { stats -> SoraRTCStats(stats) }))
         }
 
         fun buildDisconnectMessage(): String {

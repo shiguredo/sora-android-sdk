@@ -695,7 +695,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private fun handleReqStats(dataChannel: DataChannel) {
         peer?.getStats {
             it?.let { reports ->
-                peer?.sendStats(dataChannel, reports.statsMap)
+                peer?.sendStats(dataChannel, reports)
             }
         }
     }
