@@ -222,7 +222,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param statsReports 統計レポート
          */
-        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: List<SoraRTCStats>) {}
+        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
 
         /**
          * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック
@@ -611,8 +611,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
             getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
                 peer?.getStats(RTCStatsCollectorCallback {
-                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel,
-                        it.statsMap.values.map { stats -> SoraRTCStats(stats) }.toList())
+                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
                 })
             }
         }

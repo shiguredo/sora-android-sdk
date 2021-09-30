@@ -4,7 +4,6 @@ import android.content.Context
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
-import jp.shiguredo.sora.sdk.channel.SoraRTCStats
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
@@ -466,7 +465,7 @@ class PeerChannelImpl(
     }
 
     override fun sendStats(dataChannel: DataChannel, report: RTCStatsReport) {
-        val statsMessage = MessageConverter.buildStatsMessage(report.statsMap.values.map { stats -> SoraRTCStats(stats) })
+        val statsMessage = MessageConverter.buildStatsMessage(report)
         SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }

@@ -6,6 +6,7 @@ import jp.shiguredo.sora.sdk.channel.SoraRTCStats
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import org.webrtc.RTCStatsReport
 
 class MessageConverter {
 
@@ -108,8 +109,10 @@ class MessageConverter {
             return jsonMsg
         }
 
-        fun buildPongMessage(stats: List<SoraRTCStats>?): String {
-            return gson.toJson(PongMessage(stats = stats))
+        fun buildPongMessage(stats: RTCStatsReport?): String {
+            return gson.toJson(PongMessage(stats = stats?.let {
+                stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
+            }))
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
@@ -128,8 +131,8 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
-        fun buildStatsMessage(reports: List<SoraRTCStats>): String {
-            return gson.toJson(StatsMessage(reports = reports))
+        fun buildStatsMessage(reports: RTCStatsReport): String {
+            return gson.toJson(StatsMessage(reports = reports.statsMap.values.map { stats -> SoraRTCStats(stats) }))
         }
 
         fun buildDisconnectMessage(): String {
