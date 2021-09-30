@@ -17,8 +17,6 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.zip.*
 
-
-
 interface PeerChannel {
     fun handleInitialRemoteOffer(offer: String,
                                  mid: Map<String, String>?,
