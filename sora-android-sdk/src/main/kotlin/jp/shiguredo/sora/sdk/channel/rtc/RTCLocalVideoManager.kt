@@ -4,6 +4,8 @@ import android.content.Context
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.util.*
+import android.graphics.Matrix
+import kotlin.math.absoluteValue
 
 interface RTCLocalVideoManager {
     fun initTrack(factory: PeerConnectionFactory,
@@ -23,7 +25,7 @@ class RTCNullLocalVideoManager: RTCLocalVideoManager {
 }
 
 class CapturerObserverWrapper(capturerObserver: CapturerObserver): CapturerObserver {
-    private val TAG = CapturerObserver::class.simpleName
+    private val TAG = CapturerObserverWrapper::class.simpleName
     private val capturerObserver = capturerObserver
 
     override fun onCapturerStarted(succeess: Boolean) {
@@ -35,7 +37,29 @@ class CapturerObserverWrapper(capturerObserver: CapturerObserver): CapturerObser
     }
 
     override fun onFrameCaptured(frame: VideoFrame?) {
-        SoraLogger.d(TAG, "onFrameCaptured: rotation => ${frame?.rotation}")
+        SoraLogger.d(TAG, "frame: rotatedWidth=${frame?.rotatedWidth}, rotatedHeight=${frame?.rotatedHeight}, rotation=${frame?.rotation}")
+
+        /*
+        frame?.let {
+            val buffer = it.buffer
+
+            if (buffer is TextureBufferImpl && frame.rotation != 0) {
+                SoraLogger.d(TAG, "buffer: ${buffer}, ${buffer.width}, ${buffer.height}, ${buffer.unscaledWidth}, ${buffer.unscaledHeight}")
+                var matrix = Matrix()
+                matrix.setRotate(180F) // , (buffer.width/2).toFloat(), (buffer.height/2).toFloat())
+                matrix.setScale(buffer.height.toFloat(), buffer.width.toFloat())
+
+                val newBuffer = buffer.applyTransformMatrix(matrix, buffer.width, buffer.height)
+                SoraLogger.d(TAG, "newBuffer: ${newBuffer}, ${newBuffer.width}, ${newBuffer.height}, ${newBuffer.unscaledWidth}, ${newBuffer.unscaledHeight}")
+                val newFrame = VideoFrame(newBuffer, frame.rotation, frame.timestampNs)
+                capturerObserver.onFrameCaptured(newFrame)
+            } else {
+                SoraLogger.d(TAG, "raw frame")
+                capturerObserver.onFrameCaptured(frame)
+            }
+        }
+         */
+
         capturerObserver.onFrameCaptured(frame)
     }
 }
