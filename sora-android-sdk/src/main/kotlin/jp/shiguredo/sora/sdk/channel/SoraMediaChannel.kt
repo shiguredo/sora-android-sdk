@@ -22,6 +22,9 @@ import org.webrtc.*
 import java.util.*
 import kotlin.concurrent.schedule
 
+typealias SoraRTCStats = Map<String, Any>
+typealias SoraRTCStatsReport = MutableList<SoraRTCStats>
+
 /**
  * [SignalingChannel] と [PeerChannel] を
  * 管理、協調動作させるためのクラス
@@ -215,7 +218,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param statsReports 統計レポート
          */
-        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
+        fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: SoraRTCStatsReport) {}
 
         /**
          * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック
@@ -604,7 +607,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
             getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
                 peer?.getStats(RTCStatsCollectorCallback {
-                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
+                    listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, PeerChannel.convertStats(it))
                 })
             }
         }

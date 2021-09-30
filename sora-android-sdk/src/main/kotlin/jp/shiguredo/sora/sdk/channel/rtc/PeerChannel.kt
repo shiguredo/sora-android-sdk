@@ -7,10 +7,11 @@ import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
+import jp.shiguredo.sora.sdk.channel.SoraRTCStats
+import jp.shiguredo.sora.sdk.channel.SoraRTCStatsReport
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import jp.shiguredo.sora.sdk.util.convertStats
 import org.webrtc.*
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
@@ -18,7 +19,23 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.zip.*
 
+
+
 interface PeerChannel {
+    companion object {
+        fun convertStats(report: RTCStatsReport): SoraRTCStatsReport {
+            var entries = mutableListOf<SoraRTCStats>()
+            for ((_, stats) in report.statsMap) {
+                val entry = mutableMapOf<String, Any>()
+                entry["id"] = stats.id
+                entry["type"] = stats.type
+                entry["timestamp"] = stats.timestampUs
+                entry.putAll(stats.members)
+                entries.add(entry)
+            }
+            return entries
+        }
+    }
 
     fun handleInitialRemoteOffer(offer: String,
                                  mid: Map<String, String>?,
@@ -465,7 +482,7 @@ class PeerChannelImpl(
     }
 
     override fun sendStats(dataChannel: DataChannel, report: RTCStatsReport) {
-        val statsMessage = MessageConverter.buildStatsMessage(convertStats(report))
+        val statsMessage = MessageConverter.buildStatsMessage(PeerChannel.convertStats(report))
         SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }
@@ -591,5 +608,7 @@ class PeerChannelImpl(
             handler(null)
         }
     }
+
+
 
 }

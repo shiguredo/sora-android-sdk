@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.SoraRTCStatsReport
 import jp.shiguredo.sora.sdk.util.SoraLogger
 
 class MessageConverter {
@@ -107,7 +108,7 @@ class MessageConverter {
             return jsonMsg
         }
 
-        fun buildPongMessage(stats: List<Any>?): String {
+        fun buildPongMessage(stats: SoraRTCStatsReport?): String {
             return gson.toJson(PongMessage(stats = stats))
         }
 
@@ -127,7 +128,7 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
-        fun buildStatsMessage(reports: List<Any>): String {
+        fun buildStatsMessage(reports: SoraRTCStatsReport): String {
             return gson.toJson(StatsMessage(reports = reports))
         }
 

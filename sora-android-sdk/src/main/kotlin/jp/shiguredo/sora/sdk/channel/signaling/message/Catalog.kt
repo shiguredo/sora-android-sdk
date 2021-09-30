@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.annotations.SerializedName
+import jp.shiguredo.sora.sdk.channel.SoraRTCStatsReport
 import jp.shiguredo.sora.sdk.util.SDKInfo
 
 data class MessageCommonPart(
@@ -14,7 +15,7 @@ data class PingMessage(
 
 data class PongMessage(
         @SerializedName("type") val type: String = "pong",
-        @SerializedName("stats") val stats: List<Any>? = null
+        @SerializedName("stats") val stats: SoraRTCStatsReport? = null
 )
 
 data class ConnectMessage(
@@ -140,7 +141,7 @@ data class ReqStatsMessage(
 
 data class StatsMessage(
         @SerializedName("type")    val type: String = "stats",
-        @SerializedName("reports") val reports: List<Any>
+        @SerializedName("reports") val reports: SoraRTCStatsReport
 )
 
 data class NotificationMessage(
