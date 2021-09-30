@@ -27,10 +27,6 @@ class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
         "id" to stats.id,
         "type" to stats.type,
         "timestamp" to stats.timestampUs) + stats.members) {}
-
-    override fun get(key: String): Any? {
-        return map[key]
-    }
 }
 
 /**
