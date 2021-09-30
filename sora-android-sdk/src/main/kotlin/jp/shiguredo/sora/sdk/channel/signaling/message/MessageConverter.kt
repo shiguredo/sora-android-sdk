@@ -2,9 +2,9 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.Sora
+import jp.shiguredo.sora.sdk.channel.SoraRTCStats
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.SoraRTCStatsReport
 import jp.shiguredo.sora.sdk.util.SoraLogger
 
 class MessageConverter {
@@ -108,7 +108,7 @@ class MessageConverter {
             return jsonMsg
         }
 
-        fun buildPongMessage(stats: SoraRTCStatsReport?): String {
+        fun buildPongMessage(stats: List<SoraRTCStats>?): String {
             return gson.toJson(PongMessage(stats = stats))
         }
 
@@ -128,7 +128,7 @@ class MessageConverter {
             return gson.toJson(CandidateMessage(candidate = sdp))
         }
 
-        fun buildStatsMessage(reports: SoraRTCStatsReport): String {
+        fun buildStatsMessage(reports: List<SoraRTCStats>): String {
             return gson.toJson(StatsMessage(reports = reports))
         }
 

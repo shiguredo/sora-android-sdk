@@ -1,8 +1,8 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
+import jp.shiguredo.sora.sdk.channel.SoraRTCStats
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.signaling.message.*
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -237,7 +237,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun sendPongMessage(report: RTCStatsReport?) {
         webSocket?.let { ws ->
-            val stats = report?.let { PeerChannel.convertStats(it) }
+            val stats = report?.let { report.statsMap.values.map { stats -> SoraRTCStats(stats) } }
             val msg = MessageConverter.buildPongMessage(stats)
             SoraLogger.d(TAG, msg)
             ws.send(msg)
