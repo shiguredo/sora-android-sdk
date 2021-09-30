@@ -9,6 +9,11 @@
 - FIX
     - バグ修正
 
+## develop
+
+- [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
+  - @enm10k
+
 ##  2021.2
 
 - [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する
