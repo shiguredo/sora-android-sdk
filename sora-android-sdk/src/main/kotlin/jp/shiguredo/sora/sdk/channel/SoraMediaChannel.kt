@@ -22,13 +22,6 @@ import org.webrtc.*
 import java.util.*
 import kotlin.concurrent.schedule
 
-class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
-    constructor(stats: RTCStats) : this(mapOf(
-        "id" to stats.id,
-        "type" to stats.type,
-        "timestamp" to stats.timestampUs) + stats.members) {}
-}
-
 /**
  * [SignalingChannel] と [PeerChannel] を
  * 管理、協調動作させるためのクラス

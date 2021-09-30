@@ -2,11 +2,18 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.Sora
-import jp.shiguredo.sora.sdk.channel.SoraRTCStats
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
+
+class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
+    constructor(stats: RTCStats) : this(mapOf(
+        "id" to stats.id,
+        "type" to stats.type,
+        "timestamp" to stats.timestampUs) + stats.members) {}
+}
 
 class MessageConverter {
 
