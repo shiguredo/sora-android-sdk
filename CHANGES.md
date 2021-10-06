@@ -11,7 +11,9 @@
 
 ## develop
 
-- [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
+  - [UPDATE] libwebrtc を 93.4577.8.2 に上げる
+  - @miosakuma
+  - [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
   - @enm10k
 
 ##  2021.2
