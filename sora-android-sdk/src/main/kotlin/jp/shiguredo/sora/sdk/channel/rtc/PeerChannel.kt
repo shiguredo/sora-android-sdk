@@ -18,7 +18,6 @@ import java.util.concurrent.Executors
 import java.util.zip.*
 
 interface PeerChannel {
-
     fun handleInitialRemoteOffer(offer: String,
                                  mid: Map<String, String>?,
                                  encodings: List<Encoding>?): Single<SessionDescription>
@@ -33,7 +32,7 @@ interface PeerChannel {
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
-    fun sendStats(dataChannel: DataChannel, report: Any)
+    fun sendStats(dataChannel: DataChannel, report: RTCStatsReport)
     fun sendDisconnectMessage(dataChannel: DataChannel)
 
     interface Listener {
@@ -463,7 +462,7 @@ class PeerChannelImpl(
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
     }
 
-    override fun sendStats(dataChannel: DataChannel, report: Any) {
+    override fun sendStats(dataChannel: DataChannel, report: RTCStatsReport) {
         val statsMessage = MessageConverter.buildStatsMessage(report)
         SoraLogger.d(TAG, "peer: sendStats, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))

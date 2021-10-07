@@ -9,6 +9,13 @@
 - FIX
     - バグ修正
 
+## 2021.3
+
+  - [UPDATE] libwebrtc を 93.4577.8.2 に上げる
+  - @miosakuma
+  - [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
+  - @enm10k
+
 ##  2021.2
 
 - [CHANGE] SoraMediaChannel のコンストラクタ引数 channelId の型を String? から String に変更する

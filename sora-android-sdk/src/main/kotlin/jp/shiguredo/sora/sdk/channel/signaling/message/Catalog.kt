@@ -14,7 +14,7 @@ data class PingMessage(
 
 data class PongMessage(
         @SerializedName("type") val type: String = "pong",
-        @SerializedName("stats") val stats: Any? = null
+        @SerializedName("stats") val stats: List<SoraRTCStats>? = null
 )
 
 data class ConnectMessage(
@@ -140,7 +140,7 @@ data class ReqStatsMessage(
 
 data class StatsMessage(
         @SerializedName("type")    val type: String = "stats",
-        @SerializedName("reports") val reports: Any
+        @SerializedName("reports") val reports: List<SoraRTCStats>
 )
 
 data class NotificationMessage(
