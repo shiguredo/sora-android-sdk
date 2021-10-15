@@ -40,7 +40,7 @@ task clean(type: Delete) {
 dependencyUpdates.resolutionStrategy = {
   componentSelection { rules ->
     rules.all { ComponentSelection selection ->
-      boolean rejected = ['alpha', 'beta', 'rc'].any { qualifier ->
+      boolean rejected = ['alpha', 'beta', 'rc', 'M'].any { qualifier ->
         selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
       }
       if (rejected) {
