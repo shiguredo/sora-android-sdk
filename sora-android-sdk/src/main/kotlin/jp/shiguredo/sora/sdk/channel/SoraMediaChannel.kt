@@ -27,14 +27,13 @@ import kotlin.concurrent.schedule
  * 管理、協調動作させるためのクラス
  *
  * Sora に接続するアプリケーションは、このクラスを利用することでシグナリングの
- * 詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます。
+ * 詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます.
+ *
+ * シグナリングの手順とデータに関しては Sora のドキュメント
+ *   [https://sora.shiguredo.jp/doc/SIGNALING.html](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください.
  *
  * @constructor
- * SoraMediaChannel インスタンスを生成します。
- *
- * cf.
- * - シグナリングの手順とデータに関しては Sora のドキュメント
- *   [](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください
+ * SoraMediaChannel インスタンスを生成します.
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
@@ -81,7 +80,7 @@ class SoraMediaChannel @JvmOverloads constructor(
      */
     interface Listener {
         /**
-         * ローカルストリームが追加されたときに呼び出されるコールバック
+         * ローカルストリームが追加されたときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.MediaStream`
@@ -93,7 +92,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onAddLocalStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
 
         /**
-         * リモートストリームが追加されたときに呼び出されるコールバック
+         * リモートストリームが追加されたときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.MediaStream`
@@ -105,7 +104,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onAddRemoteStream(mediaChannel: SoraMediaChannel, ms: MediaStream) {}
 
         /**
-         * リモートストリームが削除されたときに呼び出されるコールバック
+         * リモートストリームが削除されたときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.MediaStream.label()`
@@ -116,73 +115,77 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onRemoveRemoteStream(mediaChannel: SoraMediaChannel, label: String) {}
 
         /**
-         * Sora との接続が確立されたときに呼び出されるコールバック
+         * Sora との接続が確立されたときに呼び出されるコールバック.
          *
-         * @see PeerChannel
+         * cf.
+         * - [PeerChannel]
+         *
          * @param mediaChannel イベントが発生したチャネル
          */
         fun onConnect(mediaChannel: SoraMediaChannel) {}
 
         /**
-         * Sora との接続が切断されたときに呼び出されるコールバック
+         * Sora との接続が切断されたときに呼び出されるコールバック.
          *
-         * @see PeerChannel
+         * cf.
+         * - [PeerChannel]
+         *
          * @param mediaChannel イベントが発生したチャネル
          */
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
-         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック
+         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
          * - `org.webrtc.PeerConnection.Observer`
+         * - [PeerChannel]
          *
-         * @see PeerChannel
          * @param reason エラーの理由
          */
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
 
         /**
-         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック
+         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
          * - `org.webrtc.PeerConnection.Observer`
+         * - [PeerChannel]
          *
-         * @see PeerChannel
          * @param reason エラーの理由
          * @param message エラーの情報
          */
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
 
         /**
-         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
          * - `org.webrtc.PeerConnection.Observer`
+         * - [PeerChannel]
          *
-         * @see PeerChannel
          * @param reason 警告の理由
          */
         fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
 
         /**
-         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック
+         * Sora との通信やメディアで警告が発生したときに呼び出されるコールバック.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
          * - `org.webrtc.PeerConnection.Observer`
+         * - [PeerChannel]
          *
-         * @see PeerChannel
          * @param reason 警告の理由
          * @param message 警告の情報
          */
         fun onWarning(mediaChannel: SoraMediaChannel, reason: SoraErrorReason, message: String) {}
 
         /**
-         * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック
+         * 接続しているチャネルの参加者が増減したときに呼び出されるコールバック.
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param attendees 配信者数と視聴者数を含むオブジェクト
@@ -190,7 +193,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
 
         /**
-         * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック
+         * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック.
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param notification プッシュ API により受信したメッセージ
@@ -198,7 +201,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onNotificationMessage(mediaChannel: SoraMediaChannel, notification : NotificationMessage) {}
 
         /**
-         * Sora のプッシュ API によりメッセージを受信したときに呼び出されるコールバック
+         * Sora のプッシュ API によりメッセージを受信したときに呼び出されるコールバック.
          *
          * @param mediaChannel イベントが発生したチャネル
          * @param push プッシュ API により受信したメッセージ
@@ -206,7 +209,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onPushMessage(mediaChannel: SoraMediaChannel, push : PushMessage) {}
 
         /**
-         * PeerConnection の getStats() 統計情報を取得したときに呼び出されるコールバック
+         * PeerConnection の getStats() 統計情報を取得したときに呼び出されるコールバック.
          *
          * cf.
          * - https://w3c.github.io/webrtc-stats/
@@ -218,15 +221,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
 
         /**
-         * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック
+         * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック.
          *
-         * 引数の encodings は Sora が送ってきた設定を反映した RtpParameters.Encoding のリストです。
-         * デフォルトの実装ではなにも行いません。
+         * 引数の encodings は Sora が送ってきた設定を反映した RtpParameters.Encoding のリストです.
+         * デフォルトの実装ではなにも行いません.
          * このコールバックを実装し、引数のオブジェクトを変更することで、アプリケーションの要件に従った
-         * 設定をエンコーダにわたすことができます。
+         * 設定をエンコーダにわたすことができます.
          *
-         * cf. Web 標準の対応 API は次のとおりです。libwebrtc の native(C++) と android の実装は
-         * 異なりますので注意してください。
+         * cf. Web 標準の対応 API は次のとおりです. libwebrtc の native(C++) と android の実装は
+         * 異なりますので注意してください.
          * - https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters
          * - https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-setparameters
          *
@@ -244,7 +247,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var closing = false
 
     /**
-     * コネクション ID
+     * コネクション ID.
      */
     var connectionId: String? = null
     private set
@@ -444,9 +447,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     /**
-     * Sora に接続します。
+     * Sora に接続します.
      *
-     * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います。
+     * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います.
      */
     fun connect() {
         try {
@@ -717,9 +720,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     /**
-     * Sora への接続を切断します。
+     * Sora への接続を切断します.
      *
-     * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います。
+     * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います.
      */
     fun disconnect() {
         if (closing)

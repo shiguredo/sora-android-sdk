@@ -4,7 +4,7 @@ import jp.shiguredo.sora.sdk.Sora
 import org.webrtc.*
 
 /**
- * Sora への接続オプションを表すクラスです
+ * Sora への接続オプションを表すクラスです.
  */
 class SoraMediaOption {
 
@@ -25,12 +25,12 @@ class SoraMediaOption {
         get() = spotlightOption != null
 
     /**
-     * 利用する VideoEncoderFactory を指定します
+     * 利用する VideoEncoderFactory を指定します.
      */
     var videoEncoderFactory: VideoEncoderFactory? = null
 
     /**
-     * 利用する VideoDecoderFactory を指定します
+     * 利用する VideoDecoderFactory を指定します.
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
@@ -45,7 +45,7 @@ class SoraMediaOption {
     var videoBitrate: Int? = null
 
     /**
-     * 映像の視聴を有効にします
+     * 映像の視聴を有効にします.
      *
      * cf.
      * - `org.webrtc.EglBase`
@@ -59,7 +59,7 @@ class SoraMediaOption {
     }
 
     /**
-     * 映像の配信を有効にします
+     * 映像の配信を有効にします.
      *
      * cf.
      * - `org.webrtc.VideoCapturer`
@@ -77,7 +77,7 @@ class SoraMediaOption {
     }
 
     /**
-     * サイマルキャスト機能を有効にします。
+     * サイマルキャスト機能を有効にします.
      */
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
         simulcastEnabled = true
@@ -85,13 +85,13 @@ class SoraMediaOption {
     }
 
     /**
-     * スポットライト機能を有効にします。
+     * スポットライト機能を有効にします.
      *
-     * スポットライト機能はサイマルキャスト機能を利用します。
-     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります。
+     * スポットライト機能はサイマルキャスト機能を利用します.
+     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
      *
      * サーバがスポットライトレガシー機能を利用している場合は、
-     * [Sora.usesSpotlightLegacy] に `true` をセットしてください。
+     * [Sora.usesSpotlightLegacy] に `true` をセットしてください.
      */
     fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
@@ -103,37 +103,37 @@ class SoraMediaOption {
     }
 
     /**
-     * 音声のオプション設定を指定します
+     * 音声のオプション設定を指定します.
      */
     var audioOption: SoraAudioOption = SoraAudioOption()
 
     /**
-     * 音声の視聴を有効にします
+     * 音声の視聴を有効にします.
      */
     fun enableAudioDownstream() {
         audioDownstreamEnabled = true
     }
 
     /**
-     * 音声の配信を有効にします
+     * 音声の配信を有効にします.
      */
     fun enableAudioUpstream() {
         audioUpstreamEnabled = true
     }
 
     /**
-     * 音声コーデック
+     * 音声コーデック.
      */
     var audioCodec = SoraAudioOption.Codec.OPUS
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     /**
-     * 音声ビットレート
+     * 音声ビットレート.
      */
     var audioBitrate: Int? = null
 
     /**
-     * マルチストリームを有効にします
+     * マルチストリームを有効にします.
      *
      * cf.
      * - Sora ドキュメントのマルチストリーム
@@ -186,16 +186,12 @@ class SoraMediaOption {
         SoraChannelRole.RECVONLY
 
     /**
-     * enableCpuOveruseDetection
-     *
-     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です。
+     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です.
      */
     var enableCpuOveruseDetection: Boolean = true
 
     /**
-     * tcpCandidatePolicy
-     *
-     * TcpCandidatePolicy を設定します。
+     * TcpCandidatePolicy を設定します.
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
             PeerConnection.TcpCandidatePolicy.ENABLED

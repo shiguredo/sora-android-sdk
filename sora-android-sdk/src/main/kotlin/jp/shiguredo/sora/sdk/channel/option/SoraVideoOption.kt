@@ -3,12 +3,12 @@ package jp.shiguredo.sora.sdk.channel.option
 import android.graphics.Point
 
 /**
- * 映像に関するオプションをまとめるクラスです
+ * 映像に関するオプションをまとめるクラスです.
  */
 class SoraVideoOption {
 
     /**
-     * 利用できる映像コーデックを示します
+     * 利用できる映像コーデックを示します.
      */
     enum class Codec {
         /** H.264 */
@@ -20,12 +20,12 @@ class SoraVideoOption {
     }
 
     /**
-     * 映像のフレームサイズをまとめるクラスです
+     * 映像のフレームサイズをまとめるクラスです.
      */
     class FrameSize {
 
         /**
-         * ランドスケープモードで利用できるフレームサイズを示します
+         * ランドスケープモードで利用できるフレームサイズを示します.
          */
         class Landscape {
 
@@ -56,7 +56,7 @@ class SoraVideoOption {
         }
 
         /**
-         * ポートレートモードで利用できるフレームサイズを示します
+         * ポートレートモードで利用できるフレームサイズを示します.
          */
         class Portrait {
 
