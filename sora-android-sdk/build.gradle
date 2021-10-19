@@ -47,20 +47,19 @@ android {
 }
 
 dokkaJavadoc.configure {
-    outputDirectory.set(new File("${buildDir}/dokka"))
-    moduleName.set("sora")
-    // "dafault" を指定すると $USER_HOME/.cache/dokka を使用するとあるが "${projectDir}/default" を見てしまうのでコメントアウトしている
-    //cacheRoot.set(file("default"))
+    // デフォルトの出力先は "${buildDir}/dokka". 変更したいときにコメントアウトを行う.
+    // outputDirectory.set(new File("${buildDir}/dokka"))
+    moduleName.set("Sora Android SDK")
+    // "dafault" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
+    // cacheRoot.set(file("default"))
 
-    sourceSets {
-        configureEach {
+    dokkaSourceSets {
+        named("main") {
             reportUndocumented.set(true)
-            includes.from("packages.md")
-            //1.4 で削除されたため移行不可。Kotlin Model が利用されるが上書き可能.
-            //disableAutoconfiguration = false
+            includes.from(files("packages.md"))
 
             sourceLink {
-                localDirectory.set(file("sora-android-sdk/src/main/kotlin"))
+                localDirectory.set(file("src/main/kotlin"))
                 remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin").toURL())
                 remoteLineSuffix.set("#L")
             }
