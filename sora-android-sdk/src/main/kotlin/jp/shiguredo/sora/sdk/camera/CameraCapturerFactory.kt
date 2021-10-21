@@ -9,10 +9,10 @@ import org.webrtc.CameraEnumerator
 import org.webrtc.CameraVideoCapturer
 
 /**
- * カメラからの映像を取得するための `CameraVideoCapturer` のファクトリクラスです。
+ * カメラからの映像を取得するための `CameraVideoCapturer` のファクトリクラスです.
  *
- * Camera1, Camera2 を統一的に扱うことが出来ます。
- * cf:
+ * Camera1, Camera2 を統一的に扱うことが出来ます.
+ * cf.
  * - `org.webrtc.CameraVideoCapturer`
  */
 class CameraCapturerFactory {
@@ -21,15 +21,15 @@ class CameraCapturerFactory {
         val TAG = CameraCapturerFactory::class.simpleName
 
         /**
-         * `CameraVideoCapturer` のインスタンスを生成します。
+         * `CameraVideoCapturer` のインスタンスを生成します.
          *
-         * 複数のカメラがある場合はフロントのカメラを優先します。
+         * 複数のカメラがある場合はフロントのカメラを優先します.
          *
          * @param context application context
          * @param fixedResolution true の場合は解像度維持を優先、false の場合は
-         * フレームレート維持を優先する。デフォルト値は false 。
+         * フレームレート維持を優先する. デフォルト値は false.
          * @param frontFacingFirst true の場合はフロントカメラを優先、false の場合は
-         * リアカメラを優先して選択する。デフォルト値は true 。
+         * リアカメラを優先して選択する. デフォルト値は true.
          * @return 生成された `CameraVideoCapturer`
          */
         @JvmOverloads

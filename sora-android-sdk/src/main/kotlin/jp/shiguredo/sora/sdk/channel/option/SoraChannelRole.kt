@@ -3,7 +3,7 @@ package jp.shiguredo.sora.sdk.channel.option
 import java.util.*
 
 /**
- * チャネルの役割を示します
+ * チャネルの役割を示します.
  */
 enum class SoraChannelRole {
 
