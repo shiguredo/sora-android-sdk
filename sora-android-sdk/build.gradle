@@ -46,10 +46,10 @@ android {
     }
 }
 
-dokkaJavadoc.configure {
+dokkaHtml.configure {
     // デフォルトの出力先は "${buildDir}/dokka". 変更したいときにコメントアウトを行う.
     // outputDirectory.set(new File("${buildDir}/dokka"))
-    moduleName.set("Sora Android SDK")
+    moduleName.set("sora-android-sdk")
     // "dafault" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
     // cacheRoot.set(file("default"))
 
