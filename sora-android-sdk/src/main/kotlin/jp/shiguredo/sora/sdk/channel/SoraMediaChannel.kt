@@ -23,11 +23,10 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 /**
- * [SignalingChannel] と [PeerChannel] を
- * 管理、協調動作させるためのクラス
+ * Sora への接続を行うクラスです.
+ * [SignalingChannel] と [PeerChannel] の管理、協調動作制御を行っています.
+ * このクラスを利用することでシグナリングの詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます.
  *
- * Sora に接続するアプリケーションは、このクラスを利用することでシグナリングの
- * 詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます.
  *
  * シグナリングの手順とデータに関しては Sora のドキュメント
  *   [https://sora.shiguredo.jp/doc/SIGNALING.html](https://sora.shiguredo.jp/doc/SIGNALING.html)を参照ください.
