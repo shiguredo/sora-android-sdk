@@ -9,6 +9,11 @@
 - FIX
     - バグ修正
 
+## develop
+
+  - [UPDATE] dokka を 1.5.31 に上げる
+  - @miosakuma
+
 ## 2021.3
 
   - [UPDATE] libwebrtc を 93.4577.8.2 に上げる
