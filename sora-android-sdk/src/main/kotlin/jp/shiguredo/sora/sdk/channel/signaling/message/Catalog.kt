@@ -43,7 +43,8 @@ data class ConnectMessage(
         @SerializedName("data_channel_signaling")
                                        val dataChannelSignaling:      Boolean? = null,
         @SerializedName("ignore_disconnect_websocket")
-                                       val ignoreDisconnectWebsocket: Boolean? = null
+                                       val ignoreDisconnectWebsocket: Boolean? = null,
+        @SerializedName("redirect") var redirect: Boolean? = null
 )
 
 data class VideoSetting(
@@ -85,6 +86,11 @@ data class Encoding(
         @SerializedName("maxBitrate")            val maxBitrate:            Int?,
         @SerializedName("maxFramerate")          val maxFramerate:          Int?,
         @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
+)
+
+data class RedirectMessage(
+        @SerializedName("type")     val type: String = "redirect",
+        @SerializedName("location") val location: String
 )
 
 data class OfferMessage(

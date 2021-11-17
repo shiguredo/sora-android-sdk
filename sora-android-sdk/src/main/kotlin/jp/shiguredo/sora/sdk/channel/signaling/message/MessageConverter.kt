@@ -32,7 +32,8 @@ class MessageConverter {
                                 metadata: Any?,
                                 sdp: String? = null,
                                 clientId: String? = null,
-                                signalingNotifyMetadata: Any? = null
+                                signalingNotifyMetadata: Any? = null,
+                                redirect: Boolean = false
         ): String {
 
             val msg = ConnectMessage(
@@ -56,7 +57,7 @@ class MessageConverter {
                     },
                     sdp = sdp,
                     clientId = clientId,
-                    signalingNotifyMetadata = signalingNotifyMetadata
+                    signalingNotifyMetadata = signalingNotifyMetadata,
             )
 
             if (mediaOption.upstreamIsRequired) {
@@ -109,6 +110,10 @@ class MessageConverter {
             if (mediaOption.spotlightOption != null && !Sora.usesSpotlightLegacy) {
                 msg.spotlightFocusRid = mediaOption.spotlightOption?.spotlightFocusRid?.toString()
                 msg.spotlightUnfocusRid = mediaOption.spotlightOption?.spotlightUnfocusRid?.toString()
+            }
+
+            if (redirect) {
+                msg.redirect = true
             }
 
             val jsonMsg = gson.toJson(msg)
@@ -181,6 +186,10 @@ class MessageConverter {
 
         fun parseReqStatsMessage(text: String): ReqStatsMessage {
             return gson.fromJson(text, ReqStatsMessage::class.java)
+        }
+
+        fun parseRedirectMessage(text: String): RedirectMessage {
+            return gson.fromJson(text, RedirectMessage::class.java)
         }
     }
 }
