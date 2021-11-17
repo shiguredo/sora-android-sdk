@@ -48,7 +48,7 @@ import kotlin.concurrent.schedule
  */
 class SoraMediaChannel @JvmOverloads constructor(
         private val context:                   Context,
-        private val signalingEndpoint:         String,
+        private val signalingEndpoint:         List<String>,
         private val channelId:                 String,
         private val signalingMetadata:         Any?                 = "",
         private val mediaOption:               SoraMediaOption,
@@ -571,7 +571,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun connectSignalingChannel(clientOfferSdp : SessionDescription?) {
         signaling = SignalingChannelImpl(
-                endpoint                         = signalingEndpoint,
+                endpoints                        = signalingEndpoint,
                 role                             = role,
                 channelId                        = channelId,
                 connectDataChannelSignaling      = dataChannelSignaling,

@@ -36,7 +36,7 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
-        private val endpoint:                         String,
+        private val endpoints:                        List<String>,
         private val role:                             SoraChannelRole,
         private val channelId:                        String,
         private val connectDataChannelSignaling:      Boolean?                    = null,
@@ -57,13 +57,20 @@ class SignalingChannelImpl @JvmOverloads constructor(
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
 
     private var webSocket: WebSocket? = null
+      @Synchronized set
+
     private var closing  = false
 
     override fun connect() {
-        val url = "${endpoint}?channel_id=${channelId}"
-        SoraLogger.i(TAG, "[signaling:$role] start to connect ${url}")
-        val request = Request.Builder().url(url).build()
-        client.newWebSocket(request, webSocketListener)
+        SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
+        // TODO: endpoints.isEmpty をチェックする?
+
+        for (endpoint in endpoints) {
+            val url = "$endpoint?channel_id=$channelId"
+            val request = Request.Builder().url(url).build()
+            SoraLogger.i(TAG, "connecting to $url")
+            client.newWebSocket(request, webSocketListener)
+        }
     }
 
     override fun sendAnswer(sdp: String) {
@@ -252,6 +259,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     SoraLogger.i(TAG, "signaling is closing")
                     return
                 }
+
+                if (this@SignalingChannelImpl.webSocket != null) {
+                    SoraLogger.i(TAG, "already connected. closing connection with ${webSocket.request().url.host}")
+                    webSocket.close(1000, null)
+                    return
+                }
+
+                SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url.host}")
 
                 this@SignalingChannelImpl.webSocket = webSocket
                 listener?.onConnect()
