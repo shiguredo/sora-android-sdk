@@ -323,6 +323,15 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
         }
 
+        override fun onRedirect(location: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onLocalIceCandidateFound")
+
+            SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
+            requestClientOfferSdp(location)
+            SoraLogger.i(TAG, "[channel:$role] closing old SignalingChannel")
+            signaling?.disconnect()
+        }
+
     }
 
     private val peerListener = object : PeerChannel.Listener {
@@ -527,7 +536,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
 
-    private fun requestClientOfferSdp() {
+    private fun requestClientOfferSdp(redirectLocation: String? = null) {
         val mediaOption = SoraMediaOption().apply {
             enableVideoDownstream(null)
             enableAudioDownstream()
@@ -555,7 +564,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                                 }
                                 val handler = Handler(Looper.getMainLooper())
                                 handler.post() {
-                                    connectSignalingChannel(it.getOrNull())
+                                    connectSignalingChannel(redirectLocation, it.getOrNull())
                                 }
                             },
                             onError = {
@@ -569,9 +578,10 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?) {
+    private fun connectSignalingChannel(redirectLocation: String?, clientOfferSdp : SessionDescription?) {
+        val endpoints = if (redirectLocation != null) { listOf(redirectLocation) } else { signalingEndpoint }
         signaling = SignalingChannelImpl(
-                endpoints                        = signalingEndpoint,
+                endpoints                        = endpoints,
                 role                             = role,
                 channelId                        = channelId,
                 connectDataChannelSignaling      = dataChannelSignaling,
@@ -581,7 +591,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 listener                         = signalingListener,
                 clientOfferSdp                   = clientOfferSdp,
                 clientId                         = clientId,
-                signalingNotifyMetadata          = signalingNotifyMetadata
+                signalingNotifyMetadata          = signalingNotifyMetadata,
+                redirect                         = redirectLocation != null
         )
         signaling!!.connect()
     }

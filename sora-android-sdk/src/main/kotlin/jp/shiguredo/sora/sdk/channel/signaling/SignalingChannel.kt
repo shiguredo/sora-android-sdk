@@ -31,6 +31,7 @@ interface SignalingChannel {
         fun onError(reason: SoraErrorReason)
         fun onNotificationMessage(notification: NotificationMessage)
         fun onPushMessage(push: PushMessage)
+        fun onRedirect(location: String)
         fun getStats(handler: (RTCStatsReport?) -> Unit)
     }
 }
@@ -46,7 +47,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         private var listener:                         SignalingChannel.Listener?,
         private val clientOfferSdp:                   SessionDescription?,
         private val clientId:                         String?                     = null,
-        private val signalingNotifyMetadata:          Any?                        = null
+        private val signalingNotifyMetadata:          Any?                        = null,
+        private val redirect:                         Boolean                     = false
 ) : SignalingChannel {
 
     companion object {
@@ -61,7 +63,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private var closing  = false
 
-    private var redirect = false
+    // TODO: フラグ名に改善の余地あり?
+    private var redirecting = false
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -154,7 +157,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
             closing = true
             client.dispatcher.executorService.shutdown()
             webSocket?.close(1000, null)
-            listener?.onDisconnect()
+
+            if (!redirecting) {
+                listener?.onDisconnect()
+            }
             listener = null
         }
     }
@@ -258,18 +264,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onRedirectMessage(text: String) {
         SoraLogger.d(TAG, "[signaling:$role] <- redirect")
+        redirecting = true
 
-        val redirect = MessageConverter.parseRedirectMessage(text)
-        this@SignalingChannelImpl.redirect = true
-        this@SignalingChannelImpl.webSocket?.let {
-            SoraLogger.d(TAG, "closing old connection with ${it.request().url.host}")
-
-            this@SignalingChannelImpl.webSocket = null
-            it.close(1000, null)
-        }
-
-        SoraLogger.d(TAG, "redirect to ${redirect.location}")
-        connect(redirect.location)
+        val msg = MessageConverter.parseRedirectMessage(text)
+        SoraLogger.d(TAG, "redirect to ${msg.location}")
+        listener?.onRedirect(msg.location)
     }
 
     private val webSocketListener = object : WebSocketListener() {
@@ -340,16 +339,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
+            if (redirecting || this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
                 /*
                 endpoints が複数の値を保つ場合、 SignalingChannelImpl は endpoints に含まれる全てのエンドポイントに
                 WebSocket の接続を試み、その内の1つを利用する
                 利用しなかった WebSocket を切断する際に SignalingChannelImpl の disconnect が実行されると困るので、
                 切断している WebSocket が SignalingChannelImpl の保持するものと等しい場合のみ、後続の処理を実行する
-
-                type: redirect の処理でも、再接続中に WebSocket を切断するので同様の考慮が必要だが、
-                onRedirectMessage 内で SignalingChannelImpl の WebSocket に null を設定しているため、
-                同じチェック方法でカバーできている
                 */
                 return
             }
@@ -367,7 +362,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            if (this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
+            if (redirecting || this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
                 // onClosed のコメントを参照
                 return
             }
