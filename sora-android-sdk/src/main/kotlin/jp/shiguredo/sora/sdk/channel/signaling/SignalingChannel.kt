@@ -60,6 +60,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private var webSocket: WebSocket? = null
       @Synchronized set
+      @Synchronized get
+
+    private var webSocketCandidates = mutableListOf<WebSocket>()
 
     private var closing  = false
 
@@ -71,15 +74,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
         // TODO: endpoints.isEmpty をチェックする?
 
         for (endpoint in endpoints) {
-            connect(endpoint)
+            webSocketCandidates.add(connect(endpoint))
         }
     }
 
-    private fun connect(endpoint: String) {
-        val url = "$endpoint?channel_id=$channelId"
-        val request = Request.Builder().url(url).build()
-        SoraLogger.i(TAG, "connecting to $url")
-        client.newWebSocket(request, webSocketListener)
+    private fun connect(endpoint: String): WebSocket {
+        SoraLogger.i(TAG, "connecting to $endpoint")
+        val request = Request.Builder().url(endpoint).build()
+        return client.newWebSocket(request, webSocketListener)
     }
 
     override fun sendAnswer(sdp: String) {
@@ -283,16 +285,20 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
 
                 if (this@SignalingChannelImpl.webSocket != null) {
-                    SoraLogger.i(TAG,
-                        "already connected with ${this@SignalingChannelImpl.webSocket?.request()?.url?.host}. " +
-                        "closing connection to ${webSocket.request().url.host}")
-                    webSocket.close(1000, null)
                     return
                 }
 
-                SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url.host}")
+                SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url}")
 
                 this@SignalingChannelImpl.webSocket = webSocket
+                for (candidate in this@SignalingChannelImpl.webSocketCandidates) {
+                    if (candidate != webSocket) {
+                        SoraLogger.d(TAG, "closing connection with ${candidate.request().url}")
+                        candidate.cancel()
+                    }
+                }
+                this@SignalingChannelImpl.webSocketCandidates.clear()
+
                 listener?.onConnect()
                 sendConnectMessage()
             } catch (e: Exception) {
@@ -339,13 +345,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (redirecting || this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
-                /*
-                endpoints が複数の値を保つ場合、 SignalingChannelImpl は endpoints に含まれる全てのエンドポイントに
-                WebSocket の接続を試み、その内の1つを利用する
-                利用しなかった WebSocket を切断する際に SignalingChannelImpl の disconnect が実行されると困るので、
-                切断している WebSocket が SignalingChannelImpl の保持するものと等しい場合のみ、後続の処理を実行する
-                */
+            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                 return
             }
             try {
@@ -362,8 +363,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            if (redirecting || this@SignalingChannelImpl.webSocket?.request()?.url?.host != webSocket.request().url.host) {
-                // onClosed のコメントを参照
+            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                 return
             }
             SoraLogger.d(TAG, "[signaling:$role] @onClosing")
@@ -371,6 +372,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
+                return
+            }
             try {
                 response?.let {
                     SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
