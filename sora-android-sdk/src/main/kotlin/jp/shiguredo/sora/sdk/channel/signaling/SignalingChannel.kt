@@ -66,8 +66,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private var closing  = false
 
-    // TODO: フラグ名に改善の余地あり?
-    private var redirecting = false
+    private var receivedRedirectMessage = false
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -158,7 +157,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             client.dispatcher.executorService.shutdown()
             webSocket?.close(1000, null)
 
-            if (!redirecting) {
+            if (!receivedRedirectMessage) {
                 listener?.onDisconnect()
             }
             listener = null
@@ -264,7 +263,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onRedirectMessage(text: String) {
         SoraLogger.d(TAG, "[signaling:$role] <- redirect")
-        redirecting = true
+        receivedRedirectMessage = true
 
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
@@ -343,7 +342,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                 // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                 return
             }
@@ -361,7 +360,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                 // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                 return
             }
@@ -370,7 +369,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            if (redirecting || this@SignalingChannelImpl.webSocket != webSocket) {
+            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                 // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                 return
             }
