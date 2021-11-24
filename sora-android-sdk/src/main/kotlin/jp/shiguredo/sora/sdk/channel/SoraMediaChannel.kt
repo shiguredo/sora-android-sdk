@@ -324,7 +324,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onRedirect(location: String) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onLocalIceCandidateFound")
+            SoraLogger.d(TAG, "[channel:$role] @peer:onRedirect")
 
             SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
             requestClientOfferSdp(location)
