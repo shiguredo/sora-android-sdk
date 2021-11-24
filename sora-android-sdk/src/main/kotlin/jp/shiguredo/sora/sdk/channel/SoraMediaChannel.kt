@@ -36,6 +36,7 @@ import kotlin.concurrent.schedule
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
+ * @param signalingUrlCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
  * @param signalingMetadata connect メッセージに含める `metadata`
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
@@ -48,7 +49,8 @@ import kotlin.concurrent.schedule
  */
 class SoraMediaChannel @JvmOverloads constructor(
         private val context:                   Context,
-        private val signalingEndpoint:         List<String>,
+        private val signalingEndpoint:         String?              = null,
+        private val signalingUrlCandidates:    List<String>         = emptyList(),
         private val channelId:                 String,
         private val signalingMetadata:         Any?                 = "",
         private val mediaOption:               SoraMediaOption,
@@ -64,6 +66,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+    }
+
+    init {
+        if (signalingEndpoint == null && signalingUrlCandidates.isEmpty()) {
+            throw IllegalArgumentException("Either signalingEndpoint or signalingUrlCandidates must be specified")
+        }
     }
 
     /**
@@ -587,7 +595,12 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     private fun connectSignalingChannel(clientOfferSdp : SessionDescription?, redirectLocation: String? = null) {
-        val endpoints = if (redirectLocation != null) { listOf(redirectLocation) } else { signalingEndpoint }
+        val endpoints = when {
+            redirectLocation != null -> listOf(redirectLocation)
+            signalingUrlCandidates.isNotEmpty() -> signalingUrlCandidates
+            else -> listOf(signalingEndpoint!!)
+        }
+
         signaling = SignalingChannelImpl(
                 endpoints                        = endpoints,
                 role                             = role,

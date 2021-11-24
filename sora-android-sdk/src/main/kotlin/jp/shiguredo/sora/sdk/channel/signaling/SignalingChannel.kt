@@ -71,8 +71,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
-        // TODO: endpoints.isEmpty をチェックする?
-
         for (endpoint in endpoints) {
             webSocketCandidates.add(connect(endpoint))
         }
