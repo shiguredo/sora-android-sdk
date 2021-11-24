@@ -245,6 +245,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var switchedToDataChannel = false
     private var closing = false
 
+    // type: redirect で再利用するために、初回接続時の clientOffer を保持する
+    private var clientOffer: SessionDescription? = null
+
     /**
      * コネクション ID.
      */
@@ -326,10 +329,14 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onRedirect(location: String) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onRedirect")
 
-            SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
-            requestClientOfferSdp(location)
             SoraLogger.i(TAG, "[channel:$role] closing old SignalingChannel")
             signaling?.disconnect()
+
+            SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
+            val handler = Handler(Looper.getMainLooper())
+            handler.post() {
+                connectSignalingChannel(clientOffer, location)
+            }
         }
 
     }
@@ -536,7 +543,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
 
-    private fun requestClientOfferSdp(redirectLocation: String? = null) {
+    private fun requestClientOfferSdp() {
         val mediaOption = SoraMediaOption().apply {
             enableVideoDownstream(null)
             enableAudioDownstream()
@@ -563,8 +570,9 @@ class SoraMediaChannel @JvmOverloads constructor(
                                     SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
                                 }
                                 val handler = Handler(Looper.getMainLooper())
+                                clientOffer = it.getOrNull()
                                 handler.post() {
-                                    connectSignalingChannel(redirectLocation, it.getOrNull())
+                                    connectSignalingChannel(clientOffer)
                                 }
                             },
                             onError = {
@@ -578,7 +586,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(redirectLocation: String?, clientOfferSdp : SessionDescription?) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?, redirectLocation: String? = null) {
         val endpoints = if (redirectLocation != null) { listOf(redirectLocation) } else { signalingEndpoint }
         signaling = SignalingChannelImpl(
                 endpoints                        = endpoints,
