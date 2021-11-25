@@ -261,9 +261,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onRedirectMessage(text: String) {
         SoraLogger.d(TAG, "[signaling:$role] <- redirect")
-        synchronized (this) {
-            receivedRedirectMessage = true
-        }
+        receivedRedirectMessage = true
 
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
