@@ -59,8 +59,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
 
     private var webSocket: WebSocket? = null
-      @Synchronized set
-      @Synchronized get
 
     private var webSocketCandidates = mutableListOf<WebSocket>()
 
@@ -281,20 +279,22 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     return
                 }
 
-                if (this@SignalingChannelImpl.webSocket != null) {
-                    return
-                }
-
-                SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url}")
-
-                this@SignalingChannelImpl.webSocket = webSocket
-                for (candidate in this@SignalingChannelImpl.webSocketCandidates) {
-                    if (candidate != webSocket) {
-                        SoraLogger.d(TAG, "closing connection with ${candidate.request().url}")
-                        candidate.cancel()
+                synchronized (this) {
+                    if (this@SignalingChannelImpl.webSocket != null) {
+                        return
                     }
+
+                    SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url}")
+
+                    this@SignalingChannelImpl.webSocket = webSocket
+                    for (candidate in this@SignalingChannelImpl.webSocketCandidates) {
+                        if (candidate != webSocket) {
+                            SoraLogger.d(TAG, "closing connection with ${candidate.request().url}")
+                            candidate.cancel()
+                        }
+                    }
+                    this@SignalingChannelImpl.webSocketCandidates.clear()
                 }
-                this@SignalingChannelImpl.webSocketCandidates.clear()
 
                 listener?.onConnect()
                 sendConnectMessage()
@@ -342,10 +342,13 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
-                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
-                return
+            synchronized (this) {
+                if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
+                    // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
+                    return
+                }
             }
+
             try {
                 if (code == 1000) {
                     SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
@@ -360,19 +363,25 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
-                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
-                return
+            synchronized (this) {
+                if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
+                    // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
+                    return
+                }
             }
+
             SoraLogger.d(TAG, "[signaling:$role] @onClosing")
             disconnect()
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
-                // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
-                return
+            synchronized (this) {
+                if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
+                    // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
+                    return
+                }
             }
+
             try {
                 response?.let {
                     SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
