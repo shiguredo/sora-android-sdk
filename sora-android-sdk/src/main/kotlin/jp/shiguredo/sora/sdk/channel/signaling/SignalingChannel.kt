@@ -261,7 +261,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onRedirectMessage(text: String) {
         SoraLogger.d(TAG, "[signaling:$role] <- redirect")
-        receivedRedirectMessage = true
+        synchronized (this) {
+            receivedRedirectMessage = true
+        }
 
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
@@ -279,7 +281,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     return
                 }
 
-                synchronized (this) {
+                synchronized (this@SignalingChannelImpl) {
                     if (this@SignalingChannelImpl.webSocket != null) {
                         return
                     }
@@ -342,7 +344,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            synchronized (this) {
+            synchronized (this@SignalingChannelImpl) {
                 if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                     // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                     return
@@ -363,7 +365,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            synchronized (this) {
+            synchronized (this@SignalingChannelImpl) {
                 if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                     // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                     return
@@ -375,7 +377,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            synchronized (this) {
+            synchronized (this@SignalingChannelImpl) {
                 if (receivedRedirectMessage || this@SignalingChannelImpl.webSocket != webSocket) {
                     // WebSocket が SignalingChannelImpl で保持しているものと等しい場合のみ後続の処理を実行する
                     return
