@@ -199,7 +199,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         // type: redirect を受信している場合は onDisconnect を発火させない
-        if (!shouldExecuteOnDisconnect) {
+        if (shouldExecuteOnDisconnect) {
             listener?.onDisconnect()
         }
         listener = null
