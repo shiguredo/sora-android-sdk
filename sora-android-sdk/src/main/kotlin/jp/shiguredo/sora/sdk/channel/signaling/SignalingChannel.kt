@@ -60,8 +60,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
 
     /*
-      接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性があるため、
-      WebSocketListener から参照される以下の変数はスレッド・セーフである必要がある
+      接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
+      その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
+      メソッドから同時にアクセスされる可能性があるため、排他制御が必要となる
       - ws
       - wsCandidates
       - receivedRedirectMessage
