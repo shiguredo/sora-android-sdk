@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] 複数シグナリング URL の指定に対応する
+  - @enm10k
+- [UPDATE] redirect メッセージに対応する
+  - @enm10k
 - [UPDATE] dokka を 1.5.31 に上げる
   - @miosakuma
 
