@@ -326,13 +326,13 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url}")
 
                     ws = webSocket
-                    for (candidate in this@SignalingChannelImpl.wsCandidates) {
+                    for (candidate in wsCandidates) {
                         if (candidate != webSocket) {
                             SoraLogger.d(TAG, "closing connection with ${candidate.request().url}")
                             candidate.cancel()
                         }
                     }
-                    this@SignalingChannelImpl.wsCandidates.clear()
+                    wsCandidates.clear()
                 }
 
                 listener?.onConnect()
