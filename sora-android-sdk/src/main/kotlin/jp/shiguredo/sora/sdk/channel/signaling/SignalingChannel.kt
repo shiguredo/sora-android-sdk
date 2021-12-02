@@ -10,6 +10,7 @@ import okio.ByteString
 import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 interface SignalingChannel {
 
@@ -31,12 +32,13 @@ interface SignalingChannel {
         fun onError(reason: SoraErrorReason)
         fun onNotificationMessage(notification: NotificationMessage)
         fun onPushMessage(push: PushMessage)
+        fun onRedirect(location: String)
         fun getStats(handler: (RTCStatsReport?) -> Unit)
     }
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
-        private val endpoint:                         String,
+        private val endpoints:                        List<String>,
         private val role:                             SoraChannelRole,
         private val channelId:                        String,
         private val connectDataChannelSignaling:      Boolean?                    = null,
@@ -46,7 +48,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         private var listener:                         SignalingChannel.Listener?,
         private val clientOfferSdp:                   SessionDescription?,
         private val clientId:                         String?                     = null,
-        private val signalingNotifyMetadata:          Any?                        = null
+        private val signalingNotifyMetadata:          Any?                        = null,
+        private val redirect:                         Boolean                     = false
 ) : SignalingChannel {
 
     companion object {
@@ -56,25 +59,50 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val client =
         OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
 
-    private var webSocket: WebSocket? = null
-    private var closing  = false
+    /*
+      接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
+      その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
+      メソッドから同時にアクセスされる可能性があるため、スレッドセーフである必要がある
+      - ws
+      - wsCandidates
+      - receivedRedirectMessage
+      - closing
+
+      ws と wsCandidates については両方を同時に更新するため、このクラスのインスタンスで排他制御する
+      receivedRedirectMessage と closing には上記のような要件がないため、 AtomicBoolean を使う
+     */
+    private var ws: WebSocket? = null
+
+    private val wsCandidates = mutableListOf<WebSocket>()
+
+    private val closing = AtomicBoolean(false)
+
+    private val receivedRedirectMessage = AtomicBoolean(false)
 
     override fun connect() {
-        val url = "${endpoint}?channel_id=${channelId}"
-        SoraLogger.i(TAG, "[signaling:$role] start to connect ${url}")
-        val request = Request.Builder().url(url).build()
-        client.newWebSocket(request, webSocketListener)
+        SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
+        synchronized (this) {
+            for (endpoint in endpoints) {
+                wsCandidates.add(connect(endpoint))
+            }
+        }
+    }
+
+    private fun connect(endpoint: String): WebSocket {
+        SoraLogger.i(TAG, "connecting to $endpoint")
+        val request = Request.Builder().url(endpoint).build()
+        return client.newWebSocket(request, webSocketListener)
     }
 
     override fun sendAnswer(sdp: String) {
         SoraLogger.d(TAG, "[signaling:$role] -> answer")
 
-        if (closing) {
+        if (closing.get()) {
             SoraLogger.i(TAG, "signaling is closing")
             return
         }
 
-        webSocket?.let {
+        ws?.let {
             val msg = MessageConverter.buildAnswerMessage(sdp)
             it.send(msg)
         }
@@ -83,14 +111,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
     override fun sendUpdateAnswer(sdp: String) {
         SoraLogger.d(TAG, "[signaling:$role] -> re-answer(update)")
 
-        if (closing) {
+        if (closing.get()) {
             SoraLogger.i(TAG, "signaling is closing")
             return
         }
 
         SoraLogger.d(TAG, sdp)
 
-        webSocket?.let {
+        ws?.let {
             val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
             it.send(msg)
         }
@@ -99,14 +127,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
     override fun sendReAnswer(sdp: String) {
         SoraLogger.d(TAG, "[signaling:$role] -> re-answer")
 
-        if (closing) {
+        if (closing.get()) {
             SoraLogger.i(TAG, "signaling is closing")
             return
         }
 
         SoraLogger.d(TAG, sdp)
 
-        webSocket?.let {
+        ws?.let {
             val msg = MessageConverter.buildReAnswerMessage(sdp)
             it.send(msg)
         }
@@ -115,44 +143,50 @@ class SignalingChannelImpl @JvmOverloads constructor(
     override fun sendCandidate(sdp: String) {
         SoraLogger.d(TAG, "[signaling:$role] -> candidate")
 
-        if (closing) {
+        if (closing.get()) {
             SoraLogger.i(TAG, "signaling is closing")
             return
         }
 
         SoraLogger.d(TAG, sdp)
 
-        webSocket?.let {
+        ws?.let {
             val msg = MessageConverter.buildCandidateMessage(sdp)
             it.send(msg)
         }
     }
 
     override fun sendDisconnectMessage() {
-        SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$webSocket")
-        webSocket?.let {
+        SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
+        ws?.let {
             val disconnectMessage = MessageConverter.buildDisconnectMessage()
             it.send(disconnectMessage)
         }
     }
 
     override fun disconnect() {
-        if (!closing) {
-            closing = true
-            client.dispatcher.executorService.shutdown()
-            webSocket?.close(1000, null)
-            listener?.onDisconnect()
-            listener = null
+        if (closing.get()) {
+            return
         }
+
+        closing.set(true)
+        client.dispatcher.executorService.shutdown()
+        ws?.close(1000, null)
+
+        // type: redirect を受信している場合は onDisconnect を発火させない
+        if (!receivedRedirectMessage.get()) {
+            listener?.onDisconnect()
+        }
+        listener = null
     }
 
     private fun sendConnectMessage() {
-        if (closing) {
+        if (closing.get()) {
             SoraLogger.i(TAG, "signaling is closing")
             return
         }
 
-        webSocket?.let {
+        ws?.let {
             SoraLogger.d(TAG, "[signaling:$role] -> connect")
             val message = MessageConverter.buildConnectMessage(
                     role                      = role,
@@ -163,14 +197,15 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     metadata                  = connectMetadata,
                     sdp                       = clientOfferSdp?.description,
                     clientId                  = clientId,
-                    signalingNotifyMetadata   = signalingNotifyMetadata
+                    signalingNotifyMetadata   = signalingNotifyMetadata,
+                    redirect                  = redirect
             )
             it.send(message)
         }
     }
 
     private fun closeWithError(reason: String) {
-        SoraLogger.i(TAG, "[signaling:$role] $reason")
+        SoraLogger.i(TAG, "[signaling:$role] closeWithError: reason=$reason")
         disconnect()
     }
 
@@ -235,11 +270,45 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private fun sendPongMessage(report: RTCStatsReport?) {
-        webSocket?.let { ws ->
+        ws?.let { ws ->
             val msg = MessageConverter.buildPongMessage(report)
             SoraLogger.d(TAG, msg)
             ws.send(msg)
         }
+    }
+
+    private fun onRedirectMessage(text: String) {
+        SoraLogger.d(TAG, "[signaling:$role] <- redirect")
+        receivedRedirectMessage.set(true)
+
+        val msg = MessageConverter.parseRedirectMessage(text)
+        SoraLogger.d(TAG, "redirect to ${msg.location}")
+        listener?.onRedirect(msg.location)
+    }
+
+    // WebSocketListener の onClosed, onClosing, onFailure で使用する
+    @Synchronized
+    private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
+        // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
+        wsCandidates.remove(webSocket)
+
+        /*
+          ここで receivedRedirectMessage をチェックすることを検討したが、不要だという結論に至った
+          type: redirect を既に受信している場合、  onDisconnect が発火しない限り、
+          SignalingChannelImpl の disconnect が実行されても問題ない
+         */
+
+        // 採用する WebSocket が決まっていないが、 wsCandidates が残っているのでイベントは無視する
+        if (ws == null && wsCandidates.size != 0) {
+            return false
+        }
+
+        // 採用されなかった WebSocket を始末する際のイベントを無視する
+        if (ws != null && ws != webSocket) {
+            return false
+        }
+
+        return true
     }
 
     private val webSocketListener = object : WebSocketListener() {
@@ -248,12 +317,28 @@ class SignalingChannelImpl @JvmOverloads constructor(
             try {
                 SoraLogger.d(TAG, "[signaling:$role] @onOpen")
 
-                if (closing) {
+                if (closing.get()) {
                     SoraLogger.i(TAG, "signaling is closing")
                     return
                 }
 
-                this@SignalingChannelImpl.webSocket = webSocket
+                synchronized (this@SignalingChannelImpl) {
+                    if (ws != null) {
+                        return
+                    }
+
+                    SoraLogger.i(TAG, "succeeded to connect with ${webSocket.request().url}")
+
+                    ws = webSocket
+                    for (candidate in wsCandidates) {
+                        if (candidate != webSocket) {
+                            SoraLogger.d(TAG, "closing connection with ${candidate.request().url}")
+                            candidate.cancel()
+                        }
+                    }
+                    wsCandidates.clear()
+                }
+
                 listener?.onConnect()
                 sendConnectMessage()
             } catch (e: Exception) {
@@ -266,7 +351,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.d(TAG, "[signaling:$role] @onMessage(text)")
                 SoraLogger.d(TAG, text)
 
-                if (closing) {
+                if (closing.get()) {
                     SoraLogger.i(TAG, "signaling is closing")
                     return
                 }
@@ -282,6 +367,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                             "re-offer" -> onReOfferMessage(json)
                             "notify"   -> onNotifyMessage(json)
                             "push"     -> onPushMessage(json)
+                            "redirect" -> onRedirectMessage(json)
                             else       -> SoraLogger.i(TAG, "received unknown-type message")
                         }
 
@@ -299,12 +385,22 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            if (code == 1000) {
+                SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
+            } else {
+                SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
+            }
+
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosed: skipped")
+                return
+            }
+
             try {
-                if (code == 1000) {
-                    SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = ${code}")
-                } else {
-                    SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = ${code}")
+                if (code != 1000) {
+                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 }
+
                 disconnect()
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
@@ -313,15 +409,26 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing")
+
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
+                return
+            }
+
             disconnect()
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            try {
-                response?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
-                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
+            response?.let {
+                SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
+            } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onFailure: skipped")
+                return
+            }
+
+            try {
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect()
             } catch (e: Exception) {

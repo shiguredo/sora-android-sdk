@@ -11,14 +11,18 @@
 
 ## develop
 
-  - [UPDATE] dokka を 1.5.31 に上げる
+- [UPDATE] 複数シグナリング URL の指定に対応する
+  - @enm10k
+- [UPDATE] redirect メッセージに対応する
+  - @enm10k
+- [UPDATE] dokka を 1.5.31 に上げる
   - @miosakuma
 
 ## 2021.3
 
-  - [UPDATE] libwebrtc を 93.4577.8.2 に上げる
+- [UPDATE] libwebrtc を 93.4577.8.2 に上げる
   - @miosakuma
-  - [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
+- [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
   - @enm10k
 
 ##  2021.2

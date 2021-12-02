@@ -36,6 +36,7 @@ import kotlin.concurrent.schedule
  *
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
+ * @param signalingEndpointCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
  * @param signalingMetadata connect メッセージに含める `metadata`
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
@@ -47,23 +48,31 @@ import kotlin.concurrent.schedule
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  */
 class SoraMediaChannel @JvmOverloads constructor(
-        private val context:                   Context,
-        private val signalingEndpoint:         String,
-        private val channelId:                 String,
-        private val signalingMetadata:         Any?                 = "",
-        private val mediaOption:               SoraMediaOption,
-        private val timeoutSeconds:            Long                 = DEFAULT_TIMEOUT_SECONDS,
-        private var listener:                  Listener?,
-        private val clientId:                  String?              = null,
-        private val signalingNotifyMetadata:   Any?                 = null,
-        private val peerConnectionOption:      PeerConnectionOption = PeerConnectionOption(),
-        private val dataChannelSignaling:      Boolean?             = null,
-        private var ignoreDisconnectWebSocket: Boolean?             = null
+    private val context:                     Context,
+    private val signalingEndpoint:           String?              = null,
+    private val signalingEndpointCandidates: List<String>         = emptyList(),
+    private val channelId:                   String,
+    private val signalingMetadata:           Any?                 = "",
+    private val mediaOption:                 SoraMediaOption,
+    private val timeoutSeconds:              Long                 = DEFAULT_TIMEOUT_SECONDS,
+    private var listener:                    Listener?,
+    private val clientId:                    String?              = null,
+    private val signalingNotifyMetadata:     Any?                 = null,
+    private val peerConnectionOption:        PeerConnectionOption = PeerConnectionOption(),
+    private val dataChannelSignaling:        Boolean?             = null,
+    private var ignoreDisconnectWebSocket:   Boolean?             = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+    }
+
+    init {
+        if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty())
+            || (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())) {
+            throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
+        }
     }
 
     /**
@@ -245,6 +254,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var switchedToDataChannel = false
     private var closing = false
 
+    // type: redirect で再利用するために、初回接続時の clientOffer を保持する
+    private var clientOffer: SessionDescription? = null
+
     /**
      * コネクション ID.
      */
@@ -320,6 +332,19 @@ class SoraMediaChannel @JvmOverloads constructor(
                 peer!!.getStats(handler)
             } else {
                 handler(null)
+            }
+        }
+
+        override fun onRedirect(location: String) {
+            SoraLogger.d(TAG, "[channel:$role] @peer:onRedirect")
+
+            SoraLogger.i(TAG, "[channel:$role] closing old SignalingChannel")
+            signaling?.disconnect()
+
+            SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
+            val handler = Handler(Looper.getMainLooper())
+            handler.post() {
+                connectSignalingChannel(clientOffer, location)
             }
         }
 
@@ -554,8 +579,9 @@ class SoraMediaChannel @JvmOverloads constructor(
                                     SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
                                 }
                                 val handler = Handler(Looper.getMainLooper())
+                                clientOffer = it.getOrNull()
                                 handler.post() {
-                                    connectSignalingChannel(it.getOrNull())
+                                    connectSignalingChannel(clientOffer)
                                 }
                             },
                             onError = {
@@ -569,9 +595,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?) {
+    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?, redirectLocation: String? = null) {
+        val endpoints = when {
+            redirectLocation != null -> listOf(redirectLocation)
+            signalingEndpointCandidates.isNotEmpty() -> signalingEndpointCandidates
+            else -> listOf(signalingEndpoint!!)
+        }
+
         signaling = SignalingChannelImpl(
-                endpoint                         = signalingEndpoint,
+                endpoints                        = endpoints,
                 role                             = role,
                 channelId                        = channelId,
                 connectDataChannelSignaling      = dataChannelSignaling,
@@ -581,7 +613,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 listener                         = signalingListener,
                 clientOfferSdp                   = clientOfferSdp,
                 clientId                         = clientId,
-                signalingNotifyMetadata          = signalingNotifyMetadata
+                signalingNotifyMetadata          = signalingNotifyMetadata,
+                redirect                         = redirectLocation != null
         )
         signaling!!.connect()
     }
