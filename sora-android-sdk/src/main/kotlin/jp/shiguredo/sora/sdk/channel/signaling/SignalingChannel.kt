@@ -76,6 +76,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private var receivedRedirectMessage = AtomicBoolean(false)
 
     // WebSocketListener の onClosed, onClosing, onFailure で使用する
+    @Synchronized
     private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
         // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
         wsCandidates.remove(webSocket)
@@ -387,11 +388,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
             }
 
-            synchronized (this@SignalingChannelImpl) {
-                if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
-                    SoraLogger.d(TAG, "[signaling:$role] @onClosed: skipped")
-                    return
-                }
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosed: skipped")
+                return
             }
 
             try {
@@ -408,11 +407,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing")
 
-            synchronized (this@SignalingChannelImpl) {
-                if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
-                    SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
-                    return
-                }
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
+                return
             }
 
             disconnect()
@@ -423,11 +420,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
             } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
-            synchronized (this@SignalingChannelImpl) {
-                if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
-                    SoraLogger.d(TAG, "[signaling:$role] @onFailure: skipped")
-                    return
-                }
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onFailure: skipped")
+                return
             }
 
             try {
