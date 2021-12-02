@@ -69,7 +69,8 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     init {
-        if (signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) {
+        if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty())
+            || (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())) {
             throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
         }
     }
