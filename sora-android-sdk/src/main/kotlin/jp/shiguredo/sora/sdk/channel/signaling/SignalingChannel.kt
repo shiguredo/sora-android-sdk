@@ -69,37 +69,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
      */
     private var ws: WebSocket? = null
 
-    private var wsCandidates = mutableListOf<WebSocket>()
+    private val wsCandidates = mutableListOf<WebSocket>()
 
-    private var closing = AtomicBoolean(false)
+    private val closing = AtomicBoolean(false)
 
-    private var receivedRedirectMessage = AtomicBoolean(false)
-
-    // WebSocketListener の onClosed, onClosing, onFailure で使用する
-    @Synchronized
-    private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
-        // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
-        wsCandidates.remove(webSocket)
-
-        /*
-          ここで receivedRedirectMessage をチェックすることを検討したが、不要だという結論に至った
-          type: redirect を既に受信している場合、  onDisconnect が発火しない限り、
-          SignalingChannelImpl の disconnect が実行されても問題ない
-         */
-
-        // 採用する WebSocket が決まっていないが、 wsCandidates が残っているのでイベントは無視する
-        if (ws == null && wsCandidates.size != 0) {
-            return false
-        }
-
-        // 採用されなかった WebSocket を始末する際のイベントを無視する
-        if (ws != null && ws != webSocket) {
-            return false
-        }
-
-        return true
-    }
-
+    private val receivedRedirectMessage = AtomicBoolean(false)
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -306,6 +280,31 @@ class SignalingChannelImpl @JvmOverloads constructor(
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
         listener?.onRedirect(msg.location)
+    }
+
+    // WebSocketListener の onClosed, onClosing, onFailure で使用する
+    @Synchronized
+    private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
+        // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
+        wsCandidates.remove(webSocket)
+
+        /*
+          ここで receivedRedirectMessage をチェックすることを検討したが、不要だという結論に至った
+          type: redirect を既に受信している場合、  onDisconnect が発火しない限り、
+          SignalingChannelImpl の disconnect が実行されても問題ない
+         */
+
+        // 採用する WebSocket が決まっていないが、 wsCandidates が残っているのでイベントは無視する
+        if (ws == null && wsCandidates.size != 0) {
+            return false
+        }
+
+        // 採用されなかった WebSocket を始末する際のイベントを無視する
+        if (ws != null && ws != webSocket) {
+            return false
+        }
+
+        return true
     }
 
     private val webSocketListener = object : WebSocketListener() {
