@@ -26,4 +26,6 @@ jobs:
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build
+      - name: Lint Check
+        run: ./gradlew ktlintCheck
