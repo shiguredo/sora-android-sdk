@@ -4,9 +4,11 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.*
 import java.util.concurrent.*
 
-internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Context?,
-                                                   enableIntelVp8Encoder: Boolean,
-                                                   enableH264HighProfile: Boolean) : VideoEncoderFactory {
+internal class SimulcastVideoEncoderFactoryWrapper(
+    sharedContext: EglBase.Context?,
+    enableIntelVp8Encoder: Boolean,
+    enableH264HighProfile: Boolean
+) : VideoEncoderFactory {
 
     /*
      * ソフトウェアエンコーダーの利用を優先するファクトリーです。
@@ -45,7 +47,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
             supportedCodecInfos.addAll(hardwareVideoEncoderFactory.supportedCodecs)
             return supportedCodecInfos.toTypedArray()
         }
-
     }
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -64,8 +65,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
 
         override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
             streamSettings = settings
-            val future = executor.submit(Callable {
-                SoraLogger.i(TAG, """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
+            val future = executor.submit(
+                Callable {
+                    SoraLogger.i(
+                        TAG,
+                        """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
                 |  streamSettings:
                 |    numberOfCores=${settings.numberOfCores}
                 |    width=${settings.width}
@@ -75,9 +79,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
                 |    automaticResizeOn=${settings.automaticResizeOn}
                 |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
                 |    lossNotification=${settings.capabilities.lossNotification}
-            """.trimMargin())
-                return@Callable encoder.initEncode(settings, callback)
-            })
+            """.trimMargin()
+                    )
+                    return@Callable encoder.initEncode(settings, callback)
+                }
+            )
             return future.get()
         }
 
@@ -87,29 +93,33 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
         }
 
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-            val future = executor.submit(Callable {
-                // SoraLogger.d(TAG, "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} "
-                //         + "[${Thread.currentThread().id}]")
-                if (streamSettings == null) {
-                    return@Callable encoder.encode(frame, encodeInfo)
-                } else if (frame.buffer.width == streamSettings!!.width) {
-                    return@Callable encoder.encode(frame, encodeInfo)
-                } else {
-                    // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
-                    val originalBuffer = frame.buffer
-                    // val ratio = originalBuffer.width / streamSettings!!.width
-                    // SoraLogger.d(TAG, "encode: Scaling needed, " +
-                    //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
-                    //         "ratio=$ratio")
-                    // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
-                    val adaptedBuffer = originalBuffer.cropAndScale(0, 0, originalBuffer.width, originalBuffer.height,
-                            streamSettings!!.width, streamSettings!!.height)
-                    val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
-                    val result = encoder.encode(adaptedFrame, encodeInfo)
-                    adaptedBuffer.release()
-                    return@Callable result
+            val future = executor.submit(
+                Callable {
+                    // SoraLogger.d(TAG, "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} "
+                    //         + "[${Thread.currentThread().id}]")
+                    if (streamSettings == null) {
+                        return@Callable encoder.encode(frame, encodeInfo)
+                    } else if (frame.buffer.width == streamSettings!!.width) {
+                        return@Callable encoder.encode(frame, encodeInfo)
+                    } else {
+                        // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
+                        val originalBuffer = frame.buffer
+                        // val ratio = originalBuffer.width / streamSettings!!.width
+                        // SoraLogger.d(TAG, "encode: Scaling needed, " +
+                        //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                        //         "ratio=$ratio")
+                        // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
+                        val adaptedBuffer = originalBuffer.cropAndScale(
+                            0, 0, originalBuffer.width, originalBuffer.height,
+                            streamSettings!!.width, streamSettings!!.height
+                        )
+                        val adaptedFrame = VideoFrame(adaptedBuffer, frame.rotation, frame.timestampNs)
+                        val result = encoder.encode(adaptedFrame, encodeInfo)
+                        adaptedBuffer.release()
+                        return@Callable result
+                    }
                 }
-            })
+            )
             return future.get()
         }
 
@@ -143,14 +153,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
         }
     }
 
-
     private val primary: VideoEncoderFactory
     private val fallback: VideoEncoderFactory
     private val native: SimulcastVideoEncoderFactory
 
     init {
         val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
-                sharedContext, enableIntelVp8Encoder, enableH264HighProfile)
+            sharedContext, enableIntelVp8Encoder, enableH264HighProfile
+        )
         primary = StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
         fallback = StreamEncoderWrapperFactory(Fallback(primary))
         native = SimulcastVideoEncoderFactory(primary, fallback)
@@ -163,5 +173,4 @@ internal class SimulcastVideoEncoderFactoryWrapper(sharedContext: EglBase.Contex
     override fun getSupportedCodecs(): Array<VideoCodecInfo> {
         return native.supportedCodecs
     }
-
 }

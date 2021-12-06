@@ -5,9 +5,6 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.ConnectMessage
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlin.test.fail
-
 
 class ConnectClientIdTest {
     val gson = Gson()
@@ -26,12 +23,12 @@ class ConnectClientIdTest {
         assertEquals("It's me", message["client_id"])
     }
 
-    private fun roundtrip(clientId: String?) : Map<*, *> {
+    private fun roundtrip(clientId: String?): Map<*, *> {
         val original = ConnectMessage(
-                role = "upstream",
-                channelId = "sora",
-                sdp         = "",
-                clientId = clientId
+            role = "upstream",
+            channelId = "sora",
+            sdp = "",
+            clientId = clientId
         )
         val serialized = gson.toJson(original)
         return gson.fromJson(serialized, Map::class.java)

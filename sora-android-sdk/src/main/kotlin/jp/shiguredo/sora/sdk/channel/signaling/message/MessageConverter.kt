@@ -8,11 +8,14 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
 
-class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
-    constructor(stats: RTCStats) : this(mapOf(
-        "id" to stats.id,
-        "type" to stats.type,
-        "timestamp" to stats.timestampUs) + stats.members) {}
+class SoraRTCStats(private val map: Map<String, Any>) : Map<String, Any> by map {
+    constructor(stats: RTCStats) : this(
+        mapOf(
+            "id" to stats.id,
+            "type" to stats.type,
+            "timestamp" to stats.timestampUs
+        ) + stats.members
+    ) {}
 }
 
 class MessageConverter {
@@ -24,39 +27,40 @@ class MessageConverter {
         val gson = Gson()
 
         @JvmOverloads
-        fun buildConnectMessage(role: SoraChannelRole,
-                                channelId: String,
-                                dataChannelSignaling: Boolean?,
-                                ignoreDisconnectWebSocket: Boolean?,
-                                mediaOption: SoraMediaOption,
-                                metadata: Any?,
-                                sdp: String? = null,
-                                clientId: String? = null,
-                                signalingNotifyMetadata: Any? = null
+        fun buildConnectMessage(
+            role: SoraChannelRole,
+            channelId: String,
+            dataChannelSignaling: Boolean?,
+            ignoreDisconnectWebSocket: Boolean?,
+            mediaOption: SoraMediaOption,
+            metadata: Any?,
+            sdp: String? = null,
+            clientId: String? = null,
+            signalingNotifyMetadata: Any? = null
         ): String {
 
             val msg = ConnectMessage(
-                    role = role.signaling,
-                    channelId = channelId,
-                    dataChannelSignaling = dataChannelSignaling,
-                    ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
-                    metadata = metadata,
-                    multistream = mediaOption.multistreamIsRequired,
-                    spotlight = mediaOption.spotlightOption?.let {
-                        if (Sora.usesSpotlightLegacy)
-                            it.spotlightNumber
-                        else
-                            true
-                    },
-                    spotlightNumber = mediaOption.spotlightOption?.let {
-                        if (Sora.usesSpotlightLegacy)
-                            null
-                        else
-                            it.spotlightNumber
-                    },
-                    sdp = sdp,
-                    clientId = clientId,
-                    signalingNotifyMetadata = signalingNotifyMetadata
+                role = role.signaling,
+                channelId = channelId,
+                dataChannelSignaling = dataChannelSignaling,
+                ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
+                metadata = metadata,
+                multistream = mediaOption.multistreamIsRequired,
+                spotlight = mediaOption.spotlightOption?.let {
+                    if (Sora.usesSpotlightLegacy)
+                        it.spotlightNumber
+                    else
+                        true
+                },
+                spotlightNumber = mediaOption.spotlightOption?.let {
+                    if (Sora.usesSpotlightLegacy)
+                        null
+                    else
+                        it.spotlightNumber
+                },
+                sdp = sdp,
+                clientId = clientId,
+                signalingNotifyMetadata = signalingNotifyMetadata
             )
 
             if (mediaOption.upstreamIsRequired) {
@@ -70,7 +74,6 @@ class MessageConverter {
                     }
 
                     msg.audio = audioSetting
-
                 } else {
                     msg.audio = false
                 }
@@ -117,9 +120,13 @@ class MessageConverter {
         }
 
         fun buildPongMessage(stats: RTCStatsReport?): String {
-            return gson.toJson(PongMessage(stats = stats?.let {
-                stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
-            }))
+            return gson.toJson(
+                PongMessage(
+                    stats = stats?.let {
+                        stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
+                    }
+                )
+            )
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
@@ -184,4 +191,3 @@ class MessageConverter {
         }
     }
 }
-
