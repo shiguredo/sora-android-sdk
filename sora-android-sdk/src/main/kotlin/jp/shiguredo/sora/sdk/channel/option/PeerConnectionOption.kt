@@ -7,7 +7,7 @@ class PeerConnectionOption {
 
     /**
      * PeerConnection の getStats() 統計情報を取得するインターバルのミリ秒.
-      *
+     *
      * 0 の場合、統計情報を取得しません.
      *
      * cf.

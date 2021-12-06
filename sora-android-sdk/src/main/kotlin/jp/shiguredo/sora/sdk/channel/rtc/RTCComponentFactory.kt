@@ -6,13 +6,19 @@ import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.*
+import org.webrtc.DefaultVideoDecoderFactory
+import org.webrtc.DefaultVideoEncoderFactory
+import org.webrtc.MediaConstraints
+import org.webrtc.PeerConnectionFactory
+import org.webrtc.SoftwareVideoDecoderFactory
+import org.webrtc.SoftwareVideoEncoderFactory
 import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 
-
-class RTCComponentFactory(private val mediaOption: SoraMediaOption,
-                          private val listener: PeerChannel.Listener?) {
+class RTCComponentFactory(
+    private val mediaOption: SoraMediaOption,
+    private val listener: PeerChannel.Listener?
+) {
     companion object {
         private val TAG = RTCComponentFactory::class.simpleName
     }
@@ -21,10 +27,10 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(appContext: Context): PeerConnectionFactory {
         val cl = Thread.currentThread().contextClassLoader
-        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=${cl}")
+        SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=$cl")
         val factoryOptions = PeerConnectionFactory.Options()
         val factoryBuilder = PeerConnectionFactory.builder()
-                .setOptions(factoryOptions)
+            .setOptions(factoryOptions)
 
         // DefaultVideoEncoderFactory, DefaultVideoDecoderFactory は
         // EglBase.Context を与えるとハードウェアエンコーダーを使用する
@@ -34,13 +40,17 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
             mediaOption.simulcastEnabled ->
-                SimulcastVideoEncoderFactoryWrapper(mediaOption.videoUpstreamContext,
-                                true,
-                                false)
+                SimulcastVideoEncoderFactoryWrapper(
+                    mediaOption.videoUpstreamContext,
+                    true,
+                    false
+                )
             mediaOption.videoUpstreamContext != null ->
-                DefaultVideoEncoderFactory(mediaOption.videoUpstreamContext,
-                        true /* enableIntelVp8Encoder */,
-                        false /* enableH264HighProfile */)
+                DefaultVideoEncoderFactory(
+                    mediaOption.videoUpstreamContext,
+                    true /* enableIntelVp8Encoder */,
+                    false /* enableH264HighProfile */
+                )
 
             mediaOption.videoDownstreamContext != null ->
                 DefaultVideoEncoderFactory(mediaOption.videoDownstreamContext,
@@ -78,9 +88,9 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
                 createJavaAudioDevice(appContext)
         }
         factoryBuilder
-                .setAudioDeviceModule(audioDeviceModule)
-                .setVideoEncoderFactory(encoderFactory)
-                .setVideoDecoderFactory(decoderFactory)
+            .setAudioDeviceModule(audioDeviceModule)
+            .setVideoEncoderFactory(encoderFactory)
+            .setVideoDecoderFactory(decoderFactory)
         // option で渡ってきた場合の所有権はアプリケーションにある。
         // ここで生成した場合だけ解放する。
         if (mediaOption.audioOption.audioDeviceModule == null) {
@@ -92,15 +102,15 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
 
     fun createSDPConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
-        SoraLogger.d(TAG, "createSDPConstraints: ${constraints}")
+        SoraLogger.d(TAG, "createSDPConstraints: $constraints")
         return constraints
     }
 
-    fun createVideoManager() : RTCLocalVideoManager {
+    fun createVideoManager(): RTCLocalVideoManager {
         val videoManager = mediaOption.videoCapturer?.let {
             RTCLocalVideoManagerImpl(it)
         } ?: RTCNullLocalVideoManager()
-        SoraLogger.d(TAG, "videoManager created: ${videoManager}")
+        SoraLogger.d(TAG, "videoManager created: $videoManager")
         return videoManager
     }
 
@@ -117,7 +127,9 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
             }
 
             override fun onWebRtcAudioRecordStartError(
-                    errorCode: JavaAudioDeviceModule.AudioRecordStartErrorCode, errorMessage: String) {
+                errorCode: JavaAudioDeviceModule.AudioRecordStartErrorCode,
+                errorMessage: String
+            ) {
                 SoraLogger.e(TAG, "onWebRtcAudioRecordStartError: $errorCode. $errorMessage")
                 reportError(SoraErrorReason.AUDIO_RECORD_START_ERROR, "$errorMessage [$errorCode]")
             }
@@ -135,7 +147,9 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
             }
 
             override fun onWebRtcAudioTrackStartError(
-                    errorCode: JavaAudioDeviceModule.AudioTrackStartErrorCode, errorMessage: String) {
+                errorCode: JavaAudioDeviceModule.AudioTrackStartErrorCode,
+                errorMessage: String
+            ) {
                 SoraLogger.e(TAG, "onWebRtcAudioTrackStartError: $errorCode. $errorMessage")
                 reportError(SoraErrorReason.AUDIO_TRACK_START_ERROR, "$errorMessage [$errorCode]")
             }
@@ -147,18 +161,20 @@ class RTCComponentFactory(private val mediaOption: SoraMediaOption,
         }
 
         return JavaAudioDeviceModule.builder(appContext)
-                .setUseHardwareAcousticEchoCanceler(
-                        JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported()
-                                && mediaOption.audioOption.useHardwareAcousticEchoCanceler)
-                .setUseHardwareNoiseSuppressor(
-                        JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported()
-                                && mediaOption.audioOption.useHardwareNoiseSuppressor)
-                .setAudioRecordErrorCallback(audioRecordErrorCallback)
-                .setAudioTrackErrorCallback(audioTrackErrorCallback)
-                .setAudioSource(mediaOption.audioOption.audioSource)
-                .setUseStereoInput(mediaOption.audioOption.useStereoInput)
-                .setUseStereoOutput(mediaOption.audioOption.useStereoOutput)
-                .createAudioDeviceModule()
+            .setUseHardwareAcousticEchoCanceler(
+                JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported() &&
+                    mediaOption.audioOption.useHardwareAcousticEchoCanceler
+            )
+            .setUseHardwareNoiseSuppressor(
+                JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported() &&
+                    mediaOption.audioOption.useHardwareNoiseSuppressor
+            )
+            .setAudioRecordErrorCallback(audioRecordErrorCallback)
+            .setAudioTrackErrorCallback(audioTrackErrorCallback)
+            .setAudioSource(mediaOption.audioOption.audioSource)
+            .setUseStereoInput(mediaOption.audioOption.useStereoInput)
+            .setUseStereoOutput(mediaOption.audioOption.useStereoOutput)
+            .createAudioDeviceModule()
     }
 
     private fun reportError(errorReason: SoraErrorReason, errorMessage: String) {

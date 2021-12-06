@@ -13,7 +13,7 @@ class SoraAudioOption {
     companion object {
         const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
         const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
-        const val HIGH_PASS_FILTER_CONSTRAINT  = "googHighpassFilter"
+        const val HIGH_PASS_FILTER_CONSTRAINT = "googHighpassFilter"
         const val NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression"
     }
     /**

@@ -1,7 +1,6 @@
 package jp.shiguredo.sora.sdk.util
 
 import java.io.InputStream
-import java.io.OutputStream
 import java.nio.ByteBuffer
 
 class ByteBufferBackedInputStream(private val buf: ByteBuffer) : InputStream() {

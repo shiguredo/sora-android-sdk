@@ -8,11 +8,14 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
 
-class SoraRTCStats(private val map: Map<String, Any>): Map<String, Any> by map {
-    constructor(stats: RTCStats) : this(mapOf(
-        "id" to stats.id,
-        "type" to stats.type,
-        "timestamp" to stats.timestampUs) + stats.members) {}
+class SoraRTCStats(private val map: Map<String, Any>) : Map<String, Any> by map {
+    constructor(stats: RTCStats) : this(
+        mapOf(
+            "id" to stats.id,
+            "type" to stats.type,
+            "timestamp" to stats.timestampUs
+        ) + stats.members
+    ) {}
 }
 
 class MessageConverter {
@@ -71,7 +74,6 @@ class MessageConverter {
                     }
 
                     msg.audio = audioSetting
-
                 } else {
                     msg.audio = false
                 }
@@ -122,9 +124,13 @@ class MessageConverter {
         }
 
         fun buildPongMessage(stats: RTCStatsReport?): String {
-            return gson.toJson(PongMessage(stats = stats?.let {
-                stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
-            }))
+            return gson.toJson(
+                PongMessage(
+                    stats = stats?.let {
+                        stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
+                    }
+                )
+            )
         }
 
         fun buildUpdateAnswerMessage(sdp: String): String {
@@ -193,4 +199,3 @@ class MessageConverter {
         }
     }
 }
-

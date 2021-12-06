@@ -11,5 +11,4 @@ object Sora {
      */
     @Deprecated("スポットライトレガシー機能は 2021 年 12 月に廃止が予定されています。")
     var usesSpotlightLegacy: Boolean = false
-
 }
