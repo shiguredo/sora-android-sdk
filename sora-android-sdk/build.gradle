@@ -68,6 +68,16 @@ dokkaHtml.configure {
     }
 }
 
+ktlint {
+    version = "0.43.2"
+    android = false
+    outputToConsole = true
+    reporters {
+        reporter "checkstyle"
+    }
+    ignoreFailures = false
+}
+
 dependencies {
     api "com.github.shiguredo:shiguredo-webrtc-android:${libwebrtc_version}"
 
