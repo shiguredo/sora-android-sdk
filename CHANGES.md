@@ -17,6 +17,10 @@
   - @enm10k
 - [UPDATE] dokka を 1.5.31 に上げる
   - @miosakuma
+- [FIX] 視聴のみかつ H.264 した場合に接続できない問題についてのワークアラウンドを削除する
+  - SoraMediaOption.videoUpstreamContext が無く SoraMediaOption.videoDownstreamContext 
+    がある場合はコーデック指定に依らず、 DefaultVideoEncoderFactory を使用する
+  - @miosakuma
 
 ## 2021.3
 
