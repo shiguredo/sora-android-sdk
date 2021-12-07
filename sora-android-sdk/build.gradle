@@ -41,9 +41,12 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+}
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    dependsOn("ktlintFormat")
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 }
 
