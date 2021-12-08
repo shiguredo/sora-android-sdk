@@ -2,7 +2,6 @@ package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -53,9 +52,11 @@ class RTCComponentFactory(
                 )
 
             mediaOption.videoDownstreamContext != null ->
-                DefaultVideoEncoderFactory(mediaOption.videoDownstreamContext,
-                        true /* enableIntelVp8Encoder */,
-                        false /* enableH264HighProfile */)
+                DefaultVideoEncoderFactory(
+                    mediaOption.videoDownstreamContext,
+                    true /* enableIntelVp8Encoder */,
+                    false /* enableH264HighProfile */
+                )
             else ->
                 // context が指定されていなければソフトウェアエンコーダーを使用する
                 SoftwareVideoEncoderFactory()

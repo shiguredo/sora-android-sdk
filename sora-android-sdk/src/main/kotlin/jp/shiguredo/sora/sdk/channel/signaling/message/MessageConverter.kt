@@ -27,40 +27,41 @@ class MessageConverter {
         val gson = Gson()
 
         @JvmOverloads
-        fun buildConnectMessage(role: SoraChannelRole,
-                                channelId: String,
-                                dataChannelSignaling: Boolean?,
-                                ignoreDisconnectWebSocket: Boolean?,
-                                mediaOption: SoraMediaOption,
-                                metadata: Any?,
-                                sdp: String? = null,
-                                clientId: String? = null,
-                                signalingNotifyMetadata: Any? = null,
-                                redirect: Boolean = false
+        fun buildConnectMessage(
+            role: SoraChannelRole,
+            channelId: String,
+            dataChannelSignaling: Boolean?,
+            ignoreDisconnectWebSocket: Boolean?,
+            mediaOption: SoraMediaOption,
+            metadata: Any?,
+            sdp: String? = null,
+            clientId: String? = null,
+            signalingNotifyMetadata: Any? = null,
+            redirect: Boolean = false
         ): String {
 
             val msg = ConnectMessage(
-                    role = role.signaling,
-                    channelId = channelId,
-                    dataChannelSignaling = dataChannelSignaling,
-                    ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
-                    metadata = metadata,
-                    multistream = mediaOption.multistreamIsRequired,
-                    spotlight = mediaOption.spotlightOption?.let {
-                        if (Sora.usesSpotlightLegacy)
-                            it.spotlightNumber
-                        else
-                            true
-                    },
-                    spotlightNumber = mediaOption.spotlightOption?.let {
-                        if (Sora.usesSpotlightLegacy)
-                            null
-                        else
-                            it.spotlightNumber
-                    },
-                    sdp = sdp,
-                    clientId = clientId,
-                    signalingNotifyMetadata = signalingNotifyMetadata,
+                role = role.signaling,
+                channelId = channelId,
+                dataChannelSignaling = dataChannelSignaling,
+                ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
+                metadata = metadata,
+                multistream = mediaOption.multistreamIsRequired,
+                spotlight = mediaOption.spotlightOption?.let {
+                    if (Sora.usesSpotlightLegacy)
+                        it.spotlightNumber
+                    else
+                        true
+                },
+                spotlightNumber = mediaOption.spotlightOption?.let {
+                    if (Sora.usesSpotlightLegacy)
+                        null
+                    else
+                        it.spotlightNumber
+                },
+                sdp = sdp,
+                clientId = clientId,
+                signalingNotifyMetadata = signalingNotifyMetadata,
             )
 
             if (mediaOption.upstreamIsRequired) {

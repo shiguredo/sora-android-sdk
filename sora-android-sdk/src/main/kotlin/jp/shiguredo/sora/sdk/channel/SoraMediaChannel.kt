@@ -60,19 +60,19 @@ import kotlin.concurrent.schedule
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  */
 class SoraMediaChannel @JvmOverloads constructor(
-    private val context:                     Context,
-    private val signalingEndpoint:           String?              = null,
-    private val signalingEndpointCandidates: List<String>         = emptyList(),
-    private val channelId:                   String,
-    private val signalingMetadata:           Any?                 = "",
-    private val mediaOption:                 SoraMediaOption,
-    private val timeoutSeconds:              Long                 = DEFAULT_TIMEOUT_SECONDS,
-    private var listener:                    Listener?,
-    private val clientId:                    String?              = null,
-    private val signalingNotifyMetadata:     Any?                 = null,
-    private val peerConnectionOption:        PeerConnectionOption = PeerConnectionOption(),
-    private val dataChannelSignaling:        Boolean?             = null,
-    private var ignoreDisconnectWebSocket:   Boolean?             = null
+    private val context: Context,
+    private val signalingEndpoint: String? = null,
+    private val signalingEndpointCandidates: List<String> = emptyList(),
+    private val channelId: String,
+    private val signalingMetadata: Any? = "",
+    private val mediaOption: SoraMediaOption,
+    private val timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
+    private var listener: Listener?,
+    private val clientId: String? = null,
+    private val signalingNotifyMetadata: Any? = null,
+    private val peerConnectionOption: PeerConnectionOption = PeerConnectionOption(),
+    private val dataChannelSignaling: Boolean? = null,
+    private var ignoreDisconnectWebSocket: Boolean? = null
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -81,8 +81,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     init {
-        if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty())
-            || (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())) {
+        if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
+            (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())
+        ) {
             throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
         }
     }
@@ -361,7 +362,6 @@ class SoraMediaChannel @JvmOverloads constructor(
                 connectSignalingChannel(clientOffer, location)
             }
         }
-
     }
 
     private val peerListener = object : PeerChannel.Listener {
@@ -589,33 +589,35 @@ class SoraMediaChannel @JvmOverloads constructor(
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
-                    .observeOn(Schedulers.io())
-                    .subscribeBy(
-                            onSuccess = {
-                                SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
-                                disconnect()
+                .observeOn(Schedulers.io())
+                .subscribeBy(
+                    onSuccess = {
+                        SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
+                        disconnect()
 
-                                if (it.isFailure) {
-                                    SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
-                                }
-                                val handler = Handler(Looper.getMainLooper())
-                                clientOffer = it.getOrNull()
-                                handler.post() {
-                                    connectSignalingChannel(clientOffer)
-                                }
-                            },
-                            onError = {
-                                SoraLogger.w(TAG,
-                                        "[channel:$role] failed request client offer SDP: ${it.message}")
-                                disconnect()
-                            }
+                        if (it.isFailure) {
+                            SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
+                        }
+                        val handler = Handler(Looper.getMainLooper())
+                        clientOffer = it.getOrNull()
+                        handler.post() {
+                            connectSignalingChannel(clientOffer)
+                        }
+                    },
+                    onError = {
+                        SoraLogger.w(
+                            TAG,
+                            "[channel:$role] failed request client offer SDP: ${it.message}"
+                        )
+                        disconnect()
+                    }
 
                 )
             compositeDisposable.add(subscription)
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp : SessionDescription?, redirectLocation: String? = null) {
+    private fun connectSignalingChannel(clientOfferSdp: SessionDescription?, redirectLocation: String? = null) {
         val endpoints = when {
             redirectLocation != null -> listOf(redirectLocation)
             signalingEndpointCandidates.isNotEmpty() -> signalingEndpointCandidates
@@ -623,18 +625,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         signaling = SignalingChannelImpl(
-                endpoints                        = endpoints,
-                role                             = role,
-                channelId                        = channelId,
-                connectDataChannelSignaling      = dataChannelSignaling,
-                connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket,
-                mediaOption                      = mediaOption,
-                connectMetadata                  = signalingMetadata,
-                listener                         = signalingListener,
-                clientOfferSdp                   = clientOfferSdp,
-                clientId                         = clientId,
-                signalingNotifyMetadata          = signalingNotifyMetadata,
-                redirect                         = redirectLocation != null
+            endpoints = endpoints,
+            role = role,
+            channelId = channelId,
+            connectDataChannelSignaling = dataChannelSignaling,
+            connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket,
+            mediaOption = mediaOption,
+            connectMetadata = signalingMetadata,
+            listener = signalingListener,
+            clientOfferSdp = clientOfferSdp,
+            clientId = clientId,
+            signalingNotifyMetadata = signalingNotifyMetadata,
+            redirect = redirectLocation != null
         )
         signaling!!.connect()
     }

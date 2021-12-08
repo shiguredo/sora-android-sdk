@@ -18,33 +18,33 @@ data class PongMessage(
 )
 
 data class ConnectMessage(
-        @SerializedName("type")        val type:                      String = "connect",
-        @SerializedName("role")        var role:                      String,
-        @SerializedName("channel_id")  val channelId:                 String,
-        @SerializedName("client_id")   val clientId:                  String? = null,
-        @SerializedName("metadata")    val metadata:                  Any? = null,
-        @SerializedName("signaling_notify_metadata")
-                                       val signalingNotifyMetadata:   Any? = null,
-        @SerializedName("multistream") val multistream:               Boolean = false,
-        @SerializedName("spotlight")   var spotlight:                 Any? = null,
-        @SerializedName("spotlight_number")
-                                       var spotlightNumber:           Int? = null,
-        @SerializedName("spotlight_focus_rid") var spotlightFocusRid: String? = null,
-        @SerializedName("spotlight_unfocus_rid") var spotlightUnfocusRid: String? = null,
-        @SerializedName("simulcast")   var simulcast:                 Boolean? = false,
-        @SerializedName("simulcast_rid")
-                                       var simulcastRid:              String? = null,
-        @SerializedName("video")       var video:                     Any? = null,
-        @SerializedName("audio")       var audio:                     Any? = null,
-        @SerializedName("sora_client") val soraClient:                String = SDKInfo.sdkInfo(),
-        @SerializedName("libwebrtc")   val libwebrtc:                 String = SDKInfo.libwebrtcInfo(),
-        @SerializedName("environment") val environment:               String = SDKInfo.deviceInfo(),
-        @SerializedName("sdp")         val sdp:                       String? = null,
-        @SerializedName("data_channel_signaling")
-                                       val dataChannelSignaling:      Boolean? = null,
-        @SerializedName("ignore_disconnect_websocket")
-                                       val ignoreDisconnectWebsocket: Boolean? = null,
-        @SerializedName("redirect") var redirect: Boolean? = null
+    @SerializedName("type") val type: String = "connect",
+    @SerializedName("role") var role: String,
+    @SerializedName("channel_id") val channelId: String,
+    @SerializedName("client_id") val clientId: String? = null,
+    @SerializedName("metadata") val metadata: Any? = null,
+    @SerializedName("signaling_notify_metadata")
+    val signalingNotifyMetadata: Any? = null,
+    @SerializedName("multistream") val multistream: Boolean = false,
+    @SerializedName("spotlight") var spotlight: Any? = null,
+    @SerializedName("spotlight_number")
+    var spotlightNumber: Int? = null,
+    @SerializedName("spotlight_focus_rid") var spotlightFocusRid: String? = null,
+    @SerializedName("spotlight_unfocus_rid") var spotlightUnfocusRid: String? = null,
+    @SerializedName("simulcast") var simulcast: Boolean? = false,
+    @SerializedName("simulcast_rid")
+    var simulcastRid: String? = null,
+    @SerializedName("video") var video: Any? = null,
+    @SerializedName("audio") var audio: Any? = null,
+    @SerializedName("sora_client") val soraClient: String = SDKInfo.sdkInfo(),
+    @SerializedName("libwebrtc") val libwebrtc: String = SDKInfo.libwebrtcInfo(),
+    @SerializedName("environment") val environment: String = SDKInfo.deviceInfo(),
+    @SerializedName("sdp") val sdp: String? = null,
+    @SerializedName("data_channel_signaling")
+    val dataChannelSignaling: Boolean? = null,
+    @SerializedName("ignore_disconnect_websocket")
+    val ignoreDisconnectWebsocket: Boolean? = null,
+    @SerializedName("redirect") var redirect: Boolean? = null
 )
 
 data class VideoSetting(
@@ -89,8 +89,8 @@ data class Encoding(
 )
 
 data class RedirectMessage(
-        @SerializedName("type")     val type: String = "redirect",
-        @SerializedName("location") val location: String
+    @SerializedName("type") val type: String = "redirect",
+    @SerializedName("location") val location: String
 )
 
 data class OfferMessage(
