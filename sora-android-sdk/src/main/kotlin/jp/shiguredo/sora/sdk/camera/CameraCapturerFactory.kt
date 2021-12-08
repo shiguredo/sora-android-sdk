@@ -33,9 +33,11 @@ class CameraCapturerFactory {
          * @return 生成された `CameraVideoCapturer`
          */
         @JvmOverloads
-        fun create(context: Context,
-                   fixedResolution: Boolean = false,
-                   frontFacingFirst: Boolean = true) : CameraVideoCapturer? {
+        fun create(
+            context: Context,
+            fixedResolution: Boolean = false,
+            frontFacingFirst: Boolean = true
+        ): CameraVideoCapturer? {
             SoraLogger.d(TAG, "create camera capturer")
             var videoCapturer: CameraVideoCapturer? = null
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -60,14 +62,14 @@ class CameraCapturerFactory {
                     videoCapturer
                 }
                 else -> {
-                    SoraLogger.d(TAG, "Wrap capturer: original.isScreencast=${videoCapturer.isScreencast}, fixedResolution=${fixedResolution}")
+                    SoraLogger.d(TAG, "Wrap capturer: original.isScreencast=${videoCapturer.isScreencast}, fixedResolution=$fixedResolution")
                     CameraVideoCapturerWrapper(videoCapturer, fixedResolution)
                 }
             }
         }
 
         private fun createCapturer(enumerator: CameraEnumerator, frontFacingFirst: Boolean): CameraVideoCapturer? {
-            var capturer : CameraVideoCapturer? = null
+            var capturer: CameraVideoCapturer? = null
             enumerator.deviceNames.forEach {
                 deviceName ->
                 if (capturer == null) {
@@ -86,17 +88,16 @@ class CameraCapturerFactory {
             return capturer
         }
 
-        private fun findDeviceCamera(enumerator: CameraEnumerator,
-                                     deviceName: String,
-                                     frontFacing: Boolean) : CameraVideoCapturer? {
+        private fun findDeviceCamera(
+            enumerator: CameraEnumerator,
+            deviceName: String,
+            frontFacing: Boolean
+        ): CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
             if (enumerator.isFrontFacing(deviceName) == frontFacing) {
                 capturer = enumerator.createCapturer(deviceName, null)
             }
             return capturer
         }
-
     }
-
 }
-

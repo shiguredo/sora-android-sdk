@@ -3,6 +3,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.dokka'
+apply plugin: 'org.jlleitschuh.gradle.ktlint'
 
 group = 'com.github.shiguredo'
 
@@ -40,9 +41,12 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+}
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    dependsOn("ktlintFormat")
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 }
 
@@ -65,6 +69,16 @@ dokkaHtml.configure {
             }
         }
     }
+}
+
+ktlint {
+    version = "0.43.2"
+    android = false
+    outputToConsole = true
+    reporters {
+        reporter "checkstyle"
+    }
+    ignoreFailures = false
 }
 
 dependencies {

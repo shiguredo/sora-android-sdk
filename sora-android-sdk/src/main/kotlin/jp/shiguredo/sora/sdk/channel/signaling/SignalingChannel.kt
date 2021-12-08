@@ -2,10 +2,18 @@ package jp.shiguredo.sora.sdk.channel.signaling
 
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
-import jp.shiguredo.sora.sdk.channel.signaling.message.*
+import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
+import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import okhttp3.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import okio.ByteString
 import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
@@ -38,18 +46,18 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
-        private val endpoints:                        List<String>,
-        private val role:                             SoraChannelRole,
-        private val channelId:                        String,
-        private val connectDataChannelSignaling:      Boolean?                    = null,
-        private val connectIgnoreDisconnectWebSocket: Boolean?                    = null,
-        private val mediaOption:                      SoraMediaOption,
-        private val connectMetadata:                  Any?,
-        private var listener:                         SignalingChannel.Listener?,
-        private val clientOfferSdp:                   SessionDescription?,
-        private val clientId:                         String?                     = null,
-        private val signalingNotifyMetadata:          Any?                        = null,
-        private val redirect:                         Boolean                     = false
+    private val endpoints: List<String>,
+    private val role: SoraChannelRole,
+    private val channelId: String,
+    private val connectDataChannelSignaling: Boolean? = null,
+    private val connectIgnoreDisconnectWebSocket: Boolean? = null,
+    private val mediaOption: SoraMediaOption,
+    private val connectMetadata: Any?,
+    private var listener: SignalingChannel.Listener?,
+    private val clientOfferSdp: SessionDescription?,
+    private val clientId: String? = null,
+    private val signalingNotifyMetadata: Any? = null,
+    private val redirect: Boolean = false
 ) : SignalingChannel {
 
     companion object {
@@ -81,7 +89,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
-        synchronized (this) {
+        synchronized(this) {
             for (endpoint in endpoints) {
                 wsCandidates.add(connect(endpoint))
             }
@@ -189,16 +197,16 @@ class SignalingChannelImpl @JvmOverloads constructor(
         ws?.let {
             SoraLogger.d(TAG, "[signaling:$role] -> connect")
             val message = MessageConverter.buildConnectMessage(
-                    role                      = role,
-                    channelId                 = channelId,
-                    dataChannelSignaling      = connectDataChannelSignaling,
-                    ignoreDisconnectWebSocket = connectIgnoreDisconnectWebSocket,
-                    mediaOption               = mediaOption,
-                    metadata                  = connectMetadata,
-                    sdp                       = clientOfferSdp?.description,
-                    clientId                  = clientId,
-                    signalingNotifyMetadata   = signalingNotifyMetadata,
-                    redirect                  = redirect
+                role = role,
+                channelId = channelId,
+                dataChannelSignaling = connectDataChannelSignaling,
+                ignoreDisconnectWebSocket = connectIgnoreDisconnectWebSocket,
+                mediaOption = mediaOption,
+                metadata = connectMetadata,
+                sdp = clientOfferSdp?.description,
+                clientId = clientId,
+                signalingNotifyMetadata = signalingNotifyMetadata,
+                redirect = redirect
             )
             it.send(message)
         }
@@ -211,15 +219,18 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun onOfferMessage(text: String) {
         val offerMessage = MessageConverter.parseOfferMessage(text)
-        SoraLogger.d(TAG, """[signaling:$role] <- offer
-            |${offerMessage.sdp}""".trimMargin())
+        SoraLogger.d(
+            TAG,
+            """[signaling:$role] <- offer
+            |${offerMessage.sdp}""".trimMargin()
+        )
 
         listener?.onInitialOffer(offerMessage)
     }
 
     private fun onSwitchedMessage(text: String) {
         val switchMessage = MessageConverter.parseSwitchMessage(text)
-        SoraLogger.d(TAG, "[signaling:$role] <- switch ${switchMessage}")
+        SoraLogger.d(TAG, "[signaling:$role] <- switch $switchMessage")
 
         listener?.onSwitched(switchMessage)
     }
@@ -322,7 +333,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     return
                 }
 
-                synchronized (this@SignalingChannelImpl) {
+                synchronized(this@SignalingChannelImpl) {
                     if (ws != null) {
                         return
                     }
@@ -360,20 +371,18 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     val json = it
                     MessageConverter.parseType(json)?.let {
                         when (it) {
-                            "offer"    -> onOfferMessage(json)
+                            "offer" -> onOfferMessage(json)
                             "switched" -> onSwitchedMessage(json)
-                            "ping"     -> onPingMessage(json)
-                            "update"   -> onUpdateMessage(json)
+                            "ping" -> onPingMessage(json)
+                            "update" -> onUpdateMessage(json)
                             "re-offer" -> onReOfferMessage(json)
-                            "notify"   -> onNotifyMessage(json)
-                            "push"     -> onPushMessage(json)
+                            "notify" -> onNotifyMessage(json)
+                            "push" -> onPushMessage(json)
                             "redirect" -> onRedirectMessage(json)
-                            else       -> SoraLogger.i(TAG, "received unknown-type message")
+                            else -> SoraLogger.i(TAG, "received unknown-type message")
                         }
-
                     } ?: closeWithError("failed to parse 'type' from message")
                 }
-
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }
@@ -386,9 +395,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             if (code == 1000) {
-                SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
+                SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
             } else {
-                SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [${reason}], code = $code")
+                SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
             }
 
             if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
@@ -437,4 +446,3 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 }
-

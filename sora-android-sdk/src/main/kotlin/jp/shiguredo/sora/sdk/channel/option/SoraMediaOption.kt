@@ -1,7 +1,11 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import jp.shiguredo.sora.sdk.Sora
-import org.webrtc.*
+import org.webrtc.EglBase
+import org.webrtc.PeerConnection
+import org.webrtc.VideoCapturer
+import org.webrtc.VideoDecoderFactory
+import org.webrtc.VideoEncoderFactory
 
 /**
  * Sora への接続オプションを表すクラスです.
@@ -13,12 +17,12 @@ class SoraMediaOption {
     }
 
     internal var audioDownstreamEnabled = false
-    internal var audioUpstreamEnabled   = false
+    internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
-    internal var videoUpstreamEnabled   = false
-    internal var multistreamEnabled     = false
+    internal var videoUpstreamEnabled = false
+    internal var multistreamEnabled = false
     internal var spotlightOption: SoraSpotlightOption? = null
-    internal var simulcastEnabled       = false
+    internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
 
     internal val spotlightEnabled: Boolean
@@ -34,10 +38,10 @@ class SoraMediaOption {
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
-    internal var videoCapturer:          VideoCapturer? = null
+    internal var videoCapturer: VideoCapturer? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null
-    internal var videoUpstreamContext:   EglBase.Context? = null
+    internal var videoUpstreamContext: EglBase.Context? = null
 
     var videoCodec = SoraVideoOption.Codec.VP9
 
@@ -69,10 +73,12 @@ class SoraMediaOption {
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
      */
-    fun enableVideoUpstream(capturer:        VideoCapturer,
-                            eglContext:      EglBase.Context?) {
+    fun enableVideoUpstream(
+        capturer: VideoCapturer,
+        eglContext: EglBase.Context?
+    ) {
         videoUpstreamEnabled = true
-        videoCapturer        = capturer
+        videoCapturer = capturer
         videoUpstreamContext = eglContext
     }
 
@@ -145,19 +151,19 @@ class SoraMediaOption {
 
     // Just for internal usage
     internal val videoIsRequired: Boolean
-    get() = videoDownstreamEnabled || videoUpstreamEnabled
+        get() = videoDownstreamEnabled || videoUpstreamEnabled
 
     internal val videoHwAccelerationIsRequired: Boolean
-    get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
+        get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
 
     internal val audioIsRequired: Boolean
-    get() = audioDownstreamEnabled || audioUpstreamEnabled
+        get() = audioDownstreamEnabled || audioUpstreamEnabled
 
     internal val downstreamIsRequired: Boolean
-    get() = audioDownstreamEnabled || videoDownstreamEnabled
+        get() = audioDownstreamEnabled || videoDownstreamEnabled
 
     internal val upstreamIsRequired: Boolean
-    get() = audioUpstreamEnabled || videoUpstreamEnabled
+        get() = audioUpstreamEnabled || videoUpstreamEnabled
 
     internal var _multistreamIsRequired: Boolean? = null
 
@@ -178,12 +184,12 @@ class SoraMediaOption {
     internal var _requiredRole: SoraChannelRole? = null
 
     internal val requiredRole: SoraChannelRole
-    get() = if (upstreamIsRequired && downstreamIsRequired)
-        SoraChannelRole.SENDRECV
-    else if (upstreamIsRequired)
-        SoraChannelRole.SENDONLY
-    else
-        SoraChannelRole.RECVONLY
+        get() = if (upstreamIsRequired && downstreamIsRequired)
+            SoraChannelRole.SENDRECV
+        else if (upstreamIsRequired)
+            SoraChannelRole.SENDONLY
+        else
+            SoraChannelRole.RECVONLY
 
     /**
      * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です.
@@ -194,6 +200,5 @@ class SoraMediaOption {
      * TcpCandidatePolicy を設定します.
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
-            PeerConnection.TcpCandidatePolicy.ENABLED
+        PeerConnection.TcpCandidatePolicy.ENABLED
 }
-

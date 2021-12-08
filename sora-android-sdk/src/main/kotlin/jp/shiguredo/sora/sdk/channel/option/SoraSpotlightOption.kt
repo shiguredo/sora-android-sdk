@@ -16,5 +16,4 @@ class SoraSpotlightOption {
 
     var spotlightFocusRid: SoraVideoOption.SpotlightRid? = null
     var spotlightUnfocusRid: SoraVideoOption.SpotlightRid? = null
-
 }
