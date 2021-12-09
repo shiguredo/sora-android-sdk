@@ -3,7 +3,7 @@ apply plugin: "org.ajoberstar.grgit"
 apply plugin: 'org.jetbrains.dokka'
 
 buildscript {
-    ext.kotlin_version = '1.4.31'
+    ext.kotlin_version = '1.6.0'
     ext.libwebrtc_version = '93.4577.8.2'
 
     ext.dokka_version = '1.5.31'
@@ -15,7 +15,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:7.0.4'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
         classpath 'org.ajoberstar.grgit:grgit-gradle:4.1.1'
