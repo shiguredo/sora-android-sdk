@@ -1,7 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
-import jp.shiguredo.sora.sdk.Sora
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -47,18 +46,6 @@ class MessageConverter {
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                 metadata = metadata,
                 multistream = mediaOption.multistreamIsRequired,
-                spotlight = mediaOption.spotlightOption?.let {
-                    if (Sora.usesSpotlightLegacy)
-                        it.spotlightNumber
-                    else
-                        true
-                },
-                spotlightNumber = mediaOption.spotlightOption?.let {
-                    if (Sora.usesSpotlightLegacy)
-                        null
-                    else
-                        it.spotlightNumber
-                },
                 sdp = sdp,
                 clientId = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
@@ -110,7 +97,9 @@ class MessageConverter {
                 msg.simulcastRid = mediaOption.simulcastRid?.toString()
             }
 
-            if (mediaOption.spotlightOption != null && !Sora.usesSpotlightLegacy) {
+            if (mediaOption.spotlightOption != null) {
+                msg.spotlight = true
+                msg.spotlightNumber = mediaOption.spotlightOption?.spotlightNumber
                 msg.spotlightFocusRid = mediaOption.spotlightOption?.spotlightFocusRid?.toString()
                 msg.spotlightUnfocusRid = mediaOption.spotlightOption?.spotlightUnfocusRid?.toString()
             }

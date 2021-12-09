@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import jp.shiguredo.sora.sdk.Sora
 import org.webrtc.EglBase
 import org.webrtc.PeerConnection
 import org.webrtc.VideoCapturer
@@ -96,16 +95,11 @@ class SoraMediaOption {
      * スポットライト機能はサイマルキャスト機能を利用します.
      * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
      *
-     * サーバがスポットライトレガシー機能を利用している場合は、
-     * [Sora.usesSpotlightLegacy] に `true` をセットしてください.
      */
     fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
         multistreamEnabled = true
-
-        if (!Sora.usesSpotlightLegacy) {
-            enableSimulcast()
-        }
+        enableSimulcast()
     }
 
     /**
