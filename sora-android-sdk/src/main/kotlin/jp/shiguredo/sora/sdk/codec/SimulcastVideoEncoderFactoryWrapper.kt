@@ -9,7 +9,6 @@ import org.webrtc.VideoCodecInfo
 import org.webrtc.VideoCodecStatus
 import org.webrtc.VideoEncoder
 import org.webrtc.VideoEncoderFactory
-import org.webrtc.VideoEncoderFallback
 import org.webrtc.VideoFrame
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
@@ -20,45 +19,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     enableIntelVp8Encoder: Boolean,
     enableH264HighProfile: Boolean
 ) : VideoEncoderFactory {
-
-    /*
-     * ソフトウェアエンコーダーの利用を優先するファクトリーです。
-     * 指定されたコーデックにソフトウェアエンコーダーが対応していない場合にハードウェアエンコーダーを利用します。
-     * ただし、このクラスは libwebrtc の問題を回避するためのワークアラウンドで実質的に用途はありません。
-     *
-     * libwebrtc でサイマルキャストを扱うには SimulcastEncoderAdapter を利用します。
-     * SimulcastEncoderAdapter はプライマリのエンコーダーとフォールバックのエンコーダー
-     * (指定されたコーデックにプライマリのエンコーダーが対応していない場合に利用されます)
-     * を持ちます。プライマリに HardwareVideoEncoderFactory 、
-     * フォールバックに SoftwareVideoEncoderFactory を指定すると、
-     * H.264 の使用時に libwebrtc がクラッシュします。
-     * これは SoftwareVideoEncoderFactory が H.264 に非対応であり、
-     * createEncoder() が null を返すのに対して libwebrtc 側が null 時の処理に対応していないためです。
-     * createEncoder() はフォールバックの利用の有無に関わらず実行されるので、
-     * null を回避するために HardwareVideoEncoderFactory に処理を委譲しています。
-     * プライマリ・フォールバックの両方で HardwareVideoEncoderFactory を使うことになりますが、特に問題ありません。
-     */
-    private class Fallback(private val hardwareVideoEncoderFactory: VideoEncoderFactory) : VideoEncoderFactory {
-
-        private val softwareVideoEncoderFactory: VideoEncoderFactory = SoftwareVideoEncoderFactory()
-
-        override fun createEncoder(info: VideoCodecInfo): VideoEncoder? {
-            val softwareEncoder = softwareVideoEncoderFactory.createEncoder(info)
-            val hardwareEncoder = hardwareVideoEncoderFactory.createEncoder(info)
-            return if (hardwareEncoder != null && softwareEncoder != null) {
-                VideoEncoderFallback(hardwareEncoder, softwareEncoder)
-            } else {
-                softwareEncoder ?: hardwareEncoder
-            }
-        }
-
-        override fun getSupportedCodecs(): Array<VideoCodecInfo> {
-            val supportedCodecInfos: MutableList<VideoCodecInfo> = mutableListOf()
-            supportedCodecInfos.addAll(softwareVideoEncoderFactory.supportedCodecs)
-            supportedCodecInfos.addAll(hardwareVideoEncoderFactory.supportedCodecs)
-            return supportedCodecInfos.toTypedArray()
-        }
-    }
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
     // - スレッドをひとつ起動する
@@ -165,7 +125,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     }
 
     private val primary: VideoEncoderFactory
-    private val fallback: VideoEncoderFactory
+    private val fallback: VideoEncoderFactory?
     private val native: SimulcastVideoEncoderFactory
 
     init {
@@ -173,7 +133,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
         primary = StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
-        fallback = StreamEncoderWrapperFactory(Fallback(primary))
+        fallback = SoftwareVideoEncoderFactory()
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 
