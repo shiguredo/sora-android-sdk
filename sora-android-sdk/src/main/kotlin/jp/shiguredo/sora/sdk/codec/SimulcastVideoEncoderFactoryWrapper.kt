@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.codec
 
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.HardwareVideoEncoderFactory
@@ -17,7 +18,8 @@ import java.util.concurrent.Executors
 internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean,
-    enableH264HighProfile: Boolean
+    enableH264HighProfile: Boolean,
+    videoCodec: SoraVideoOption.Codec
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -134,7 +136,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
         primary = StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
-        fallback = SoftwareVideoEncoderFactory()
+
+        // H.264 のサイマルキャストを利用する場合は fallback に null を設定する
+        // Sora Android SDK では SW の H.264 を無効化しているため fallback に設定できるものがない
+        fallback = if (videoCodec != SoraVideoOption.Codec.H264) {
+            SoftwareVideoEncoderFactory()
+        } else {
+            null
+        }
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 

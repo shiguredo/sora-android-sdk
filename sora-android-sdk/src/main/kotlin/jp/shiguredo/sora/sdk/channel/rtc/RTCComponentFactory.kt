@@ -42,7 +42,8 @@ class RTCComponentFactory(
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
                     true,
-                    false
+                    false,
+                    mediaOption.videoCodec,
                 )
             mediaOption.videoUpstreamContext != null ->
                 DefaultVideoEncoderFactory(
