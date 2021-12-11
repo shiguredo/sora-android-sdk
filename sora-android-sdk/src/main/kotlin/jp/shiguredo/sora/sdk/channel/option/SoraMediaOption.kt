@@ -94,7 +94,6 @@ class SoraMediaOption {
      *
      * スポットライト機能はサイマルキャスト機能を利用します.
      * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
-     *
      */
     fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
