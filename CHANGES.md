@@ -14,6 +14,7 @@
 - [UPDATE] libwebrtc を 96.4664.2.1 に上げる
   - @enm10k
 - [UPDATE] 複数シグナリング URL の指定に対応する
+  - SoraMediaChannel に connectedSignalingEndpoint を追加する
   - @enm10k
 - [UPDATE] redirect メッセージに対応する
   - @enm10k
