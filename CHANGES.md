@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 96.4664.2.1 に上げる
+  - @enm10k
 - [UPDATE] 複数シグナリング URL の指定に対応する
   - @enm10k
 - [UPDATE] redirect メッセージに対応する
@@ -21,6 +23,11 @@
   - SoraMediaOption.videoUpstreamContext が無く SoraMediaOption.videoDownstreamContext 
     がある場合はコーデック指定に依らず、 DefaultVideoEncoderFactory を使用する
   - @miosakuma
+- [FIX] libwebrtc の更新で発生するようになったサイマルキャストのクラッシュを修正する
+  - SimulcastVideoEncoderFactoryWrapper.kt の Fallback クラスが原因で java.lang.UnsupportedOperationException が発生していた
+  - 調査の結果、 Fallback クラスを削除できることがわかったので、その方向で修正した
+  - その過程で、 libwebrtc に適用している Android のサイマルキャスト対応のパッチを更新し、 SimulcastVideoEncoderFactory の fallback に null を指定できるようにした
+  - @enm10k
 
 ## 2021.3
 
