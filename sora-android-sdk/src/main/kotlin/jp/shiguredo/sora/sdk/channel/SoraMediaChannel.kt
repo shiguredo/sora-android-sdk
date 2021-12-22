@@ -792,14 +792,15 @@ class SoraMediaChannel @JvmOverloads constructor(
             return
         closing = true
 
-        connectedSignalingEndpoint = null
-
         stopTimer()
         sendDisconnectMessage()
         compositeDisposable.dispose()
 
         listener?.onClose(this)
         listener = null
+
+        // アプリケーションで定義された切断処理を実行した後に connectedSignalingEndpoint を null にする
+        connectedSignalingEndpoint = null
 
         signaling?.disconnect()
         signaling = null
