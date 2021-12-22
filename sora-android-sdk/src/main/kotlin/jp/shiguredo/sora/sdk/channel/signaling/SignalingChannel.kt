@@ -31,7 +31,7 @@ interface SignalingChannel {
     fun disconnect()
 
     interface Listener {
-        fun onConnect()
+        fun onConnect(connectedEndpoint: String)
         fun onDisconnect()
         fun onInitialOffer(offerMessage: OfferMessage)
         fun onSwitched(switchedMessage: SwitchedMessage)
@@ -350,7 +350,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     wsCandidates.clear()
                 }
 
-                listener?.onConnect()
+                listener?.onConnect(webSocket.request().url.toString())
                 sendConnectMessage()
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())

@@ -275,6 +275,12 @@ class SoraMediaChannel @JvmOverloads constructor(
     var connectionId: String? = null
         private set
 
+    /**
+     * シグナリングに利用しているエンドポイント.
+     */
+    var connectedSignalingEndpoint: String? = null
+        private set
+
     private val compositeDisposable = ReusableCompositeDisposable()
 
     private val signalingListener = object : SignalingChannel.Listener {
@@ -295,8 +301,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
         }
 
-        override fun onConnect() {
+        override fun onConnect(connectedEndpoint: String) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
+            connectedSignalingEndpoint = connectedEndpoint
         }
 
         override fun onInitialOffer(offerMessage: OfferMessage) {
@@ -791,6 +798,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         listener?.onClose(this)
         listener = null
+
+        // アプリケーションで定義された切断処理を実行した後に connectedSignalingEndpoint を null にする
+        connectedSignalingEndpoint = null
 
         signaling?.disconnect()
         signaling = null
