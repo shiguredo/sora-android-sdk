@@ -43,7 +43,7 @@ android {
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    dependsOn("ktlintFormat")
+    finalizedBy("ktlintFormat")
     kotlinOptions {
         jvmTarget = "1.8"
     }
