@@ -103,7 +103,6 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         connectDataChannelSignaling = dataChannelSignaling
         connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket
-        SoraLogger.d(TAG, "connectDataChannelSignaling=$connectDataChannelSignaling, connectIgnoreDisconnectWebSocket=$connectIgnoreDisconnectWebSocket")
     }
 
     /**
