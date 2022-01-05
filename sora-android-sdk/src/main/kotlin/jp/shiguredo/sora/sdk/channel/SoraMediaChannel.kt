@@ -815,6 +815,7 @@ class SoraMediaChannel @JvmOverloads constructor(
      * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います.
      */
     fun disconnect() {
+        // アプリケーションから切断された場合は NO-ERROR とする
         internalDisconnect(DisconnectReason.NO_ERROR)
     }
 
