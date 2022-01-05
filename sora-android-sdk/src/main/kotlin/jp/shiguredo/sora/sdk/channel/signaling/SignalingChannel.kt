@@ -28,12 +28,12 @@ interface SignalingChannel {
     fun sendUpdateAnswer(sdp: String)
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
-    fun sendDisconnect(reason: DisconnectReason)
-    fun disconnect(reason: DisconnectReason?)
+    fun sendDisconnect(disconnectReason: DisconnectReason)
+    fun disconnect(disconnectReason: DisconnectReason?)
 
     interface Listener {
         fun onConnect(connectedEndpoint: String)
-        fun onDisconnect(reason: DisconnectReason?)
+        fun onDisconnect(disconnectReason: DisconnectReason?)
         fun onInitialOffer(offerMessage: OfferMessage)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -165,16 +165,16 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun sendDisconnect(reason: DisconnectReason) {
+    override fun sendDisconnect(disconnectReason: DisconnectReason) {
         SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
         ws?.let {
-            val disconnectMessage = MessageConverter.buildDisconnectMessage(reason)
+            val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
             SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
             it.send(disconnectMessage)
         }
     }
 
-    override fun disconnect(reason: DisconnectReason?) {
+    override fun disconnect(disconnectReason: DisconnectReason?) {
         if (closing.get()) {
             return
         }
@@ -185,7 +185,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         // type: redirect を受信している場合は onDisconnect を発火させない
         if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(reason)
+            listener?.onDisconnect(disconnectReason)
         }
         listener = null
     }

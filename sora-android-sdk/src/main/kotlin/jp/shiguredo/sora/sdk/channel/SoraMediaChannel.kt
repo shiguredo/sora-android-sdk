@@ -302,7 +302,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(reason: DisconnectReason?) {
+        override fun onDisconnect(disconnectReason: DisconnectReason?) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -314,7 +314,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
-                internalDisconnect(reason)
+                internalDisconnect(disconnectReason)
             }
         }
 
@@ -819,13 +819,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         internalDisconnect(DisconnectReason.NO_ERROR)
     }
 
-    private fun internalDisconnect(reason: DisconnectReason?) {
+    private fun internalDisconnect(disconnectReason: DisconnectReason?) {
         if (closing)
             return
         closing = true
 
         stopTimer()
-        reason?.let {
+        disconnectReason?.let {
             sendDisconnectIfNeeded(it)
         }
         compositeDisposable.dispose()
@@ -848,23 +848,23 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
     }
 
-    private fun sendDisconnectOverWebSocket(reason: DisconnectReason) {
-        signaling?.sendDisconnect(reason)
+    private fun sendDisconnectOverWebSocket(disconnectReason: DisconnectReason) {
+        signaling?.sendDisconnect(disconnectReason)
     }
 
-    private fun sendDisconnectOverDataChannel(reason: DisconnectReason) {
+    private fun sendDisconnectOverDataChannel(disconnectReason: DisconnectReason) {
         dataChannels["signaling"]?.let {
-            peer?.sendDisconnect(it, reason)
+            peer?.sendDisconnect(it, disconnectReason)
         }
     }
 
-    private fun sendDisconnectIfNeeded(reason: DisconnectReason) {
+    private fun sendDisconnectIfNeeded(disconnectReason: DisconnectReason) {
         val state = peer?.connectionState() ?: null
         SoraLogger.d(
             TAG,
             "[channel:$role] sendDisconnectIfNeeded switched=$switchedToDataChannel, " +
                 "ignoreDisconenctWebSocket=$ignoreDisconnectWebSocket, " +
-                "reason=$reason, PeerConnectionState=$state"
+                "reason=$disconnectReason, PeerConnectionState=$state"
         )
 
         if (state == PeerConnection.PeerConnectionState.FAILED) {
@@ -872,25 +872,25 @@ class SoraMediaChannel @JvmOverloads constructor(
             return
         }
 
-        when (reason) {
+        when (disconnectReason) {
             DisconnectReason.NO_ERROR -> {
                 if (!dataChannelSignaling) {
                     // WebSocket のみ
-                    sendDisconnectOverWebSocket(reason)
+                    sendDisconnectOverWebSocket(disconnectReason)
                 } else {
                     // WebSocket と DataChannel / DataChannel のみ
                     if (!switchedToDataChannel) {
                         // type: switched 未受信
-                        sendDisconnectOverWebSocket(reason)
+                        sendDisconnectOverWebSocket(disconnectReason)
                     } else {
                         // type: switched 受信済
-                        sendDisconnectOverDataChannel(reason)
+                        sendDisconnectOverDataChannel(disconnectReason)
                     }
                 }
             }
             DisconnectReason.WEBSOCKET_ONCLOSE, DisconnectReason.WEBSOCKET_ONERROR -> {
                 if (switchedToDataChannel && !ignoreDisconnectWebSocket) {
-                    sendDisconnectOverDataChannel(reason)
+                    sendDisconnectOverDataChannel(disconnectReason)
                 }
             }
         }

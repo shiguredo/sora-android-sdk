@@ -144,8 +144,8 @@ class MessageConverter {
             return gson.toJson(StatsMessage(reports = reports.statsMap.values.map { stats -> SoraRTCStats(stats) }))
         }
 
-        fun buildDisconnectMessage(reason: DisconnectReason?): String {
-            return gson.toJson(DisconnectMessage(reason = reason?.value ?: null))
+        fun buildDisconnectMessage(disconnectReason: DisconnectReason?): String {
+            return gson.toJson(DisconnectMessage(reason = disconnectReason?.value ?: null))
         }
 
         fun parseType(text: String): String? {
