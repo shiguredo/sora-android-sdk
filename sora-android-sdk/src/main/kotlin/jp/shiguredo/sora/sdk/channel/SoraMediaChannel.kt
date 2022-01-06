@@ -508,7 +508,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onDisconnect(disconnectReason: DisconnectReason?) {
-            SoraLogger.d(TAG, "[channel:$role] @peer:onClose:$disconnectReason")
+            SoraLogger.d(TAG, "[channel:$role] @peer:onDisconnect:$disconnectReason")
 
             internalDisconnect(disconnectReason)
         }
