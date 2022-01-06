@@ -11,6 +11,8 @@
 
 ## develop
 
+- [CHANGE] スポットライトレガシーを削除する
+  - @enm10k
 - [UPDATE] libwebrtc を 96.4664.2.1 に上げる
   - @enm10k
 - [UPDATE] 複数シグナリング URL の指定に対応する
@@ -20,7 +22,7 @@
   - @enm10k
 - [UPDATE] dokka を 1.5.31 に上げる
   - @miosakuma
-- [CHANGE] スポットライトレガシーを削除する
+- [UPDATE] type: disconnect に reason を追加する
   - @enm10k
 - [FIX] 視聴のみかつ H.264 した場合に接続できない問題についてのワークアラウンドを削除する
   - SoraMediaOption.videoUpstreamContext が無く SoraMediaOption.videoDownstreamContext 
