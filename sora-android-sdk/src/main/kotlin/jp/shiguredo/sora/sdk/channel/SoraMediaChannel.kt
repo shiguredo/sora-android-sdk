@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
+import jp.shiguredo.sora.sdk.BuildConfig
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
 import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -902,6 +903,14 @@ class SoraMediaChannel @JvmOverloads constructor(
 
             SoraDisconnectReason.SIGNALING_FAILURE, SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
                 // メッセージの送信は不要
+            }
+
+            else -> {
+                // SoraDisconnectReason のすべての条件が網羅されていて欲しい
+                if (BuildConfig.DEBUG) {
+                    throw Exception("when statement should be exhaustive.")
+                }
+                SoraLogger.i(TAG, "when statement should be exhaustive.")
             }
         }
     }
