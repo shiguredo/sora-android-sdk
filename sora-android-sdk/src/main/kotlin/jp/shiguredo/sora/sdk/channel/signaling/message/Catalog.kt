@@ -180,5 +180,6 @@ data class NotificationMessage(
 )
 
 data class DisconnectMessage(
-    @SerializedName("type") val type: String = "disconnect"
+    @SerializedName("type") val type: String = "disconnect",
+    @SerializedName("reason") val reason: String? = null
 )
