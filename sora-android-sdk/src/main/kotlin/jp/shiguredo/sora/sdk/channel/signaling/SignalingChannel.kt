@@ -1,6 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
-import jp.shiguredo.sora.sdk.channel.SoraDisconnectReason
+import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter

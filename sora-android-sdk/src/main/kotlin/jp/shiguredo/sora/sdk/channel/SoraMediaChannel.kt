@@ -19,6 +19,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -906,10 +907,3 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 }
 
-enum class SoraDisconnectReason(val value: String?) {
-    NO_ERROR("NO-ERROR"),
-    WEBSOCKET_ONCLOSE("WEBSOCKET-ONCLOSE"),
-    WEBSOCKET_ONERROR("WEBSOCKET-ONERROR"),
-    PEER_CONNECTION_STATE_FAILED(null),
-    SIGNALING_FAILURE(null),
-}
