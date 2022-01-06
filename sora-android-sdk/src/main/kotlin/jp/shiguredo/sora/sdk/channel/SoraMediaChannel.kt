@@ -88,11 +88,11 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     // DataChannel 経由のシグナリングが有効なら true
     // Sora から渡された値 (= offer メッセージ) を参照して更新している
-    private var dataChannelSignaling: Boolean = false
+    private var offerDataChannelSignaling: Boolean = false
 
     // DataChannel 経由のシグナリング利用時に WebSocket の切断を無視するなら true
     // 同じく switched メッセージを参照して更新している
-    private var ignoreDisconnectWebSocket: Boolean = false
+    private var switchedIgnoreDisconnectWebSocket: Boolean = false
 
     init {
         if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
@@ -101,6 +101,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
         }
 
+        // コンストラクタ以外で dataChannelSignaling, ignoreDisconnectWebSocket を参照すべきではない
+        // 各種ロジックの判定には Sora のメッセージに含まれる値を参照する必要があるため、以下を利用するのが正しい
+        // - offerDataChannelSignaling
+        // - switchedIgnoreDisconnectWebSocket
         connectDataChannelSignaling = dataChannelSignaling
         connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket
     }
@@ -307,10 +311,10 @@ class SoraMediaChannel @JvmOverloads constructor(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
                     "switchedToDataChannel=$switchedToDataChannel, " +
-                    "ignoreDisconnectWebSocket=$ignoreDisconnectWebSocket"
+                    "switchedIgnoreDisconnectWebSocket=$switchedIgnoreDisconnectWebSocket"
+
             )
-            val ignoreDisconnect = ignoreDisconnectWebSocket ?: false
-            if (switchedToDataChannel && ignoreDisconnect) {
+            if (switchedToDataChannel && switchedIgnoreDisconnectWebSocket) {
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
@@ -331,7 +335,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onSwitched(switchedMessage: SwitchedMessage) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onSwitched")
-            this@SoraMediaChannel.ignoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
+            switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
             handleSwitched(switchedMessage)
         }
 
@@ -357,7 +361,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onError(reason: SoraErrorReason) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason")
-            val ignoreError = ignoreDisconnectWebSocket ?: false
+            val ignoreError = switchedIgnoreDisconnectWebSocket
             if (switchedToDataChannel && ignoreError) {
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
@@ -687,7 +691,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {
-            dataChannelSignaling = true
+            offerDataChannelSignaling = true
         }
 
         if (0 < peerConnectionOption.getStatsIntervalMSec) {
@@ -721,8 +725,8 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun handleSwitched(switchedMessage: SwitchedMessage) {
         switchedToDataChannel = true
-        ignoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
-        val earlyCloseWebSocket = ignoreDisconnectWebSocket ?: false
+        switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
+        val earlyCloseWebSocket = switchedIgnoreDisconnectWebSocket
         if (earlyCloseWebSocket) {
             signaling?.disconnect(null)
         }
@@ -863,7 +867,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(
             TAG,
             "[channel:$role] sendDisconnectIfNeeded switched=$switchedToDataChannel, " +
-                "ignoreDisconenctWebSocket=$ignoreDisconnectWebSocket, " +
+                "switchedIgnoreDisconnectWebSocket=$switchedIgnoreDisconnectWebSocket, " +
                 "reason=$disconnectReason, PeerConnectionState=$state"
         )
 
@@ -874,7 +878,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         when (disconnectReason) {
             DisconnectReason.NO_ERROR -> {
-                if (!dataChannelSignaling) {
+                if (!offerDataChannelSignaling) {
                     // WebSocket のみ
                     sendDisconnectOverWebSocket(disconnectReason)
                 } else {
@@ -889,7 +893,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 }
             }
             DisconnectReason.WEBSOCKET_ONCLOSE, DisconnectReason.WEBSOCKET_ONERROR -> {
-                if (switchedToDataChannel && !ignoreDisconnectWebSocket) {
+                if (switchedToDataChannel && !switchedIgnoreDisconnectWebSocket) {
                     sendDisconnectOverDataChannel(disconnectReason)
                 }
             }
