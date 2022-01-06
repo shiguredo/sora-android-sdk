@@ -306,7 +306,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(disconnectReason: DisconnectReason?) {
+        override fun onDisconnect(disconnectReason: SoraDisconnectReason?) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -507,7 +507,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener?.onWarning(this@SoraMediaChannel, reason, message)
         }
 
-        override fun onDisconnect(disconnectReason: DisconnectReason?) {
+        override fun onDisconnect(disconnectReason: SoraDisconnectReason?) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onDisconnect:$disconnectReason")
 
             internalDisconnect(disconnectReason)
@@ -643,7 +643,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                             TAG,
                             "[channel:$role] failed request client offer SDP: ${it.message}"
                         )
-                        disconnect(DisconnectReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
 
                 )
@@ -716,7 +716,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     onError = {
                         val msg = "[channel:$role] failure in handleInitialOffer: ${it.message}"
                         SoraLogger.w(TAG, msg)
-                        disconnect(DisconnectReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )
             compositeDisposable.add(subscription)
@@ -744,7 +744,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     onError = {
                         val msg = "[channel:$role] failed handle updated offer: ${it.message}"
                         SoraLogger.w(TAG, msg)
-                        disconnect(DisconnectReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )
             compositeDisposable.add(subscription)
@@ -763,7 +763,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     onError = {
                         val msg = "[channel:$role] failed handle re-offer: ${it.message}"
                         SoraLogger.w(TAG, msg)
-                        disconnect(DisconnectReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )
             compositeDisposable.add(subscription)
@@ -782,7 +782,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     onError = {
                         val msg = "[channel:$role] failed handle re-offer: ${it.message}"
                         SoraLogger.w(TAG, msg)
-                        disconnect(DisconnectReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )
             compositeDisposable.add(subscription)
@@ -820,10 +820,10 @@ class SoraMediaChannel @JvmOverloads constructor(
      */
     fun disconnect() {
         // アプリケーションから切断された場合は NO-ERROR とする
-        internalDisconnect(DisconnectReason.NO_ERROR)
+        internalDisconnect(SoraDisconnectReason.NO_ERROR)
     }
 
-    private fun internalDisconnect(disconnectReason: DisconnectReason?) {
+    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?) {
         if (closing)
             return
         closing = true
@@ -852,17 +852,17 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
     }
 
-    private fun sendDisconnectOverWebSocket(disconnectReason: DisconnectReason) {
+    private fun sendDisconnectOverWebSocket(disconnectReason: SoraDisconnectReason) {
         signaling?.sendDisconnect(disconnectReason)
     }
 
-    private fun sendDisconnectOverDataChannel(disconnectReason: DisconnectReason) {
+    private fun sendDisconnectOverDataChannel(disconnectReason: SoraDisconnectReason) {
         dataChannels["signaling"]?.let {
             peer?.sendDisconnect(it, disconnectReason)
         }
     }
 
-    private fun sendDisconnectIfNeeded(disconnectReason: DisconnectReason) {
+    private fun sendDisconnectIfNeeded(disconnectReason: SoraDisconnectReason) {
         val state = peer?.connectionState() ?: null
         SoraLogger.d(
             TAG,
@@ -877,7 +877,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         when (disconnectReason) {
-            DisconnectReason.NO_ERROR -> {
+            SoraDisconnectReason.NO_ERROR -> {
                 if (!offerDataChannelSignaling) {
                     // WebSocket のみ
                     sendDisconnectOverWebSocket(disconnectReason)
@@ -893,20 +893,20 @@ class SoraMediaChannel @JvmOverloads constructor(
                 }
             }
 
-            DisconnectReason.WEBSOCKET_ONCLOSE, DisconnectReason.WEBSOCKET_ONERROR -> {
+            SoraDisconnectReason.WEBSOCKET_ONCLOSE, SoraDisconnectReason.WEBSOCKET_ONERROR -> {
                 if (switchedToDataChannel && !switchedIgnoreDisconnectWebSocket) {
                     sendDisconnectOverDataChannel(disconnectReason)
                 }
             }
 
-            DisconnectReason.SIGNALING_FAILURE, DisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
+            SoraDisconnectReason.SIGNALING_FAILURE, SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
                 // メッセージの送信は不要
             }
         }
     }
 }
 
-enum class DisconnectReason(val value: String?) {
+enum class SoraDisconnectReason(val value: String?) {
     NO_ERROR("NO-ERROR"),
     WEBSOCKET_ONCLOSE("WEBSOCKET-ONCLOSE"),
     WEBSOCKET_ONERROR("WEBSOCKET-ONERROR"),

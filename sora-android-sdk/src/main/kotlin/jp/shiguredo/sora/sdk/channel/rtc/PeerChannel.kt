@@ -4,7 +4,7 @@ import android.content.Context
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
-import jp.shiguredo.sora.sdk.channel.DisconnectReason
+import jp.shiguredo.sora.sdk.channel.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
@@ -45,14 +45,14 @@ interface PeerChannel {
     // その場合に Result 型でエラーを含めて返す
     fun requestClientOfferSdp(): Single<Result<SessionDescription>>
 
-    fun disconnect(disconnectReason: DisconnectReason?)
+    fun disconnect(disconnectReason: SoraDisconnectReason?)
 
     fun connectionState(): PeerConnection.PeerConnectionState?
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
     fun sendStats(dataChannel: DataChannel, report: RTCStatsReport)
-    fun sendDisconnect(dataChannel: DataChannel, disconnectReason: DisconnectReason)
+    fun sendDisconnect(dataChannel: DataChannel, disconnectReason: SoraDisconnectReason)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -60,7 +60,7 @@ interface PeerChannel {
         fun onAddLocalStream(ms: MediaStream)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
-        fun onDisconnect(disconnectReason: DisconnectReason?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
         fun onDataChannelOpen(label: String, dataChannel: DataChannel)
         fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String)
         fun onDataChannelClosed(label: String, dataChannel: DataChannel)
@@ -257,7 +257,7 @@ class PeerChannelImpl(
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
                         listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILED)
-                        disconnect(DisconnectReason.PEER_CONNECTION_STATE_FAILED)
+                        disconnect(SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED)
                     }
                     PeerConnection.PeerConnectionState.DISCONNECTED -> {
                         if (closing) return
@@ -494,7 +494,7 @@ class PeerChannelImpl(
         listener?.onAddLocalStream(localStream!!)
     }
 
-    override fun disconnect(disconnectReason: DisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
         if (closing)
             return
         executor.execute {
@@ -513,7 +513,7 @@ class PeerChannelImpl(
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }
 
-    override fun sendDisconnect(dataChannel: DataChannel, disconnectReason: DisconnectReason) {
+    override fun sendDisconnect(dataChannel: DataChannel, disconnectReason: SoraDisconnectReason) {
         SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
         val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
         SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
@@ -620,7 +620,7 @@ class PeerChannelImpl(
             }
         ).subscribeOn(Schedulers.from(executor))
 
-    private fun closeInternal(disconnectReason: DisconnectReason?) {
+    private fun closeInternal(disconnectReason: SoraDisconnectReason?) {
         if (closing)
             return
         SoraLogger.d(TAG, "disconnect")

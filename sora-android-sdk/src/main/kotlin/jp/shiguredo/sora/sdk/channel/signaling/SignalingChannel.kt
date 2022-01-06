@@ -1,6 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
-import jp.shiguredo.sora.sdk.channel.DisconnectReason
+import jp.shiguredo.sora.sdk.channel.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
@@ -28,12 +28,12 @@ interface SignalingChannel {
     fun sendUpdateAnswer(sdp: String)
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
-    fun sendDisconnect(disconnectReason: DisconnectReason)
-    fun disconnect(disconnectReason: DisconnectReason?)
+    fun sendDisconnect(disconnectReason: SoraDisconnectReason)
+    fun disconnect(disconnectReason: SoraDisconnectReason?)
 
     interface Listener {
         fun onConnect(connectedEndpoint: String)
-        fun onDisconnect(disconnectReason: DisconnectReason?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
         fun onInitialOffer(offerMessage: OfferMessage)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -165,7 +165,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun sendDisconnect(disconnectReason: DisconnectReason) {
+    override fun sendDisconnect(disconnectReason: SoraDisconnectReason) {
         SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
         ws?.let {
             val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
@@ -174,7 +174,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun disconnect(disconnectReason: DisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
         if (closing.get()) {
             return
         }
@@ -216,7 +216,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private fun closeWithError(reason: String) {
         SoraLogger.i(TAG, "[signaling:$role] closeWithError: reason=$reason")
-        disconnect(DisconnectReason.SIGNALING_FAILURE)
+        disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
     }
 
     private fun onOfferMessage(text: String) {
@@ -412,7 +412,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 }
 
-                disconnect(DisconnectReason.WEBSOCKET_ONCLOSE)
+                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }
@@ -426,7 +426,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            disconnect(DisconnectReason.WEBSOCKET_ONCLOSE)
+            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -441,7 +441,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
             try {
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                disconnect(DisconnectReason.WEBSOCKET_ONERROR)
+                disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }

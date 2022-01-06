@@ -1,7 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
-import jp.shiguredo.sora.sdk.channel.DisconnectReason
+import jp.shiguredo.sora.sdk.channel.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -144,7 +144,7 @@ class MessageConverter {
             return gson.toJson(StatsMessage(reports = reports.statsMap.values.map { stats -> SoraRTCStats(stats) }))
         }
 
-        fun buildDisconnectMessage(disconnectReason: DisconnectReason?): String {
+        fun buildDisconnectMessage(disconnectReason: SoraDisconnectReason?): String {
             return gson.toJson(DisconnectMessage(reason = disconnectReason?.value ?: null))
         }
 
