@@ -892,10 +892,15 @@ class SoraMediaChannel @JvmOverloads constructor(
                     }
                 }
             }
+
             DisconnectReason.WEBSOCKET_ONCLOSE, DisconnectReason.WEBSOCKET_ONERROR -> {
                 if (switchedToDataChannel && !switchedIgnoreDisconnectWebSocket) {
                     sendDisconnectOverDataChannel(disconnectReason)
                 }
+            }
+
+            DisconnectReason.SIGNALING_FAILURE, DisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
+                // メッセージの送信は不要
             }
         }
     }
