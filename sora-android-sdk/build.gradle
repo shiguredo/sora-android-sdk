@@ -86,7 +86,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'com.squareup.okhttp3:okhttp:4.9.1'
 
     // required by "rtc" part
