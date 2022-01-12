@@ -1,7 +1,7 @@
 package jp.shiguredo.sora.sdk.error
 
 /**
- * Sora との通信やメディアに関するエラーを示します
+ * Sora との通信やメディアに関するエラーを示します.
  */
 enum class SoraErrorReason {
     // Sora との接続のエラー

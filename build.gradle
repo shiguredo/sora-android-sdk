@@ -4,9 +4,9 @@ apply plugin: 'org.jetbrains.dokka'
 
 buildscript {
     ext.kotlin_version = '1.4.31'
-    ext.libwebrtc_version = '93.4577.8.2'
+    ext.libwebrtc_version = '96.4664.2.1'
 
-    ext.dokka_version = '0.10.1'
+    ext.dokka_version = '1.5.31'
 
     repositories {
         google()
@@ -18,10 +18,11 @@ buildscript {
         classpath 'com.android.tools.build:gradle:4.2.2'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
-        classpath 'org.ajoberstar.grgit:grgit-gradle:4.1.0'
+        classpath 'org.ajoberstar.grgit:grgit-gradle:4.1.1'
 
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
         classpath "com.github.ben-manes:gradle-versions-plugin:0.38.0"
+        classpath "org.jlleitschuh.gradle:ktlint-gradle:10.2.0"
     }
 }
 
@@ -40,7 +41,7 @@ task clean(type: Delete) {
 dependencyUpdates.resolutionStrategy = {
   componentSelection { rules ->
     rules.all { ComponentSelection selection ->
-      boolean rejected = ['alpha', 'beta', 'rc'].any { qualifier ->
+      boolean rejected = ['alpha', 'beta', 'rc', 'M'].any { qualifier ->
         selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
       }
       if (rejected) {

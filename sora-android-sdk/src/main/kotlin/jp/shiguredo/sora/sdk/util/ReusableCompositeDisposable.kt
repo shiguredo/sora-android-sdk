@@ -21,5 +21,4 @@ class ReusableCompositeDisposable {
         compositeDisposable?.dispose()
         compositeDisposable = null
     }
-
 }

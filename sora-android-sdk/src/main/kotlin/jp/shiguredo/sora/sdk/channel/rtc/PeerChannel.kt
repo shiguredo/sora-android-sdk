@@ -4,36 +4,55 @@ import android.content.Context
 import io.reactivex.Single
 import io.reactivex.SingleOnSubscribe
 import io.reactivex.schedulers.Schedulers
+import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import org.webrtc.*
+import org.webrtc.DataChannel
+import org.webrtc.IceCandidate
+import org.webrtc.Logging
+import org.webrtc.MediaStream
+import org.webrtc.MediaStreamTrack
+import org.webrtc.PeerConnection
+import org.webrtc.PeerConnectionFactory
+import org.webrtc.RTCStatsCollectorCallback
+import org.webrtc.RTCStatsReport
+import org.webrtc.RtpParameters
+import org.webrtc.RtpReceiver
+import org.webrtc.RtpSender
+import org.webrtc.RtpTransceiver
+import org.webrtc.SdpObserver
+import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
-import java.util.*
+import java.util.UUID
 import java.util.concurrent.Executors
-import java.util.zip.*
+import java.util.zip.DeflaterInputStream
+import java.util.zip.InflaterInputStream
 
 interface PeerChannel {
-    fun handleInitialRemoteOffer(offer: String,
-                                 mid: Map<String, String>?,
-                                 encodings: List<Encoding>?): Single<SessionDescription>
+    fun handleInitialRemoteOffer(
+        offer: String,
+        mid: Map<String, String>?,
+        encodings: List<Encoding>?
+    ): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
 
     // 失敗しても問題のない処理が含まれる (client offer SDP は生成に失敗しても問題ない) ので、
     // その場合に Result 型でエラーを含めて返す
     fun requestClientOfferSdp(): Single<Result<SessionDescription>>
 
-    fun disconnect()
+    fun disconnect(disconnectReason: SoraDisconnectReason?)
 
+    fun connectionState(): PeerConnection.PeerConnectionState?
     fun getStats(statsCollectorCallback: RTCStatsCollectorCallback)
     fun getStats(handler: (RTCStatsReport?) -> Unit)
     fun sendReAnswer(dataChannel: DataChannel, description: String)
     fun sendStats(dataChannel: DataChannel, report: RTCStatsReport)
-    fun sendDisconnectMessage(dataChannel: DataChannel)
+    fun sendDisconnect(dataChannel: DataChannel, disconnectReason: SoraDisconnectReason)
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -41,7 +60,7 @@ interface PeerChannel {
         fun onAddLocalStream(ms: MediaStream)
         fun onLocalIceCandidateFound(candidate: IceCandidate)
         fun onConnect()
-        fun onDisconnect()
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
         fun onDataChannelOpen(label: String, dataChannel: DataChannel)
         fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String)
         fun onDataChannelClosed(label: String, dataChannel: DataChannel)
@@ -54,13 +73,13 @@ interface PeerChannel {
 }
 
 class PeerChannelImpl(
-        private val appContext:         Context,
-        private val networkConfig:      PeerNetworkConfig,
-        private val mediaOption:        SoraMediaOption,
-                    dataChannelConfigs: List<Map<String, Any>>? = null,
-        private var listener:           PeerChannel.Listener?,
-        private var useTracer:          Boolean = false
-): PeerChannel {
+    private val appContext: Context,
+    private val networkConfig: PeerNetworkConfig,
+    private val mediaOption: SoraMediaOption,
+    dataChannelConfigs: List<Map<String, Any>>? = null,
+    private var listener: PeerChannel.Listener?,
+    private var useTracer: Boolean = false
+) : PeerChannel {
 
     companion object {
         private val TAG = PeerChannelImpl::class.simpleName
@@ -69,12 +88,12 @@ class PeerChannelImpl(
         fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             if (!isInitialized) {
                 val options = PeerConnectionFactory.InitializationOptions
-                        .builder(context)
-                        .setEnableInternalTracer(useTracer)
-                        .setFieldTrials("")
-                        .createInitializationOptions()
+                    .builder(context)
+                    .setEnableInternalTracer(useTracer)
+                    .setFieldTrials("")
+                    .createInitializationOptions()
                 PeerConnectionFactory.initialize(options)
-                if(SoraLogger.libjingle_enabled) {
+                if (SoraLogger.libjingle_enabled) {
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
                 isInitialized = true
@@ -84,12 +103,13 @@ class PeerChannelImpl(
 
     private val componentFactory = RTCComponentFactory(mediaOption, listener)
 
-    private var conn:    PeerConnection?        = null
+    private var conn: PeerConnection? = null
+
     private var factory: PeerConnectionFactory? = null
 
-    private val executor =  Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor()
 
-    private val sdpConstraints    = componentFactory.createSDPConstraints()
+    private val sdpConstraints = componentFactory.createSDPConstraints()
     private val localAudioManager = componentFactory.createAudioManager()
     private val localVideoManager = componentFactory.createVideoManager()
 
@@ -114,7 +134,7 @@ class PeerChannelImpl(
 
     init {
         val compressedDataChannels = (dataChannelConfigs ?: emptyList())
-                .filter { (it["compress"] ?: false) == true }
+            .filter { (it["compress"] ?: false) == true }
         compressLabels = compressedDataChannels.map { it["label"] as String }
         SoraLogger.d(TAG, "[rtc] compressedLabels=$compressLabels, dataChannelConfigs=$dataChannelConfigs")
     }
@@ -122,7 +142,7 @@ class PeerChannelImpl(
     private val connectionObserver = object : PeerConnection.Observer {
 
         override fun onSignalingChange(state: PeerConnection.SignalingState?) {
-            SoraLogger.d(TAG, "[rtc] @onSignalingChange: ${state.toString()}")
+            SoraLogger.d(TAG, "[rtc] @onSignalingChange: $state")
         }
 
         override fun onIceCandidate(candidate: IceCandidate?) {
@@ -151,7 +171,7 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
         }
 
-        override  fun onTrack(transceiver: RtpTransceiver) {
+        override fun onTrack(transceiver: RtpTransceiver) {
             SoraLogger.d(TAG, "[rtc] @onTrack direction=${transceiver.direction}")
             SoraLogger.d(TAG, "[rtc] @onTrack currentDirection=${transceiver.currentDirection}")
             SoraLogger.d(TAG, "[rtc] @onTrack sender.track=${transceiver.sender.track()}")
@@ -161,34 +181,45 @@ class PeerChannelImpl(
         }
 
         override fun onDataChannel(dataChannel: DataChannel) {
-            SoraLogger.d(TAG, "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}"
-                    + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}")
+            SoraLogger.d(
+                TAG,
+                "[rtc] @onDataChannel label=${dataChannel.label()}, id=${dataChannel.id()}" +
+                    " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}"
+            )
 
             dataChannel.registerObserver(object : DataChannel.Observer {
                 val label = dataChannel.label()
 
                 override fun onBufferedAmountChange(previouAmount: Long) {
-                    SoraLogger.d(TAG, "[rtc] @dataChannel.onBufferedAmountChange"
-                            + " label=$label, id=${dataChannel.id()}"
-                            + " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()},"
-                            + " previousAmount=$previouAmount)")
+                    SoraLogger.d(
+                        TAG,
+                        "[rtc] @dataChannel.onBufferedAmountChange" +
+                            " label=$label, id=${dataChannel.id()}" +
+                            " state=${dataChannel.state()}, bufferedAmount=${dataChannel.bufferedAmount()}," +
+                            " previousAmount=$previouAmount)"
+                    )
                 }
 
                 override fun onStateChange() {
-                    SoraLogger.d(TAG, "[rtc] @dataChannel.onStateChange"
-                            + " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}")
+                    SoraLogger.d(
+                        TAG,
+                        "[rtc] @dataChannel.onStateChange" +
+                            " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}"
+                    )
                     if (dataChannel.state() == DataChannel.State.CLOSED) {
                         listener?.onDataChannelClosed(dataChannel.label(), dataChannel)
                     }
                 }
 
                 override fun onMessage(buffer: DataChannel.Buffer) {
-                    SoraLogger.d(TAG, "[rtc] @dataChannel.onMessage"
-                            + " label=$label, state=${dataChannel.state()}, binary=${buffer.binary}")
+                    SoraLogger.d(
+                        TAG,
+                        "[rtc] @dataChannel.onMessage" +
+                            " label=$label, state=${dataChannel.state()}, binary=${buffer.binary}"
+                    )
                     val messageData = dataChannelBufferToString(label, buffer)
                     listener?.onDataChannelMessage(dataChannel.label(), dataChannel, messageData)
                 }
-
             })
 
             listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
@@ -226,7 +257,7 @@ class PeerChannelImpl(
                     }
                     PeerConnection.PeerConnectionState.FAILED -> {
                         listener?.onError(SoraErrorReason.PEER_CONNECTION_FAILED)
-                        disconnect()
+                        disconnect(SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED)
                     }
                     PeerConnection.PeerConnectionState.DISCONNECTED -> {
                         if (closing) return
@@ -239,7 +270,7 @@ class PeerChannelImpl(
                         if (!closing) {
                             listener?.onError(SoraErrorReason.PEER_CONNECTION_CLOSED)
                         }
-                        disconnect()
+                        disconnect(null)
                     }
                     else -> {}
                 }
@@ -259,20 +290,22 @@ class PeerChannelImpl(
         }
     }
 
-    private fun setup(): Single<Boolean> = Single.create(SingleOnSubscribe<Boolean> {
-        try {
-            setupInternal()
-            it.onSuccess(true)
-        } catch (e: Exception) {
-            SoraLogger.w(TAG, e.toString())
-            it.onError(e)
+    private fun setup(): Single<Boolean> = Single.create(
+        SingleOnSubscribe<Boolean> {
+            try {
+                setupInternal()
+                it.onSuccess(true)
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, e.toString())
+                it.onError(e)
+            }
         }
-    }).subscribeOn(Schedulers.from(executor))
+    ).subscribeOn(Schedulers.from(executor))
 
     override fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription> {
 
         val offerSDP =
-                SessionDescription(SessionDescription.Type.OFFER, offer)
+            SessionDescription(SessionDescription.Type.OFFER, offer)
 
         return setRemoteDescription(offerSDP).flatMap {
             // active: false が無効化されてしまう問題に対応
@@ -286,9 +319,11 @@ class PeerChannelImpl(
         }
     }
 
-    override fun handleInitialRemoteOffer(offer: String,
-                                          mid: Map<String, String>?,
-                                          encodings: List<Encoding>?): Single<SessionDescription> {
+    override fun handleInitialRemoteOffer(
+        offer: String,
+        mid: Map<String, String>?,
+        encodings: List<Encoding>?
+    ): Single<SessionDescription> {
 
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
@@ -304,9 +339,9 @@ class PeerChannelImpl(
 
             val audioMid = mid?.get("audio")
             if (audioMid != null) {
-                val transceiver =  this.conn?.transceivers?.find { it.mid == audioMid }
+                val transceiver = this.conn?.transceivers?.find { it.mid == audioMid }
                 transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set audio sender: mid=${audioMid}, transceiver=${transceiver}")
+                SoraLogger.d(TAG, "set audio sender: mid=$audioMid, transceiver=$transceiver")
                 audioSender = transceiver?.sender
                 audioSender?.streams = listOf(localStream!!.id)
 
@@ -324,7 +359,7 @@ class PeerChannelImpl(
             if (videoMid != null) {
                 val transceiver = this.conn?.transceivers?.find { it.mid == videoMid }
                 transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set video sender: mid=${mid}, transceiver=${transceiver} ")
+                SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$transceiver ")
                 videoSender = transceiver?.sender
                 videoSender?.streams = listOf(localStream!!.id)
 
@@ -369,14 +404,17 @@ class PeerChannelImpl(
         listener?.onSenderEncodings(parameters.encodings)
         parameters.encodings.forEach {
             with(it) {
-                SoraLogger.d(TAG, "update sender encoding: " +
+                SoraLogger.d(
+                    TAG,
+                    "update sender encoding: " +
                         "id=${sender.id()}, " +
                         "rid=$rid, " +
                         "active=$active, " +
                         "scaleResolutionDownBy=$scaleResolutionDownBy, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
-                        "ssrc=$ssrc")
+                        "ssrc=$ssrc"
+                )
             }
         }
 
@@ -391,33 +429,39 @@ class PeerChannelImpl(
         }
     }
 
-    private fun createClientOfferSdp() : Single<Result<SessionDescription>> =
-        Single.create(SingleOnSubscribe<Result<SessionDescription>> {
+    private fun createClientOfferSdp(): Single<Result<SessionDescription>> =
+        Single.create(
+            SingleOnSubscribe<Result<SessionDescription>> {
 
-            val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
-                    RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
+                val directionRecvOnly = RtpTransceiver.RtpTransceiverInit(
+                    RtpTransceiver.RtpTransceiverDirection.RECV_ONLY
+                )
 
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
-            conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+                conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
+                conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
 
-            conn?.createOffer(object : SdpObserver {
-                override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
-                    it.onSuccess(Result.success(sdp!!))
-                }
-                override fun onCreateFailure(error: String) {
-                    SoraLogger.d(TAG, "createOffer:onCreateFailure: $error")
-                    // Offer SDP は生成に失敗しても問題ないので、エラーメッセージを onSuccess で渡す
-                    it.onSuccess(Result.failure(Error(error)))
-                }
-                override fun onSetSuccess() {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onSetFailure(s: String?) {
-                    it.onError(Error("must not come here"))
-                }
-            }, sdpConstraints)
-        }).subscribeOn(Schedulers.from(executor))
+                conn?.createOffer(
+                    object : SdpObserver {
+                        override fun onCreateSuccess(sdp: SessionDescription?) {
+                            SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
+                            it.onSuccess(Result.success(sdp!!))
+                        }
+                        override fun onCreateFailure(error: String) {
+                            SoraLogger.d(TAG, "createOffer:onCreateFailure: $error")
+                            // Offer SDP は生成に失敗しても問題ないので、エラーメッセージを onSuccess で渡す
+                            it.onSuccess(Result.failure(Error(error)))
+                        }
+                        override fun onSetSuccess() {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onSetFailure(s: String?) {
+                            it.onError(Error("must not come here"))
+                        }
+                    },
+                    sdpConstraints
+                )
+            }
+        ).subscribeOn(Schedulers.from(executor))
 
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
@@ -427,8 +471,9 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         conn = factory!!.createPeerConnection(
-                networkConfig.createConfiguration(),
-                connectionObserver)
+            networkConfig.createConfiguration(),
+            connectionObserver
+        )
 
         SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
@@ -449,11 +494,11 @@ class PeerChannelImpl(
         listener?.onAddLocalStream(localStream!!)
     }
 
-    override fun disconnect() {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
         if (closing)
             return
         executor.execute {
-            closeInternal()
+            closeInternal(disconnectReason)
         }
     }
 
@@ -468,13 +513,14 @@ class PeerChannelImpl(
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), statsMessage))
     }
 
-    override fun sendDisconnectMessage(dataChannel: DataChannel) {
+    override fun sendDisconnect(dataChannel: DataChannel, disconnectReason: SoraDisconnectReason) {
         SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
-        val disconnectMessage = MessageConverter.buildDisconnectMessage()
+        val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
+        SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
     }
 
-    private fun stringToDataChannelBuffer(label: String, data: String) : DataChannel.Buffer {
+    private fun stringToDataChannelBuffer(label: String, data: String): DataChannel.Buffer {
         val inStream = when (compressLabels.contains(label)) {
             true ->
                 DeflaterInputStream(ByteArrayInputStream(data.toByteArray()))
@@ -485,7 +531,7 @@ class PeerChannelImpl(
         return DataChannel.Buffer(byteBuffer, true)
     }
 
-    private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer) : String {
+    private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer): String {
         val inStream = when (compressLabels.contains(label)) {
             true ->
                 InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
@@ -496,72 +542,90 @@ class PeerChannelImpl(
     }
 
     private fun createAnswer(): Single<SessionDescription> =
-        Single.create(SingleOnSubscribe<SessionDescription> {
-            conn?.createAnswer(object : SdpObserver {
-                override fun onCreateSuccess(sdp: SessionDescription?) {
-                    SoraLogger.d(TAG, """createAnswer:onCreateSuccess: ${sdp!!.type}
-                        |${sdp.description}""".trimMargin())
-                    it.onSuccess(sdp)
-                }
-                override fun onCreateFailure(s: String?) {
-                    SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=${s}")
-                    it.onError(Error(s))
-                }
-                override fun onSetSuccess() {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onSetFailure(s: String?) {
-                    it.onError(Error("must not come here"))
-                }
-            }, sdpConstraints)
-        }).subscribeOn(Schedulers.from(executor))
+        Single.create(
+            SingleOnSubscribe<SessionDescription> {
+                conn?.createAnswer(
+                    object : SdpObserver {
+                        override fun onCreateSuccess(sdp: SessionDescription?) {
+                            SoraLogger.d(
+                                TAG,
+                                """createAnswer:onCreateSuccess: ${sdp!!.type}
+                        |${sdp.description}""".trimMargin()
+                            )
+                            it.onSuccess(sdp)
+                        }
+                        override fun onCreateFailure(s: String?) {
+                            SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=$s")
+                            it.onError(Error(s))
+                        }
+                        override fun onSetSuccess() {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onSetFailure(s: String?) {
+                            it.onError(Error("must not come here"))
+                        }
+                    },
+                    sdpConstraints
+                )
+            }
+        ).subscribeOn(Schedulers.from(executor))
 
     private fun setLocalDescription(sdp: SessionDescription): Single<SessionDescription> =
-        Single.create(SingleOnSubscribe<SessionDescription> {
-            conn?.setLocalDescription(object : SdpObserver {
-                override fun onCreateSuccess(p0: SessionDescription?) {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onCreateFailure(p0: String?) {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onSetSuccess() {
-                    SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
-                    it.onSuccess(sdp)
-                }
-                override fun onSetFailure(s: String?) {
-                    SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=${s} ${this@PeerChannelImpl}")
-                    it.onError(Error(s))
-                }
-            }, sdp)
-        }).subscribeOn(Schedulers.from(executor))
+        Single.create(
+            SingleOnSubscribe<SessionDescription> {
+                conn?.setLocalDescription(
+                    object : SdpObserver {
+                        override fun onCreateSuccess(p0: SessionDescription?) {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onCreateFailure(p0: String?) {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onSetSuccess() {
+                            SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
+                            it.onSuccess(sdp)
+                        }
+                        override fun onSetFailure(s: String?) {
+                            SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=$s ${this@PeerChannelImpl}")
+                            it.onError(Error(s))
+                        }
+                    },
+                    sdp
+                )
+            }
+        ).subscribeOn(Schedulers.from(executor))
 
     private fun setRemoteDescription(sdp: SessionDescription): Single<SessionDescription> =
-        Single.create(SingleOnSubscribe<SessionDescription> {
-            conn?.setRemoteDescription(object : SdpObserver {
-                override fun onCreateSuccess(p0: SessionDescription?) {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onCreateFailure(p0: String?) {
-                    it.onError(Error("must not come here"))
-                }
-                override fun onSetSuccess() {
-                    SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
-                    it.onSuccess(sdp)
-                }
-                override fun onSetFailure(s: String?) {
-                    SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=${s} ${this@PeerChannelImpl}")
-                    it.onError(Error(s))
-                }
-            }, sdp)
-        }).subscribeOn(Schedulers.from(executor))
+        Single.create(
+            SingleOnSubscribe<SessionDescription> {
+                conn?.setRemoteDescription(
+                    object : SdpObserver {
+                        override fun onCreateSuccess(p0: SessionDescription?) {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onCreateFailure(p0: String?) {
+                            it.onError(Error("must not come here"))
+                        }
+                        override fun onSetSuccess() {
+                            SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
+                            it.onSuccess(sdp)
+                        }
+                        override fun onSetFailure(s: String?) {
+                            SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=$s ${this@PeerChannelImpl}")
+                            it.onError(Error(s))
+                        }
+                    },
+                    sdp
+                )
+            }
+        ).subscribeOn(Schedulers.from(executor))
 
-    private fun closeInternal() {
+    private fun closeInternal(disconnectReason: SoraDisconnectReason?) {
         if (closing)
             return
         SoraLogger.d(TAG, "disconnect")
         closing = true
-        listener?.onDisconnect()
+        listener?.onDisconnect(disconnectReason)
         listener = null
         SoraLogger.d(TAG, "dispose peer connection")
         conn?.dispose()
@@ -578,6 +642,10 @@ class PeerChannelImpl(
         }
     }
 
+    override fun connectionState(): PeerConnection.PeerConnectionState? {
+        return conn?.connectionState()
+    }
+
     override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
         conn?.getStats(statsCollectorCallback)
     }
@@ -589,5 +657,4 @@ class PeerChannelImpl(
             handler(null)
         }
     }
-
 }

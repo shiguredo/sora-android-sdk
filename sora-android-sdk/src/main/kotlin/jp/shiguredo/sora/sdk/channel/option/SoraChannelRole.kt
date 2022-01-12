@@ -1,9 +1,9 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import java.util.*
+import java.util.Locale
 
 /**
- * チャネルの役割を示します
+ * チャネルの役割を示します.
  */
 enum class SoraChannelRole {
 
@@ -18,5 +18,4 @@ enum class SoraChannelRole {
 
     internal val signaling: String
         get() = this.toString().toLowerCase(Locale.getDefault())
-
 }

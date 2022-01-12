@@ -1,10 +1,13 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import jp.shiguredo.sora.sdk.Sora
-import org.webrtc.*
+import org.webrtc.EglBase
+import org.webrtc.PeerConnection
+import org.webrtc.VideoCapturer
+import org.webrtc.VideoDecoderFactory
+import org.webrtc.VideoEncoderFactory
 
 /**
- * Sora への接続オプションを表すクラスです
+ * Sora への接続オプションを表すクラスです.
  */
 class SoraMediaOption {
 
@@ -13,31 +16,31 @@ class SoraMediaOption {
     }
 
     internal var audioDownstreamEnabled = false
-    internal var audioUpstreamEnabled   = false
+    internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
-    internal var videoUpstreamEnabled   = false
-    internal var multistreamEnabled     = false
+    internal var videoUpstreamEnabled = false
+    internal var multistreamEnabled = false
     internal var spotlightOption: SoraSpotlightOption? = null
-    internal var simulcastEnabled       = false
+    internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
 
     /**
-     * 利用する VideoEncoderFactory を指定します
+     * 利用する VideoEncoderFactory を指定します.
      */
     var videoEncoderFactory: VideoEncoderFactory? = null
 
     /**
-     * 利用する VideoDecoderFactory を指定します
+     * 利用する VideoDecoderFactory を指定します.
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
-    internal var videoCapturer:          VideoCapturer? = null
+    internal var videoCapturer: VideoCapturer? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null
-    internal var videoUpstreamContext:   EglBase.Context? = null
+    internal var videoUpstreamContext: EglBase.Context? = null
 
     var videoCodec = SoraVideoOption.Codec.VP9
 
@@ -45,7 +48,7 @@ class SoraMediaOption {
     var videoBitrate: Int? = null
 
     /**
-     * 映像の視聴を有効にします
+     * 映像の視聴を有効にします.
      *
      * cf.
      * - `org.webrtc.EglBase`
@@ -59,7 +62,7 @@ class SoraMediaOption {
     }
 
     /**
-     * 映像の配信を有効にします
+     * 映像の配信を有効にします.
      *
      * cf.
      * - `org.webrtc.VideoCapturer`
@@ -69,15 +72,17 @@ class SoraMediaOption {
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
      */
-    fun enableVideoUpstream(capturer:        VideoCapturer,
-                            eglContext:      EglBase.Context?) {
+    fun enableVideoUpstream(
+        capturer: VideoCapturer,
+        eglContext: EglBase.Context?
+    ) {
         videoUpstreamEnabled = true
-        videoCapturer        = capturer
+        videoCapturer = capturer
         videoUpstreamContext = eglContext
     }
 
     /**
-     * サイマルキャスト機能を有効にします。
+     * サイマルキャスト機能を有効にします.
      */
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
         simulcastEnabled = true
@@ -85,55 +90,49 @@ class SoraMediaOption {
     }
 
     /**
-     * スポットライト機能を有効にします。
+     * スポットライト機能を有効にします.
      *
-     * スポットライト機能はサイマルキャスト機能を利用します。
-     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります。
-     *
-     * サーバがスポットライトレガシー機能を利用している場合は、
-     * [Sora.usesSpotlightLegacy] に `true` をセットしてください。
+     * スポットライト機能はサイマルキャスト機能を利用します.
+     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
      */
     fun enableSpotlight(option: SoraSpotlightOption) {
         spotlightOption = option
         multistreamEnabled = true
-
-        if (!Sora.usesSpotlightLegacy) {
-            enableSimulcast()
-        }
+        enableSimulcast()
     }
 
     /**
-     * 音声のオプション設定を指定します
+     * 音声のオプション設定を指定します.
      */
     var audioOption: SoraAudioOption = SoraAudioOption()
 
     /**
-     * 音声の視聴を有効にします
+     * 音声の視聴を有効にします.
      */
     fun enableAudioDownstream() {
         audioDownstreamEnabled = true
     }
 
     /**
-     * 音声の配信を有効にします
+     * 音声の配信を有効にします.
      */
     fun enableAudioUpstream() {
         audioUpstreamEnabled = true
     }
 
     /**
-     * 音声コーデック
+     * 音声コーデック.
      */
     var audioCodec = SoraAudioOption.Codec.OPUS
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     /**
-     * 音声ビットレート
+     * 音声ビットレート.
      */
     var audioBitrate: Int? = null
 
     /**
-     * マルチストリームを有効にします
+     * マルチストリームを有効にします.
      *
      * cf.
      * - Sora ドキュメントのマルチストリーム
@@ -145,19 +144,19 @@ class SoraMediaOption {
 
     // Just for internal usage
     internal val videoIsRequired: Boolean
-    get() = videoDownstreamEnabled || videoUpstreamEnabled
+        get() = videoDownstreamEnabled || videoUpstreamEnabled
 
     internal val videoHwAccelerationIsRequired: Boolean
-    get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
+        get() = (videoUpstreamContext != null) || (videoDownstreamContext != null)
 
     internal val audioIsRequired: Boolean
-    get() = audioDownstreamEnabled || audioUpstreamEnabled
+        get() = audioDownstreamEnabled || audioUpstreamEnabled
 
     internal val downstreamIsRequired: Boolean
-    get() = audioDownstreamEnabled || videoDownstreamEnabled
+        get() = audioDownstreamEnabled || videoDownstreamEnabled
 
     internal val upstreamIsRequired: Boolean
-    get() = audioUpstreamEnabled || videoUpstreamEnabled
+        get() = audioUpstreamEnabled || videoUpstreamEnabled
 
     internal var _multistreamIsRequired: Boolean? = null
 
@@ -178,26 +177,21 @@ class SoraMediaOption {
     internal var _requiredRole: SoraChannelRole? = null
 
     internal val requiredRole: SoraChannelRole
-    get() = if (upstreamIsRequired && downstreamIsRequired)
-        SoraChannelRole.SENDRECV
-    else if (upstreamIsRequired)
-        SoraChannelRole.SENDONLY
-    else
-        SoraChannelRole.RECVONLY
+        get() = if (upstreamIsRequired && downstreamIsRequired)
+            SoraChannelRole.SENDRECV
+        else if (upstreamIsRequired)
+            SoraChannelRole.SENDONLY
+        else
+            SoraChannelRole.RECVONLY
 
     /**
-     * enableCpuOveruseDetection
-     *
-     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です。
+     * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です.
      */
     var enableCpuOveruseDetection: Boolean = true
 
     /**
-     * tcpCandidatePolicy
-     *
-     * TcpCandidatePolicy を設定します。
+     * TcpCandidatePolicy を設定します.
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
-            PeerConnection.TcpCandidatePolicy.ENABLED
+        PeerConnection.TcpCandidatePolicy.ENABLED
 }
-

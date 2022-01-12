@@ -7,10 +7,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import androidx.test.core.app.ApplicationProvider;
+
 import jp.shiguredo.sora.sdk.channel.SoraMediaChannel;
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption;
 
@@ -41,10 +45,10 @@ public class SoraMediaChannelTest {
     public void constructorCallUntil180() {
         try {
             // connectMetadata が null のパターン
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     null, mediaOption, timeoutSeconds, listener);
             // connectMetadata が String のパターン
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataString, mediaOption, timeoutSeconds, listener);
         } catch (Exception e) {
             fail(e.toString());
@@ -56,7 +60,7 @@ public class SoraMediaChannelTest {
     @Test
     public void constructorCallFrom181WithoutTimeoutSeconds() {
         try {
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, new ArrayList(Arrays.asList(channelId)),
                     connectMetadataString, mediaOption, listener);
         } catch (Exception e) {
             fail(e.toString());
@@ -69,10 +73,10 @@ public class SoraMediaChannelTest {
     public void constructorCallFrom181WithMetadataMap() {
         try {
             // timeoutSeconds あり
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, timeoutSeconds, listener);
             // timeoutSeconds なし
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, listener);
         } catch (Exception e) {
             fail(e.toString());
@@ -86,11 +90,11 @@ public class SoraMediaChannelTest {
     public void constructorCallFrom181WithClientId() {
         try {
             // 文字列
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
                     listener, clientId);
             // マップ
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
                     listener, clientId);
         } catch (Exception e) {
@@ -107,11 +111,11 @@ public class SoraMediaChannelTest {
     public void constructorCallFrom181WithSignalingNotifyMetadata() {
         try {
             // 文字列
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
                     listener, clientId, signalingNotifyMetadataString);
             // マップ
-            new SoraMediaChannel(context, signalingEndpoint, channelId,
+            new SoraMediaChannel(context, signalingEndpoint, Collections.<String>emptyList(), channelId,
                     connectMetadataMap, mediaOption, SoraMediaChannel.DEFAULT_TIMEOUT_SECONDS,
                     listener, /* clientId */ null, signalingNotifyMetadataMap);
         } catch (Exception e) {

@@ -6,7 +6,6 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-
 class ConnectMetadataJsonTest {
     val gson = Gson()
 
@@ -32,7 +31,7 @@ class ConnectMetadataJsonTest {
 
     @Test fun listMetadata1() {
         val message = roundtrip(listOf(1, 2, 3))
-        if(message.metadata !is List<*>) {
+        if (message.metadata !is List<*>) {
             fail("metadata should be list: ${message.metadata}")
         }
         val metadata = message.metadata as List<*>
@@ -44,7 +43,7 @@ class ConnectMetadataJsonTest {
 
     @Test fun listMetadata2() {
         val message = roundtrip(listOf("foo", "bar", "baz"))
-        if(message.metadata !is List<*>) {
+        if (message.metadata !is List<*>) {
             fail("metadata should be list: ${message.metadata}")
         }
         val metadata = message.metadata as List<*>
@@ -55,12 +54,14 @@ class ConnectMetadataJsonTest {
     }
 
     @Test fun mapMetadata() {
-        val message = roundtrip(hashMapOf(
+        val message = roundtrip(
+            hashMapOf(
                 "foo" to 1,
                 "bar" to "baz",
                 "baz" to listOf("ham", "eggs", "bacon")
-        ))
-        if(message.metadata !is Map<*, *>) {
+            )
+        )
+        if (message.metadata !is Map<*, *>) {
             fail("metadata should be map: ${message.metadata}")
         }
         val metadata = message.metadata as Map<*, *>
@@ -71,9 +72,9 @@ class ConnectMetadataJsonTest {
     }
 
     @Test fun setMetadata() {
-        val message = roundtrip(setOf(1,2,3))
+        val message = roundtrip(setOf(1, 2, 3))
         // Set は List で返ってくる
-        if(message.metadata !is List<*>) {
+        if (message.metadata !is List<*>) {
             fail("metadata should be set: ${message.metadata}")
         }
         val metadata = message.metadata as List<*>
@@ -81,13 +82,12 @@ class ConnectMetadataJsonTest {
         assertEquals(listOf(1.0, 2.0, 3.0), metadata)
     }
 
-
-    private fun roundtrip(metadata: Any?) : ConnectMessage {
+    private fun roundtrip(metadata: Any?): ConnectMessage {
         val original = ConnectMessage(
-                role = "upstream",
-                channelId = "sora",
-                sdp         = "",
-                metadata = metadata
+            role = "upstream",
+            channelId = "sora",
+            sdp = "",
+            metadata = metadata
         )
         val serialized = gson.toJson(original)
         return gson.fromJson(serialized, ConnectMessage::class.java)

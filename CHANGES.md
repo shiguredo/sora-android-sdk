@@ -9,11 +9,36 @@
 - FIX
     - バグ修正
 
+## 2022.1.0
+
+- [CHANGE] スポットライトレガシーを削除する
+  - @enm10k
+- [UPDATE] libwebrtc を 96.4664.2.1 に上げる
+  - @enm10k
+- [UPDATE] 複数シグナリング URL の指定に対応する
+  - SoraMediaChannel に connectedSignalingEndpoint を追加する
+  - @enm10k
+- [UPDATE] redirect メッセージに対応する
+  - @enm10k
+- [UPDATE] dokka を 1.5.31 に上げる
+  - @miosakuma
+- [UPDATE] type: disconnect に reason を追加する
+  - @enm10k
+- [FIX] 視聴のみかつ H.264 した場合に接続できない問題についてのワークアラウンドを削除する
+  - SoraMediaOption.videoUpstreamContext が無く SoraMediaOption.videoDownstreamContext 
+    がある場合はコーデック指定に依らず、 DefaultVideoEncoderFactory を使用する
+  - @miosakuma
+- [FIX] libwebrtc の更新で発生するようになったサイマルキャストのクラッシュを修正する
+  - SimulcastVideoEncoderFactoryWrapper.kt の Fallback クラスが原因で java.lang.UnsupportedOperationException が発生していた
+  - 調査の結果、 Fallback クラスを削除できることがわかったので、その方向で修正した
+  - その過程で、 libwebrtc に適用している Android のサイマルキャスト対応のパッチを更新し、 SimulcastVideoEncoderFactory の fallback に null を指定できるようにした
+  - @enm10k
+
 ## 2021.3
 
-  - [UPDATE] libwebrtc を 93.4577.8.2 に上げる
+- [UPDATE] libwebrtc を 93.4577.8.2 に上げる
   - @miosakuma
-  - [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
+- [FIX] stats メッセージに含まれる統計情報のフォーマットを修正する
   - @enm10k
 
 ##  2021.2
