@@ -9,7 +9,6 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
-import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
@@ -31,9 +30,10 @@ import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
-import java.util.zip.InflaterInputStream
 
 interface PeerChannel {
+    var compressLabels: List<String>
+
     fun handleInitialRemoteOffer(
         offer: String,
         mid: Map<String, String>?,
@@ -62,7 +62,7 @@ interface PeerChannel {
         fun onConnect()
         fun onDisconnect(disconnectReason: SoraDisconnectReason?)
         fun onDataChannelOpen(label: String, dataChannel: DataChannel)
-        fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String)
+        fun onDataChannelMessage(label: String, dataChannel: DataChannel, dataChannelBuffer: DataChannel.Buffer)
         fun onDataChannelClosed(label: String, dataChannel: DataChannel)
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
         fun onError(reason: SoraErrorReason)
@@ -119,7 +119,7 @@ class PeerChannelImpl(
     private var audioSender: RtpSender? = null
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
-    private val compressLabels: List<String>
+    override var compressLabels: List<String> = emptyList()
 
     // PeerChannel は再利用されないため、
     // connected が一度 true になった後、再度 false になることはない
@@ -217,8 +217,7 @@ class PeerChannelImpl(
                         "[rtc] @dataChannel.onMessage" +
                             " label=$label, state=${dataChannel.state()}, binary=${buffer.binary}"
                     )
-                    val messageData = dataChannelBufferToString(label, buffer)
-                    listener?.onDataChannelMessage(dataChannel.label(), dataChannel, messageData)
+                    listener?.onDataChannelMessage(dataChannel.label(), dataChannel, buffer)
                 }
             })
 
@@ -529,16 +528,6 @@ class PeerChannelImpl(
         }
         val byteBuffer = ByteBuffer.wrap(inStream.readBytes())
         return DataChannel.Buffer(byteBuffer, true)
-    }
-
-    private fun dataChannelBufferToString(label: String, buffer: DataChannel.Buffer): String {
-        val inStream = when (compressLabels.contains(label)) {
-            true ->
-                InflaterInputStream(ByteBufferBackedInputStream(buffer.data))
-            false ->
-                ByteBufferBackedInputStream(buffer.data)
-        }
-        return inStream.reader().readText()
     }
 
     private fun createAnswer(): Single<SessionDescription> =

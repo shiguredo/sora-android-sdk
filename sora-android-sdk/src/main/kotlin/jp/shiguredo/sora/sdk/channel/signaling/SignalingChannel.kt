@@ -58,6 +58,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val clientOfferSdp: SessionDescription?,
     private val clientId: String? = null,
     private val signalingNotifyMetadata: Any? = null,
+    private val connectDataChannels: List<Map<String, Any>>? = null,
     private val redirect: Boolean = false
 ) : SignalingChannel {
 
@@ -208,6 +209,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 sdp = clientOfferSdp?.description,
                 clientId = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
+                dataChannels = connectDataChannels,
                 redirect = redirect
             )
             it.send(message)

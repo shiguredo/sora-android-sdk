@@ -37,6 +37,7 @@ class MessageConverter {
             sdp: String? = null,
             clientId: String? = null,
             signalingNotifyMetadata: Any? = null,
+            dataChannels: List<Map<String, Any>>? = null,
             redirect: Boolean = false
         ): String {
 
@@ -45,6 +46,7 @@ class MessageConverter {
                 channelId = channelId,
                 dataChannelSignaling = dataChannelSignaling,
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
+                dataChannels = dataChannels,
                 metadata = metadata,
                 multistream = mediaOption.multistreamIsRequired,
                 sdp = sdp,

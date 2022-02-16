@@ -22,8 +22,10 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import jp.shiguredo.sora.sdk.util.ZipHelper
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -32,6 +34,7 @@ import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
 import org.webrtc.SessionDescription
+import java.nio.ByteBuffer
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -61,6 +64,7 @@ import kotlin.concurrent.schedule
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
+ * @param dataChannels connect メッセージに含める `data_channels`
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -75,7 +79,8 @@ class SoraMediaChannel @JvmOverloads constructor(
     private val signalingNotifyMetadata: Any? = null,
     private val peerConnectionOption: PeerConnectionOption = PeerConnectionOption(),
     dataChannelSignaling: Boolean? = null,
-    ignoreDisconnectWebSocket: Boolean? = null
+    ignoreDisconnectWebSocket: Boolean? = null,
+    dataChannels: List<Map<String, Any>>? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -88,6 +93,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     // connect メッセージに含める `ignore_disconnect_websocket`
     private val connectIgnoreDisconnectWebSocket: Boolean?
+
+    // connect メッセージに含める `data_channels`
+    private val connectDataChannels: List<Map<String, Any>>?
 
     // DataChannel 経由のシグナリングが有効なら true
     // Sora から渡された値 (= offer メッセージ) を参照して更新している
@@ -110,6 +118,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         // - switchedIgnoreDisconnectWebSocket
         connectDataChannelSignaling = dataChannelSignaling
         connectIgnoreDisconnectWebSocket = ignoreDisconnectWebSocket
+        connectDataChannels = dataChannels
     }
 
     /**
@@ -282,6 +291,14 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param encodings Sora から送信された encodings
          */
         fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
+
+        /**
+         * メッセージング機能で受信したメッセージを取得するためのコールバック
+         *
+         * @param label ラベル
+         * @param data 受信したメッセージ
+         */
+        fun onDataChannelMessage(label: String, data: ByteBuffer) {}
     }
 
     private var peer: PeerChannel? = null
@@ -432,10 +449,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onDataChannelOpen(label: String, dataChannel: DataChannel) {
-            dataChannels[label] = dataChannel
+            this@SoraMediaChannel.dataChannels[label] = dataChannel
         }
 
-        override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
+        // override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
+        override fun onDataChannelMessage(label: String, dataChannel: DataChannel, dataChannelBuffer: DataChannel.Buffer) {
+            val compress = peer!!.compressLabels.contains(label)
+            SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelMessage label=$label, compress=$compress")
 
             val expectedType = when (label) {
                 "signaling" -> "re-offer"
@@ -446,36 +466,47 @@ class SoraMediaChannel @JvmOverloads constructor(
                 else -> label // 追加が発生した時に備えて許容する
             }
 
-            MessageConverter.parseType(messageData)?.let { type ->
-                when (type) {
-                    expectedType -> {
-                        when (label) {
-                            "signaling" -> {
-                                val reOfferMessage = MessageConverter.parseReOfferMessage(messageData)
-                                handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+            val buffer = when (compress) {
+                true -> ZipHelper.unzip(dataChannelBuffer.data)
+                false -> dataChannelBuffer.data
+            }
+
+            if (!label.startsWith("#")) {
+                val message = ByteBufferBackedInputStream(buffer).reader().readText()
+
+                MessageConverter.parseType(message)?.let { type ->
+                    when (type) {
+                        expectedType -> {
+                            when (label) {
+                                "signaling" -> {
+                                    val reOfferMessage = MessageConverter.parseReOfferMessage(message)
+                                    handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+                                }
+                                "notify" -> {
+                                    val notificationMessage = MessageConverter.parseNotificationMessage(message)
+                                    handleNotificationMessage(notificationMessage)
+                                }
+                                "push" -> {
+                                    val pushMessage = MessageConverter.parsePushMessage(message)
+                                    listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+                                }
+                                "stats" -> {
+                                    // req-stats は type しかないので parse しない
+                                    handleReqStats(dataChannel)
+                                }
+                                "e2ee" -> {
+                                    SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
+                                }
+                                else ->
+                                    SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
                             }
-                            "notify" -> {
-                                val notificationMessage = MessageConverter.parseNotificationMessage(messageData)
-                                handleNotificationMessage(notificationMessage)
-                            }
-                            "push" -> {
-                                val pushMessage = MessageConverter.parsePushMessage(messageData)
-                                listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
-                            }
-                            "stats" -> {
-                                // req-stats は type しかないので parse しない
-                                handleReqStats(dataChannel)
-                            }
-                            "e2ee" -> {
-                                SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$messageData")
-                            }
-                            else ->
-                                SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$messageData")
                         }
+                        else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$message")
                     }
-                    else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$messageData")
                 }
             }
+
+            listener?.onDataChannelMessage(label, buffer)
         }
 
         override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
@@ -673,6 +704,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             clientOfferSdp = clientOfferSdp,
             clientId = clientId,
             signalingNotifyMetadata = signalingNotifyMetadata,
+            connectDataChannels = connectDataChannels,
             redirect = redirectLocation != null
         )
         signaling!!.connect()
@@ -913,6 +945,30 @@ class SoraMediaChannel @JvmOverloads constructor(
                 }
                 SoraLogger.i(TAG, "when statement should be exhaustive.")
             }
+        }
+    }
+
+    fun sendDataChannelMessage(label: String, data: String) {
+        sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
+    }
+
+    fun sendDataChannelMessage(label: String, data: ByteBuffer) {
+        if (!label.startsWith("#")) {
+            SoraLogger.w(TAG, "label should start with \"#\"")
+        }
+
+        if (dataChannels.containsKey(label)) {
+            val dataChannel = dataChannels[label]
+            val compress = peer!!.compressLabels.contains(label)
+            val buffer = when (compress) {
+                true -> ZipHelper.zip(data)
+                false -> data
+            }
+
+            val result = dataChannel?.send(DataChannel.Buffer(buffer, true))
+            SoraLogger.d(TAG, "state=${dataChannel?.state()}  result=$result")
+        } else {
+            SoraLogger.d(TAG, "data channel for label: $label not found")
         }
     }
 }
