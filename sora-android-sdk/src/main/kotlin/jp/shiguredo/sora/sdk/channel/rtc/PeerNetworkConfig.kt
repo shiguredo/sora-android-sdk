@@ -27,7 +27,6 @@ class PeerNetworkConfig(
             .setEnableGcmCryptoSuites(true)
             .createCryptoOptions()
         conf.cryptoOptions = cryptoOptions
-        conf.enableDtlsSrtp = true
         conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
         conf.tcpCandidatePolicy = mediaOption.tcpCandidatePolicy

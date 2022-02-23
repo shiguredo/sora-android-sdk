@@ -35,9 +35,36 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
         var streamSettings: VideoEncoder.Settings? = null
+        var cropX = 0
+        var cropY = 0
 
         override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
-            streamSettings = settings
+            var adjusted = settings
+            if (settings.height % 16 != 0 || settings.width % 16 != 0) {
+                var width = settings.width
+                if (settings.width % 16 != 0) {
+                    cropX = settings.width % 16
+                    SoraLogger.i(TAG, "width: ${settings.width} => ${settings.width - cropX}")
+                }
+
+                var height = settings.height
+                if (settings.height % 16 != 0) {
+                    cropY = settings.height % 16
+                    SoraLogger.i(TAG, "height: ${settings.height} => ${settings.height - cropY}")
+                }
+
+                adjusted = VideoEncoder.Settings(
+                    settings.numberOfCores,
+                    settings.width - cropX,
+                    settings.height - cropY,
+                    settings.startBitrate,
+                    settings.maxFramerate,
+                    settings.numberOfSimulcastStreams,
+                    settings.automaticResizeOn,
+                    settings.capabilities,
+                )
+            }
+
             val future = executor.submit(
                 Callable {
                     SoraLogger.i(
@@ -45,17 +72,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                         """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
                 |  encoder=${encoder.implementationName}
                 |  streamSettings:
-                |    numberOfCores=${settings.numberOfCores}
-                |    width=${settings.width}
-                |    height=${settings.height}
-                |    startBitrate=${settings.startBitrate}
-                |    maxFramerate=${settings.maxFramerate}
-                |    automaticResizeOn=${settings.automaticResizeOn}
-                |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
-                |    lossNotification=${settings.capabilities.lossNotification}
+                |    numberOfCores=${adjusted.numberOfCores}
+                |    width=${adjusted.width}
+                |    height=${adjusted.height}
+                |    startBitrate=${adjusted.startBitrate}
+                |    maxFramerate=${adjusted.maxFramerate}
+                |    automaticResizeOn=${adjusted.automaticResizeOn}
+                |    numberOfSimulcastStreams=${adjusted.numberOfSimulcastStreams}
+                |    lossNotification=${adjusted.capabilities.lossNotification}
             """.trimMargin()
                     )
-                    return@Callable encoder.initEncode(settings, callback)
+                    return@Callable encoder.initEncode(adjusted, callback)
                 }
             )
             return future.get()
