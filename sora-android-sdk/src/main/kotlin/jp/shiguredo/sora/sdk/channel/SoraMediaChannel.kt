@@ -22,6 +22,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -291,6 +292,11 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param encodings Sora から送信された encodings
          */
         fun onSenderEncodings(mediaChannel: SoraMediaChannel, encodings: List<RtpParameters.Encoding>) {}
+
+        /**
+         * データチャネルが利用可能になったタイミングで呼び出されるコールバック
+         */
+        fun onDataChannel() {}
 
         /**
          * メッセージング機能で受信したメッセージを取得するためのコールバック
@@ -765,6 +771,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (earlyCloseWebSocket) {
             signaling?.disconnect(null)
         }
+        listener?.onDataChannel()
     }
 
     private fun handleUpdateOffer(sdp: String) {
@@ -948,27 +955,47 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    fun sendDataChannelMessage(label: String, data: String) {
-        sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
+    fun sendDataChannelMessage(label: String, data: String): SoraMessagingError? {
+        return sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
     }
 
-    fun sendDataChannelMessage(label: String, data: ByteBuffer) {
-        if (!label.startsWith("#")) {
-            SoraLogger.w(TAG, "label should start with \"#\"")
+    fun sendDataChannelMessage(label: String, data: ByteBuffer): SoraMessagingError? {
+        if (!switchedToDataChannel) {
+            return SoraMessagingError.NOT_READY
         }
 
-        if (dataChannels.containsKey(label)) {
-            val dataChannel = dataChannels[label]
-            val compress = peer!!.compressLabels.contains(label)
-            val buffer = when (compress) {
-                true -> ZipHelper.zip(data)
-                false -> data
-            }
+        if (!label.startsWith("#")) {
+            SoraLogger.w(TAG, "label should start with \"#\"")
+            return SoraMessagingError.INVALID_LABEL
+        }
 
-            val result = dataChannel?.send(DataChannel.Buffer(buffer, true))
-            SoraLogger.d(TAG, "state=${dataChannel?.state()}  result=$result")
-        } else {
+        val dataChannel = dataChannels[label]
+
+        if (dataChannel == null) {
             SoraLogger.d(TAG, "data channel for label: $label not found")
+            return SoraMessagingError.CHANNEL_NOT_FOUND
+        }
+
+        if (dataChannel.state() != DataChannel.State.OPEN) {
+            return SoraMessagingError.INVALID_STATE
+        }
+
+        if (peer == null) {
+            return SoraMessagingError.PEER_CHANNEL_UNAVAILABLE
+        }
+
+        val compress = peer!!.compressLabels.contains(label)
+        val buffer = when (compress) {
+            true -> ZipHelper.zip(data)
+            false -> data
+        }
+
+        val result = dataChannel.send(DataChannel.Buffer(buffer, true))
+        SoraLogger.d(TAG, "state=${dataChannel.state()}  result=$result")
+        return if (result != false) {
+            null
+        } else {
+            SoraMessagingError.MESSAGING_FAILED
         }
     }
 }
