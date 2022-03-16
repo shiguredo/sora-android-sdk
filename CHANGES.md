@@ -9,6 +9,15 @@
 - FIX
     - バグ修正
 
+## develop
+
+- [CHANGE] Sora で廃止となった以下のフィールドを削除する
+  - NotificationMessage.numberOfUpstreamConnections
+  - NotificationMessage.numberOfDownstreamConnections
+  - ChannelAttendeesCount.numberOfUpstreams
+  - ChannelAttendeesCount.numberOfDownstreams
+  - @miosakuma
+
 ## 2022.1.0
 
 - [CHANGE] スポットライトレガシーを削除する
