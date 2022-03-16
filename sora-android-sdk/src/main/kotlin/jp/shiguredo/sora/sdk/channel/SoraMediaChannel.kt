@@ -804,9 +804,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         when (notification.eventType) {
             "connection.created", "connection.destroyed" -> {
                 val attendees = ChannelAttendeesCount(
-                    numberOfSendrecvConnections = notification.numberOfSendrecvConnections!!,
-                    numberOfSendonlyConnections = notification.numberOfSendonlyConnections!!,
-                    numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections!!,
+                    numberOfSendrecvConnections = notification.numberOfSendrecvConnections?: 0,
+                    numberOfSendonlyConnections = notification.numberOfSendonlyConnections?: 0,
+                    numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections?: 0,
                 )
                 listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
             }
