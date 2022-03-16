@@ -458,7 +458,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             this@SoraMediaChannel.dataChannels[label] = dataChannel
         }
 
-        // override fun onDataChannelMessage(label: String, dataChannel: DataChannel, messageData: String) {
         override fun onDataChannelMessage(label: String, dataChannel: DataChannel, dataChannelBuffer: DataChannel.Buffer) {
             val compress = peer!!.compressLabels.contains(label)
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelMessage label=$label, compress=$compress")
