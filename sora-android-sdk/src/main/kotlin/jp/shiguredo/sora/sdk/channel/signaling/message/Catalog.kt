@@ -162,10 +162,6 @@ data class NotificationMessage(
     @SerializedName("metadata_list") val metadataList: Any?,
     @SerializedName("minutes") val connectionTime: Long?,
     @SerializedName("channel_connections") val numberOfConnections: Int?,
-    @Deprecated("numberOfUpstreamConnections は 2021 年 6 月リリース予定の Sora にて廃止されます。")
-    @SerializedName("channel_upstream_connections") val numberOfUpstreamConnections: Int?,
-    @Deprecated("numberOfDownstreamConnections は 2021 年 6 月リリース予定の Sora にて廃止されます。")
-    @SerializedName("channel_downstream_connections") val numberOfDownstreamConnections: Int?,
     @SerializedName("channel_sendrecv_connections") val numberOfSendrecvConnections: Int?,
     @SerializedName("channel_sendonly_connections") val numberOfSendonlyConnections: Int?,
     @SerializedName("channel_recvonly_connections") val numberOfRecvonlyConnections: Int?,
