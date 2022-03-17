@@ -311,6 +311,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         /**
          * メッセージング機能で受信したメッセージを取得するためのコールバック
+         * ラベルが # から始まるメッセージのみが通知されます
          *
          * @param label ラベル
          * @param data 受信したメッセージ
@@ -487,7 +488,9 @@ class SoraMediaChannel @JvmOverloads constructor(
                 false -> dataChannelBuffer.data
             }
 
-            if (!label.startsWith("#")) {
+            if (label.startsWith("#")) {
+                listener?.onDataChannelMessage(label, buffer)
+            } else {
                 try {
                     val message = dataToString(buffer)
 
@@ -525,8 +528,6 @@ class SoraMediaChannel @JvmOverloads constructor(
                     SoraLogger.e(TAG, e.stackTraceToString())
                 }
             }
-
-            listener?.onDataChannelMessage(label, buffer)
         }
 
         override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
