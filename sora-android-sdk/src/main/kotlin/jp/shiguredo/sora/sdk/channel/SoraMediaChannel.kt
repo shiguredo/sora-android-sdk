@@ -964,7 +964,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         if (!label.startsWith("#")) {
-            SoraLogger.w(TAG, "label should start with \"#\"")
+            SoraLogger.w(TAG, "label must start with \"#\"")
             return SoraMessagingError.INVALID_LABEL
         }
 
