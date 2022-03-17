@@ -23,7 +23,6 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
-import jp.shiguredo.sora.sdk.util.ByteBufferBackedInputStream
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import jp.shiguredo.sora.sdk.util.ZipHelper
@@ -36,6 +35,8 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
 import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -87,6 +88,16 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+
+        private val utf8Decoder = StandardCharsets.UTF_8
+            .newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+
+        @Synchronized
+        fun dataToString(data: ByteBuffer): String {
+            return utf8Decoder.decode(data).toString()
+        }
     }
 
     // connect メッセージに含める `data_channel_signaling`
@@ -477,37 +488,41 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
 
             if (!label.startsWith("#")) {
-                val message = ByteBufferBackedInputStream(buffer).reader().readText()
+                try {
+                    val message = dataToString(buffer)
 
-                MessageConverter.parseType(message)?.let { type ->
-                    when (type) {
-                        expectedType -> {
-                            when (label) {
-                                "signaling" -> {
-                                    val reOfferMessage = MessageConverter.parseReOfferMessage(message)
-                                    handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+                    MessageConverter.parseType(message)?.let { type ->
+                        when (type) {
+                            expectedType -> {
+                                when (label) {
+                                    "signaling" -> {
+                                        val reOfferMessage = MessageConverter.parseReOfferMessage(message)
+                                        handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+                                    }
+                                    "notify" -> {
+                                        val notificationMessage = MessageConverter.parseNotificationMessage(message)
+                                        handleNotificationMessage(notificationMessage)
+                                    }
+                                    "push" -> {
+                                        val pushMessage = MessageConverter.parsePushMessage(message)
+                                        listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+                                    }
+                                    "stats" -> {
+                                        // req-stats は type しかないので parse しない
+                                        handleReqStats(dataChannel)
+                                    }
+                                    "e2ee" -> {
+                                        SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
+                                    }
+                                    else ->
+                                        SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
                                 }
-                                "notify" -> {
-                                    val notificationMessage = MessageConverter.parseNotificationMessage(message)
-                                    handleNotificationMessage(notificationMessage)
-                                }
-                                "push" -> {
-                                    val pushMessage = MessageConverter.parsePushMessage(message)
-                                    listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
-                                }
-                                "stats" -> {
-                                    // req-stats は type しかないので parse しない
-                                    handleReqStats(dataChannel)
-                                }
-                                "e2ee" -> {
-                                    SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
-                                }
-                                else ->
-                                    SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
                             }
+                            else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$message")
                         }
-                        else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$message")
                     }
+                } catch (e: Exception) {
+                    SoraLogger.e(TAG, e.stackTraceToString())
                 }
             }
 
