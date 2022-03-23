@@ -312,7 +312,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * @param dataChannels Sora の offer メッセージに含まれる data_channels のうち label が # から始まるもの
          */
-        fun onDataChannel(dataChannels: List<Map<String, Any>>?) {}
+        fun onDataChannel(mediaChannel: SoraMediaChannel, dataChannels: List<Map<String, Any>>?) {}
 
         /**
          * メッセージング機能で受信したメッセージを取得するためのコールバック
@@ -321,7 +321,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param label ラベル
          * @param data 受信したメッセージ
          */
-        fun onDataChannelMessage(label: String, data: ByteBuffer) {}
+        fun onDataChannelMessage(mediaChannel: SoraMediaChannel, label: String, data: ByteBuffer) {}
     }
 
     private var peer: PeerChannel? = null
@@ -494,7 +494,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
 
             if (label.startsWith("#")) {
-                listener?.onDataChannelMessage(label, buffer)
+                listener?.onDataChannelMessage(this@SoraMediaChannel, label, buffer)
             } else {
                 try {
                     val message = dataToString(buffer)
@@ -794,7 +794,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (earlyCloseWebSocket) {
             signaling?.disconnect(null)
         }
-        listener?.onDataChannel(offerDataChannels)
+        listener?.onDataChannel(this, offerDataChannels)
     }
 
     private fun handleUpdateOffer(sdp: String) {
