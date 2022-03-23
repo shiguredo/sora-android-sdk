@@ -14,37 +14,31 @@ class SoraLogger {
         var enabled = false
         var libjingle_enabled = false
 
-        fun v(tag: String?, msg: String) {
+        fun v(tag: String?, msg: String, tr: Throwable? = null) {
             if (enabled) {
-                Log.v(tag, msg)
+                Log.v(tag, msg, tr)
             }
         }
 
-        fun d(tag: String?, msg: String) {
+        fun d(tag: String?, msg: String, tr: Throwable? = null) {
             if (enabled) {
-                Log.d(tag, msg)
+                Log.d(tag, msg, tr)
             }
         }
 
-        fun i(tag: String?, msg: String) {
+        fun i(tag: String?, msg: String, tr: Throwable? = null) {
             if (enabled) {
-                Log.i(tag, msg)
+                Log.i(tag, msg, tr)
             }
         }
 
-        fun w(tag: String?, msg: String) {
+        fun w(tag: String?, msg: String, tr: Throwable? = null) {
             if (enabled) {
-                Log.w(tag, msg)
+                Log.w(tag, msg, tr)
             }
         }
 
-        fun e(tag: String?, msg: String) {
-            if (enabled) {
-                Log.e(tag, msg)
-            }
-        }
-
-        fun e(tag: String?, msg: String, tr: Throwable) {
+        fun e(tag: String?, msg: String, tr: Throwable? = null) {
             if (enabled) {
                 Log.e(tag, msg, tr)
             }
