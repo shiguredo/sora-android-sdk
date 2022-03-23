@@ -1019,7 +1019,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         val result = dataChannel.send(DataChannel.Buffer(buffer, true))
         SoraLogger.d(TAG, "state=${dataChannel.state()}  result=$result")
         return if (result != false) {
-            null
+            SoraMessagingError.OK
         } else {
             SoraMessagingError.MESSAGING_FAILED
         }
