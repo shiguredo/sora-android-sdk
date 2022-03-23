@@ -999,7 +999,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         if (dataChannel == null) {
             SoraLogger.w(TAG, "data channel for label: $label not found")
-            return SoraMessagingError.CHANNEL_NOT_FOUND
+            return SoraMessagingError.LABEL_NOT_FUND
         }
 
         if (dataChannel.state() != DataChannel.State.OPEN) {
