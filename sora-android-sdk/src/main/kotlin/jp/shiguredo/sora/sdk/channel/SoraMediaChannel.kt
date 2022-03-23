@@ -88,16 +88,6 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
-
-        private val utf8Decoder = StandardCharsets.UTF_8
-            .newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .onUnmappableCharacter(CodingErrorAction.REPORT)
-
-        @Synchronized
-        fun dataToString(data: ByteBuffer): String {
-            return utf8Decoder.decode(data).toString()
-        }
     }
 
     // connect メッセージに含める `data_channel_signaling`
@@ -119,6 +109,19 @@ class SoraMediaChannel @JvmOverloads constructor(
     // DataChannel 経由のシグナリング利用時に WebSocket の切断を無視するなら true
     // 同じく switched メッセージを参照して更新している
     private var switchedIgnoreDisconnectWebSocket: Boolean = false
+
+    // DataChannel メッセージの ByteBuffer を String に変換するための CharsetDecoder
+    // CharsetDecoder はスレッドセーフではないため注意
+    private val utf8Decoder = StandardCharsets.UTF_8
+        .newDecoder()
+        .onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT)
+
+    // DataChannel メッセージの ByteBuffer を String に変換する
+    @Synchronized
+    fun dataToString(data: ByteBuffer): String {
+        return utf8Decoder.decode(data).toString()
+    }
 
     init {
         if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
