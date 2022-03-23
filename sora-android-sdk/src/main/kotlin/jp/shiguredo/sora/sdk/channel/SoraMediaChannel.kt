@@ -985,7 +985,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         return sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
     }
 
-    fun sendDataChannelMessage(label: String, data: ByteBuffer): SoraMessagingError? {
+    fun sendDataChannelMessage(label: String, data: ByteBuffer): SoraMessagingError {
         if (!switchedToDataChannel) {
             return SoraMessagingError.NOT_READY
         }
