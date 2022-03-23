@@ -1021,7 +1021,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         return if (result != false) {
             SoraMessagingError.OK
         } else {
-            SoraMessagingError.MESSAGING_FAILED
+            SoraMessagingError.SEND_FAILED
         }
     }
 }
