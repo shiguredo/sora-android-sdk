@@ -43,5 +43,11 @@ class SoraLogger {
                 Log.e(tag, msg)
             }
         }
+
+        fun e(tag: String?, msg: String, tr: Throwable) {
+            if (enabled) {
+                Log.e(tag, msg, tr)
+            }
+        }
     }
 }

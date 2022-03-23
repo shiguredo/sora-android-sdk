@@ -533,7 +533,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                         }
                     }
                 } catch (e: Exception) {
-                    SoraLogger.e(TAG, e.stackTraceToString())
+                    SoraLogger.e(TAG, "failed to process DataChannel message", e)
                 }
             }
         }
