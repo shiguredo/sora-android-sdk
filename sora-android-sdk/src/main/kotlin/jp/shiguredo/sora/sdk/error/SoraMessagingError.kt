@@ -8,7 +8,7 @@ enum class SoraMessagingError {
     NOT_READY,
     INVALID_LABEL,
     INVALID_STATE,
-    LABEL_NOT_FUND,
+    LABEL_NOT_FOUND,
     SEND_FAILED,
     PEER_CHANNEL_UNAVAILABLE
 }
