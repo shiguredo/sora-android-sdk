@@ -142,7 +142,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     /**
      * ロール
      */
-    val role = mediaOption.requiredRole
+    val role = mediaOption.role ?: mediaOption.requiredRole
 
     private var getStatsTimer: Timer? = null
     private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
