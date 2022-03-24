@@ -99,8 +99,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     // connect メッセージに含める `data_channels`
     private val connectDataChannels: List<Map<String, Any>>?
 
+    // メッセージング機能で利用する DataChannel
     // offer メッセージに含まれる `data_channels` のうち、 label が # から始まるもの
-    private var offerDataChannels: List<Map<String, Any>>? = null
+    private var dataChannelsForMessaging: List<Map<String, Any>>? = null
 
     // DataChannel 経由のシグナリングが有効なら true
     // Sora から渡された値 (= offer メッセージ) を参照して更新している
@@ -758,7 +759,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {
             offerDataChannelSignaling = true
-            offerDataChannels = offerMessage.dataChannels.filter {
+            dataChannelsForMessaging = offerMessage.dataChannels.filter {
                 it.containsKey("label") && (it["label"] as? String)?.startsWith("#") ?: false
             }
         }
@@ -799,7 +800,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (earlyCloseWebSocket) {
             signaling?.disconnect(null)
         }
-        listener?.onDataChannel(this, offerDataChannels)
+        listener?.onDataChannel(this, dataChannelsForMessaging)
     }
 
     private fun handleUpdateOffer(sdp: String) {
