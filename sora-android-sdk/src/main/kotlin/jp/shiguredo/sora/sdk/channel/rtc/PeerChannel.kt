@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import jp.shiguredo.sora.sdk.util.ZipHelper
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.Logging
@@ -32,8 +33,6 @@ import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
 
 interface PeerChannel {
-    var compressLabels: List<String>
-
     fun handleInitialRemoteOffer(
         offer: String,
         mid: Map<String, String>?,
@@ -53,6 +52,8 @@ interface PeerChannel {
     fun sendReAnswer(dataChannel: DataChannel, description: String)
     fun sendStats(dataChannel: DataChannel, report: RTCStatsReport)
     fun sendDisconnect(dataChannel: DataChannel, disconnectReason: SoraDisconnectReason)
+    fun zipBufferIfNeeded(label: String, buffer: ByteBuffer): ByteBuffer
+    fun unzipBufferIfNeeded(label: String, buffer: ByteBuffer): ByteBuffer
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -119,7 +120,7 @@ class PeerChannelImpl(
     private var audioSender: RtpSender? = null
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
-    override var compressLabels: List<String> = emptyList()
+    private var compressLabels: List<String> = emptyList()
 
     // PeerChannel は再利用されないため、
     // connected が一度 true になった後、再度 false になることはない
@@ -517,6 +518,24 @@ class PeerChannelImpl(
         val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
         SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
         dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+    }
+
+    override fun zipBufferIfNeeded(label: String, buffer: ByteBuffer): ByteBuffer {
+        val compress = compressLabels.contains(label)
+        SoraLogger.d(TAG, "peer: zipBufferIfNeeded, label=$label, compress=$compress")
+        return when (compress) {
+            true -> ZipHelper.zip(buffer)
+            false -> buffer
+        }
+    }
+
+    override fun unzipBufferIfNeeded(label: String, buffer: ByteBuffer): ByteBuffer {
+        val compress = compressLabels.contains(label)
+        SoraLogger.d(TAG, "peer: unzipBufferIfNeeded, label=$label, compress=$compress")
+        return when (compress) {
+            true -> ZipHelper.unzip(buffer)
+            false -> buffer
+        }
     }
 
     private fun stringToDataChannelBuffer(label: String, data: String): DataChannel.Buffer {

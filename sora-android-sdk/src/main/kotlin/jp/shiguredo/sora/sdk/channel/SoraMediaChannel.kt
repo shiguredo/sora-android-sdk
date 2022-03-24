@@ -25,7 +25,6 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import jp.shiguredo.sora.sdk.util.ZipHelper
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -486,13 +485,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 return
             }
 
-            val compress = peer!!.compressLabels.contains(label)
-            SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelMessage label=$label, compress=$compress")
-
-            val buffer = when (compress) {
-                true -> ZipHelper.unzip(dataChannelBuffer.data)
-                false -> dataChannelBuffer.data
-            }
+            SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelMessage label=$label")
+            val buffer = peer!!.unzipBufferIfNeeded(label, dataChannelBuffer.data)
 
             if (label.startsWith("#")) {
                 listener?.onDataChannelMessage(this@SoraMediaChannel, label, buffer)
@@ -1016,12 +1010,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (peer == null) {
             return SoraMessagingError.PEER_CHANNEL_UNAVAILABLE
         }
-
-        val compress = peer!!.compressLabels.contains(label)
-        val buffer = when (compress) {
-            true -> ZipHelper.zip(data)
-            false -> data
-        }
+        val buffer = peer!!.zipBufferIfNeeded(label, data)
 
         val succeeded = dataChannel.send(DataChannel.Buffer(buffer, true))
         SoraLogger.d(TAG, "state=${dataChannel.state()}  succeeded=$succeeded")
