@@ -313,6 +313,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         /**
          * データチャネルが利用可能になったタイミングで呼び出されるコールバック
          *
+         * @param mediaChannel イベントが発生したチャネル
          * @param dataChannels Sora の offer メッセージに含まれる data_channels のうち label が # から始まるもの
          */
         fun onDataChannel(mediaChannel: SoraMediaChannel, dataChannels: List<Map<String, Any>>?) {}
@@ -321,6 +322,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * メッセージング機能で受信したメッセージを取得するためのコールバック
          * ラベルが # から始まるメッセージのみが通知されます
          *
+         * @param mediaChannel イベントが発生したチャネル
          * @param label ラベル
          * @param data 受信したメッセージ
          */
