@@ -482,17 +482,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         override fun onDataChannelMessage(label: String, dataChannel: DataChannel, dataChannelBuffer: DataChannel.Buffer) {
+            if (peer == null) {
+                return
+            }
+
             val compress = peer!!.compressLabels.contains(label)
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelMessage label=$label, compress=$compress")
-
-            val expectedType = when (label) {
-                "signaling" -> "re-offer"
-                "notify" -> "notify"
-                "push" -> "push"
-                "stats" -> "req-stats"
-                "e2ee" -> "NOT-IMPLEMENTED"
-                else -> label // 追加が発生した時に備えて許容する
-            }
 
             val buffer = when (compress) {
                 true -> ZipHelper.unzip(dataChannelBuffer.data)
@@ -504,6 +499,15 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 try {
                     val message = dataToString(buffer)
+
+                    val expectedType = when (label) {
+                        "signaling" -> "re-offer"
+                        "notify" -> "notify"
+                        "push" -> "push"
+                        "stats" -> "req-stats"
+                        "e2ee" -> "NOT-IMPLEMENTED"
+                        else -> label // 追加が発生した時に備えて許容する
+                    }
 
                     MessageConverter.parseType(message)?.let { type ->
                         when (type) {
