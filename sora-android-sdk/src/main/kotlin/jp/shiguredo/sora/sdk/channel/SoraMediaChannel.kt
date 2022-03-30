@@ -117,7 +117,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         .onMalformedInput(CodingErrorAction.REPORT)
         .onUnmappableCharacter(CodingErrorAction.REPORT)
 
-    // DataChannel メッセージの ByteBuffer を String に変換する
+    /**
+     * メッセージングで受信したデータを UTF-8 の文字列に変換します.
+     *
+     * CharsetDecoder がスレッド・セーフでないため、 Synchronized を付与しています.
+     * アプリケーションで大量のメッセージを処理してパフォーマンスの問題が生じた場合、独自の関数を定義して利用することを推奨します.
+     *
+     * @param data 受信したメッセージ
+     * @return UTF-8 の文字列
+     */
     @Synchronized
     fun dataToString(data: ByteBuffer): String {
         return utf8Decoder.decode(data).toString()
@@ -982,10 +990,24 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
+    /**
+     * メッセージを送信します.
+     *
+     * @param label ラベル
+     * @param data 送信する文字列
+     * @return エラー
+     */
     fun sendDataChannelMessage(label: String, data: String): SoraMessagingError {
         return sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
     }
 
+    /**
+     * メッセージを送信します.
+     *
+     * @param label ラベル
+     * @param data 送信するデータ
+     * @return エラー
+     */
     fun sendDataChannelMessage(label: String, data: ByteBuffer): SoraMessagingError {
         if (!switchedToDataChannel) {
             return SoraMessagingError.NOT_READY
