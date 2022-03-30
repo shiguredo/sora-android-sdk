@@ -11,6 +11,12 @@
 
 ## develop
 
+- [CHANGE] Sora で廃止となった以下のフィールドを削除する
+  - NotificationMessage.numberOfUpstreamConnections
+  - NotificationMessage.numberOfDownstreamConnections
+  - ChannelAttendeesCount.numberOfUpstreams
+  - ChannelAttendeesCount.numberOfDownstreams
+  - @miosakuma
 - [UPDATE] SoraMediaOption に role を追加する
   - type: connect の role を明示的に指定できるようなった
   - 未指定の場合は、従来通り、 SDK が role を自動的に決定する
