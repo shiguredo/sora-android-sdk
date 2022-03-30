@@ -142,6 +142,13 @@ class SoraMediaOption {
         multistreamEnabled = true
     }
 
+    /**
+     * ロール.
+     *
+     * 未設定の場合、 Sora Android SDK はロールを自動的に決定します
+     */
+    var role: SoraChannelRole? = null
+
     // Just for internal usage
     internal val videoIsRequired: Boolean
         get() = videoDownstreamEnabled || videoUpstreamEnabled

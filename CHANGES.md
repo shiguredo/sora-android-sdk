@@ -17,6 +17,12 @@
   - ChannelAttendeesCount.numberOfUpstreams
   - ChannelAttendeesCount.numberOfDownstreams
   - @miosakuma
+- [UPDATE] SoraMediaOption に role を追加する
+  - type: connect の role を明示的に指定できるようなった
+  - 未指定の場合は、従来通り、 SDK が role を自動的に決定する
+  - @enm10k
+- [ADD] メッセージング機能に対応する
+  - @enm10k
 
 ## 2022.1.0
 
