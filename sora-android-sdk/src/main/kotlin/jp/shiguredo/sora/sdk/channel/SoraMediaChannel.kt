@@ -273,6 +273,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onAttendeesCountUpdated(mediaChannel: SoraMediaChannel, attendees: ChannelAttendeesCount) {}
 
         /**
+         * Sora から type: offer メッセージを受信した際に呼び出されるコールバック.
+         *
+         */
+        fun onOfferMessage(mediaChannel: SoraMediaChannel, offer: OfferMessage) {}
+
+        /**
          * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック.
          *
          * @param mediaChannel イベントが発生したチャネル
@@ -387,6 +393,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
             this@SoraMediaChannel.connectionId = offerMessage.connectionId
             handleInitialOffer(offerMessage)
+            listener?.onOfferMessage(this@SoraMediaChannel, offerMessage)
         }
 
         override fun onSwitched(switchedMessage: SwitchedMessage) {

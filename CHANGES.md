@@ -23,6 +23,9 @@
   - @enm10k
 - [ADD] メッセージング機能に対応する
   - @enm10k
+- [FIX] SoraMediaChannel.Listener に onOfferMessage を追加する
+  - type: offer に含まれる metadata などにアクセスするために必要だった
+  - @enm10k
 
 ## 2022.1.0
 
