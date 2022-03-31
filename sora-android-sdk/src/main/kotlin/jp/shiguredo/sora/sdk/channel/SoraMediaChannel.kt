@@ -353,7 +353,16 @@ class SoraMediaChannel @JvmOverloads constructor(
         private set
 
     /**
-     * シグナリングに利用しているエンドポイント.
+     * 最初に type: connect を最初に送信したエンドポイント.
+     *
+     * Sora から type: redirect メッセージを受信した場合、 contactSignalingEndpoint と connectedSignalingEndpoint の値は異なります
+     * type: redirect メッセージを受信しなかった場合、 contactSignalingEndpoint と connectedSignalingEndpoint は同じ値です
+     */
+    var contactSignalingEndpoint: String? = null
+        private set
+
+    /**
+     * 接続中のエンドポイント.
      */
     var connectedSignalingEndpoint: String? = null
         private set
@@ -378,15 +387,21 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
         }
 
-        override fun onConnect(connectedEndpoint: String) {
+        override fun onConnect(endpoint: String) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
-            connectedSignalingEndpoint = connectedEndpoint
+
+            // SignalingChannel の初回接続時のみ contactSignalingEndpoint を設定する
+            // Sora から type: redirect を受信した場合、このコールバックは複数回実行される可能性がある
+            if (contactSignalingEndpoint == null) {
+                contactSignalingEndpoint = endpoint
+            }
         }
 
-        override fun onInitialOffer(offerMessage: OfferMessage) {
+        override fun onInitialOffer(offerMessage: OfferMessage, endpoint: String) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onInitialOffer")
             this@SoraMediaChannel.connectionId = offerMessage.connectionId
             handleInitialOffer(offerMessage)
+            connectedSignalingEndpoint = endpoint
         }
 
         override fun onSwitched(switchedMessage: SwitchedMessage) {
@@ -878,9 +893,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         when (notification.eventType) {
             "connection.created", "connection.destroyed" -> {
                 val attendees = ChannelAttendeesCount(
-                    numberOfSendrecvConnections = notification.numberOfSendrecvConnections?: 0,
-                    numberOfSendonlyConnections = notification.numberOfSendonlyConnections?: 0,
-                    numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections?: 0,
+                    numberOfSendrecvConnections = notification.numberOfSendrecvConnections ?: 0,
+                    numberOfSendonlyConnections = notification.numberOfSendonlyConnections ?: 0,
+                    numberOfRecvonlyConnections = notification.numberOfRecvonlyConnections ?: 0,
                 )
                 listener?.onAttendeesCountUpdated(this@SoraMediaChannel, attendees)
             }
@@ -912,7 +927,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         listener?.onClose(this)
         listener = null
 
-        // アプリケーションで定義された切断処理を実行した後に connectedSignalingEndpoint を null にする
+        // アプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
+        contactSignalingEndpoint = null
         connectedSignalingEndpoint = null
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い

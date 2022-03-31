@@ -17,6 +17,10 @@
   - ChannelAttendeesCount.numberOfUpstreams
   - ChannelAttendeesCount.numberOfDownstreams
   - @miosakuma
+- [UPDATE] SoraMediaChannel に contactSignalingEndpoint を追加する
+  - 最初に type: connect を送信したエンドポイントを表す
+  - この変更と併せて、 connectedSignalingEndpoint をセットするタイミングを、 type: connect 送信時から type: offer 送信時に変更した
+  - @enm10k
 - [UPDATE] SoraMediaOption に role を追加する
   - type: connect の role を明示的に指定できるようなった
   - 未指定の場合は、従来通り、 SDK が role を自動的に決定する

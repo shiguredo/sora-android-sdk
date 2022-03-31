@@ -32,9 +32,9 @@ interface SignalingChannel {
     fun disconnect(disconnectReason: SoraDisconnectReason?)
 
     interface Listener {
-        fun onConnect(connectedEndpoint: String)
+        fun onConnect(endpoint: String)
         fun onDisconnect(disconnectReason: SoraDisconnectReason?)
-        fun onInitialOffer(offerMessage: OfferMessage)
+        fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
         fun onReOffer(sdp: String)
@@ -229,7 +229,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
             |${offerMessage.sdp}""".trimMargin()
         )
 
-        listener?.onInitialOffer(offerMessage)
+        var endpoint = ""
+        ws?.let {
+            endpoint = it.request().url.toString()
+        }
+
+        listener?.onInitialOffer(offerMessage, endpoint)
     }
 
     private fun onSwitchedMessage(text: String) {
