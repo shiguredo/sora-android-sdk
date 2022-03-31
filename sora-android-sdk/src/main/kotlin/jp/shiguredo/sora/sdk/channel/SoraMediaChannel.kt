@@ -276,7 +276,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * Sora から type: offer メッセージを受信した際に呼び出されるコールバック.
          *
          * @param mediaChannel イベントが発生したチャネル
-         * @param Sora から受信した type: offer メッセージ
+         * @param offer Sora から受信した type: offer メッセージ
          */
         fun onOfferMessage(mediaChannel: SoraMediaChannel, offer: OfferMessage) {}
 
