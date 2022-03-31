@@ -389,6 +389,9 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onConnect(endpoint: String) {
             SoraLogger.d(TAG, "[channel:$role] @signaling:onOpen")
+
+            // SignalingChannel の初回接続時のみ contactSignalingEndpoint を設定する
+            // Sora から type: redirect を受信した場合、このコールバックは複数回実行される可能性がある
             if (contactSignalingEndpoint == null) {
                 contactSignalingEndpoint = endpoint
             }
