@@ -66,6 +66,7 @@ import kotlin.concurrent.schedule
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
+ * @param bundleId connect メッセージに含める `bundle_id`
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -82,6 +83,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     dataChannelSignaling: Boolean? = null,
     ignoreDisconnectWebSocket: Boolean? = null,
     dataChannels: List<Map<String, Any>>? = null,
+    private var bundleId: String? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -660,6 +662,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
+            |bundleId                = ${this.bundleId}
             |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin()
         )
 
@@ -765,6 +768,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             listener = signalingListener,
             clientOfferSdp = clientOfferSdp,
             clientId = clientId,
+            bundleId = bundleId,
             signalingNotifyMetadata = signalingNotifyMetadata,
             connectDataChannels = connectDataChannels,
             redirect = redirectLocation != null

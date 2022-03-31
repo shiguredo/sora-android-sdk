@@ -36,6 +36,7 @@ class MessageConverter {
             metadata: Any?,
             sdp: String? = null,
             clientId: String? = null,
+            bundleId: String? = null,
             signalingNotifyMetadata: Any? = null,
             dataChannels: List<Map<String, Any>>? = null,
             redirect: Boolean = false
@@ -51,6 +52,7 @@ class MessageConverter {
                 multistream = mediaOption.multistreamIsRequired,
                 sdp = sdp,
                 clientId = clientId,
+                bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
             )
 

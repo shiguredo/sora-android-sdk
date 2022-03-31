@@ -57,9 +57,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private var listener: SignalingChannel.Listener?,
     private val clientOfferSdp: SessionDescription?,
     private val clientId: String? = null,
+    private val bundleId: String? = null,
     private val signalingNotifyMetadata: Any? = null,
     private val connectDataChannels: List<Map<String, Any>>? = null,
-    private val redirect: Boolean = false
+    private val redirect: Boolean = false,
 ) : SignalingChannel {
 
     companion object {
@@ -208,6 +209,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 metadata = connectMetadata,
                 sdp = clientOfferSdp?.description,
                 clientId = clientId,
+                bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 dataChannels = connectDataChannels,
                 redirect = redirect
