@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.2.0
+
 - [CHANGE] Sora で廃止となった以下のフィールドを削除する
   - NotificationMessage.numberOfUpstreamConnections
   - NotificationMessage.numberOfDownstreamConnections
