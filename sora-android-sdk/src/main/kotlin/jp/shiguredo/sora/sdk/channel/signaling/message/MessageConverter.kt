@@ -1,9 +1,9 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
-import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
@@ -37,6 +37,7 @@ class MessageConverter {
             sdp: String? = null,
             clientId: String? = null,
             signalingNotifyMetadata: Any? = null,
+            dataChannels: List<Map<String, Any>>? = null,
             redirect: Boolean = false
         ): String {
 
@@ -45,6 +46,7 @@ class MessageConverter {
                 channelId = channelId,
                 dataChannelSignaling = dataChannelSignaling,
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
+                dataChannels = dataChannels,
                 metadata = metadata,
                 multistream = mediaOption.multistreamIsRequired,
                 sdp = sdp,

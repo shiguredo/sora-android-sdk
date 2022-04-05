@@ -12,6 +12,7 @@ import org.webrtc.CameraVideoCapturer
  * カメラからの映像を取得するための `CameraVideoCapturer` のファクトリクラスです.
  *
  * Camera1, Camera2 を統一的に扱うことが出来ます.
+ *
  * cf.
  * - `org.webrtc.CameraVideoCapturer`
  */

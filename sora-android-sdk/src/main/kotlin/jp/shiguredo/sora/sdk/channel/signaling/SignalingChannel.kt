@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
-import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
@@ -8,6 +7,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import okhttp3.OkHttpClient
@@ -32,9 +32,9 @@ interface SignalingChannel {
     fun disconnect(disconnectReason: SoraDisconnectReason?)
 
     interface Listener {
-        fun onConnect(connectedEndpoint: String)
+        fun onConnect(endpoint: String)
         fun onDisconnect(disconnectReason: SoraDisconnectReason?)
-        fun onInitialOffer(offerMessage: OfferMessage)
+        fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
         fun onReOffer(sdp: String)
@@ -58,6 +58,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val clientOfferSdp: SessionDescription?,
     private val clientId: String? = null,
     private val signalingNotifyMetadata: Any? = null,
+    private val connectDataChannels: List<Map<String, Any>>? = null,
     private val redirect: Boolean = false
 ) : SignalingChannel {
 
@@ -208,6 +209,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 sdp = clientOfferSdp?.description,
                 clientId = clientId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
+                dataChannels = connectDataChannels,
                 redirect = redirect
             )
             it.send(message)
@@ -227,7 +229,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
             |${offerMessage.sdp}""".trimMargin()
         )
 
-        listener?.onInitialOffer(offerMessage)
+        var endpoint = ""
+        ws?.let {
+            endpoint = it.request().url.toString()
+        }
+
+        listener?.onInitialOffer(offerMessage, endpoint)
     }
 
     private fun onSwitchedMessage(text: String) {

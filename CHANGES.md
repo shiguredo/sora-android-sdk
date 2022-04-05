@@ -9,20 +9,44 @@
 - FIX
     - バグ修正
 
+## develop
+
+## 2022.2.0
+
+- [CHANGE] Sora で廃止となった以下のフィールドを削除する
+  - NotificationMessage.numberOfUpstreamConnections
+  - NotificationMessage.numberOfDownstreamConnections
+  - ChannelAttendeesCount.numberOfUpstreams
+  - ChannelAttendeesCount.numberOfDownstreams
+  - @miosakuma
+- [UPDATE] SoraMediaChannel に contactSignalingEndpoint を追加する
+  - 最初に type: connect を送信したエンドポイントを表す
+  - この変更と併せて、 connectedSignalingEndpoint をセットするタイミングを、 type: connect 送信時から type: offer 送信時に変更した
+  - @enm10k
+- [UPDATE] SoraMediaOption に role を追加する
+  - type: connect の role を明示的に指定できるようなった
+  - 未指定の場合は、従来通り、 SDK が role を自動的に決定する
+  - @enm10k
+- [ADD] メッセージング機能に対応する
+  - @enm10k
+- [FIX] SoraMediaChannel.Listener に onOfferMessage を追加する
+  - type: offer に含まれる metadata などにアクセスするために必要だった
+  - @enm10k
+
 ## 2022.1.0
 
 - [CHANGE] スポットライトレガシーを削除する
   - @enm10k
 - [UPDATE] libwebrtc を 96.4664.2.1 に上げる
   - @enm10k
-- [UPDATE] 複数シグナリング URL の指定に対応する
-  - SoraMediaChannel に connectedSignalingEndpoint を追加する
-  - @enm10k
-- [UPDATE] redirect メッセージに対応する
-  - @enm10k
 - [UPDATE] dokka を 1.5.31 に上げる
   - @miosakuma
-- [UPDATE] type: disconnect に reason を追加する
+- [ADD] 複数シグナリング URL の指定に対応する
+  - SoraMediaChannel に connectedSignalingEndpoint を追加する
+  - @enm10k
+- [ADD] redirect メッセージに対応する
+  - @enm10k
+- [ADD] type: disconnect に reason を追加する
   - @enm10k
 - [FIX] 視聴のみかつ H.264 した場合に接続できない問題についてのワークアラウンドを削除する
   - SoraMediaOption.videoUpstreamContext が無く SoraMediaOption.videoDownstreamContext 

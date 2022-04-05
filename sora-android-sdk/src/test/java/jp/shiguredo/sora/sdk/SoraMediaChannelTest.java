@@ -60,7 +60,7 @@ public class SoraMediaChannelTest {
     @Test
     public void constructorCallFrom181WithoutTimeoutSeconds() {
         try {
-            new SoraMediaChannel(context, signalingEndpoint, new ArrayList(Arrays.asList(channelId)),
+            new SoraMediaChannel(context, signalingEndpoint, Collections.singletonList(channelId),
                     connectMetadataString, mediaOption, listener);
         } catch (Exception e) {
             fail(e.toString());
