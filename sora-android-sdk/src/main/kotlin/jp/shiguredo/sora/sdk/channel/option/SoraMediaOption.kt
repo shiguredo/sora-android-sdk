@@ -92,13 +92,19 @@ class SoraMediaOption {
     /**
      * スポットライト機能を有効にします.
      *
-     * スポットライト機能はサイマルキャスト機能を利用します.
-     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
+     * スポットライト機能では、複数の映像を送信するためにサイマルキャスト機能を利用しています.
+     * この関数を実行すると、マルチストリーム機能とサイマルキャスト機能が自動的に有効になります.
+     * enableSimulcast に false を指定することで、サイマルキャストを無効化することも可能です.
+     *
+     * @param enableSimulcast サイマルキャスト機能の有効化
      */
-    fun enableSpotlight(option: SoraSpotlightOption) {
+    fun enableSpotlight(option: SoraSpotlightOption, enableSimulcast: Boolean = true) {
         spotlightOption = option
         multistreamEnabled = true
-        enableSimulcast()
+
+        if (enableSimulcast) {
+            enableSimulcast()
+        }
     }
 
     /**
