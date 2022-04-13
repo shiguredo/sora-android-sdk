@@ -96,8 +96,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
             val future = executor.submit(
                 Callable {
-                    // SoraLogger.d(TAG, "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} "
-                    //         + "[${Thread.currentThread().id}]")
+                    SoraLogger.d(
+                        TAG,
+                        "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} " +
+                            "[${Thread.currentThread().id}]"
+                    )
                     if (streamSettings == null) {
                         return@Callable encoder.encode(frame, encodeInfo)
                     } else if (frame.buffer.width == streamSettings!!.width) {
@@ -105,10 +108,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     } else {
                         // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
                         val originalBuffer = frame.buffer
-                        // val ratio = originalBuffer.width / streamSettings!!.width
-                        // SoraLogger.d(TAG, "encode: Scaling needed, " +
-                        //         "${buffer.width}x${buffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
-                        //         "ratio=$ratio")
+                        val ratio = originalBuffer.width / streamSettings!!.width
+                        SoraLogger.d(
+                            TAG,
+                            "encode: Scaling needed, " +
+                                "${originalBuffer.width}x${originalBuffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                                "ratio=$ratio"
+                        )
                         // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
                         val adaptedBuffer = originalBuffer.cropAndScale(
                             0, 0, originalBuffer.width, originalBuffer.height,
