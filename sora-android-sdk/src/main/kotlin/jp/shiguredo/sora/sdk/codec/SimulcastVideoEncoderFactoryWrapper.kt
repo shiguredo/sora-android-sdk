@@ -102,7 +102,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     // )
                     if (streamSettings == null) {
                         return@Callable encoder.encode(frame, encodeInfo)
-                    } else if (frame.buffer.width == streamSettings!!.width) {
+                    } else if (frame.buffer.width == streamSettings!!.width && frame.buffer.height == streamSettings!!.height) {
                         return@Callable encoder.encode(frame, encodeInfo)
                     } else {
                         // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
