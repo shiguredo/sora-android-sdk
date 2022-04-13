@@ -35,19 +35,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
         var streamSettings: VideoEncoder.Settings? = null
-        var cropX = 0
-        var cropY = 0
 
         override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
             var adjusted = settings
+            var cropX = 0
+            var cropY = 0
             if (settings.height % 16 != 0 || settings.width % 16 != 0) {
-                var width = settings.width
                 if (settings.width % 16 != 0) {
                     cropX = settings.width % 16
                     SoraLogger.i(TAG, "width: ${settings.width} => ${settings.width - cropX}")
                 }
 
-                var height = settings.height
                 if (settings.height % 16 != 0) {
                     cropY = settings.height % 16
                     SoraLogger.i(TAG, "height: ${settings.height} => ${settings.height - cropY}")
@@ -63,6 +61,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     settings.automaticResizeOn,
                     settings.capabilities,
                 )
+                streamSettings = adjusted
             }
 
             val future = executor.submit(
@@ -96,11 +95,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
             val future = executor.submit(
                 Callable {
-                    SoraLogger.d(
-                        TAG,
-                        "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} " +
-                            "[${Thread.currentThread().id}]"
-                    )
+                    // SoraLogger.d(
+                    //     TAG,
+                    //     "encode() buffer=${frame.buffer}, thread=${Thread.currentThread().name} " +
+                    //         "[${Thread.currentThread().id}]"
+                    // )
                     if (streamSettings == null) {
                         return@Callable encoder.encode(frame, encodeInfo)
                     } else if (frame.buffer.width == streamSettings!!.width) {
@@ -108,13 +107,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     } else {
                         // 上がってきたバッファと initEncode() の設定が違うパターン、ここでスケールする必要がある
                         val originalBuffer = frame.buffer
-                        val ratio = originalBuffer.width / streamSettings!!.width
-                        SoraLogger.d(
-                            TAG,
-                            "encode: Scaling needed, " +
-                                "${originalBuffer.width}x${originalBuffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
-                                "ratio=$ratio"
-                        )
+                        // val ratio = originalBuffer.width / streamSettings!!.width
+                        // SoraLogger.d(
+                        //     TAG,
+                        //     "encode: Scaling needed, " +
+                        //         "${originalBuffer.width}x${originalBuffer.height} to ${streamSettings!!.width}x${streamSettings!!.height}, " +
+                        //         "ratio=$ratio"
+                        // )
                         // TODO(shino): へんなスケールファクタの場合に正しく動作するか?
                         val adaptedBuffer = originalBuffer.cropAndScale(
                             0, 0, originalBuffer.width, originalBuffer.height,
