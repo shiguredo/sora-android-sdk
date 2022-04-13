@@ -81,8 +81,7 @@ ktlint {
 }
 
 dependencies {
-    // api "com.github.shiguredo:shiguredo-webrtc-android:${libwebrtc_version}"
-    api files('/Users/enm10k/w/shiguredo/sora-android-sdk-samples-multi-module/sora-android-sdk/libwebrtc.aar')
+    api "com.github.shiguredo:shiguredo-webrtc-android:${libwebrtc_version}"
 
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
