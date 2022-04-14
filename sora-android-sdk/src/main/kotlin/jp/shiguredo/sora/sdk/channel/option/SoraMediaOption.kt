@@ -201,4 +201,15 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
         PeerConnection.TcpCandidatePolicy.ENABLED
+
+    /**
+     * 解像度を16の倍数に自動で調整する.
+     *
+     * ハードウェア (= MediaCodec) を利用したエンコードは、解像度が16の倍数のケースのみしか Android CTS でテストされていません.
+     * https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=214-218;drc=0f50cc284949f225f663408e7d467f39d549d3dc
+     *
+     * そのため、 Sora Android SDK は上記のケースにおいて、解像度が16の倍数になるように自動で調節します.
+     *  false を設定することで、解像度の調整を無効化することができます.
+     */
+    var enableHardwareVideoEncoderResolutionAdjustment = true
 }
