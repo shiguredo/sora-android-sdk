@@ -35,13 +35,11 @@ internal class HardwareVideoEncoderFactoryWrapper(
                 if (settings.width % 16 != 0) {
                     cropX = settings.width % 16
                     SoraLogger.i(TAG, "width: ${settings.width} => ${settings.width - cropX}")
-                    settings.width - cropX
                 }
 
                 if (settings.height % 16 != 0) {
                     cropY = settings.height % 16
                     SoraLogger.i(TAG, "height: ${settings.height} => ${settings.height - cropY}")
-                    settings.height - cropY
                 }
 
                 adjustedSettings = VideoEncoder.Settings(
