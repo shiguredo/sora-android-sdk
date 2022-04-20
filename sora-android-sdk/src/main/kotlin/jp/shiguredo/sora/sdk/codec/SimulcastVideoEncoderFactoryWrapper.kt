@@ -17,8 +17,8 @@ import java.util.concurrent.Executors
 
 internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
-    enableIntelVp8Encoder: Boolean,
-    enableH264HighProfile: Boolean,
+    enableIntelVp8Encoder: Boolean = true,
+    enableH264HighProfile: Boolean = false,
     videoCodec: SoraVideoOption.Codec,
     enableResolutionAdjustment: Boolean,
 ) : VideoEncoderFactory {

@@ -19,8 +19,8 @@ import org.webrtc.VideoEncoderFallback
 
 internal class SoraDefaultVideoEncoderFactory(
     eglContext: EglBase.Context?,
-    enableIntelVp8Encoder: Boolean,
-    enableH264HighProfile: Boolean,
+    enableIntelVp8Encoder: Boolean = true,
+    enableH264HighProfile: Boolean = false,
     enableResolutionAdjustment: Boolean,
 ) : VideoEncoderFactory {
     private val hardwareVideoEncoderFactory: VideoEncoderFactory

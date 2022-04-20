@@ -41,24 +41,18 @@ class RTCComponentFactory(
             mediaOption.simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
-                    enableIntelVp8Encoder = true,
-                    enableH264HighProfile = false,
                     videoCodec = mediaOption.videoCodec,
                     enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
                 )
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
-                    enableIntelVp8Encoder = true,
-                    enableH264HighProfile = false,
                     enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
                 )
 
             mediaOption.videoDownstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoDownstreamContext,
-                    enableIntelVp8Encoder = true,
-                    enableH264HighProfile = false,
                     enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
                 )
             else ->
