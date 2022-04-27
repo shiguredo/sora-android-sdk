@@ -127,10 +127,11 @@ internal class HardwareVideoEncoderWrapper(
             if (!it.adjusted) {
                 encoder.encode(frame, encodeInfo)
             } else {
-                val originalWidth = frame.buffer.width
-                val originalHeight = frame.buffer.height
+                // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
+                // メモリー・コピーが発生しない
+                // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
                 val adjustedBuffer = frame.buffer.cropAndScale(
-                    it.cropX / 2, it.cropY / 2, originalWidth, originalHeight, it.width, it.height
+                    it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
                 )
                 // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
                 val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
