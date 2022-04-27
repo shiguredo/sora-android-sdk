@@ -20,7 +20,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
     videoCodec: SoraVideoOption.Codec,
-    enableResolutionAdjustment: Boolean,
+    enableResolutionAdjustment: Boolean = true
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -29,7 +29,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     // - 内部のエンコーダをつねにそのスレッド上で呼び出す
     private class StreamEncoderWrapper(
         private val encoder: VideoEncoder,
-        private val enableResolutionAdjustment: Boolean
     ) : VideoEncoder {
         companion object {
             val TAG = StreamEncoderWrapper::class.simpleName
@@ -38,11 +37,10 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         // 単一スレッドで実行するための ExecutorService
         // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
-        var helper: VideoEncoderHelper? = null
+        var streamSettings: VideoEncoder.Settings? = null
 
         override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
-            helper = VideoEncoderHelper(settings)
-            val settings = helper!!.settings
+            streamSettings = settings
             val future = executor.submit(
                 Callable {
                     SoraLogger.i(
@@ -74,26 +72,33 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
             val future = executor.submit(
                 Callable {
-
-                    return@Callable helper?.let {
-                        it.recalculateIfNeeded(frame)
-
-                        if (!it.adjusted) {
+                    return@Callable streamSettings?.let {
+                        if (frame.buffer.width == it.width) {
+                            // スケールが不要
                             encoder.encode(frame, encodeInfo)
                         } else {
+                            // StreamEncoderWrapper ではスケールだけを行い
+                            // 解像度の調整は HardwareVideoEncoderWrapper に任せる
                             val originalWidth = frame.buffer.width
                             val originalHeight = frame.buffer.height
-                            val adjustedBuffer = frame.buffer.cropAndScale(
+                            val scaledBuffer = frame.buffer.cropAndScale(
                                 0, 0, originalWidth, originalHeight,
-                                it.settings.width, it.settings.height
+                                it.width, it.height,
                             )
-                            val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
-                            val result = encoder.encode(adjustedFrame, encodeInfo)
-                            adjustedBuffer.release()
+                            /*
+                            SoraLogger.d(
+                                TAG,
+                                "scale: ${originalWidth}x$originalHeight => " +
+                                    "${it.width}x${it.height}"
+                            )
+                             */
+                            val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
+                            val result = encoder.encode(scaledFrame, encodeInfo)
+                            scaledBuffer.release()
                             result
                         }
                     } ?: run {
-                        // helper は null にならない想定だが force unwrap を防ぐためにこのように記述する
+                        // streamSettings は null にならない想定だが force unwrap を防ぐためにこのように記述する
                         VideoCodecStatus.ERROR
                     }
                 }
@@ -119,14 +124,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
 
     private class StreamEncoderWrapperFactory(
         private val factory: VideoEncoderFactory,
-        private val enableResolutionAdjustment: Boolean
     ) : VideoEncoderFactory {
         override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
             val encoder = factory.createEncoder(videoCodecInfo)
             if (encoder == null) {
                 return null
             }
-            return StreamEncoderWrapper(encoder, enableResolutionAdjustment)
+            return StreamEncoderWrapper(encoder)
         }
 
         override fun getSupportedCodecs(): Array<VideoCodecInfo> {
@@ -142,7 +146,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
-        primary = StreamEncoderWrapperFactory(hardwareVideoEncoderFactory, enableResolutionAdjustment)
+
+        primary = if (enableResolutionAdjustment) {
+            StreamEncoderWrapperFactory(
+                HardwareVideoEncoderWrapperFactory(hardwareVideoEncoderFactory)
+            )
+        } else {
+            StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
+        }
 
         // H.264 のサイマルキャストを利用する場合は fallback に null を設定する
         // Sora Android SDK では SW の H.264 を無効化しているため fallback に設定できるものがない

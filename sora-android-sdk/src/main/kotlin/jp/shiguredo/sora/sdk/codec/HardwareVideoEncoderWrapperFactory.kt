@@ -8,7 +8,9 @@ import org.webrtc.VideoEncoder
 import org.webrtc.VideoEncoderFactory
 import org.webrtc.VideoFrame
 
-class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
+const val RESOLUTION_ALIGNMENT = 16
+
+class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
 
     companion object {
         val TAG = VideoEncoderHelper::class.simpleName
@@ -34,13 +36,18 @@ class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
     val height: Int
         get() = settings.height
 
+    var cropX = 0
+        private set
+    var cropY = 0
+        private set
+
     // 最新のフレームのサイズ
     private var lastFrameWidth: Int = 0
     private var lastFrameHeight: Int = 0
 
     init {
-        var cropX = originalSettings.width % 16
-        var cropY = originalSettings.height % 16
+        cropX = originalSettings.width % RESOLUTION_ALIGNMENT
+        cropY = originalSettings.height % RESOLUTION_ALIGNMENT
 
         if (cropX != 0 || cropY != 0) {
             SoraLogger.i(
@@ -63,13 +70,6 @@ class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
     }
 
     fun recalculateIfNeeded(frame: VideoFrame) {
-        /* 不要なはず
-        if (lastFrameWidth == 0 && lastFrameHeight == 0) {
-            lastFrameWidth = frame.buffer.width
-            lastFrameHeight = frame.buffer.height
-        }
-         */
-
         if (frame.buffer.width != lastFrameWidth || frame.buffer.height != lastFrameHeight) {
             SoraLogger.i(
                 TAG,
@@ -78,8 +78,8 @@ class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
             lastFrameWidth = frame.buffer.width
             lastFrameHeight = frame.buffer.height
 
-            var cropX = frame.buffer.width % 16
-            var cropY = frame.buffer.height % 16
+            cropX = frame.buffer.width % RESOLUTION_ALIGNMENT
+            cropY = frame.buffer.height % RESOLUTION_ALIGNMENT
 
             if (cropX != 0 || cropY != 0) {
                 SoraLogger.i(
@@ -130,8 +130,9 @@ internal class HardwareVideoEncoderWrapper(
                 val originalWidth = frame.buffer.width
                 val originalHeight = frame.buffer.height
                 val adjustedBuffer = frame.buffer.cropAndScale(
-                    0, 0, originalWidth, originalHeight, it.settings.width, it.settings.height
+                    it.cropX / 2, it.cropY / 2, originalWidth, originalHeight, it.width, it.height
                 )
+                // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
                 val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
                 val result = encoder.encode(adjustedFrame, encodeInfo)
                 adjustedBuffer.release()
