@@ -77,8 +77,11 @@ class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
         }
     }
 
-    // 動作確認をした限り、エンコーダーに渡されるフレームのサイズが変化する前に initEncode が呼ばれており、
-    // recalculateIfNeeded は実行されなかったが念の為に残しておく
+    // HardwareVideoEncoder の encode に、フレームのサイズが途中で変化することを考慮した条件があったため実装した関数
+    // 参照: https://source.chromium.org/chromium/chromium/src/+/master:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=353-362;drc=5a79d28eba61aea39558a492fb4c0ff4fef427ba
+    //
+    // 動作確認をした限り、ネットワーク帯域などに起因してダウンサイズが発生した場合は initEncode が呼ばれており、
+    // この関数は実行されなかったがの念の為に残しておく
     //
     // この関数を削除する場合は、 VideoEncoderHelper と HardwareVideoEncoderWrapper の統合を検討すべき
     fun recalculateIfNeeded(frame: VideoFrame) {
