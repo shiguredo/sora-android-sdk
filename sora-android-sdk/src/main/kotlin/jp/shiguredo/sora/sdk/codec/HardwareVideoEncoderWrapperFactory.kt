@@ -10,7 +10,7 @@ import org.webrtc.VideoFrame
 
 const val RESOLUTION_ALIGNMENT = 16
 
-class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
+class VideoEncoderHelper(private val originalSettings: VideoEncoder.Settings) {
 
     companion object {
         val TAG = VideoEncoderHelper::class.simpleName
@@ -18,12 +18,12 @@ class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
 
     private var adjustedSettings: VideoEncoder.Settings? = null
 
-    val adjusted: Boolean
+    val isCropRequired: Boolean
         get() = adjustedSettings != null
 
     val settings: VideoEncoder.Settings
         get() {
-            return if (adjusted) {
+            return if (isCropRequired) {
                 adjustedSettings!!
             } else {
                 originalSettings
@@ -46,20 +46,28 @@ class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
     private var lastFrameHeight: Int = 0
 
     init {
-        cropX = originalSettings.width % RESOLUTION_ALIGNMENT
-        cropY = originalSettings.height % RESOLUTION_ALIGNMENT
+        SoraLogger.i(TAG, "$this init")
+
+        lastFrameWidth = originalSettings.width
+        lastFrameHeight = originalSettings.height
+
+        calculate(originalSettings.width, originalSettings.height)
+    }
+
+    private fun calculate(width: Int, height: Int) {
+        cropX = width % RESOLUTION_ALIGNMENT
+        cropY = height % RESOLUTION_ALIGNMENT
 
         if (cropX != 0 || cropY != 0) {
             SoraLogger.i(
                 TAG,
-                "init: ${originalSettings.width}x${originalSettings.height} => " +
-                    " ${originalSettings.width - cropX}x${originalSettings.height - cropY}"
+                "calculate: ${width}x$height => " +
+                    "${width - cropX}x${height - cropY}"
             )
-
             adjustedSettings = VideoEncoder.Settings(
                 originalSettings.numberOfCores,
-                originalSettings.width - cropX,
-                originalSettings.height - cropY,
+                width - cropX,
+                height - cropY,
                 originalSettings.startBitrate,
                 originalSettings.maxFramerate,
                 originalSettings.numberOfSimulcastStreams,
@@ -69,6 +77,10 @@ class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
         }
     }
 
+    // 動作確認をした限り、エンコーダーに渡されるフレームのサイズが変化する前に initEncode が呼ばれており、
+    // recalculateIfNeeded は実行されなかったが念の為に残しておく
+    //
+    // この関数を削除する場合は、 VideoEncoderHelper と HardwareVideoEncoderWrapper の統合を検討すべき
     fun recalculateIfNeeded(frame: VideoFrame) {
         if (frame.buffer.width != lastFrameWidth || frame.buffer.height != lastFrameHeight) {
             SoraLogger.i(
@@ -78,26 +90,7 @@ class VideoEncoderHelper(val originalSettings: VideoEncoder.Settings) {
             lastFrameWidth = frame.buffer.width
             lastFrameHeight = frame.buffer.height
 
-            cropX = frame.buffer.width % RESOLUTION_ALIGNMENT
-            cropY = frame.buffer.height % RESOLUTION_ALIGNMENT
-
-            if (cropX != 0 || cropY != 0) {
-                SoraLogger.i(
-                    TAG,
-                    "recalculate: ${frame.buffer.width}x${frame.buffer.height} => " +
-                        " ${frame.buffer.width - cropX}x${frame.buffer.height - cropY}"
-                )
-                adjustedSettings = VideoEncoder.Settings(
-                    originalSettings.numberOfCores,
-                    frame.buffer.width - cropX,
-                    frame.buffer.height - cropY,
-                    originalSettings.startBitrate,
-                    originalSettings.maxFramerate,
-                    originalSettings.numberOfSimulcastStreams,
-                    originalSettings.automaticResizeOn,
-                    originalSettings.capabilities,
-                )
-            }
+            calculate(frame.buffer.width, frame.buffer.height)
         }
     }
 }
@@ -124,7 +117,7 @@ internal class HardwareVideoEncoderWrapper(
         return helper?.let {
             it.recalculateIfNeeded(frame)
 
-            if (!it.adjusted) {
+            if (!it.isCropRequired) {
                 encoder.encode(frame, encodeInfo)
             } else {
                 // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
