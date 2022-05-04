@@ -201,4 +201,24 @@ class SoraMediaOption {
      */
     var tcpCandidatePolicy: PeerConnection.TcpCandidatePolicy =
         PeerConnection.TcpCandidatePolicy.ENABLED
+
+    /**
+     * HW エンコーダー利用時の解像度が16の倍数になるように調整するフラグ.
+     * このフラグが true の場合、 HW エンコーダーに入力されるフレームの解像度が16の倍数になるように調節します.
+     *
+     * このオプションを実装した経緯は以下の通りです.
+     * - 解像度が 16 の倍数でない場合、 HW エンコーダーの初期化がエラーになる変更が libwebrtc のメインストリームに入った
+     *   - Android CTS では、 HW エンコーダー (= MediaCodec) を 16 で割り切れる解像度のみでテストしており、かつ 16 で割り切れない解像度で問題が発生する端末があった
+     * - Sora Android SDK では一部の解像度が影響を受けるため、対応としてこのオプションを実装した
+     *
+     * 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=214-218;drc=0f50cc284949f225f663408e7d467f39d549d3dc
+     *
+     * Sora Android SDK では libwebrtc にパッチを当て、上記の HW エンコーダー初期化時の解像度のチェックを無効化しています.
+     * そのため、このフラグを false に設定することで、従来通り、解像度を調整することなく HW エンコーダーを利用することも可能です.
+     *
+     * より詳細な情報を確認したい場合は、以下の Chromium のイシューを参照してください.
+     *
+     * https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
+     */
+    var enableHardwareVideoEncoderResolutionAdjustment = true
 }
