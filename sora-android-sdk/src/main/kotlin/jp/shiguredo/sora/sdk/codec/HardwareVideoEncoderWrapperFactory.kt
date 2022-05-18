@@ -10,12 +10,12 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
+    private val pixelAlignment: Int,
 ) : VideoEncoder {
-    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings) {
+    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: Int) {
 
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
-            const val RESOLUTION_ALIGNMENT = 16
         }
 
         var croppedSettings: VideoEncoder.Settings? = null
@@ -57,8 +57,8 @@ internal class HardwareVideoEncoderWrapper(
         }
 
         private fun calculate(width: Int, height: Int) {
-            cropX = width % RESOLUTION_ALIGNMENT
-            cropY = height % RESOLUTION_ALIGNMENT
+            cropX = width % resolutionPixelAlignment
+            cropY = height % resolutionPixelAlignment
 
             if (cropX != 0 || cropY != 0) {
                 SoraLogger.i(
@@ -108,7 +108,7 @@ internal class HardwareVideoEncoderWrapper(
 
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
         return try {
-            calculator = CropSizeCalculator(settings)
+            calculator = CropSizeCalculator(settings, pixelAlignment)
             encoder.initEncode(calculator!!.settings, callback)
         } catch (e: Exception) {
             SoraLogger.e(TAG, "initEncode failed", e)
@@ -165,6 +165,7 @@ internal class HardwareVideoEncoderWrapper(
 
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
+    private val resolutionPixelAlignment: Int,
 ) : VideoEncoderFactory {
     companion object {
         val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
@@ -176,7 +177,7 @@ internal class HardwareVideoEncoderWrapperFactory(
             if (encoder == null) {
                 return null
             }
-            return HardwareVideoEncoderWrapper(encoder)
+            return HardwareVideoEncoderWrapper(encoder, resolutionPixelAlignment)
         } catch (e: Exception) {
             SoraLogger.e(TAG, "createEncoder failed", e)
             return null

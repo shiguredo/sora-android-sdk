@@ -147,13 +147,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
 
-        primary = if (enableResolutionAdjustment) {
-            StreamEncoderWrapperFactory(
-                HardwareVideoEncoderWrapperFactory(hardwareVideoEncoderFactory)
+        // 解像度が奇数の場合、偶数になるように調整する
+        val resolutionPixelAlignment = if (enableResolutionAdjustment) { 16 } else { 2 }
+
+        primary = StreamEncoderWrapperFactory(
+            HardwareVideoEncoderWrapperFactory(
+                hardwareVideoEncoderFactory, resolutionPixelAlignment
             )
-        } else {
-            StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
-        }
+        )
 
         // H.264 のサイマルキャストを利用する場合は fallback に null を設定する
         // Sora Android SDK では SW の H.264 を無効化しているため fallback に設定できるものがない
