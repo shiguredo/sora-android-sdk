@@ -156,12 +156,12 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             )
         )
 
-        // H.264 のサイマルキャストを利用する場合は fallback に null を設定する
-        // Sora Android SDK では SW の H.264 を無効化しているため fallback に設定できるものがない
+        // Sora Android SDK では H.264 の SW エンコーダーを無効化しているため、 fallback に設定できない
+        // 代わりに、解像度調整が自動で行われない HardwareVideoEncoderFactory を fallback として設定する
         fallback = if (videoCodec != SoraVideoOption.Codec.H264) {
             SoftwareVideoEncoderFactory()
         } else {
-            null
+            hardwareVideoEncoderFactory
         }
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
