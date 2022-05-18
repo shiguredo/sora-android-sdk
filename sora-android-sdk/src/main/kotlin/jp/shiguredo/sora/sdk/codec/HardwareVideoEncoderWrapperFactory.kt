@@ -156,12 +156,19 @@ internal class HardwareVideoEncoderWrapper(
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
 ) : VideoEncoderFactory {
+    private val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
+
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
-        val encoder = factory.createEncoder(videoCodecInfo)
-        if (encoder == null) {
+        try {
+            val encoder = factory.createEncoder(videoCodecInfo)
+            if (encoder == null) {
+                return null
+            }
+            return HardwareVideoEncoderWrapper(encoder)
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "createEncoder failed", e)
             return null
         }
-        return HardwareVideoEncoderWrapper(encoder)
     }
 
     override fun getSupportedCodecs(): Array<VideoCodecInfo> {
