@@ -107,8 +107,13 @@ internal class HardwareVideoEncoderWrapper(
     private var calculator: CropSizeCalculator? = null
 
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
-        calculator = CropSizeCalculator(settings)
-        return encoder.initEncode(calculator!!.settings, callback)
+        return try {
+            calculator = CropSizeCalculator(settings)
+            encoder.initEncode(calculator!!.settings, callback)
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "initEncode failed", e)
+            VideoCodecStatus.ERROR
+        }
     }
 
     override fun release(): VideoCodecStatus {
@@ -116,27 +121,32 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-        return calculator?.let {
-            it.recalculateIfNeeded(frame)
+        try {
+            return calculator?.let {
+                it.recalculateIfNeeded(frame)
 
-            if (!it.isCropRequired) {
-                encoder.encode(frame, encodeInfo)
-            } else {
-                // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
-                // メモリー・コピーが発生しない
-                // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
-                val adjustedBuffer = frame.buffer.cropAndScale(
-                    it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
-                )
-                // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
-                val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
-                val result = encoder.encode(adjustedFrame, encodeInfo)
-                adjustedBuffer.release()
-                result
+                if (!it.isCropRequired) {
+                    encoder.encode(frame, encodeInfo)
+                } else {
+                    // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
+                    // メモリー・コピーが発生しない
+                    // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
+                    val adjustedBuffer = frame.buffer.cropAndScale(
+                        it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
+                    )
+                    // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
+                    val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
+                    val result = encoder.encode(adjustedFrame, encodeInfo)
+                    adjustedBuffer.release()
+                    result
+                }
+            } ?: run {
+                // helper は null にならない想定だが force unwrap を防ぐためにこのように記述する
+                VideoCodecStatus.ERROR
             }
-        } ?: run {
-            // helper は null にならない想定だが force unwrap を防ぐためにこのように記述する
-            VideoCodecStatus.ERROR
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "encode failed", e)
+            return VideoCodecStatus.ERROR
         }
     }
 
@@ -156,7 +166,9 @@ internal class HardwareVideoEncoderWrapper(
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
 ) : VideoEncoderFactory {
-    private val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
+    companion object {
+        val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
+    }
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
         try {
