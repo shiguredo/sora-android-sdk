@@ -10,7 +10,7 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
-    private val pixelAlignment: Int,
+    private val resolutionPixelAlignment: Int = 0,
 ) : VideoEncoder {
     class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: Int) {
 
@@ -108,7 +108,7 @@ internal class HardwareVideoEncoderWrapper(
 
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
         return try {
-            calculator = CropSizeCalculator(settings, pixelAlignment)
+            calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
             encoder.initEncode(calculator!!.settings, callback)
         } catch (e: Exception) {
             SoraLogger.e(TAG, "initEncode failed", e)
@@ -165,7 +165,7 @@ internal class HardwareVideoEncoderWrapper(
 
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
-    private val resolutionPixelAlignment: Int,
+    private val resolutionPixelAlignment: Int = 0
 ) : VideoEncoderFactory {
     companion object {
         val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName

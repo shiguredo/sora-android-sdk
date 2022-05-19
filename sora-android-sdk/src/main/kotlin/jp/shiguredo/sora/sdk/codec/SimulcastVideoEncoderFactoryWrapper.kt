@@ -18,7 +18,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    enableResolutionAdjustment: Boolean = true
+    resolutionPixelAlignment: Int,
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -145,15 +145,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
 
-        // 解像度が奇数の場合、偶数になるように調整する
-        val resolutionPixelAlignment = if (enableResolutionAdjustment) { 16 } else { 2 }
-
-        primary = StreamEncoderWrapperFactory(
-            HardwareVideoEncoderWrapperFactory(
-                hardwareVideoEncoderFactory, resolutionPixelAlignment
+        val encoder = if (resolutionPixelAlignment == 0) {
+            hardwareVideoEncoderFactory
+        } else {
+            StreamEncoderWrapperFactory(
+                HardwareVideoEncoderWrapperFactory(
+                    hardwareVideoEncoderFactory, resolutionPixelAlignment
+                )
             )
-        )
+        }
 
+        primary = encoder
         fallback = SoftwareVideoEncoderFactory()
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }

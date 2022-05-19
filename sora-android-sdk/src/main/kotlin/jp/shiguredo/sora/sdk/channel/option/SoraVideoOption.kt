@@ -127,4 +127,12 @@ class SoraVideoOption {
 
         override fun toString(): String = value
     }
+
+    enum class PixelResolutionAdjustment(val value: Int) {
+        NONE(0),
+        MULTIPLE_OF_2(2),
+        MULTIPLE_OF_4(4),
+        MULTIPLE_OF_8(8),
+        MULTIPLE_OF_16(16),
+    }
 }
