@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.codec
 
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.HardwareVideoEncoderFactory
@@ -18,7 +19,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    resolutionPixelAlignment: Int,
+    resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -145,17 +146,15 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
 
-        val encoder = if (resolutionPixelAlignment == 0) {
+        val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
             hardwareVideoEncoderFactory
         } else {
-            StreamEncoderWrapperFactory(
-                HardwareVideoEncoderWrapperFactory(
-                    hardwareVideoEncoderFactory, resolutionPixelAlignment
-                )
+            HardwareVideoEncoderWrapperFactory(
+                hardwareVideoEncoderFactory, resolutionAdjustment.value
             )
         }
 
-        primary = encoder
+        primary = StreamEncoderWrapperFactory(encoderFactory)
         fallback = SoftwareVideoEncoderFactory()
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }

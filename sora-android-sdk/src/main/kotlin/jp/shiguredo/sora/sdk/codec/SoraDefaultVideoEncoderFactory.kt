@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.codec
 
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import org.webrtc.EglBase
 import org.webrtc.HardwareVideoEncoderFactory
 import org.webrtc.SoftwareVideoEncoderFactory
@@ -12,7 +13,7 @@ internal class SoraDefaultVideoEncoderFactory(
     eglContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    resolutionPixelAlignment: Int
+    resolutionAdjustment: SoraVideoOption.ResolutionAdjustment
 ) : VideoEncoderFactory {
     private val hardwareVideoEncoderFactory: VideoEncoderFactory
     private val softwareVideoEncoderFactory: VideoEncoderFactory = SoftwareVideoEncoderFactory()
@@ -21,12 +22,11 @@ internal class SoraDefaultVideoEncoderFactory(
         val defaultFactory = HardwareVideoEncoderFactory(eglContext, enableIntelVp8Encoder, enableH264HighProfile)
 
         // 解像度が奇数の場合、偶数になるように調整する
-        val encoderFactory = if (resolutionPixelAlignment == 0) {
+        hardwareVideoEncoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
             defaultFactory
         } else {
-            HardwareVideoEncoderWrapperFactory(defaultFactory, resolutionPixelAlignment)
+            HardwareVideoEncoderWrapperFactory(defaultFactory, resolutionAdjustment.value)
         }
-        hardwareVideoEncoderFactory = encoderFactory
     }
 
     override fun createEncoder(info: VideoCodecInfo): VideoEncoder? {
