@@ -129,7 +129,7 @@ class SoraVideoOption {
     }
 
     enum class ResolutionAdjustment(val value: Int) {
-        NONE(0),
+        NONE(1),
         MULTIPLE_OF_2(2),
         MULTIPLE_OF_4(4),
         MULTIPLE_OF_8(8),
