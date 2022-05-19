@@ -1,6 +1,5 @@
 package jp.shiguredo.sora.sdk.codec
 
-import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
 import org.webrtc.HardwareVideoEncoderFactory
@@ -19,7 +18,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    videoCodec: SoraVideoOption.Codec,
     enableResolutionAdjustment: Boolean = true
 ) : VideoEncoderFactory {
 
@@ -156,13 +154,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             )
         )
 
-        // Sora Android SDK では H.264 の SW エンコーダーを無効化しているため、 fallback に設定できない
-        // 代わりに、解像度調整が自動で行われない HardwareVideoEncoderFactory を fallback として設定する
-        fallback = if (videoCodec != SoraVideoOption.Codec.H264) {
-            SoftwareVideoEncoderFactory()
-        } else {
-            hardwareVideoEncoderFactory
-        }
+        fallback = SoftwareVideoEncoderFactory()
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 

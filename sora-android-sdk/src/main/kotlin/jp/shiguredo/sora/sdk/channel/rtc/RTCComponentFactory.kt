@@ -41,7 +41,6 @@ class RTCComponentFactory(
             mediaOption.simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
-                    videoCodec = mediaOption.videoCodec,
                     enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
                 )
             mediaOption.videoUpstreamContext != null ->
