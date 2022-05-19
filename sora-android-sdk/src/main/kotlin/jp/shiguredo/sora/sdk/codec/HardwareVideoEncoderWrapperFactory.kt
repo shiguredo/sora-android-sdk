@@ -107,6 +107,7 @@ internal class HardwareVideoEncoderWrapper(
     private var calculator: CropSizeCalculator? = null
 
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
+        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
         return try {
             calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
             encoder.initEncode(calculator!!.settings, callback)
@@ -121,6 +122,7 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
+        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
         try {
             return calculator?.let {
                 it.recalculateIfNeeded(frame)
