@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 102.5005.7.1 に上げる
+  - @miosakuma
 - [FIX] SoraMediaOption に enableHardwareVideoEncoderResolutionAdjustment を追加する
   - このフラグが true の場合、 HW エンコーダーに入力されるフレームの解像度が 16 の倍数になるように調整される
   - このオプションを実装した経緯は以下の通り
