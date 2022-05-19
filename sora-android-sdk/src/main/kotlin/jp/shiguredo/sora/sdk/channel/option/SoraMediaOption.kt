@@ -203,7 +203,7 @@ class SoraMediaOption {
         PeerConnection.TcpCandidatePolicy.ENABLED
 
     /**
-     * HW エンコーダー利用時の解像度を調整するフラグ.
+     * HW エンコーダー利用時の解像度を調整するパラメータ.
      * HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調節します.
      *
      * このオプションを実装した経緯は以下の通りです.
