@@ -10,7 +10,7 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
-    private val resolutionPixelAlignment: Int = 0,
+    private val resolutionPixelAlignment: Int,
 ) : VideoEncoder {
     class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: Int) {
 
@@ -48,7 +48,7 @@ internal class HardwareVideoEncoderWrapper(
         private var lastFrameHeight: Int = 0
 
         init {
-            SoraLogger.i(TAG, "$this init")
+            SoraLogger.i(TAG, "$this init: resolutionPixelAlignment=$resolutionPixelAlignment")
 
             lastFrameWidth = originalSettings.width
             lastFrameHeight = originalSettings.height
