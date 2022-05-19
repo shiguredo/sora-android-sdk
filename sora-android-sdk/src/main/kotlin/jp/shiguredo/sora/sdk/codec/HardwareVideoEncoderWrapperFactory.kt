@@ -113,6 +113,13 @@ internal class HardwareVideoEncoderWrapper(
             encoder.initEncode(calculator!!.settings, callback)
         } catch (e: Exception) {
             SoraLogger.e(TAG, "initEncode failed", e)
+            if (calculator!!.isCropRequired) {
+                val oldSettings = calculator!!.settings
+                calculator = CropSizeCalculator(oldSettings, 1u)
+                initEncode(settings, callback)
+                return VideoCodecStatus.OK
+            }
+
             VideoCodecStatus.ERROR
         }
     }
@@ -149,6 +156,13 @@ internal class HardwareVideoEncoderWrapper(
             }
         } catch (e: Exception) {
             SoraLogger.e(TAG, "encode failed", e)
+
+            if (calculator!!.isCropRequired) {
+                val oldSettings = calculator!!.settings
+                calculator = CropSizeCalculator(oldSettings, 1u)
+                encode(frame, encodeInfo)
+                return VideoCodecStatus.OK
+            }
             return VideoCodecStatus.ERROR
         }
     }
