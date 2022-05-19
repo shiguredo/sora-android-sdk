@@ -141,7 +141,7 @@ internal class HardwareVideoEncoderWrapper(
                     result
                 }
             } ?: run {
-                // helper は null にならない想定だが force unwrap を防ぐためにこのように記述する
+                // null にならない想定だが force unwrap を防ぐためにこのように記述する
                 VideoCodecStatus.ERROR
             }
         } catch (e: Exception) {
