@@ -10,9 +10,9 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
-    private val resolutionPixelAlignment: Int,
+    private val resolutionPixelAlignment: UInt,
 ) : VideoEncoder {
-    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: Int) {
+    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: UInt) {
 
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
@@ -57,8 +57,8 @@ internal class HardwareVideoEncoderWrapper(
         }
 
         private fun calculate(width: Int, height: Int) {
-            cropX = width % resolutionPixelAlignment
-            cropY = height % resolutionPixelAlignment
+            cropX = width % resolutionPixelAlignment.toInt()
+            cropY = height % resolutionPixelAlignment.toInt()
 
             if (cropX != 0 || cropY != 0) {
                 SoraLogger.i(
@@ -167,10 +167,16 @@ internal class HardwareVideoEncoderWrapper(
 
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
-    private val resolutionPixelAlignment: Int,
+    private val resolutionPixelAlignment: UInt,
 ) : VideoEncoderFactory {
     companion object {
         val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
+    }
+
+    init {
+        if (resolutionPixelAlignment == 0u) {
+            throw java.lang.Exception("resolutionPixelAlignment should not be 0")
+        }
     }
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {

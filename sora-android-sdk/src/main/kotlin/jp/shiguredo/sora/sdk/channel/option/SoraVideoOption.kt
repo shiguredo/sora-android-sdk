@@ -128,11 +128,11 @@ class SoraVideoOption {
         override fun toString(): String = value
     }
 
-    enum class ResolutionAdjustment(val value: Int) {
-        NONE(1),
-        MULTIPLE_OF_2(2),
-        MULTIPLE_OF_4(4),
-        MULTIPLE_OF_8(8),
-        MULTIPLE_OF_16(16),
+    enum class ResolutionAdjustment(val value: UInt) {
+        NONE(1u),
+        MULTIPLE_OF_2(2u),
+        MULTIPLE_OF_4(4u),
+        MULTIPLE_OF_8(8u),
+        MULTIPLE_OF_16(16u),
     }
 }
