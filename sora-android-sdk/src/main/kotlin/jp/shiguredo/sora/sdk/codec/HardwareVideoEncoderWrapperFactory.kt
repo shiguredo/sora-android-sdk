@@ -165,7 +165,7 @@ internal class HardwareVideoEncoderWrapper(
 
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
-    private val resolutionPixelAlignment: Int = 0
+    private val resolutionPixelAlignment: Int,
 ) : VideoEncoderFactory {
     companion object {
         val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
