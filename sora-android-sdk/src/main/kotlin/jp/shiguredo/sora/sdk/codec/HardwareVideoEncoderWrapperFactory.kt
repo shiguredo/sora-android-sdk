@@ -144,6 +144,7 @@ internal class HardwareVideoEncoderWrapper(
                 }
             } ?: run {
                 // null にならない想定だが force unwrap を防ぐためにこのように記述する
+                SoraLogger.e(TAG, "calculator is null")
                 VideoCodecStatus.ERROR
             }
         } catch (e: Exception) {

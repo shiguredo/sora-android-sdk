@@ -21,7 +21,7 @@ internal class SoraDefaultVideoEncoderFactory(
     init {
         val defaultFactory = HardwareVideoEncoderFactory(eglContext, enableIntelVp8Encoder, enableH264HighProfile)
 
-        // 解像度が奇数の場合、偶数になるように調整する
+        // 解像度の調整が必要な場合、改造した VideoEncoderFactory を利用する
         hardwareVideoEncoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
             defaultFactory
         } else {
