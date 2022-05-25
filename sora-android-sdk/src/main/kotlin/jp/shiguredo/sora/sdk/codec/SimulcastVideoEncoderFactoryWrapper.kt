@@ -19,8 +19,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    videoCodec: SoraVideoOption.Codec,
-    enableResolutionAdjustment: Boolean = true
+    resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
@@ -147,21 +146,16 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             sharedContext, enableIntelVp8Encoder, enableH264HighProfile
         )
 
-        primary = if (enableResolutionAdjustment) {
-            StreamEncoderWrapperFactory(
-                HardwareVideoEncoderWrapperFactory(hardwareVideoEncoderFactory)
-            )
+        val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+            hardwareVideoEncoderFactory
         } else {
-            StreamEncoderWrapperFactory(hardwareVideoEncoderFactory)
+            HardwareVideoEncoderWrapperFactory(
+                hardwareVideoEncoderFactory, resolutionAdjustment.value
+            )
         }
 
-        // H.264 のサイマルキャストを利用する場合は fallback に null を設定する
-        // Sora Android SDK では SW の H.264 を無効化しているため fallback に設定できるものがない
-        fallback = if (videoCodec != SoraVideoOption.Codec.H264) {
-            SoftwareVideoEncoderFactory()
-        } else {
-            null
-        }
+        primary = StreamEncoderWrapperFactory(encoderFactory)
+        fallback = SoftwareVideoEncoderFactory()
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 

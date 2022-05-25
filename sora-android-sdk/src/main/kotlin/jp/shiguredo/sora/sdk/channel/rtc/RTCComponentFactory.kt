@@ -41,19 +41,18 @@ class RTCComponentFactory(
             mediaOption.simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
-                    videoCodec = mediaOption.videoCodec,
-                    enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
-                    enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
 
             mediaOption.videoDownstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoDownstreamContext,
-                    enableResolutionAdjustment = mediaOption.enableHardwareVideoEncoderResolutionAdjustment,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             else ->
                 // context が指定されていなければソフトウェアエンコーダーを使用する

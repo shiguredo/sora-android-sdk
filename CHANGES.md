@@ -13,15 +13,16 @@
 
 - [UPDATE] libwebrtc を 102.5005.7.1 に上げる
   - @miosakuma
-- [FIX] SoraMediaOption に enableHardwareVideoEncoderResolutionAdjustment を追加する
-  - このフラグが true の場合、 HW エンコーダーに入力されるフレームの解像度が 16 の倍数になるように調整される
+- [FIX] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
+  - HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調整する
+  - デフォルトでは 16 が指定されている
   - このオプションを実装した経緯は以下の通り
-    - 解像度が 16の倍数でない場合、 HW エンコーダーの初期化がエラーになる変更が libwebrtc のメインストリームに入った
+    - 解像度が 16 の倍数でない場合、 HW エンコーダーの初期化がエラーになる変更が libwebrtc のメインストリームに入った
       - 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=214-218;drc=0f50cc284949f225f663408e7d467f39d549d3dc
       - Android CTS では、 HW エンコーダー (= MediaCodec) を 16で割り切れる解像度のみでテストしており、かつ 16 で割り切れない解像度で問題が発生する端末があったことが理由で上記の変更が行われた
     - Sora Android SDK では一部の解像度が影響を受けるため、対応としてこのオプションを実装した
   - Sora Android SDK では libwebrtc にパッチを当て、上記の HW エンコーダー初期化時の解像度のチェックを無効化している
-  - そのため、このフラグを false に設定することで、従来通り、解像度を調整することなく HW エンコーダーを利用できる
+  - そのため、このフラグを SoraVideoOption.ResolutionAdjustment.NONE に設定することで、従来通り、解像度を調整することなく HW エンコーダーを利用できる
   - より詳細な情報は以下のリンクを参照
     - https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
   - @enm10k

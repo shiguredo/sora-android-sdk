@@ -10,12 +10,12 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
+    private val resolutionPixelAlignment: UInt,
 ) : VideoEncoder {
-    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings) {
+    class CropSizeCalculator(private val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: UInt) {
 
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
-            const val RESOLUTION_ALIGNMENT = 16
         }
 
         var croppedSettings: VideoEncoder.Settings? = null
@@ -48,7 +48,7 @@ internal class HardwareVideoEncoderWrapper(
         private var lastFrameHeight: Int = 0
 
         init {
-            SoraLogger.i(TAG, "$this init")
+            SoraLogger.i(TAG, "$this init: resolutionPixelAlignment=$resolutionPixelAlignment")
 
             lastFrameWidth = originalSettings.width
             lastFrameHeight = originalSettings.height
@@ -57,8 +57,8 @@ internal class HardwareVideoEncoderWrapper(
         }
 
         private fun calculate(width: Int, height: Int) {
-            cropX = width % RESOLUTION_ALIGNMENT
-            cropY = height % RESOLUTION_ALIGNMENT
+            cropX = width % resolutionPixelAlignment.toInt()
+            cropY = height % resolutionPixelAlignment.toInt()
 
             if (cropX != 0 || cropY != 0) {
                 SoraLogger.i(
@@ -107,8 +107,14 @@ internal class HardwareVideoEncoderWrapper(
     private var calculator: CropSizeCalculator? = null
 
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
-        calculator = CropSizeCalculator(settings)
-        return encoder.initEncode(calculator!!.settings, callback)
+        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+        return try {
+            calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
+            encoder.initEncode(calculator!!.settings, callback)
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "initEncode failed", e)
+            VideoCodecStatus.ERROR
+        }
     }
 
     override fun release(): VideoCodecStatus {
@@ -116,27 +122,34 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-        return calculator?.let {
-            it.recalculateIfNeeded(frame)
+        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+        try {
+            return calculator?.let {
+                it.recalculateIfNeeded(frame)
 
-            if (!it.isCropRequired) {
-                encoder.encode(frame, encodeInfo)
-            } else {
-                // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
-                // メモリー・コピーが発生しない
-                // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
-                val adjustedBuffer = frame.buffer.cropAndScale(
-                    it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
-                )
-                // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
-                val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
-                val result = encoder.encode(adjustedFrame, encodeInfo)
-                adjustedBuffer.release()
-                result
+                if (!it.isCropRequired) {
+                    encoder.encode(frame, encodeInfo)
+                } else {
+                    // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
+                    // メモリー・コピーが発生しない
+                    // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
+                    val adjustedBuffer = frame.buffer.cropAndScale(
+                        it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
+                    )
+                    // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
+                    val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
+                    val result = encoder.encode(adjustedFrame, encodeInfo)
+                    adjustedBuffer.release()
+                    result
+                }
+            } ?: run {
+                // null にならない想定だが force unwrap を防ぐためにこのように記述する
+                SoraLogger.e(TAG, "calculator is null")
+                VideoCodecStatus.ERROR
             }
-        } ?: run {
-            // helper は null にならない想定だが force unwrap を防ぐためにこのように記述する
-            VideoCodecStatus.ERROR
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "encode failed", e)
+            return VideoCodecStatus.ERROR
         }
     }
 
@@ -155,13 +168,29 @@ internal class HardwareVideoEncoderWrapper(
 
 internal class HardwareVideoEncoderWrapperFactory(
     private val factory: HardwareVideoEncoderFactory,
+    private val resolutionPixelAlignment: UInt,
 ) : VideoEncoderFactory {
+    companion object {
+        val TAG = HardwareVideoEncoderWrapperFactory::class.simpleName
+    }
+
+    init {
+        if (resolutionPixelAlignment == 0u) {
+            throw java.lang.Exception("resolutionPixelAlignment should not be 0")
+        }
+    }
+
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
-        val encoder = factory.createEncoder(videoCodecInfo)
-        if (encoder == null) {
+        try {
+            val encoder = factory.createEncoder(videoCodecInfo)
+            if (encoder == null) {
+                return null
+            }
+            return HardwareVideoEncoderWrapper(encoder, resolutionPixelAlignment)
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "createEncoder failed", e)
             return null
         }
-        return HardwareVideoEncoderWrapper(encoder)
     }
 
     override fun getSupportedCodecs(): Array<VideoCodecInfo> {
