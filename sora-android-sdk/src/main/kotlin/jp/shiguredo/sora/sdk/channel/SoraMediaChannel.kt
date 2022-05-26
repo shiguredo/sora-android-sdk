@@ -25,6 +25,8 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import okhttp3.Credentials
+import okhttp3.OkHttpClient
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -33,11 +35,14 @@ import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
 import org.webrtc.SessionDescription
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
 
 /**
@@ -465,11 +470,31 @@ class SoraMediaChannel @JvmOverloads constructor(
             signaling?.disconnect(null)
 
             SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
+
+            val httpClient = createHttpClient()
             val handler = Handler(Looper.getMainLooper())
             handler.post() {
-                connectSignalingChannel(clientOffer, location)
+                connectSignalingChannel(httpClient, clientOffer, location)
             }
         }
+    }
+
+    private val proxyHost = "squid.example.com"
+    private val proxyPort = 3128
+    private val proxyUsername = "hoge"
+    private val proxyPassword = "fuga"
+    private fun createHttpClient(): OkHttpClient {
+        // proxyHost にドメインを指定すると、名前解決の通信が発生するため、 main スレッドで初期化できない
+        // 仮に main スレッドで初期化した場合、 android.os.NetworkOnMainThreadException が発生する
+        return OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
+            .proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyHost, proxyPort)))
+            .proxyAuthenticator { _, response ->
+                val credential = Credentials.basic(proxyUsername, proxyPassword)
+                response.request.newBuilder()
+                    .header("Proxy-Authorization", credential)
+                    .build()
+            }
+            .build()
     }
 
     private val peerListener = object : PeerChannel.Listener {
@@ -728,10 +753,12 @@ class SoraMediaChannel @JvmOverloads constructor(
                         if (it.isFailure) {
                             SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
                         }
+
+                        val httpClient = createHttpClient()
                         val handler = Handler(Looper.getMainLooper())
                         clientOffer = it.getOrNull()
                         handler.post() {
-                            connectSignalingChannel(clientOffer)
+                            connectSignalingChannel(httpClient, clientOffer)
                         }
                     },
                     onError = {
@@ -747,7 +774,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(clientOfferSdp: SessionDescription?, redirectLocation: String? = null) {
+    private fun connectSignalingChannel(httpClient: OkHttpClient, clientOfferSdp: SessionDescription?, redirectLocation: String? = null) {
         val endpoints = when {
             redirectLocation != null -> listOf(redirectLocation)
             signalingEndpointCandidates.isNotEmpty() -> signalingEndpointCandidates
@@ -755,6 +782,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         signaling = SignalingChannelImpl(
+            client = httpClient,
             endpoints = endpoints,
             role = role,
             channelId = channelId,

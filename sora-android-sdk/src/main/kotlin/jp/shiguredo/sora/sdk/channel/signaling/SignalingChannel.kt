@@ -18,7 +18,6 @@ import okhttp3.WebSocketListener
 import okio.ByteString
 import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface SignalingChannel {
@@ -47,6 +46,7 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
+    private val client: OkHttpClient,
     private val endpoints: List<String>,
     private val role: SoraChannelRole,
     private val channelId: String,
@@ -59,15 +59,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val clientId: String? = null,
     private val signalingNotifyMetadata: Any? = null,
     private val connectDataChannels: List<Map<String, Any>>? = null,
-    private val redirect: Boolean = false
+    private val redirect: Boolean = false,
 ) : SignalingChannel {
 
     companion object {
         private val TAG = SignalingChannelImpl::class.simpleName
     }
-
-    private val client =
-        OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS).build()
 
     /*
       接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
