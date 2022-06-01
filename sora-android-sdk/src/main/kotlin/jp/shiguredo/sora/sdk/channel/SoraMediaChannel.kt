@@ -31,6 +31,7 @@ import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
+import org.webrtc.ProxyType
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
@@ -479,22 +480,31 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private val proxyHost = "squid.example.com"
-    private val proxyPort = 3128
-    private val proxyUsername = "hoge"
-    private val proxyPassword = "fuga"
     private fun createHttpClient(): OkHttpClient {
         // proxyHost にドメインを指定すると、名前解決の通信が発生するため、 main スレッドで初期化できない
         // 仮に main スレッドで初期化した場合、 android.os.NetworkOnMainThreadException が発生する
-        return OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
-            .proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(proxyHost, proxyPort)))
-            .proxyAuthenticator { _, response ->
-                val credential = Credentials.basic(proxyUsername, proxyPassword)
-                response.request.newBuilder()
-                    .header("Proxy-Authorization", credential)
-                    .build()
+        var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
+
+        if (mediaOption.proxy.type != ProxyType.NONE) {
+            // org.webrtc.ProxyType を Proxy.Type に変換する
+            val proxyType = when (mediaOption.proxy.type) {
+                ProxyType.HTTPS -> Proxy.Type.HTTP
+                ProxyType.SOCKS5 -> Proxy.Type.SOCKS
+                else -> Proxy.Type.DIRECT
             }
-            .build()
+
+            builder = builder.proxy(Proxy(proxyType, InetSocketAddress(mediaOption.proxy.hostname, mediaOption.proxy.port)))
+
+            if (mediaOption.proxy.username.isNotBlank()) {
+                builder = builder.proxyAuthenticator { _, response ->
+                    val credential = Credentials.basic(mediaOption.proxy.username, mediaOption.proxy.password)
+                    response.request.newBuilder()
+                        .header("Proxy-Authorization", credential)
+                        .build()
+                }
+            }
+        }
+        return builder.build()
     }
 
     private val peerListener = object : PeerChannel.Listener {

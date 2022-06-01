@@ -221,4 +221,9 @@ class SoraMediaOption {
      * https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
      */
     var hardwareVideoEncoderResolutionAdjustment = SoraVideoOption.ResolutionAdjustment.MULTIPLE_OF_16
+
+    /**
+     * プロキシー
+     */
+    var proxy: SoraProxyOption = SoraProxyOption()
 }
