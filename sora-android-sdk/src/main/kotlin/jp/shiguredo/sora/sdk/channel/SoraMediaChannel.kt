@@ -494,6 +494,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
 
             builder = builder.proxy(Proxy(proxyType, InetSocketAddress(mediaOption.proxy.hostname, mediaOption.proxy.port)))
+            SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
 
             if (mediaOption.proxy.username.isNotBlank()) {
                 builder = builder.proxyAuthenticator { _, response ->
