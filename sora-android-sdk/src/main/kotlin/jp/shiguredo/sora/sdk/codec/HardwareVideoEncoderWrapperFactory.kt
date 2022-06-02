@@ -109,7 +109,9 @@ internal class HardwareVideoEncoderWrapper(
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
         // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
         return try {
-            calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
+            if (calculator == null) {
+                calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
+            }
             val result = encoder.initEncode(calculator!!.settings, callback)
 
             if (result == VideoCodecStatus.FALLBACK_SOFTWARE && calculator!!.isCropRequired) { // && encoder.implementationName!!.contains("h264", ignoreCase = true)) {
