@@ -29,11 +29,7 @@ internal class HardwareVideoEncoderWrapper(
 
         val settings: VideoEncoder.Settings
             get() {
-                return if (isCropRequired) {
-                    croppedSettings!!
-                } else {
-                    originalSettings
-                }
+                return croppedSettings ?: originalSettings
             }
 
         val width: Int
@@ -121,7 +117,7 @@ internal class HardwareVideoEncoderWrapper(
 
             val result = encoder.initEncode(calculator!!.settings, callback)
 
-            if (result == VideoCodecStatus.FALLBACK_SOFTWARE && calculator!!.isCropRequired) { // && encoder.implementationName!!.contains("h264", ignoreCase = true)) {
+            if (result == VideoCodecStatus.FALLBACK_SOFTWARE && calculator?.isCropRequired == true) {
                 // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                 // SW にフォールバックする前に解像度調整なしのパターンを試す
                 throw Exception("initEncode failed. try to retry without resolution adjustment")
@@ -130,7 +126,7 @@ internal class HardwareVideoEncoderWrapper(
         } catch (e: Exception) {
             SoraLogger.e(TAG, "initEncode failed", e)
 
-            if (calculator!!.isCropRequired) {
+            if (calculator?.isCropRequired == true) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
                 calculator = CropSizeCalculator(oldSettings, 1u, true)
@@ -165,7 +161,7 @@ internal class HardwareVideoEncoderWrapper(
                     val result = encoder.encode(adjustedFrame, encodeInfo)
                     adjustedBuffer.release()
 
-                    if (result == VideoCodecStatus.FALLBACK_SOFTWARE && it.isCropRequired) { // && encoder.implementationName!!.contains("h264", ignoreCase = true)) {
+                    if (result == VideoCodecStatus.FALLBACK_SOFTWARE && it.isCropRequired) {
                         // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                         // SW にフォールバックする前に解像度調整なしのパターンを試す
                         throw Exception("encode failed. try to retry without resolution adjustment")
@@ -180,7 +176,7 @@ internal class HardwareVideoEncoderWrapper(
         } catch (e: Exception) {
             SoraLogger.e(TAG, "encode failed", e)
 
-            if (calculator!!.isCropRequired) {
+            if (calculator?.isCropRequired == true) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
                 calculator = CropSizeCalculator(oldSettings, 1u, true)
