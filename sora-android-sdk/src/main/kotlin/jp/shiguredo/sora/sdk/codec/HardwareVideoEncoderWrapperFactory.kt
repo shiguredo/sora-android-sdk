@@ -12,7 +12,11 @@ internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
     private val resolutionPixelAlignment: UInt,
 ) : VideoEncoder {
-    class CropSizeCalculator(val originalSettings: VideoEncoder.Settings, private val resolutionPixelAlignment: UInt) {
+    class CropSizeCalculator(
+        val originalSettings: VideoEncoder.Settings,
+        private val resolutionPixelAlignment: UInt,
+        val retryingWithoutCrop: Boolean = false
+    ) {
 
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
@@ -109,9 +113,12 @@ internal class HardwareVideoEncoderWrapper(
     override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
         // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
         return try {
-            if (calculator == null) {
+            if (calculator?.retryingWithoutCrop == true && calculator?.originalSettings?.width == settings.width && calculator?.originalSettings?.height == settings.height) {
+                // リトライ中 かつ initEncode に渡された settings の解像度が変化していない場合 calculator の初期化処理をスキップする
+            } else {
                 calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
             }
+
             val result = encoder.initEncode(calculator!!.settings, callback)
 
             if (result == VideoCodecStatus.FALLBACK_SOFTWARE && calculator!!.isCropRequired) { // && encoder.implementationName!!.contains("h264", ignoreCase = true)) {
@@ -126,7 +133,7 @@ internal class HardwareVideoEncoderWrapper(
             if (calculator!!.isCropRequired) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
-                calculator = CropSizeCalculator(oldSettings, 1u)
+                calculator = CropSizeCalculator(oldSettings, 1u, true)
                 return initEncode(settings, callback)
             }
 
@@ -176,7 +183,7 @@ internal class HardwareVideoEncoderWrapper(
             if (calculator!!.isCropRequired) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
-                calculator = CropSizeCalculator(oldSettings, 1u)
+                calculator = CropSizeCalculator(oldSettings, 1u, true)
                 return encode(frame, encodeInfo)
             }
             return VideoCodecStatus.ERROR
