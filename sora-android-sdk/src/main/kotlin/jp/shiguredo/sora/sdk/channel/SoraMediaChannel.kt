@@ -498,6 +498,13 @@ class SoraMediaChannel @JvmOverloads constructor(
 
             if (mediaOption.proxy.username.isNotBlank()) {
                 builder = builder.proxyAuthenticator { _, response ->
+                    // プロキシーの認証情報が誤っていた場合リトライしない
+                    // https://square.github.io/okhttp/recipes/#handling-authentication-kt-java
+                    if (response.request.header("Proxy-Authorization") != null) {
+                        SoraLogger.i(TAG, "proxy authorization failed")
+                        return@proxyAuthenticator null
+                    }
+
                     val credential = Credentials.basic(mediaOption.proxy.username, mediaOption.proxy.password)
                     response.request.newBuilder()
                         .header("Proxy-Authorization", credential)
