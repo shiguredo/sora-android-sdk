@@ -486,7 +486,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
         if (mediaOption.proxy.type != ProxyType.NONE) {
-            // org.webrtc.ProxyType を Proxy.Type に変換する
+            // org.webrtc.ProxyType を java.net.Proxy.Type に変換する
             val proxyType = when (mediaOption.proxy.type) {
                 ProxyType.HTTPS -> Proxy.Type.HTTP
                 ProxyType.SOCKS5 -> Proxy.Type.SOCKS
