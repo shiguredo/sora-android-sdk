@@ -223,7 +223,7 @@ class SoraMediaOption {
     var hardwareVideoEncoderResolutionAdjustment = SoraVideoOption.ResolutionAdjustment.MULTIPLE_OF_16
 
     /**
-     * プロキシー
+     * プロキシ
      */
     var proxy: SoraProxyOption = SoraProxyOption()
 }

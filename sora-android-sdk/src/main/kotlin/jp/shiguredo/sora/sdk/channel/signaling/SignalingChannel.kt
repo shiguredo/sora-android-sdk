@@ -76,7 +76,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     init {
         // OkHttpClient は main スレッドで初期化しない
-        // プロキシーとしてホスト名が指定された場合に名前解決のためのネットワーク通信が発生し、
+        // プロキシの設定としてホスト名が指定された場合、名前解決のネットワーク通信が発生し、
         // android.os.NetworkOnMainThreadException が起きてしまう
         // それを防ぐためにコルーチンを利用して別スレッドで初期化する
         client = runBlocking(Dispatchers.IO) {
@@ -95,7 +95,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
                 if (mediaOption.proxy.username.isNotBlank()) {
                     builder = builder.proxyAuthenticator { _, response ->
-                        // プロキシーの認証情報が誤っていた場合リトライしない
+                        // プロキシの認証情報が誤っていた場合リトライしない
                         // https://square.github.io/okhttp/recipes/#handling-authentication-kt-java
                         if (response.request.header("Proxy-Authorization") != null) {
                             SoraLogger.e(TAG, "proxy authorization failed. proxy: ${mediaOption.proxy}")

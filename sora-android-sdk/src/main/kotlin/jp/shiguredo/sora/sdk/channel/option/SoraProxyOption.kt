@@ -4,7 +4,7 @@ import jp.shiguredo.sora.sdk.util.SDKInfo
 import org.webrtc.ProxyType
 
 /**
- * プロキシーに関するオプションをまとめるクラスです.
+ * プロキシに関するオプションをまとめるクラスです.
  */
 class SoraProxyOption {
 
