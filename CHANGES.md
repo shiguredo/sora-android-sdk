@@ -13,7 +13,7 @@
 
 - [UPDATE] libwebrtc を 102.5005.7.1 に上げる
   - @miosakuma
-- [ADD] HTTP プロキシに対応する
+- [ADD] HTTP プロキシーに対応する
   - @enm10k
 - [FIX] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
   - HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調整する
