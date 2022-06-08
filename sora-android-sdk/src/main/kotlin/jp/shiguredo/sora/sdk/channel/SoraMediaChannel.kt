@@ -465,7 +465,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             signaling?.disconnect(null)
 
             SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
-
             val handler = Handler(Looper.getMainLooper())
             handler.post() {
                 connectSignalingChannel(clientOffer, location)
@@ -729,7 +728,6 @@ class SoraMediaChannel @JvmOverloads constructor(
                         if (it.isFailure) {
                             SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
                         }
-
                         val handler = Handler(Looper.getMainLooper())
                         clientOffer = it.getOrNull()
                         handler.post() {
