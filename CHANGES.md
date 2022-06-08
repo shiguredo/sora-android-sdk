@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 102.5005.7.1 に上げる
+- [UPDATE] libwebrtc を 102.5005.7.6 に上げる
   - @miosakuma
 - [ADD] HTTP プロキシに対応する
   - @enm10k
