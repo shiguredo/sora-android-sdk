@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import jp.shiguredo.sora.sdk.util.SDKInfo
 import org.webrtc.ProxyType
 
 /**
@@ -11,7 +12,7 @@ class SoraProxyOption {
     var type = ProxyType.NONE
 
     /** エージェント */
-    var agent: String = "Sora Android SDK"
+    var agent: String = SDKInfo.sdkInfo()
 
     /** ホスト名 */
     var hostname: String = ""
