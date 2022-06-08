@@ -27,6 +27,6 @@ class SoraProxyOption {
     var password: String = ""
 
     override fun toString(): String {
-        return "type=$type, agent=$agent, hostname=$hostname, port=$port, username=$username, password=${"*".repeat(password.length)}"
+        return "type=$type, hostname=$hostname, port=$port, username=$username, password=${"*".repeat(password.length)}, agent=$agent"
     }
 }
