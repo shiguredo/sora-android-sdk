@@ -126,7 +126,8 @@ internal class HardwareVideoEncoderWrapper(
         } catch (e: Exception) {
             SoraLogger.e(TAG, "initEncode failed", e)
 
-            if (calculator?.isCropRequired == true) {
+            // 無限ループを発生させないために、リトライ中は再度リトライしない
+            if (calculator?.isCropRequired == true && calculator?.retryingWithoutCrop == false) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
                 calculator = CropSizeCalculator(oldSettings, 1u, true)
@@ -176,7 +177,8 @@ internal class HardwareVideoEncoderWrapper(
         } catch (e: Exception) {
             SoraLogger.e(TAG, "encode failed", e)
 
-            if (calculator?.isCropRequired == true) {
+            // 無限ループを発生させないために、リトライ中は再度リトライしない
+            if (calculator?.isCropRequired == true && calculator?.retryingWithoutCrop == false) {
                 SoraLogger.i(TAG, "retrying without resolution adjustment")
                 val oldSettings = calculator!!.originalSettings
                 calculator = CropSizeCalculator(oldSettings, 1u, true)
