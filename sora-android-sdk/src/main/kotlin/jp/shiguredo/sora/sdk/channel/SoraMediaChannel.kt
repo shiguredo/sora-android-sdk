@@ -25,25 +25,19 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
-import okhttp3.Credentials
-import okhttp3.OkHttpClient
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
-import org.webrtc.ProxyType
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
 import org.webrtc.SessionDescription
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
-import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
 
 /**
@@ -472,47 +466,11 @@ class SoraMediaChannel @JvmOverloads constructor(
 
             SoraLogger.i(TAG, "[channel:$role] opening new SignalingChannel")
 
-            val httpClient = createHttpClient()
             val handler = Handler(Looper.getMainLooper())
             handler.post() {
-                connectSignalingChannel(httpClient, clientOffer, location)
+                connectSignalingChannel(clientOffer, location)
             }
         }
-    }
-
-    private fun createHttpClient(): OkHttpClient {
-        // proxyHost にドメインを指定すると、名前解決の通信が発生するため、 main スレッドで初期化できない
-        // 仮に main スレッドで初期化した場合、 android.os.NetworkOnMainThreadException が発生する
-        var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
-
-        if (mediaOption.proxy.type != ProxyType.NONE) {
-            // org.webrtc.ProxyType を java.net.Proxy.Type に変換する
-            val proxyType = when (mediaOption.proxy.type) {
-                ProxyType.HTTPS -> Proxy.Type.HTTP
-                ProxyType.SOCKS5 -> Proxy.Type.SOCKS
-                else -> Proxy.Type.DIRECT
-            }
-
-            builder = builder.proxy(Proxy(proxyType, InetSocketAddress(mediaOption.proxy.hostname, mediaOption.proxy.port)))
-            SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
-
-            if (mediaOption.proxy.username.isNotBlank()) {
-                builder = builder.proxyAuthenticator { _, response ->
-                    // プロキシーの認証情報が誤っていた場合リトライしない
-                    // https://square.github.io/okhttp/recipes/#handling-authentication-kt-java
-                    if (response.request.header("Proxy-Authorization") != null) {
-                        SoraLogger.i(TAG, "proxy authorization failed")
-                        return@proxyAuthenticator null
-                    }
-
-                    val credential = Credentials.basic(mediaOption.proxy.username, mediaOption.proxy.password)
-                    response.request.newBuilder()
-                        .header("Proxy-Authorization", credential)
-                        .build()
-                }
-            }
-        }
-        return builder.build()
     }
 
     private val peerListener = object : PeerChannel.Listener {
@@ -772,11 +730,10 @@ class SoraMediaChannel @JvmOverloads constructor(
                             SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
                         }
 
-                        val httpClient = createHttpClient()
                         val handler = Handler(Looper.getMainLooper())
                         clientOffer = it.getOrNull()
                         handler.post() {
-                            connectSignalingChannel(httpClient, clientOffer)
+                            connectSignalingChannel(clientOffer)
                         }
                     },
                     onError = {
@@ -792,7 +749,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
-    private fun connectSignalingChannel(httpClient: OkHttpClient, clientOfferSdp: SessionDescription?, redirectLocation: String? = null) {
+    private fun connectSignalingChannel(clientOfferSdp: SessionDescription?, redirectLocation: String? = null) {
         val endpoints = when {
             redirectLocation != null -> listOf(redirectLocation)
             signalingEndpointCandidates.isNotEmpty() -> signalingEndpointCandidates
@@ -800,7 +757,6 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
 
         signaling = SignalingChannelImpl(
-            client = httpClient,
             endpoints = endpoints,
             role = role,
             channelId = channelId,

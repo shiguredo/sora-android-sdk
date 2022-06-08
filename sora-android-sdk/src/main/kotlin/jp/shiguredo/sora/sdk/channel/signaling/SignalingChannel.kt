@@ -10,14 +10,21 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
+import org.webrtc.ProxyType
 import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface SignalingChannel {
@@ -46,7 +53,6 @@ interface SignalingChannel {
 }
 
 class SignalingChannelImpl @JvmOverloads constructor(
-    private val client: OkHttpClient,
     private val endpoints: List<String>,
     private val role: SoraChannelRole,
     private val channelId: String,
@@ -64,6 +70,47 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     companion object {
         private val TAG = SignalingChannelImpl::class.simpleName
+    }
+
+    private val client: OkHttpClient
+
+    init {
+        // OkHttpClient は main スレッドで初期化しない
+        // プロキシーとしてホスト名が指定された場合に名前解決のためのネットワーク通信が発生し、
+        // android.os.NetworkOnMainThreadException が起きてしまう
+        // それを防ぐためにコルーチンを利用して別スレッドで初期化する
+        client = runBlocking(Dispatchers.IO) {
+            var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
+
+            if (mediaOption.proxy.type != ProxyType.NONE) {
+                // org.webrtc.ProxyType を Proxy.Type に変換する
+                val proxyType = when (mediaOption.proxy.type) {
+                    ProxyType.HTTPS -> Proxy.Type.HTTP
+                    ProxyType.SOCKS5 -> Proxy.Type.SOCKS
+                    else -> Proxy.Type.DIRECT
+                }
+
+                builder = builder.proxy(Proxy(proxyType, InetSocketAddress(mediaOption.proxy.hostname, mediaOption.proxy.port)))
+                SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
+
+                if (mediaOption.proxy.username.isNotBlank()) {
+                    builder = builder.proxyAuthenticator { _, response ->
+                        // プロキシーの認証情報が誤っていた場合リトライしない
+                        // https://square.github.io/okhttp/recipes/#handling-authentication-kt-java
+                        if (response.request.header("Proxy-Authorization") != null) {
+                            SoraLogger.e(TAG, "proxy authorization failed: ${mediaOption.proxy}")
+                            return@proxyAuthenticator null
+                        }
+
+                        val credential = Credentials.basic(mediaOption.proxy.username, mediaOption.proxy.password)
+                        response.request.newBuilder()
+                            .header("Proxy-Authorization", credential)
+                            .build()
+                    }
+                }
+            }
+            return@runBlocking builder.build()
+        }
     }
 
     /*
