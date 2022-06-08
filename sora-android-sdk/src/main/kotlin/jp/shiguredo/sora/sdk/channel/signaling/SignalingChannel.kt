@@ -83,6 +83,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
+                SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
                 // org.webrtc.ProxyType を Proxy.Type に変換する
                 val proxyType = when (mediaOption.proxy.type) {
                     ProxyType.HTTPS -> Proxy.Type.HTTP
@@ -91,14 +92,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
 
                 builder = builder.proxy(Proxy(proxyType, InetSocketAddress(mediaOption.proxy.hostname, mediaOption.proxy.port)))
-                SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
 
                 if (mediaOption.proxy.username.isNotBlank()) {
                     builder = builder.proxyAuthenticator { _, response ->
                         // プロキシーの認証情報が誤っていた場合リトライしない
                         // https://square.github.io/okhttp/recipes/#handling-authentication-kt-java
                         if (response.request.header("Proxy-Authorization") != null) {
-                            SoraLogger.e(TAG, "proxy authorization failed: ${mediaOption.proxy}")
+                            SoraLogger.e(TAG, "proxy authorization failed. proxy: ${mediaOption.proxy}")
+                            SoraLogger.e(TAG, "response from proxy: code=${response.code}, headers=${response.headers}, body=${response.message}")
                             return@proxyAuthenticator null
                         }
 
