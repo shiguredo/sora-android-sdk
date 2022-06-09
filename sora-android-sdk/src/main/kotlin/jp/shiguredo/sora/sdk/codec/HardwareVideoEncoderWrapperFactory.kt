@@ -67,11 +67,13 @@ internal class HardwareVideoEncoderWrapper(
     // nullable を避けるために適当な値で初期化している
     private var calculator = CropSizeCalculator(1u, 0, 0)
 
-    private fun retryWithoutCropping(width: Int, height: Int) {
+    private fun retryWithoutCropping(width: Int, height: Int, retryFunc: () -> VideoCodecStatus): VideoCodecStatus {
         SoraLogger.i(TAG, "retrying without resolution adjustment")
 
-        // alignment が 1 = 解像度調整なし
+        // alignment = 1u ... 解像度調整なし
         calculator = CropSizeCalculator(1u, width, height)
+
+        return retryFunc()
     }
 
     override fun initEncode(originalSettings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
@@ -93,28 +95,24 @@ internal class HardwareVideoEncoderWrapper(
                 originalSettings.capabilities,
             )
 
-            // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+            // HardwareVideoEncoder が利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
             try {
                 val result = encoder.initEncode(croppedSettings, callback)
                 return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
                     // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                     // SW にフォールバックする前に解像度調整なしのパターンを試す
                     SoraLogger.e(TAG, "initEncode() returned FALLBACK_SOFTWARE: croppedSettings $croppedSettings")
-
-                    retryWithoutCropping(originalSettings.width, originalSettings.height)
-
-                    encoder.initEncode(originalSettings, callback)
+                    retryWithoutCropping(originalSettings.width, originalSettings.height) { encoder.initEncode(originalSettings, callback) }
                 } else {
                     // FALLBACK_SOFTWARE 以外はそのまま返す
-                    return result
+                    result
                 }
             } catch (e: Exception) {
                 SoraLogger.e(TAG, "initEncode() failed", e)
 
                 // 解像度調整ありで例外が発生した場合、
                 // SW にフォールバックする前に解像度調整なしのパターンを試す
-                retryWithoutCropping(originalSettings.width, originalSettings.height)
-                return encoder.initEncode(originalSettings, callback)
+                return retryWithoutCropping(originalSettings.width, originalSettings.height) { encoder.initEncode(originalSettings, callback) }
             }
         }
     }
@@ -142,32 +140,30 @@ internal class HardwareVideoEncoderWrapper(
             // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
             val croppedWidth = calculator.croppedWidth
             val croppedHeight = calculator.croppedHeight
-            val adjustedBuffer = frame.buffer.cropAndScale(
+            val croppedBuffer = frame.buffer.cropAndScale(
                 calculator.cropX / 2, calculator.cropY / 2,
                 croppedWidth, croppedHeight, croppedWidth, croppedHeight
             )
 
             // SoraLogger.i(TAG, "crop: ${frame.buffer.width}x${frame.buffer.height} => ${width}x$height")
-            val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
+            val croppedFrame = VideoFrame(croppedBuffer, frame.rotation, frame.timestampNs)
 
-            // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+            // HardwareVideoEncoder が利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
             try {
-                var result = encoder.encode(adjustedFrame, encodeInfo)
+                var result = encoder.encode(croppedFrame, encodeInfo)
                 return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
                     // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                     // SW にフォールバックする前に解像度調整なしのパターンを試す
                     SoraLogger.e(TAG, "encode() returned FALLBACK_SOFTWARE")
-                    retryWithoutCropping(frame.buffer.width, frame.buffer.height)
-                    encoder.encode(frame, encodeInfo)
+                    retryWithoutCropping(frame.buffer.width, frame.buffer.height) { encoder.encode(frame, encodeInfo) }
                 } else {
                     result
                 }
             } catch (e: Exception) {
                 SoraLogger.e(TAG, "encode() failed", e)
-                retryWithoutCropping(frame.buffer.width, frame.buffer.height)
-                return encoder.encode(frame, encodeInfo)
+                return retryWithoutCropping(frame.buffer.width, frame.buffer.height) { encoder.encode(frame, encodeInfo) }
             } finally {
-                adjustedBuffer.release()
+                croppedBuffer.release()
             }
         }
     }
