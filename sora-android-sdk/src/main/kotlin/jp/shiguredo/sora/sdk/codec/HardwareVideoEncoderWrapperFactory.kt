@@ -10,92 +10,52 @@ import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
     private val encoder: VideoEncoder,
-    private val resolutionPixelAlignment: UInt,
+    private val alignment: UInt,
 ) : VideoEncoder {
     class CropSizeCalculator(
-        val originalSettings: VideoEncoder.Settings,
-        private val resolutionPixelAlignment: UInt,
-        val retryingWithoutCrop: Boolean = false
+        alignment: UInt,
+        private val originalWidth: Int,
+        private val originalHeight: Int,
     ) {
 
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
         }
 
-        var croppedSettings: VideoEncoder.Settings? = null
+        val cropX: Int = originalWidth % alignment.toInt()
+        val cropY: Int = originalHeight % alignment.toInt()
+
+        val croppedWidth: Int
+            get() = originalWidth - cropX
+
+        val croppedHeight: Int
+            get() = originalHeight - cropY
 
         val isCropRequired: Boolean
-            get() = croppedSettings != null
-
-        val settings: VideoEncoder.Settings
-            get() {
-                return croppedSettings ?: originalSettings
-            }
-
-        val width: Int
-            get() = settings.width
-
-        val height: Int
-            get() = settings.height
-
-        var cropX = 0
-            private set
-        var cropY = 0
-            private set
-
-        // 最新のフレームの大きさ
-        private var lastFrameWidth: Int = 0
-        private var lastFrameHeight: Int = 0
+            get() = cropX != 0 || cropY != 0
 
         init {
-            SoraLogger.i(TAG, "$this init: resolutionPixelAlignment=$resolutionPixelAlignment")
-
-            lastFrameWidth = originalSettings.width
-            lastFrameHeight = originalSettings.height
-
-            calculate(originalSettings.width, originalSettings.height)
-        }
-
-        private fun calculate(width: Int, height: Int) {
-            cropX = width % resolutionPixelAlignment.toInt()
-            cropY = height % resolutionPixelAlignment.toInt()
-
-            if (cropX != 0 || cropY != 0) {
+            // nullable を避けるために適当な値で初期化した場合は、初期化時のログに出力しない
+            if (originalWidth != 0 && originalHeight != 0) {
                 SoraLogger.i(
                     TAG,
-                    "calculate: ${width}x$height => " +
-                        "${width - cropX}x${height - cropY}"
-                )
-                croppedSettings = VideoEncoder.Settings(
-                    originalSettings.numberOfCores,
-                    width - cropX,
-                    height - cropY,
-                    originalSettings.startBitrate,
-                    originalSettings.maxFramerate,
-                    originalSettings.numberOfSimulcastStreams,
-                    originalSettings.automaticResizeOn,
-                    originalSettings.capabilities,
+                    "$this init(): alignment=$alignment" +
+                        "" +
+                        " size=${originalWidth}x$originalHeight => ${croppedWidth}x$croppedHeight"
                 )
             }
         }
 
-        // HardwareVideoEncoder の encode に、フレームのサイズが途中で変化することを考慮した条件があったため実装した関数
-        // 参照: https://source.chromium.org/chromium/chromium/src/+/master:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=353-362;drc=5a79d28eba61aea39558a492fb4c0ff4fef427ba
-        //
-        // 動作確認をした限り、ネットワーク帯域などに起因してダウンサイズが発生した場合は initEncode が呼ばれており、
-        // この関数は実行されなかったが念の為に残しておく
-        //
-        // この関数を削除する場合は HardwareVideoEncoderWrapper との統合を検討すべき
-        fun recalculateIfNeeded(frame: VideoFrame) {
-            if (frame.buffer.width != lastFrameWidth || frame.buffer.height != lastFrameHeight) {
+        fun hasFrameSizeChanged(nextWidth: Int, nextHeight: Int): Boolean {
+            return if (originalWidth == nextWidth && originalHeight == nextHeight) {
+                false
+            } else {
                 SoraLogger.i(
                     TAG,
-                    "frame size changed: ${lastFrameWidth}x$lastFrameHeight => ${frame.buffer.width}x${frame.buffer.height}"
+                    "frame size has changed: " +
+                        "${originalWidth}x$originalHeight => ${nextWidth}x$nextHeight"
                 )
-                lastFrameWidth = frame.buffer.width
-                lastFrameHeight = frame.buffer.height
-
-                calculate(frame.buffer.width, frame.buffer.height)
+                true
             }
         }
     }
@@ -104,37 +64,58 @@ internal class HardwareVideoEncoderWrapper(
         val TAG = HardwareVideoEncoderWrapper::class.simpleName
     }
 
-    private var calculator: CropSizeCalculator? = null
+    // nullable を避けるために適当な値で初期化している
+    private var calculator = CropSizeCalculator(1u, 0, 0)
 
-    override fun initEncode(settings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
-        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
-        return try {
-            if (calculator?.retryingWithoutCrop == true && calculator?.originalSettings?.width == settings.width && calculator?.originalSettings?.height == settings.height) {
-                // リトライ中 かつ initEncode に渡された settings の解像度が変化していない場合 calculator の初期化処理をスキップする
-            } else {
-                calculator = CropSizeCalculator(settings, resolutionPixelAlignment)
-            }
+    private fun retryWithoutCropping(width: Int, height: Int) {
+        SoraLogger.i(TAG, "retrying without resolution adjustment")
 
-            val result = encoder.initEncode(calculator!!.settings, callback)
+        // alignment が 1 = 解像度調整なし
+        calculator = CropSizeCalculator(1u, width, height)
+    }
 
-            if (result == VideoCodecStatus.FALLBACK_SOFTWARE && calculator?.isCropRequired == true) {
-                // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
+    override fun initEncode(originalSettings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
+        calculator = CropSizeCalculator(alignment, originalSettings.width, originalSettings.height)
+
+        if (!calculator.isCropRequired) {
+            // crop なし
+            return encoder.initEncode(originalSettings, callback)
+        } else {
+            // crop あり
+            val croppedSettings = VideoEncoder.Settings(
+                originalSettings.numberOfCores,
+                calculator.croppedWidth,
+                calculator.croppedHeight,
+                originalSettings.startBitrate,
+                originalSettings.maxFramerate,
+                originalSettings.numberOfSimulcastStreams,
+                originalSettings.automaticResizeOn,
+                originalSettings.capabilities,
+            )
+
+            // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+            try {
+                val result = encoder.initEncode(croppedSettings, callback)
+                return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
+                    // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
+                    // SW にフォールバックする前に解像度調整なしのパターンを試す
+                    SoraLogger.e(TAG, "initEncode() returned FALLBACK_SOFTWARE: croppedSettings $croppedSettings")
+
+                    retryWithoutCropping(originalSettings.width, originalSettings.height)
+
+                    encoder.initEncode(originalSettings, callback)
+                } else {
+                    // FALLBACK_SOFTWARE 以外はそのまま返す
+                    return result
+                }
+            } catch (e: Exception) {
+                SoraLogger.e(TAG, "initEncode() failed", e)
+
+                // 解像度調整ありで例外が発生した場合、
                 // SW にフォールバックする前に解像度調整なしのパターンを試す
-                throw Exception("initEncode failed. try to retry without resolution adjustment")
+                retryWithoutCropping(originalSettings.width, originalSettings.height)
+                return encoder.initEncode(originalSettings, callback)
             }
-            result
-        } catch (e: Exception) {
-            SoraLogger.e(TAG, "initEncode failed", e)
-
-            // 無限ループを発生させないために、リトライ中は再度リトライしない
-            if (calculator?.isCropRequired == true && calculator?.retryingWithoutCrop == false) {
-                SoraLogger.i(TAG, "retrying without resolution adjustment")
-                val oldSettings = calculator!!.originalSettings
-                calculator = CropSizeCalculator(oldSettings, 1u, true)
-                return initEncode(settings, callback)
-            }
-
-            VideoCodecStatus.ERROR
         }
     }
 
@@ -143,48 +124,51 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
-        // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
-        try {
-            return calculator?.let {
-                it.recalculateIfNeeded(frame)
+        // 解像度が変化した場合は calculator を再度初期化する
+        // HardwareVideoEncoder の encode ではフレーム・サイズの変化が考慮されていたため、この条件を実装した
+        // 参照: https://source.chromium.org/chromium/chromium/src/+/master:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=353-362;drc=5a79d28eba61aea39558a492fb4c0ff4fef427ba
+        //
+        // 動作確認をした限り、ネットワーク帯域などに起因してダウンサイズが発生した場合は、 encode の前に initEncode が呼ばれていた
+        if (calculator.hasFrameSizeChanged(frame.buffer.width, frame.buffer.height)) {
+            calculator = CropSizeCalculator(alignment, frame.buffer.width, frame.buffer.height)
+        }
 
-                if (!it.isCropRequired) {
+        if (!calculator.isCropRequired) {
+            return encoder.encode(frame, encodeInfo)
+        } else {
+            // crop のための計算
+            // 補足: JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
+            //       メモリー・コピーが発生しないため、それほど重い処理ではない
+            // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
+            val croppedWidth = calculator.croppedWidth
+            val croppedHeight = calculator.croppedHeight
+            val adjustedBuffer = frame.buffer.cropAndScale(
+                calculator.cropX / 2, calculator.cropY / 2,
+                croppedWidth, croppedHeight, croppedWidth, croppedHeight
+            )
+
+            // SoraLogger.i(TAG, "crop: ${frame.buffer.width}x${frame.buffer.height} => ${width}x$height")
+            val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
+
+            // エンコーダーが利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
+            try {
+                var result = encoder.encode(adjustedFrame, encodeInfo)
+                return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
+                    // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
+                    // SW にフォールバックする前に解像度調整なしのパターンを試す
+                    SoraLogger.e(TAG, "encode() returned FALLBACK_SOFTWARE")
+                    retryWithoutCropping(frame.buffer.width, frame.buffer.height)
                     encoder.encode(frame, encodeInfo)
                 } else {
-                    // JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
-                    // メモリー・コピーが発生しない
-                    // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
-                    val adjustedBuffer = frame.buffer.cropAndScale(
-                        it.cropX / 2, it.cropY / 2, it.width, it.height, it.width, it.height
-                    )
-                    // SoraLogger.i(TAG, "crop: ${it.originalSettings.width}x${it.originalSettings.height} => ${it.width}x${it.height}")
-                    val adjustedFrame = VideoFrame(adjustedBuffer, frame.rotation, frame.timestampNs)
-                    val result = encoder.encode(adjustedFrame, encodeInfo)
-                    adjustedBuffer.release()
-
-                    if (result == VideoCodecStatus.FALLBACK_SOFTWARE && it.isCropRequired) {
-                        // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
-                        // SW にフォールバックする前に解像度調整なしのパターンを試す
-                        throw Exception("encode failed. try to retry without resolution adjustment")
-                    }
                     result
                 }
-            } ?: run {
-                // null にならない想定だが force unwrap を防ぐためにこのように記述する
-                SoraLogger.e(TAG, "calculator is null")
-                VideoCodecStatus.ERROR
+            } catch (e: Exception) {
+                SoraLogger.e(TAG, "encode() failed", e)
+                retryWithoutCropping(frame.buffer.width, frame.buffer.height)
+                return encoder.encode(frame, encodeInfo)
+            } finally {
+                adjustedBuffer.release()
             }
-        } catch (e: Exception) {
-            SoraLogger.e(TAG, "encode failed", e)
-
-            // 無限ループを発生させないために、リトライ中は再度リトライしない
-            if (calculator?.isCropRequired == true && calculator?.retryingWithoutCrop == false) {
-                SoraLogger.i(TAG, "retrying without resolution adjustment")
-                val oldSettings = calculator!!.originalSettings
-                calculator = CropSizeCalculator(oldSettings, 1u, true)
-                return encode(frame, encodeInfo)
-            }
-            return VideoCodecStatus.ERROR
         }
     }
 
@@ -217,10 +201,7 @@ internal class HardwareVideoEncoderWrapperFactory(
 
     override fun createEncoder(videoCodecInfo: VideoCodecInfo?): VideoEncoder? {
         try {
-            val encoder = factory.createEncoder(videoCodecInfo)
-            if (encoder == null) {
-                return null
-            }
+            val encoder = factory.createEncoder(videoCodecInfo) ?: return null
             return HardwareVideoEncoderWrapper(encoder, resolutionPixelAlignment)
         } catch (e: Exception) {
             SoraLogger.e(TAG, "createEncoder failed", e)
