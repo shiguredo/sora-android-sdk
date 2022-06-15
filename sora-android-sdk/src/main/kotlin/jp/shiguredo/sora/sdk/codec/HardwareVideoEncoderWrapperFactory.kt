@@ -9,7 +9,7 @@ import org.webrtc.VideoEncoderFactory
 import org.webrtc.VideoFrame
 
 internal class HardwareVideoEncoderWrapper(
-    private val encoder: VideoEncoder,
+    private val internalEncoder: VideoEncoder,
     private val alignment: UInt,
 ) : VideoEncoder {
     class CropSizeCalculator(
@@ -81,7 +81,7 @@ internal class HardwareVideoEncoderWrapper(
 
         if (!calculator.isCropRequired) {
             // crop なし
-            return encoder.initEncode(originalSettings, callback)
+            return internalEncoder.initEncode(originalSettings, callback)
         } else {
             // crop あり
             val croppedSettings = VideoEncoder.Settings(
@@ -97,28 +97,28 @@ internal class HardwareVideoEncoderWrapper(
 
             // HardwareVideoEncoder が利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
             try {
-                val result = encoder.initEncode(croppedSettings, callback)
+                val result = internalEncoder.initEncode(croppedSettings, callback)
                 return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
                     // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                     // SW にフォールバックする前に解像度調整なしのパターンを試す
-                    SoraLogger.e(TAG, "initEncode() returned FALLBACK_SOFTWARE: croppedSettings $croppedSettings")
-                    retryWithoutCropping(originalSettings.width, originalSettings.height) { encoder.initEncode(originalSettings, callback) }
+                    SoraLogger.e(TAG, "internalEncoder.initEncode() returned FALLBACK_SOFTWARE: croppedSettings $croppedSettings")
+                    retryWithoutCropping(originalSettings.width, originalSettings.height) { internalEncoder.initEncode(originalSettings, callback) }
                 } else {
                     // FALLBACK_SOFTWARE 以外はそのまま返す
                     result
                 }
             } catch (e: Exception) {
-                SoraLogger.e(TAG, "initEncode() failed", e)
+                SoraLogger.e(TAG, "internalEncoder.initEncode() failed", e)
 
                 // 解像度調整ありで例外が発生した場合、
                 // SW にフォールバックする前に解像度調整なしのパターンを試す
-                return retryWithoutCropping(originalSettings.width, originalSettings.height) { encoder.initEncode(originalSettings, callback) }
+                return retryWithoutCropping(originalSettings.width, originalSettings.height) { internalEncoder.initEncode(originalSettings, callback) }
             }
         }
     }
 
     override fun release(): VideoCodecStatus {
-        return encoder.release()
+        return internalEncoder.release()
     }
 
     override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
@@ -126,13 +126,14 @@ internal class HardwareVideoEncoderWrapper(
         // HardwareVideoEncoder の encode ではフレーム・サイズの変化が考慮されていたため、この条件を実装した
         // 参照: https://source.chromium.org/chromium/chromium/src/+/master:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=353-362;drc=5a79d28eba61aea39558a492fb4c0ff4fef427ba
         //
-        // 動作確認をした限り、ネットワーク帯域などに起因してダウンサイズが発生した場合は、 encode の前に initEncode が呼ばれていた
+        // shiguredo-webrtc-build/webrtc-build の 102.5005.7.6 6ff7318 で動作を確認した限り、
+        // ネットワーク帯域などに起因してダウンサイズが発生した場合は、 encode の前に initEncode が呼ばれていた
         if (calculator.hasFrameSizeChanged(frame.buffer.width, frame.buffer.height)) {
             calculator = CropSizeCalculator(alignment, frame.buffer.width, frame.buffer.height)
         }
 
         if (!calculator.isCropRequired) {
-            return encoder.encode(frame, encodeInfo)
+            return internalEncoder.encode(frame, encodeInfo)
         } else {
             // crop のための計算
             // 補足: JavaI420Buffer の cropAndScaleI420 はクロップ後のサイズとスケール後のサイズが等しい場合、
@@ -150,18 +151,18 @@ internal class HardwareVideoEncoderWrapper(
 
             // HardwareVideoEncoder が利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
             try {
-                var result = encoder.encode(croppedFrame, encodeInfo)
+                val result = internalEncoder.encode(croppedFrame, encodeInfo)
                 return if (result == VideoCodecStatus.FALLBACK_SOFTWARE) {
                     // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                     // SW にフォールバックする前に解像度調整なしのパターンを試す
-                    SoraLogger.e(TAG, "encode() returned FALLBACK_SOFTWARE")
-                    retryWithoutCropping(frame.buffer.width, frame.buffer.height) { encoder.encode(frame, encodeInfo) }
+                    SoraLogger.e(TAG, "internalEncoder.encode() returned FALLBACK_SOFTWARE")
+                    retryWithoutCropping(frame.buffer.width, frame.buffer.height) { internalEncoder.encode(frame, encodeInfo) }
                 } else {
                     result
                 }
             } catch (e: Exception) {
-                SoraLogger.e(TAG, "encode() failed", e)
-                return retryWithoutCropping(frame.buffer.width, frame.buffer.height) { encoder.encode(frame, encodeInfo) }
+                SoraLogger.e(TAG, "internalEncoder.encode() failed", e)
+                return retryWithoutCropping(frame.buffer.width, frame.buffer.height) { internalEncoder.encode(frame, encodeInfo) }
             } finally {
                 croppedBuffer.release()
             }
@@ -169,15 +170,15 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
-        return encoder.setRateAllocation(allocation, frameRate)
+        return internalEncoder.setRateAllocation(allocation, frameRate)
     }
 
     override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        return encoder.scalingSettings
+        return internalEncoder.scalingSettings
     }
 
     override fun getImplementationName(): String {
-        return encoder.implementationName
+        return internalEncoder.implementationName
     }
 }
 
