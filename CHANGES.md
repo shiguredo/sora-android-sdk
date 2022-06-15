@@ -27,6 +27,7 @@
   - そのため、このフラグを SoraVideoOption.ResolutionAdjustment.NONE に設定することで、従来通り、解像度を調整することなく HW エンコーダーを利用できる
   - より詳細な情報は以下のリンクを参照
     - https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
+  - 加えて、解像度調整ありでエンコーダーの初期化に失敗した際に、解像度調整なしで初期化をリトライする処理も実装した
   - @enm10k
 
 ## 2022.2.0
