@@ -11,11 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 102.5005.7.6 に上げる
-  - @miosakuma
-- [ADD] HTTP プロキシに対応する
-  - @enm10k
-- [FIX] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
+- [CHANGE] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
   - HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調整する
   - デフォルトでは 16 が指定されている
   - このオプションを実装した経緯は以下の通り
@@ -28,6 +24,11 @@
   - より詳細な情報は以下のリンクを参照
     - https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
   - 加えて、解像度調整ありでエンコーダーの初期化またはエンコード処理に失敗した際に、解像度調整なしで操作をリトライする処理も実装した
+    - Android OS 11 の Xperia 5 II で VGA のサイマルキャストを H.264 で送信しようとした際、解像度調整ありの場合 (= hardwareVideoEncoderResolutionAdjustment が MULTIPLE_OF_16 の場合) は HW エンコーダーの初期化が失敗するが、解像度調整なしの場合は成功する現象を確認したため、この処理を実装した
+  - @enm10k
+- [UPDATE] libwebrtc を 102.5005.7.6 に上げる
+  - @miosakuma
+- [ADD] HTTP プロキシに対応する
   - @enm10k
 
 ## 2022.2.0
