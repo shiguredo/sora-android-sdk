@@ -83,7 +83,10 @@ class SoraMediaOption {
 
     /**
      * サイマルキャスト機能を有効にします.
+     *
+     * @param rid デフォルトで受信する映像の種類
      */
+    @JvmOverloads
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
         simulcastEnabled = true
         simulcastRid = rid
@@ -92,13 +95,21 @@ class SoraMediaOption {
     /**
      * スポットライト機能を有効にします.
      *
-     * スポットライト機能はサイマルキャスト機能を利用します.
-     * スポットライト機能を有効にすると、マルチストリームとサイマルキャスト機能も有効になります.
+     * スポットライト機能では、複数の映像を送信するためにサイマルキャスト機能を利用しています.
+     * この関数を実行することで、マルチストリーム機能が有効になります.
+     * 第2引数の enableSimulcast に false を指定しない場合は、サイマルキャスト機能も有効になります.
+     *
+     * @param option スポットライト機能のオプション
+     * @param enableSimulcast サイマルキャスト機能の利用の有無
      */
-    fun enableSpotlight(option: SoraSpotlightOption) {
+    @JvmOverloads
+    fun enableSpotlight(option: SoraSpotlightOption, enableSimulcast: Boolean = true) {
         spotlightOption = option
         multistreamEnabled = true
-        enableSimulcast()
+
+        if (enableSimulcast) {
+            enableSimulcast()
+        }
     }
 
     /**
