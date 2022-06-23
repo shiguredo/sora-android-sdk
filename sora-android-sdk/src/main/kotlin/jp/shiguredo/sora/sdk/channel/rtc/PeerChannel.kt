@@ -337,42 +337,36 @@ class PeerChannelImpl(
             // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
             // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
-            val mediaStreamLabels = listOf(localStream!!.id)
 
-            val audioMid = mid?.get("audio")
-            if (audioMid != null) {
-                val transceiver = this.conn?.transceivers?.find { it.mid == audioMid }
-                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set audio sender: mid=$audioMid, transceiver=$transceiver")
-                audioSender = transceiver?.sender
-                audioSender?.streams = listOf(localStream!!.id)
+            val audioMid = mid?.get("audio") ?: run {
+                SoraLogger.e(TAG, "mid for audio not found")
+                throw IllegalArgumentException("mid for audio not found")
+            }
+            val audioTransceiver = this.conn?.transceivers?.find { it.mid == audioMid }
+            audioTransceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+            SoraLogger.d(TAG, "set audio sender: mid=$audioMid, audioTransceiver=$audioTransceiver")
+            audioSender = audioTransceiver?.sender
+            audioSender?.streams = listOf(localStream!!.id)
 
-                localStream!!.audioTracks.firstOrNull()?.let {
-                    SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
-                    audioSender?.setTrack(it, false)
-                }
-            } else {
-                audioSender = localStream!!.audioTracks.firstOrNull()?.let {
-                    conn?.addTrack(it, mediaStreamLabels)
-                }
+            localStream!!.audioTracks.firstOrNull()?.let {
+                SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
+                audioSender?.setTrack(it, false)
             }
 
-            val videoMid = mid?.get("video")
-            if (videoMid != null) {
-                val transceiver = this.conn?.transceivers?.find { it.mid == videoMid }
-                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$transceiver ")
-                videoSender = transceiver?.sender
-                videoSender?.streams = listOf(localStream!!.id)
+            val videoMid = mid?.get("video") ?: run {
+                SoraLogger.e(TAG, "mid for video not found")
+                throw IllegalArgumentException("mid for video not found")
+            }
 
-                localStream!!.videoTracks.firstOrNull()?.let {
-                    SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
-                    videoSender?.setTrack(it, false)
-                }
-            } else {
-                videoSender = localStream!!.videoTracks.firstOrNull()?.let {
-                    conn?.addTrack(it, mediaStreamLabels)
-                }
+            val videoTransceiver = this.conn?.transceivers?.find { it.mid == videoMid }
+            videoTransceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+            SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$videoTransceiver ")
+            videoSender = videoTransceiver?.sender
+            videoSender?.streams = listOf(localStream!!.id)
+
+            localStream!!.videoTracks.firstOrNull()?.let {
+                SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
+                videoSender?.setTrack(it, false)
             }
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
