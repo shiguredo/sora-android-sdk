@@ -37,7 +37,7 @@ import java.util.zip.DeflaterInputStream
 interface PeerChannel {
     fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>?,
+        mid: Map<String, String>,
         encodings: List<Encoding>?
     ): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
@@ -116,10 +116,8 @@ class PeerChannelImpl(
     private val localAudioManager = componentFactory.createAudioManager()
     private val localVideoManager = componentFactory.createVideoManager()
 
-    private var localStream: MediaStream? = null
-
     private var videoSender: RtpSender? = null
-    private var audioSender: RtpSender? = null
+    private val localStreamId: String = UUID.randomUUID().toString()
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private var compressLabels: List<String> = emptyList()
@@ -321,12 +319,61 @@ class PeerChannelImpl(
         }
     }
 
+    private fun setAudioTrack(mid: String) {
+        val transceiver = this.conn?.transceivers?.find { it.mid == mid }
+        if (transceiver == null) {
+            SoraLogger.i(TAG, "transceiver for audio not found")
+            return
+        }
+
+        val sender = transceiver.sender
+        if (sender == null) {
+            SoraLogger.i(TAG, "sender for audio not found")
+            return
+        }
+
+        val track = localAudioManager.track
+        if (track == null) {
+            SoraLogger.i(TAG, "audio track not found")
+            return
+        }
+
+        transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+        sender.streams = listOf(localStreamId)
+        sender.setTrack(track, false)
+        SoraLogger.d(TAG, "set audio sender: mid=$mid, transceiver=$transceiver")
+    }
+
+    private fun setVideoTrack(mid: String) {
+        val transceiver = conn?.transceivers?.find { it.mid == mid }
+        if (transceiver == null) {
+            SoraLogger.i(TAG, "transceiver for video not found")
+            return
+        }
+
+        val sender = transceiver.sender
+        if (sender == null) {
+            SoraLogger.i(TAG, "sender for video not found")
+            return
+        }
+
+        val track = localVideoManager?.track
+        if (track == null) {
+            SoraLogger.i(TAG, "video track not found")
+            return
+        }
+
+        transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+        sender.streams = listOf(localStreamId)
+        sender.setTrack(track, false)
+        SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$transceiver ")
+    }
+
     override fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>?,
+        mid: Map<String, String>,
         encodings: List<Encoding>?
     ): Single<SessionDescription> {
-
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
 
@@ -337,41 +384,18 @@ class PeerChannelImpl(
             // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
             // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+            mid.get("audio")?.let {
+                setAudioTrack(it)
+            } ?: SoraLogger.i(TAG, "mid for aduio not found")
 
-            val audioMid = mid?.get("audio") ?: run {
-                SoraLogger.e(TAG, "mid for audio not found")
-                throw IllegalArgumentException("mid for audio not found")
-            }
-            val audioTransceiver = this.conn?.transceivers?.find { it.mid == audioMid }
-            audioTransceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-            SoraLogger.d(TAG, "set audio sender: mid=$audioMid, audioTransceiver=$audioTransceiver")
-            audioSender = audioTransceiver?.sender
-            audioSender?.streams = listOf(localStream!!.id)
-
-            localStream!!.audioTracks.firstOrNull()?.let {
-                SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
-                audioSender?.setTrack(it, false)
-            }
-
-            val videoMid = mid?.get("video") ?: run {
-                SoraLogger.e(TAG, "mid for video not found")
-                throw IllegalArgumentException("mid for video not found")
-            }
-
-            val videoTransceiver = this.conn?.transceivers?.find { it.mid == videoMid }
-            videoTransceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-            SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$videoTransceiver ")
-            videoSender = videoTransceiver?.sender
-            videoSender?.streams = listOf(localStream!!.id)
-
-            localStream!!.videoTracks.firstOrNull()?.let {
-                SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
-                videoSender?.setTrack(it, false)
-            }
+            mid.get("video")?.let {
+                setVideoTrack(it)
+            } ?: SoraLogger.i(TAG, "mid for video not found")
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             }
+
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
         }.flatMap {
@@ -483,22 +507,23 @@ class PeerChannelImpl(
             dependencies
         )
 
+        val localStream = factory!!.createLocalMediaStream(localStreamId)
+
         SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+        localAudioManager.track?.let {
+            localStream.addTrack(it)
+        }
 
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
-        localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
+        localVideoManager?.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
+        localVideoManager?.track?.let {
+            localStream.addTrack(it)
+        }
 
-        SoraLogger.d(TAG, "setup local media stream")
-        val streamId = UUID.randomUUID().toString()
-        localStream = factory!!.createLocalMediaStream(streamId)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
 
-        localAudioManager.attachTrackToStream(localStream!!)
-        localVideoManager.attachTrackToStream(localStream!!)
-        SoraLogger.d(TAG, "attached video sender => $videoSender")
-
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
     }
 
@@ -647,7 +672,7 @@ class PeerChannelImpl(
         conn?.dispose()
         conn = null
         localAudioManager.dispose()
-        localVideoManager.dispose()
+        localVideoManager?.dispose()
         SoraLogger.d(TAG, "dispose peer connection factory")
         factory?.dispose()
         factory = null

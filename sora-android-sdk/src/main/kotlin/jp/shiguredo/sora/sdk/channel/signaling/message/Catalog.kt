@@ -103,7 +103,7 @@ data class OfferMessage(
     @SerializedName("connection_id") val connectionId: String,
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
-    @SerializedName("mid") val mid: Map<String, String>? = null,
+    @SerializedName("mid") val mid: Map<String, String>,
     @SerializedName("encodings") val encodings: List<Encoding>?,
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null
 )

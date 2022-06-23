@@ -967,7 +967,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     private fun sendDisconnectIfNeeded(disconnectReason: SoraDisconnectReason) {
-        val state = peer?.connectionState() ?: null
+        val state = peer?.connectionState()
         SoraLogger.d(
             TAG,
             "[channel:$role] sendDisconnectIfNeeded switched=$switchedToDataChannel, " +

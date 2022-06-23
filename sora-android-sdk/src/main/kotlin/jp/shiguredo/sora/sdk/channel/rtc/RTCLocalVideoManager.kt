@@ -3,7 +3,6 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import android.content.Context
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.EglBase
-import org.webrtc.MediaStream
 import org.webrtc.PeerConnectionFactory
 import org.webrtc.SurfaceTextureHelper
 import org.webrtc.VideoCapturer
@@ -11,38 +10,17 @@ import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
 import java.util.UUID
 
-interface RTCLocalVideoManager {
-    fun initTrack(
-        factory: PeerConnectionFactory,
-        eglContext: EglBase.Context?,
-        appContext: Context
-    )
-    fun attachTrackToStream(stream: MediaStream)
-    fun dispose()
-}
-
-// just for Null-Object-Pattern
-class RTCNullLocalVideoManager : RTCLocalVideoManager {
-    override fun initTrack(
-        factory: PeerConnectionFactory,
-        eglContext: EglBase.Context?,
-        appContext: Context
-    ) {}
-    override fun attachTrackToStream(stream: MediaStream) {}
-    override fun dispose() {}
-}
-
-class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer) : RTCLocalVideoManager {
+class RTCLocalVideoManager(private val capturer: VideoCapturer) {
 
     companion object {
-        private val TAG = RTCLocalVideoManagerImpl::class.simpleName
+        private val TAG = RTCLocalVideoManager::class.simpleName
     }
 
     var source: VideoSource? = null
     var track: VideoTrack? = null
     var surfaceTextureHelper: SurfaceTextureHelper? = null
 
-    override fun initTrack(factory: PeerConnectionFactory, eglContext: EglBase.Context?, appContext: Context) {
+    fun initTrack(factory: PeerConnectionFactory, eglContext: EglBase.Context?, appContext: Context) {
         SoraLogger.d(TAG, "initTrack isScreencast=${capturer.isScreencast}")
         surfaceTextureHelper =
             SurfaceTextureHelper.create("CaptureThread", eglContext)
@@ -55,12 +33,7 @@ class RTCLocalVideoManagerImpl(private val capturer: VideoCapturer) : RTCLocalVi
         SoraLogger.d(TAG, "created track => $trackId, $track")
     }
 
-    override fun attachTrackToStream(stream: MediaStream) {
-        SoraLogger.d(TAG, "attachTrackToStream")
-        track?.let { stream.addTrack(it) }
-    }
-
-    override fun dispose() {
+    fun dispose() {
         SoraLogger.d(TAG, "dispose")
         SoraLogger.d(TAG, "dispose surfaceTextureHelper")
         surfaceTextureHelper?.dispose()
