@@ -28,7 +28,7 @@
   - @enm10k
 - [UPDATE] SoraMediaOption.enableSpotlight() の引数に `enableSimulcast` を追加し、サイマルキャスト無効の状態でスポットライト機能を利用できるようにする
     - @enm10k
-- [UPDATE] libwebrtc を 102.5005.7.6 に上げる
+- [UPDATE] libwebrtc を 103.5060.4.0 に上げる
   - @miosakuma
 - [UPDATE] 依存ライブラリー `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9` を追加する
   - @enm10k
