@@ -819,7 +819,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     },
                     onError = {
                         val msg = "[channel:$role] failure in handleInitialOffer: ${it.message}"
-                        SoraLogger.w(TAG, msg)
+                        SoraLogger.w(TAG, msg, it)
                         disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )

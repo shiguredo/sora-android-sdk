@@ -323,22 +323,10 @@ class PeerChannelImpl(
         val kind = track.kind()
 
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
-        if (transceiver == null) {
-            SoraLogger.e(TAG, "transceiver for $kind not found")
-            // TODO: 例外を上げる
-            return
-        }
-
-        val sender = transceiver.sender
-        if (sender == null) {
-            SoraLogger.e(TAG, "sender for $kind not found")
-            // TODO: 例外を上げる
-            return
-        }
-
-        transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-        sender.streams = listOf(localStreamId)
-        sender.setTrack(track, false)
+        val sender = transceiver!!.sender
+        transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+        sender!!.streams = listOf(localStreamId)
+        sender!!.setTrack(track, false)
         SoraLogger.d(TAG, "set $kind sender: mid=$mid, transceiver=$transceiver")
     }
 
@@ -357,23 +345,16 @@ class PeerChannelImpl(
             // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
             // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+
+            // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
+            // setTrack 内も同様
             mid.get("audio")?.let {
                 val track = localAudioManager.track
-                if (track == null) {
-                    SoraLogger.i(TAG, "audio track not found")
-                    // TODO: 例外を上げる
-                }
-
                 setTrack(it, track!!)
             } ?: SoraLogger.d(TAG, "mid for aduio not found")
 
             mid.get("video")?.let {
                 val track = localVideoManager?.track
-                if (track == null) {
-                    SoraLogger.i(TAG, "video track not found")
-                    // TODO: 例外を上げる
-                }
-
                 setTrack(it, track!!)
             } ?: SoraLogger.d(TAG, "mid for video not found")
 
