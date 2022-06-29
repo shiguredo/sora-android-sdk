@@ -3,10 +3,10 @@ package jp.shiguredo.sora.sdk.channel.rtc
 import android.content.Context
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
+import jp.shiguredo.sora.sdk.codec.SoraDefaultVideoEncoderFactory
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.DefaultVideoDecoderFactory
-import org.webrtc.DefaultVideoEncoderFactory
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
 import org.webrtc.SoftwareVideoDecoderFactory
@@ -41,22 +41,18 @@ class RTCComponentFactory(
             mediaOption.simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
-                    true,
-                    false,
-                    mediaOption.videoCodec,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             mediaOption.videoUpstreamContext != null ->
-                DefaultVideoEncoderFactory(
+                SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
-                    true /* enableIntelVp8Encoder */,
-                    false /* enableH264HighProfile */
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
 
             mediaOption.videoDownstreamContext != null ->
-                DefaultVideoEncoderFactory(
+                SoraDefaultVideoEncoderFactory(
                     mediaOption.videoDownstreamContext,
-                    true /* enableIntelVp8Encoder */,
-                    false /* enableH264HighProfile */
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             else ->
                 // context が指定されていなければソフトウェアエンコーダーを使用する

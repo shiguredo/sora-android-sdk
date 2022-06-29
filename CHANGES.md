@@ -11,6 +11,36 @@
 
 ## develop
 
+## 2022.3.0
+
+- [CHANGE] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
+  - HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調整する
+  - デフォルトでは 16 が指定されている
+  - このオプションを実装した経緯は以下の通り
+    - 解像度が 16 の倍数でない場合、 HW エンコーダーの初期化がエラーになる変更が libwebrtc のメインストリームに入った
+      - 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=214-218;drc=0f50cc284949f225f663408e7d467f39d549d3dc
+      - Android CTS では、 HW エンコーダー (= MediaCodec) を 16で割り切れる解像度のみでテストしており、かつ 16 で割り切れない解像度で問題が発生する端末があったことが理由で上記の変更が行われた
+    - Sora Android SDK では一部の解像度が影響を受けるため、対応としてこのオプションを実装した
+  - Sora Android SDK では libwebrtc にパッチを当て、上記の HW エンコーダー初期化時の解像度のチェックを無効化している
+  - そのため、このフラグを SoraVideoOption.ResolutionAdjustment.NONE に設定することで、従来通り、解像度を調整することなく HW エンコーダーを利用できる
+  - より詳細な情報は以下のリンクを参照
+    - https://bugs.chromium.org/p/chromium/issues/detail?id=1084702
+  - 加えて、解像度調整ありでエンコーダーの初期化またはエンコード処理に失敗した際に、解像度調整なしで操作をリトライする処理も実装した
+    - Android OS 11 の Xperia 5 II で VGA のサイマルキャストを H.264 で送信しようとした際、解像度調整ありの場合 (= hardwareVideoEncoderResolutionAdjustment が MULTIPLE_OF_16 の場合) は HW エンコーダーの初期化が失敗するが、解像度調整なしの場合は成功する現象を確認したため、この処理を実装した
+  - @enm10k
+- [UPDATE] SoraMediaOption.enableSpotlight() の引数に `enableSimulcast` を追加し、サイマルキャスト無効の状態でスポットライト機能を利用できるようにする
+    - @enm10k
+- [UPDATE] libwebrtc を 103.5060.4.0 に上げる
+  - @miosakuma
+- [UPDATE] 依存ライブラリー `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9` を追加する
+  - @enm10k
+- [UPDATE] システム条件を Android Studio 2021.2.1 に上げる
+  - @miosakuma
+- [ADD] HTTP プロキシに対応する
+  - @enm10k
+- [ADD] SoraMediaChannel に `bundleId` を追加する
+  - @enm10k
+
 ## 2022.2.0
 
 - [CHANGE] Sora で廃止となった以下のフィールドを削除する

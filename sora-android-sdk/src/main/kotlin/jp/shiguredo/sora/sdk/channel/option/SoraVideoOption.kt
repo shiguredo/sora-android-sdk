@@ -127,4 +127,31 @@ class SoraVideoOption {
 
         override fun toString(): String = value
     }
+
+    enum class ResolutionAdjustment(val value: UInt) {
+        /**
+         * 解像度を調整しない
+         */
+        NONE(1u),
+
+        /**
+         * 解像度が2の倍数になるように調整する
+         */
+        MULTIPLE_OF_2(2u),
+
+        /**
+         * 解像度が4の倍数になるように調整する
+         */
+        MULTIPLE_OF_4(4u),
+
+        /**
+         * 解像度が8の倍数になるように調整する
+         */
+        MULTIPLE_OF_8(8u),
+
+        /**
+         * 解像度が16の倍数になるように調整する
+         */
+        MULTIPLE_OF_16(16u),
+    }
 }

@@ -22,6 +22,7 @@ data class ConnectMessage(
     @SerializedName("role") var role: String,
     @SerializedName("channel_id") val channelId: String,
     @SerializedName("client_id") val clientId: String? = null,
+    @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("metadata") val metadata: Any? = null,
     @SerializedName("signaling_notify_metadata")
     val signalingNotifyMetadata: Any? = null,
@@ -98,6 +99,7 @@ data class OfferMessage(
     @SerializedName("type") val type: String = "offer",
     @SerializedName("sdp") val sdp: String,
     @SerializedName("client_id") val clientId: String,
+    @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("connection_id") val connectionId: String,
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
@@ -155,6 +157,7 @@ data class NotificationMessage(
     @SerializedName("event_type") val eventType: String,
     @SerializedName("role") val role: String?,
     @SerializedName("client_id") val clientId: String,
+    @SerializedName("bundle_id") val bundleId: String?,
     @SerializedName("connection_id") val connectionId: String?,
     @SerializedName("audio") val audio: Boolean?,
     @SerializedName("video") val video: Boolean?,

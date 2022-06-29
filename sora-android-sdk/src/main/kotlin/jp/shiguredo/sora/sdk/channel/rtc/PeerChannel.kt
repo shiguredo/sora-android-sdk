@@ -17,7 +17,9 @@ import org.webrtc.Logging
 import org.webrtc.MediaStream
 import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
+import org.webrtc.PeerConnectionDependencies
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.ProxyType
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
 import org.webrtc.RtpParameters
@@ -470,9 +472,21 @@ class PeerChannelImpl(
         factory = componentFactory.createPeerConnectionFactory(appContext)
 
         SoraLogger.d(TAG, "createPeerConnection")
+        val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
+        if (mediaOption.proxy.type != ProxyType.NONE) {
+            dependenciesBuilder.setProxy(
+                mediaOption.proxy.type,
+                mediaOption.proxy.agent,
+                mediaOption.proxy.hostname,
+                mediaOption.proxy.port,
+                mediaOption.proxy.username,
+                mediaOption.proxy.password,
+            )
+        }
+        val dependencies = dependenciesBuilder.createPeerConnectionDependencies()
         conn = factory!!.createPeerConnection(
             networkConfig.createConfiguration(),
-            connectionObserver
+            dependencies
         )
 
         SoraLogger.d(TAG, "local managers' initTrack: audio")
