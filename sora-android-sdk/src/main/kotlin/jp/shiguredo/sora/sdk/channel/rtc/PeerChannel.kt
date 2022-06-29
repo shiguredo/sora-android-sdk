@@ -348,14 +348,16 @@ class PeerChannelImpl(
 
             // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
             // setTrack 内も同様
-            mid.get("audio")?.let {
-                val track = localAudioManager.track
-                setTrack(it, track!!)
+            mid.get("audio")?.let { mid ->
+                localAudioManager.track?.let { track ->
+                    setTrack(mid, track)
+                }
             } ?: SoraLogger.d(TAG, "mid for aduio not found")
 
-            mid.get("video")?.let {
-                val track = localVideoManager?.track
-                setTrack(it, track!!)
+            mid.get("video")?.let { mid ->
+                localVideoManager?.track?.let { track ->
+                    setTrack(mid, track)
+                }
             } ?: SoraLogger.d(TAG, "mid for video not found")
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {

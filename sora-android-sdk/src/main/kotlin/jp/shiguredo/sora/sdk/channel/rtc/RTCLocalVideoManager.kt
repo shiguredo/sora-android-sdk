@@ -29,7 +29,7 @@ class RTCLocalVideoManager(private val capturer: VideoCapturer) {
 
         val trackId = UUID.randomUUID().toString()
         track = factory.createVideoTrack(trackId, source)
-        track!!.setEnabled(true)
+        track?.setEnabled(true)
         SoraLogger.d(TAG, "created track => $trackId, $track")
     }
 

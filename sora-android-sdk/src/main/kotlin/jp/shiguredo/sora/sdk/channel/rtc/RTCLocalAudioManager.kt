@@ -27,7 +27,7 @@ class RTCLocalAudioManager(
             SoraLogger.d(TAG, "audio source created: $source")
             val trackId = UUID.randomUUID().toString()
             track = factory.createAudioTrack(trackId, source)
-            track!!.setEnabled(true)
+            track?.setEnabled(true)
             SoraLogger.d(TAG, "audio track created: $track")
         }
     }
