@@ -146,9 +146,9 @@
 
 ## 2021.1.1
 
-- [FIX] Sora への接続時に simulcast_rid を指定するとエラーになる現象を修正する
-  - @enm10k
 - [CHANGE] enum class SimulcastRid の定義を `jp.shiguredo.sora.sdk.channel.signaling.message` から `jp.shiguredo.sora.sdk.channel.option.SoraVideoOption` に移動する
+  - @enm10k
+- [FIX] Sora への接続時に simulcast_rid を指定するとエラーになる現象を修正する
   - @enm10k
 
 ## 2021.1
@@ -218,6 +218,10 @@
 
 ## 2020.3
 
+- [CHANGE] 古いロール (`upstream`, `downstream`) を削除する
+    - @szktty
+- [CHANGE] `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
+    - @szktty
 - [UPDATE] libwebrtc を 83.4103.12.2 に上げる
     - @szktty
 - [UPDATE] `com.android.tools.build:gradle` を 4.0.0 に上げる
@@ -225,10 +229,6 @@
 - [UPDATE] `com.squareup.okhttp3:okhttp` を 4.7.2 に上げる
     - @szktty
 - [ADD] 新しいロール (`sendonly`, `recvonly`, `sendrecv`) に対応する
-    - @szktty
-- [CHANGE] 古いロール (`upstream`, `downstream`) を削除する
-    - @szktty
-- [CHANGE] `SoraAudioOption.audioSource` のデフォルト値を `VOICE_COMMUNICATION` に変更する
     - @szktty
 
 ## 2020.2
