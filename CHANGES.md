@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.3.0
+
 - [CHANGE] SoraMediaOption に hardwareVideoEncoderResolutionAdjustment を追加する
   - HW エンコーダーに入力されるフレームの解像度が指定された数の倍数になるように調整する
   - デフォルトでは 16 が指定されている
@@ -32,6 +34,8 @@
   - @miosakuma
 - [UPDATE] 依存ライブラリー `org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9` を追加する
   - @enm10k
+- [UPDATE] システム条件を Android Studio 2021.2.1 に上げる
+  - @miosakuma
 - [ADD] HTTP プロキシに対応する
   - @enm10k
 - [ADD] SoraMediaChannel に `bundleId` を追加する
