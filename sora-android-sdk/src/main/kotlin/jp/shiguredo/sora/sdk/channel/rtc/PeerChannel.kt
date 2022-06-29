@@ -319,54 +319,27 @@ class PeerChannelImpl(
         }
     }
 
-    private fun setAudioTrack(mid: String) {
+    private fun setTrack(mid: String, track: MediaStreamTrack) {
+        val kind = track.kind()
+
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
         if (transceiver == null) {
-            SoraLogger.i(TAG, "transceiver for audio not found")
+            SoraLogger.e(TAG, "transceiver for $kind not found")
+            // TODO: 例外を上げる
             return
         }
 
         val sender = transceiver.sender
         if (sender == null) {
-            SoraLogger.i(TAG, "sender for audio not found")
-            return
-        }
-
-        val track = localAudioManager.track
-        if (track == null) {
-            SoraLogger.i(TAG, "audio track not found")
+            SoraLogger.e(TAG, "sender for $kind not found")
+            // TODO: 例外を上げる
             return
         }
 
         transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
         sender.streams = listOf(localStreamId)
         sender.setTrack(track, false)
-        SoraLogger.d(TAG, "set audio sender: mid=$mid, transceiver=$transceiver")
-    }
-
-    private fun setVideoTrack(mid: String) {
-        val transceiver = conn?.transceivers?.find { it.mid == mid }
-        if (transceiver == null) {
-            SoraLogger.i(TAG, "transceiver for video not found")
-            return
-        }
-
-        val sender = transceiver.sender
-        if (sender == null) {
-            SoraLogger.i(TAG, "sender for video not found")
-            return
-        }
-
-        val track = localVideoManager?.track
-        if (track == null) {
-            SoraLogger.i(TAG, "video track not found")
-            return
-        }
-
-        transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-        sender.streams = listOf(localStreamId)
-        sender.setTrack(track, false)
-        SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$transceiver ")
+        SoraLogger.d(TAG, "set $kind sender: mid=$mid, transceiver=$transceiver")
     }
 
     override fun handleInitialRemoteOffer(
@@ -385,11 +358,23 @@ class PeerChannelImpl(
             // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
             mid.get("audio")?.let {
-                setAudioTrack(it)
+                val track = localAudioManager.track
+                if (track == null) {
+                    SoraLogger.i(TAG, "audio track not found")
+                    // TODO: 例外を上げる
+                }
+
+                setTrack(it, track!!)
             } ?: SoraLogger.i(TAG, "mid for aduio not found")
 
             mid.get("video")?.let {
-                setVideoTrack(it)
+                val track = localVideoManager?.track
+                if (track == null) {
+                    SoraLogger.i(TAG, "video track not found")
+                    // TODO: 例外を上げる
+                }
+
+                setTrack(it, track!!)
             } ?: SoraLogger.i(TAG, "mid for video not found")
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
