@@ -365,7 +365,7 @@ class PeerChannelImpl(
                 }
 
                 setTrack(it, track!!)
-            } ?: SoraLogger.i(TAG, "mid for aduio not found")
+            } ?: SoraLogger.d(TAG, "mid for aduio not found")
 
             mid.get("video")?.let {
                 val track = localVideoManager?.track
@@ -375,7 +375,7 @@ class PeerChannelImpl(
                 }
 
                 setTrack(it, track!!)
-            } ?: SoraLogger.i(TAG, "mid for video not found")
+            } ?: SoraLogger.d(TAG, "mid for video not found")
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }

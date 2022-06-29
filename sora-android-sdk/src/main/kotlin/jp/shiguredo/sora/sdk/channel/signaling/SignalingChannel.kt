@@ -441,7 +441,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 }
             } catch (e: Exception) {
                 // 不正なメッセージを受信した場合、シグナリングの異常とみなして Sora との接続を切断する
-                SoraLogger.e(TAG, e.toString(), e)
+                SoraLogger.e(TAG, "failed to handle a WebSocket message", e)
                 disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
             }
         }
