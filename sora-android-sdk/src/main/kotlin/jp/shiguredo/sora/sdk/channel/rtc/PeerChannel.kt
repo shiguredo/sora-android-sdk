@@ -37,7 +37,7 @@ import java.util.zip.DeflaterInputStream
 interface PeerChannel {
     fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>?,
+        mid: Map<String, String>,
         encodings: List<Encoding>?
     ): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
@@ -116,10 +116,8 @@ class PeerChannelImpl(
     private val localAudioManager = componentFactory.createAudioManager()
     private val localVideoManager = componentFactory.createVideoManager()
 
-    private var localStream: MediaStream? = null
-
     private var videoSender: RtpSender? = null
-    private var audioSender: RtpSender? = null
+    private val localStreamId: String = UUID.randomUUID().toString()
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private var compressLabels: List<String> = emptyList()
@@ -321,12 +319,20 @@ class PeerChannelImpl(
         }
     }
 
+    private fun setTrack(mid: String, track: MediaStreamTrack) {
+        val transceiver = this.conn?.transceivers?.find { it.mid == mid }
+        val sender = transceiver!!.sender
+        transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+        sender!!.streams = listOf(localStreamId)
+        sender!!.setTrack(track, false)
+        SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
+    }
+
     override fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>?,
+        mid: Map<String, String>,
         encodings: List<Encoding>?
     ): Single<SessionDescription> {
-
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
 
@@ -337,47 +343,25 @@ class PeerChannelImpl(
             // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
             // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
             // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
-            val mediaStreamLabels = listOf(localStream!!.id)
 
-            val audioMid = mid?.get("audio")
-            if (audioMid != null) {
-                val transceiver = this.conn?.transceivers?.find { it.mid == audioMid }
-                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set audio sender: mid=$audioMid, transceiver=$transceiver")
-                audioSender = transceiver?.sender
-                audioSender?.streams = listOf(localStream!!.id)
+            // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
+            // setTrack 内も同様
+            mid.get("audio")?.let { mid ->
+                localAudioManager.track?.let { track ->
+                    setTrack(mid, track)
+                }
+            } ?: SoraLogger.d(TAG, "mid for aduio not found")
 
-                localStream!!.audioTracks.firstOrNull()?.let {
-                    SoraLogger.d(TAG, "set audio track: track=$it, enabled=${it.enabled()}")
-                    audioSender?.setTrack(it, false)
+            mid.get("video")?.let { mid ->
+                localVideoManager?.track?.let { track ->
+                    setTrack(mid, track)
                 }
-            } else {
-                audioSender = localStream!!.audioTracks.firstOrNull()?.let {
-                    conn?.addTrack(it, mediaStreamLabels)
-                }
-            }
-
-            val videoMid = mid?.get("video")
-            if (videoMid != null) {
-                val transceiver = this.conn?.transceivers?.find { it.mid == videoMid }
-                transceiver?.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                SoraLogger.d(TAG, "set video sender: mid=$mid, transceiver=$transceiver ")
-                videoSender = transceiver?.sender
-                videoSender?.streams = listOf(localStream!!.id)
-
-                localStream!!.videoTracks.firstOrNull()?.let {
-                    SoraLogger.d(TAG, "set video track: track=$it, enabled=${it.enabled()}")
-                    videoSender?.setTrack(it, false)
-                }
-            } else {
-                videoSender = localStream!!.videoTracks.firstOrNull()?.let {
-                    conn?.addTrack(it, mediaStreamLabels)
-                }
-            }
+            } ?: SoraLogger.d(TAG, "mid for video not found")
 
             if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             }
+
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
         }.flatMap {
@@ -489,22 +473,23 @@ class PeerChannelImpl(
             dependencies
         )
 
+        val localStream = factory!!.createLocalMediaStream(localStreamId)
+
         SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+        localAudioManager.track?.let {
+            localStream.addTrack(it)
+        }
 
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
-        localVideoManager.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
+        localVideoManager?.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
+        localVideoManager?.track?.let {
+            localStream.addTrack(it)
+        }
 
-        SoraLogger.d(TAG, "setup local media stream")
-        val streamId = UUID.randomUUID().toString()
-        localStream = factory!!.createLocalMediaStream(streamId)
+        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
+        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
 
-        localAudioManager.attachTrackToStream(localStream!!)
-        localVideoManager.attachTrackToStream(localStream!!)
-        SoraLogger.d(TAG, "attached video sender => $videoSender")
-
-        SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream!!.audioTracks.size}")
-        SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream!!.videoTracks.size}")
         listener?.onAddLocalStream(localStream!!)
     }
 
@@ -653,7 +638,7 @@ class PeerChannelImpl(
         conn?.dispose()
         conn = null
         localAudioManager.dispose()
-        localVideoManager.dispose()
+        localVideoManager?.dispose()
         SoraLogger.d(TAG, "dispose peer connection factory")
         factory?.dispose()
         factory = null

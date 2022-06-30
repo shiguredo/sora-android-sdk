@@ -5,7 +5,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.AudioSource
 import org.webrtc.AudioTrack
 import org.webrtc.MediaConstraints
-import org.webrtc.MediaStream
 import org.webrtc.PeerConnectionFactory
 import java.util.UUID
 
@@ -18,7 +17,7 @@ class RTCLocalAudioManager(
     }
 
     private var source: AudioSource? = null
-    private var track: AudioTrack? = null
+    var track: AudioTrack? = null
 
     fun initTrack(factory: PeerConnectionFactory, audioOption: SoraAudioOption) {
         SoraLogger.d(TAG, "initTrack: send=$send")
@@ -28,7 +27,7 @@ class RTCLocalAudioManager(
             SoraLogger.d(TAG, "audio source created: $source")
             val trackId = UUID.randomUUID().toString()
             track = factory.createAudioTrack(trackId, source)
-            track!!.setEnabled(true)
+            track?.setEnabled(true)
             SoraLogger.d(TAG, "audio track created: $track")
         }
     }
@@ -56,12 +55,6 @@ class RTCLocalAudioManager(
             )
         }
         return constraints
-    }
-
-    fun attachTrackToStream(stream: MediaStream) {
-        if (send) {
-            track?.let { stream.addTrack(it) }
-        }
     }
 
     fun dispose() {

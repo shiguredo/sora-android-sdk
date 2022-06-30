@@ -104,12 +104,12 @@ class RTCComponentFactory(
         return constraints
     }
 
-    fun createVideoManager(): RTCLocalVideoManager {
-        val videoManager = mediaOption.videoCapturer?.let {
-            RTCLocalVideoManagerImpl(it)
-        } ?: RTCNullLocalVideoManager()
-        SoraLogger.d(TAG, "videoManager created: $videoManager")
-        return videoManager
+    fun createVideoManager(): RTCLocalVideoManager? {
+        return mediaOption.videoCapturer?.let {
+            val videoManager = RTCLocalVideoManager(it)
+            SoraLogger.d(TAG, "videoManager created: $videoManager")
+            videoManager
+        }
     }
 
     fun createAudioManager(): RTCLocalAudioManager {

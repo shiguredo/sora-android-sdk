@@ -819,7 +819,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                     },
                     onError = {
                         val msg = "[channel:$role] failure in handleInitialOffer: ${it.message}"
-                        SoraLogger.w(TAG, msg)
+                        SoraLogger.w(TAG, msg, it)
                         disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
                     }
                 )
@@ -967,7 +967,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     private fun sendDisconnectIfNeeded(disconnectReason: SoraDisconnectReason) {
-        val state = peer?.connectionState() ?: null
+        val state = peer?.connectionState()
         SoraLogger.d(
             TAG,
             "[channel:$role] sendDisconnectIfNeeded switched=$switchedToDataChannel, " +

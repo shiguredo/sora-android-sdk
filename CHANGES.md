@@ -9,6 +9,12 @@
 - FIX
     - バグ修正
 
+## feature/make-mid-required
+
+- [CHANGE] type: offer の mid を必須にする
+  - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
+  - @enm10k
+
 ## develop
 
 ## 2022.3.0
