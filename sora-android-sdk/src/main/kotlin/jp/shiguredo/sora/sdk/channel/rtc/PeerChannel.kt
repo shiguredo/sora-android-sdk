@@ -26,13 +26,79 @@ import org.webrtc.RtpParameters
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
 import org.webrtc.RtpTransceiver
+import org.webrtc.SSLCertificateVerifier
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.security.KeyStore
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
+
+class CustomSSLCertificateVerifier : SSLCertificateVerifier {
+    private val TAG = CustomSSLCertificateVerifier::class.simpleName
+
+    object shared {
+        var ks: KeyStore? = null
+
+        init {
+            ks = KeyStore.getInstance("BKS")
+            ks?.load(null)
+
+            val aks = KeyStore.getInstance("AndroidCAStore")
+            aks.load(null)
+
+            for (alias in aks.aliases()) {
+                ks?.setCertificateEntry(alias, aks.getCertificate(alias))
+            }
+        }
+    }
+
+    // 参考
+    // http://www.jssec.org/dl/android_securecoding/5_how_to_use_security_functions.html#%E3%83%97%E3%83%A9%E3%82%A4%E3%83%99%E3%83%BC%E3%83%88%E8%A8%BC%E6%98%8E%E6%9B%B8%E3%81%A7https%E9%80%9A%E4%BF%A1%E3%81%99%E3%82%8B
+    @Synchronized
+    override fun verify(cert: ByteArray?): Boolean {
+        val certificateFactory = CertificateFactory.getInstance("X.509")
+        val certificates = certificateFactory.generateCertificates(ByteArrayInputStream(cert)).map { it as X509Certificate }
+
+        // NOTE: certificates の数が常に1担ってしまうが、検証のためにはチェーンも含めた証明書が必要?
+        SoraLogger.d(TAG, "certificates.size: ${certificates.size}")
+
+        // DEBUG
+        // for (certificate in certificates) {
+        //     SoraLogger.d(TAG, "issuerDN.name: ${certificate.issuerDN.name}")
+        //     SoraLogger.d(TAG, "sigAlgName: ${certificate.sigAlgName}")
+        //     SoraLogger.d(TAG, "publicKey: ${certificate.publicKey}")
+        // }
+
+        val trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        trustManagerFactory.init(shared.ks)
+
+        for (trustManager in trustManagerFactory.trustManagers) {
+            val x509TrustManager = trustManager as X509TrustManager
+
+            // DEBUG
+            // for (acceptedCertificate in x509TrustManager.acceptedIssuers) {
+            //     SoraLogger.d(TAG, "acceptedCertificate.issuerDN.name: ${acceptedCertificate.issuerDN.name}")
+            // }
+
+            SoraLogger.d(TAG, "start checkServerTrusted")
+            // 検証に失敗したら、 CertificateException が発生する
+            x509TrustManager.checkServerTrusted(
+                certificates.toTypedArray(),
+                certificates[0].sigAlgName
+            )
+        }
+
+        SoraLogger.d(TAG, "checkServerTrusted passed")
+        return true
+    }
+}
 
 interface PeerChannel {
     fun handleInitialRemoteOffer(
@@ -467,10 +533,15 @@ class PeerChannelImpl(
                 mediaOption.proxy.password,
             )
         }
+
+        var connectionDependencies = PeerConnectionDependencies.builder(connectionObserver)
         val dependencies = dependenciesBuilder.createPeerConnectionDependencies()
+        val sslCertVerifier = CustomSSLCertificateVerifier()
+        connectionDependencies.setSSLCertificateVerifier(sslCertVerifier)
+
         conn = factory!!.createPeerConnection(
             networkConfig.createConfiguration(),
-            dependencies
+            connectionDependencies.createPeerConnectionDependencies()
         )
 
         val localStream = factory!!.createLocalMediaStream(localStreamId)
