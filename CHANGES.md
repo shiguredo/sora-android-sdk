@@ -15,11 +15,11 @@
   - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
   - @enm10k
 - [UPDATE] `compileSdkVersion` を 32 に上げる
-    - @mioakuma
+    - @miosakuma
 - [UPDATE] `targetSdkVersion` を 32 に上げる
-    - @mioakuma
+    - @miosakuma
 - [UPDATE] `Kotlin` のバージョンを 1.6.1 に上げる
-    - @mioakuma
+    - @miosakuma
 - [UPDATE] 依存ライブラリーのバージョンを上げる
     - `com.android.tools.build:gradle` を 7.2.2 に上げる
     - `org.jetbrains.kotlin:kotlin-gradle-plugin` を 1.7.10 に上げる
