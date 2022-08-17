@@ -55,7 +55,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 |    automaticResizeOn=${settings.automaticResizeOn}
                 |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
                 |    lossNotification=${settings.capabilities.lossNotification}
-            """.trimMargin()
+                        """.trimMargin()
                     )
                     return@Callable encoder.initEncode(settings, callback)
                 }

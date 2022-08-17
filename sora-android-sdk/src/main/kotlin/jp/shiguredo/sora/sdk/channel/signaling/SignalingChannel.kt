@@ -273,7 +273,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
         SoraLogger.d(
             TAG,
             """[signaling:$role] <- offer
-            |${offerMessage.sdp}""".trimMargin()
+            |${offerMessage.sdp}
+            """.trimMargin()
         )
 
         var endpoint = ""

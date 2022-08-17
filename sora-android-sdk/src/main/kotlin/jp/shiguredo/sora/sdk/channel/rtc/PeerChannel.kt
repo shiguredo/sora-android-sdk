@@ -314,7 +314,7 @@ class PeerChannelImpl(
             }
             return@flatMap createAnswer()
         }.flatMap {
-            answer ->
+                answer ->
             return@flatMap setLocalDescription(answer)
         }
     }
@@ -365,7 +365,7 @@ class PeerChannelImpl(
             SoraLogger.d(TAG, "createAnswer")
             return@flatMap createAnswer()
         }.flatMap {
-            answer ->
+                answer ->
             SoraLogger.d(TAG, "setLocalDescription")
             return@flatMap setLocalDescription(answer)
         }
@@ -557,7 +557,8 @@ class PeerChannelImpl(
                             SoraLogger.d(
                                 TAG,
                                 """createAnswer:onCreateSuccess: ${sdp!!.type}
-                        |${sdp.description}""".trimMargin()
+                        |${sdp.description}
+                                """.trimMargin()
                             )
                             it.onSuccess(sdp)
                         }

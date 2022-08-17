@@ -72,7 +72,7 @@ class CameraCapturerFactory {
         private fun createCapturer(enumerator: CameraEnumerator, frontFacingFirst: Boolean): CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
             enumerator.deviceNames.forEach {
-                deviceName ->
+                    deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, frontFacingFirst)
                 }
@@ -81,7 +81,7 @@ class CameraCapturerFactory {
                 return capturer
             }
             enumerator.deviceNames.forEach {
-                deviceName ->
+                    deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, !frontFacingFirst)
                 }
