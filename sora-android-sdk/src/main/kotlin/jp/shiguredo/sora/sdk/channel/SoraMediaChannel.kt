@@ -663,7 +663,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             |signalingMetadata       = ${this.signalingMetadata}
             |clientId                = ${this.clientId}
             |bundleId                = ${this.bundleId}
-            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}""".trimMargin()
+            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}
+            """.trimMargin()
         )
 
         if (closing) {

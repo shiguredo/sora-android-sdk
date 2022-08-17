@@ -14,6 +14,25 @@
 - [CHANGE] type: offer の mid を必須にする
   - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
   - @enm10k
+- [UPDATE] `compileSdkVersion` を 32 に上げる
+    - @mioakuma
+- [UPDATE] `targetSdkVersion` を 32 に上げる
+    - @mioakuma
+- [UPDATE] `Kotlin` のバージョンを 1.6.1 に上げる
+    - @mioakuma
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+    - `com.android.tools.build:gradle` を 7.2.2 に上げる
+    - `org.jetbrains.kotlin:kotlin-gradle-plugin` を 1.7.10 に上げる
+    - `org.ajoberstar.grgit:grgit-gradle` を 5.0.0 に上げる
+    - `org.jetbrains.dokka:dokka-gradle-plugin` を 1.7.10 に上げる
+    - `com.github.ben-manes:gradle-versions-plugin` を 0.42.0 に上げる
+    - `org.jlleitschuh.gradle:ktlint-gradle` を 10.3.0 に上げる
+    - `com.pinterest:ktlint` を 0.45.2 に上げる
+    - `com.google.code.gson:gson` を 2.9.1 に上げる
+    - `com.squareup.okhttp3:okhttp` を 4.10.0 に上げる
+    - `org.jetbrains.kotlinx:kotlinx-coroutines-android` を 1.6.4 に上げる
+    - `org.robolectric:robolectric` を 4.8.1 に上げる
+    - @miosakuma
 - [FIX] mid を nullable に変更する
   - 「type: offer の mid を必須にする」の対応で role が recvonly の時にエラーとなる不具合の修正
   - @miosakuma
