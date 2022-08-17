@@ -18,7 +18,9 @@
     - @miosakuma
 - [UPDATE] `targetSdkVersion` を 32 に上げる
     - @miosakuma
-- [UPDATE] `Kotlin` のバージョンを 1.6.1 に上げる
+- [UPDATE] `Kotlin` のバージョンを 1.7.10 に上げる
+    - @miosakuma
+- [UPDATE] Gradle を 7.5.1 に上げる
     - @miosakuma
 - [UPDATE] 依存ライブラリーのバージョンを上げる
     - `com.android.tools.build:gradle` を 7.2.2 に上げる
