@@ -37,7 +37,7 @@ import java.util.zip.DeflaterInputStream
 interface PeerChannel {
     fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>,
+        mid: Map<String, String>?,
         encodings: List<Encoding>?
     ): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
@@ -330,7 +330,7 @@ class PeerChannelImpl(
 
     override fun handleInitialRemoteOffer(
         offer: String,
-        mid: Map<String, String>,
+        mid: Map<String, String>?,
         encodings: List<Encoding>?
     ): Single<SessionDescription> {
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
@@ -346,13 +346,13 @@ class PeerChannelImpl(
 
             // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
             // setTrack 内も同様
-            mid.get("audio")?.let { mid ->
+            mid?.get("audio")?.let { mid ->
                 localAudioManager.track?.let { track ->
                     setTrack(mid, track)
                 }
-            } ?: SoraLogger.d(TAG, "mid for aduio not found")
+            } ?: SoraLogger.d(TAG, "mid for audio not found")
 
-            mid.get("video")?.let { mid ->
+            mid?.get("video")?.let { mid ->
                 localVideoManager?.track?.let { track ->
                     setTrack(mid, track)
                 }

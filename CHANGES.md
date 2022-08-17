@@ -9,13 +9,14 @@
 - FIX
     - バグ修正
 
-## feature/make-mid-required
+## develop
 
 - [CHANGE] type: offer の mid を必須にする
   - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
   - @enm10k
-
-## develop
+- [FIX] mid を nullable に変更する
+  - 「type: offer の mid を必須にする」の対応で role が recvonly の時にエラーとなる不具合の修正
+  - @miosakuma
 
 ## 2022.3.0
 
