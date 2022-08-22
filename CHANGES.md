@@ -14,6 +14,8 @@
 - [CHANGE] type: offer の mid を必須にする
     - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
     - @enm10k
+- [UPDATE] libwebrtc を 105.5195.0.0 に上げる
+    - @miosakuma
 - [UPDATE] `compileSdkVersion` を 32 に上げる
     - @miosakuma
 - [UPDATE] `targetSdkVersion` を 32 に上げる
