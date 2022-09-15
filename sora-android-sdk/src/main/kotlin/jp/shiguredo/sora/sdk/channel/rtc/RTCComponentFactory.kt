@@ -9,8 +9,6 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.DefaultVideoDecoderFactory
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
-import org.webrtc.SoftwareVideoDecoderFactory
-import org.webrtc.SoftwareVideoEncoderFactory
 import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 
@@ -55,8 +53,10 @@ class RTCComponentFactory(
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             else ->
-                // context が指定されていなければソフトウェアエンコーダーを使用する
-                SoftwareVideoEncoderFactory()
+                SoraDefaultVideoEncoderFactory(
+                    null,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                )
         }
 
         SoraLogger.d(TAG, "videoDecoderFactory => ${mediaOption.videoDecoderFactory}")
@@ -67,7 +67,7 @@ class RTCComponentFactory(
             mediaOption.videoDownstreamContext != null ->
                 DefaultVideoDecoderFactory(mediaOption.videoDownstreamContext)
             else ->
-                SoftwareVideoDecoderFactory()
+                DefaultVideoDecoderFactory(null)
         }
 
         SoraLogger.d(TAG, "decoderFactory => $decoderFactory")
