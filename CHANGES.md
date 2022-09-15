@@ -43,7 +43,7 @@
 - [FIX] EGLContext が取れなかった場合、DefaultVideoDecoderFactory, SoraDefaultVideoEncoderFactory を使用する
     - EGLContext が取れなかった場合の Decoder を SoftwareVideoDecoderFactory から DefaultVideoDecoderFactory に変更する
     - EGLContext が取れなかった場合の Encoder を SoftwareVideoEncoderFactory から SoraDefaultVideoEncoderFactory に変更する
-    - EGLContext は null でも Hardware を使用する MediaCodec は動作するため HW も動作可能な が取れなかった場合、DefaultVideoDecoderFactory, SoraDefaultVideoEncoderFactory を使用する
+    - EGLContext は null でも Hardware を使用する MediaCodec は動作するため HW も動作可能な DefaultVideoDecoderFactory, SoraDefaultVideoEncoderFactory を使用する
     - @miosakuma
 
 ## 2022.3.0

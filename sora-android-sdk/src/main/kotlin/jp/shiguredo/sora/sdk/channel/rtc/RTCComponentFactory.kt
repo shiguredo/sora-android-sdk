@@ -53,7 +53,6 @@ class RTCComponentFactory(
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
             else ->
-                // context が指定されていなければソフトウェアエンコーダーを使用する
                 SoraDefaultVideoEncoderFactory(
                     null,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
