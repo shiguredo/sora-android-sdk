@@ -7,11 +7,11 @@ apply plugin: 'org.jlleitschuh.gradle.ktlint'
 group = 'com.github.shiguredo'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 32
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 32
 
         buildConfigField("String", "VERSION_NAME", "\"${grgit.describe()}\"")
         buildConfigField("String", "REVISION", "\"${grgit.head().abbreviatedId}\"")
@@ -71,7 +71,7 @@ dokkaHtml.configure {
 }
 
 ktlint {
-    version = "0.43.2"
+    version = "0.45.2"
     android = false
     outputToConsole = true
     reporters {
@@ -86,9 +86,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
 
     // required by "signaling" part
-    implementation 'com.google.code.gson:gson:2.8.9'
-    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
+    implementation 'com.google.code.gson:gson:2.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 
     // required by "rtc" part
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
@@ -97,7 +97,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:core:1.4.0'
-    testImplementation('org.robolectric:robolectric:4.7.3') {
+    testImplementation('org.robolectric:robolectric:4.8.1') {
         exclude group: 'com.google.auto.service', module: 'auto-service'
     }
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
