@@ -319,13 +319,14 @@ class PeerChannelImpl(
         }
     }
 
-    private fun setTrack(mid: String, track: MediaStreamTrack) {
+    private fun setTrack(mid: String, track: MediaStreamTrack): RtpSender {
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
         val sender = transceiver!!.sender
         transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
         sender!!.streams = listOf(localStreamId)
         sender!!.setTrack(track, false)
         SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
+        return sender
     }
 
     override fun handleInitialRemoteOffer(
@@ -354,7 +355,7 @@ class PeerChannelImpl(
 
             mid?.get("video")?.let { mid ->
                 localVideoManager?.track?.let { track ->
-                    setTrack(mid, track)
+                    videoSender = setTrack(mid, track)
                 }
             } ?: SoraLogger.d(TAG, "mid for video not found")
 

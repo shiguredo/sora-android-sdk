@@ -40,6 +40,8 @@
 - [FIX] mid を nullable に変更する
     - 「type: offer の mid を必須にする」の対応で role が recvonly の時にエラーとなる不具合の修正
     - @miosakuma
+- [FIX] offer で受信した encodings が反映されない不具合を修正する
+    - @miosakuma
 - [FIX] EGLContext が取れなかった場合、DefaultVideoDecoderFactory, SoraDefaultVideoEncoderFactory を使用する
     - EGLContext が取れなかった場合の Decoder を SoftwareVideoDecoderFactory から DefaultVideoDecoderFactory に変更する
     - EGLContext が取れなかった場合の Encoder を SoftwareVideoEncoderFactory から SoraDefaultVideoEncoderFactory に変更する
