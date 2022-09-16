@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.4.0
+
 - [CHANGE] type: offer の mid を必須にする
     - この修正の結果、 type: offer に mid が含まれない場合は、エラーになります
     - @enm10k

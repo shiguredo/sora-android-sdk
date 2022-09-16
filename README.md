@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-103.5060-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5060)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-105.5195-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5195)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -22,7 +22,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
 - Android Studio 2021.2.1 以降
-- WebRTC SFU Sora 2022.1.0 以降
+- WebRTC SFU Sora 2022.1.1 以降
 
 ## サンプル
 
