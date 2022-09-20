@@ -84,7 +84,7 @@ class ConnectMetadataJsonTest {
 
     private fun roundtrip(metadata: Any?): ConnectMessage {
         val original = ConnectMessage(
-            role = "upstream",
+            role = "sendonly",
             channelId = "sora",
             sdp = "",
             metadata = metadata
