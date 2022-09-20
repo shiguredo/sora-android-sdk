@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] テストコード内に廃止された role が残っていたため最新化する
+    - @miosakuma
+
 ## 2022.4.0
 
 - [CHANGE] type: offer の mid を必須にする
