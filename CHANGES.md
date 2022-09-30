@@ -13,6 +13,8 @@
 
 - [FIX] テストコード内に廃止された role が残っていたため最新化する
     - @miosakuma
+- [FIX] `PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY` は Sora がネットワーク変更に対応しておらず不要な設定であるため削除する
+    - @miosakuma
 
 ## 2022.4.0
 
