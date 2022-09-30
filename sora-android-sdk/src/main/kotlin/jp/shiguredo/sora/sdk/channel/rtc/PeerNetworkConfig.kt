@@ -21,7 +21,6 @@ class PeerNetworkConfig(
 
         conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
         conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
-        conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
         conf.keyType = PeerConnection.KeyType.ECDSA
         val cryptoOptions = CryptoOptions.builder()
             .setEnableGcmCryptoSuites(true)
