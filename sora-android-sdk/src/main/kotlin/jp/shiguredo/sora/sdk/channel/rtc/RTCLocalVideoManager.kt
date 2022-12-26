@@ -6,6 +6,9 @@ import org.webrtc.EglBase
 import org.webrtc.PeerConnectionFactory
 import org.webrtc.SurfaceTextureHelper
 import org.webrtc.VideoCapturer
+import org.webrtc.VideoFrame
+import org.webrtc.VideoProcessor
+import org.webrtc.VideoSink
 import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
 import java.util.UUID
@@ -25,6 +28,7 @@ class RTCLocalVideoManager(private val capturer: VideoCapturer) {
         surfaceTextureHelper =
             SurfaceTextureHelper.create("CaptureThread", eglContext)
         source = factory.createVideoSource(capturer.isScreencast)
+        source!!.setVideoProcessor(ToyVideoProcessor())
         capturer.initialize(surfaceTextureHelper, appContext, source!!.capturerObserver)
 
         val trackId = UUID.randomUUID().toString()
@@ -41,5 +45,32 @@ class RTCLocalVideoManager(private val capturer: VideoCapturer) {
 
         SoraLogger.d(TAG, "dispose source")
         source?.dispose()
+    }
+}
+
+class ToyVideoProcessor : VideoProcessor {
+    companion object {
+        private val TAG = ToyVideoProcessor::class.simpleName
+    }
+
+    private var sink: VideoSink? = null
+
+    override fun onCapturerStarted(started: Boolean) {
+        SoraLogger.i(TAG, "onCapturerStarted started=$started")
+    }
+
+    override fun onCapturerStopped() {
+        SoraLogger.i(TAG, "onCapturerStopped")
+    }
+
+    override fun onFrameCaptured(frame: VideoFrame) {
+        SoraLogger.i(TAG, "onFrameCaptured frame=${frame.rotation}")
+        val newFrame = VideoFrame(frame.buffer, 0, frame.timestampNs)
+        sink!!.onFrame(newFrame)
+    }
+
+    override fun setSink(sink: VideoSink?) {
+        SoraLogger.i(TAG, "setSink sink=$sink")
+        this.sink = sink
     }
 }
