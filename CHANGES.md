@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 109.5414.2.0 に上げる
+    - @miosakuma
 - [FIX] テストコード内に廃止された role が残っていたため最新化する
     - @miosakuma
 - [FIX] `PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY` は Sora がネットワーク変更に対応しておらず不要な設定であるため削除する
