@@ -66,6 +66,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val bundleId: String? = null,
     private val signalingNotifyMetadata: Any? = null,
     private val connectDataChannels: List<Map<String, Any>>? = null,
+    private val audioStreamingLanguageCode: String? = null,
     private val redirect: Boolean = false,
 ) : SignalingChannel {
 
@@ -257,6 +258,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 dataChannels = connectDataChannels,
+                audioStreamingLanguageCode = audioStreamingLanguageCode,
                 redirect = redirect
             )
             it.send(message)

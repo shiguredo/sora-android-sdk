@@ -46,6 +46,7 @@ data class ConnectMessage(
     @SerializedName("ignore_disconnect_websocket")
     val ignoreDisconnectWebsocket: Boolean? = null,
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
+    @SerializedName("audio_streaming_language_code") val audioStreamingLanguageCode: String? = null,
     @SerializedName("redirect") var redirect: Boolean? = null
 )
 

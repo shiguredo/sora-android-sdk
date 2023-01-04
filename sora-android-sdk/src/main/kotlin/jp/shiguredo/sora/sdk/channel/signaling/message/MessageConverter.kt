@@ -39,6 +39,7 @@ class MessageConverter {
             bundleId: String? = null,
             signalingNotifyMetadata: Any? = null,
             dataChannels: List<Map<String, Any>>? = null,
+            audioStreamingLanguageCode: String?,
             redirect: Boolean = false
         ): String {
 
@@ -48,6 +49,7 @@ class MessageConverter {
                 dataChannelSignaling = dataChannelSignaling,
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                 dataChannels = dataChannels,
+                audioStreamingLanguageCode = audioStreamingLanguageCode,
                 metadata = metadata,
                 multistream = mediaOption.multistreamIsRequired,
                 sdp = sdp,
