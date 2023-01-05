@@ -237,4 +237,9 @@ class SoraMediaOption {
      * プロキシ
      */
     var proxy: SoraProxyOption = SoraProxyOption()
+
+    /**
+     * Sora の音声ストリーミング機能利用時に指定する言語コード
+     */
+    var audioStreamingLanguageCode: String? = null
 }
