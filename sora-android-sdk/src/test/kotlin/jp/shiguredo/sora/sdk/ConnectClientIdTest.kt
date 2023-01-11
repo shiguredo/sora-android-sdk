@@ -25,7 +25,7 @@ class ConnectClientIdTest {
 
     private fun roundtrip(clientId: String?): Map<*, *> {
         val original = ConnectMessage(
-            role = "upstream",
+            role = "sendonly",
             channelId = "sora",
             sdp = "",
             clientId = clientId
