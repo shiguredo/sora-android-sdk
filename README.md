@@ -22,7 +22,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
 - Android Studio 2021.3.1 以降
-- WebRTC SFU Sora 2022.1.1 以降
+- WebRTC SFU Sora 2022.2.2 以降
 
 ## サンプル
 
@@ -39,7 +39,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 ```
 Copyright 2017, Lyo Kato <lyo.kato at gmail.com> (Original Author)
-Copyright 2017-2022, Shiguredo Inc.
+Copyright 2017-2023, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
