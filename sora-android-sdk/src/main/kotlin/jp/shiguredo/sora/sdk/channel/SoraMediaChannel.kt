@@ -634,36 +634,37 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(
             TAG,
             """connect: SoraMediaOption
-            |requiredRole            = ${mediaOption.requiredRole}
-            |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
-            |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
-            |multistreamEnabled      = ${mediaOption.multistreamEnabled}
-            |audioIsRequired         = ${mediaOption.audioIsRequired}
-            |audioUpstreamEnabled    = ${mediaOption.audioUpstreamEnabled}
-            |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
-            |audioCodec              = ${mediaOption.audioCodec}
-            |audioBitRate            = ${mediaOption.audioBitrate}
-            |audioSource             = ${mediaOption.audioOption.audioSource}
-            |useStereoInput          = ${mediaOption.audioOption.useStereoInput}
-            |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
-            |videoIsRequired         = ${mediaOption.videoIsRequired}
-            |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
-            |videoUpstreamContext    = ${mediaOption.videoUpstreamContext}
-            |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
-            |videoDownstreamContext  = ${mediaOption.videoDownstreamContext}
-            |videoEncoderFactory     = ${mediaOption.videoEncoderFactory}
-            |videoDecoderFactory     = ${mediaOption.videoDecoderFactory}
-            |videoCodec              = ${mediaOption.videoCodec}
-            |videoBitRate            = ${mediaOption.videoBitrate}
-            |videoCapturer           = ${mediaOption.videoCapturer}
-            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
-            |simulcastRid            = ${mediaOption.simulcastRid}
-            |spotlightEnabled        = ${mediaOption.spotlightEnabled}
-            |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
-            |signalingMetadata       = ${this.signalingMetadata}
-            |clientId                = ${this.clientId}
-            |bundleId                = ${this.bundleId}
-            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}
+            |requiredRole               = ${mediaOption.requiredRole}
+            |upstreamIsRequired         = ${mediaOption.upstreamIsRequired}
+            |downstreamIsRequired       = ${mediaOption.downstreamIsRequired}
+            |multistreamEnabled         = ${mediaOption.multistreamEnabled}
+            |audioIsRequired            = ${mediaOption.audioIsRequired}
+            |audioUpstreamEnabled       = ${mediaOption.audioUpstreamEnabled}
+            |audioDownstreamEnabled     = ${mediaOption.audioDownstreamEnabled}
+            |audioCodec                 = ${mediaOption.audioCodec}
+            |audioBitRate               = ${mediaOption.audioBitrate}
+            |audioSource                = ${mediaOption.audioOption.audioSource}
+            |useStereoInput             = ${mediaOption.audioOption.useStereoInput}
+            |useStereoOutput            = ${mediaOption.audioOption.useStereoOutput}
+            |videoIsRequired            = ${mediaOption.videoIsRequired}
+            |videoUpstreamEnabled       = ${mediaOption.videoUpstreamEnabled}
+            |videoUpstreamContext       = ${mediaOption.videoUpstreamContext}
+            |videoDownstreamEnabled     = ${mediaOption.videoDownstreamEnabled}
+            |videoDownstreamContext     = ${mediaOption.videoDownstreamContext}
+            |videoEncoderFactory        = ${mediaOption.videoEncoderFactory}
+            |videoDecoderFactory        = ${mediaOption.videoDecoderFactory}
+            |videoCodec                 = ${mediaOption.videoCodec}
+            |videoBitRate               = ${mediaOption.videoBitrate}
+            |videoCapturer              = ${mediaOption.videoCapturer}
+            |simulcastEnabled           = ${mediaOption.simulcastEnabled}
+            |simulcastRid               = ${mediaOption.simulcastRid}
+            |spotlightEnabled           = ${mediaOption.spotlightEnabled}
+            |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}
+            |audioStreamingLanguageCode = ${mediaOption.audioStreamingLanguageCode}
+            |signalingMetadata          = ${this.signalingMetadata}
+            |clientId                   = ${this.clientId}
+            |bundleId                   = ${this.bundleId}
+            |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
             """.trimMargin()
         )
 
