@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] システム条件を Android Studio 2021.3.1 に上げる
+    - @miosakuma
 - [UPDATE] libwebrtc を 109.5414.2.0 に上げる
     - @miosakuma
 - [ADD] SoraMediaOption に audioStreamingLanguageCode を追加する

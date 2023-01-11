@@ -21,7 +21,7 @@ Please read https://github.com/shiguredo/oss before use.
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2021.2.1 以降
+- Android Studio 2021.3.1 以降
 - WebRTC SFU Sora 2022.1.1 以降
 
 ## サンプル
