@@ -812,7 +812,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
         }
         peer?.run {
-            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.mid, offerMessage.encodings)
+            val subscription = handleInitialRemoteOffer(offerMessage.sdp, offerMessage.mid, offerMessage.simulcast, offerMessage.encodings)
                 .observeOn(Schedulers.io())
                 .subscribeBy(
                     onSuccess = {

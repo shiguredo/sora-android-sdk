@@ -38,6 +38,7 @@ interface PeerChannel {
     fun handleInitialRemoteOffer(
         offer: String,
         mid: Map<String, String>?,
+        simulcast: Boolean?,
         encodings: List<Encoding>?
     ): Single<SessionDescription>
     fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription>
@@ -332,10 +333,13 @@ class PeerChannelImpl(
     override fun handleInitialRemoteOffer(
         offer: String,
         mid: Map<String, String>?,
+        simulcast: Boolean?,
         encodings: List<Encoding>?
     ): Single<SessionDescription> {
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
+
+        mediaOption.simulcastEnabled = simulcast ?: false
 
         return setup().flatMap {
             SoraLogger.d(TAG, "setRemoteDescription")
