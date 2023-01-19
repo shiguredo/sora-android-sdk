@@ -13,7 +13,7 @@
 
 - [UPDATE] システム条件を更新する
     - Android Studio 2021.3.1 以降
-    - WebRTC SFU Sora 2022.2.2 以降
+    - WebRTC SFU Sora 2022.2.0 以降
     - @miosakuma
 - [UPDATE] libwebrtc を 109.5414.2.0 に上げる
     - @miosakuma
