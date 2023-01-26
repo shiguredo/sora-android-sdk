@@ -44,7 +44,7 @@ import kotlin.concurrent.schedule
  * Sora への接続を行うクラスです.
  *
  * [SignalingChannel] と [PeerChannel] の管理、協調動作制御を行っています.
- * このクラスを利用することでシグナリングの詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます.
+ * このクラスを利用することでシグナリングの詳細が隠蔽され、単一の [Listener] でイベントを受けることができます.
  *
  * シグナリングの手順とデータに関しては下記の Sora のドキュメントを参照ください.
  *  - [WebSocket 経由のシグナリング](https://sora.shiguredo.jp/doc/SIGNALING)
