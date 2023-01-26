@@ -311,12 +311,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
 
         /**
-         * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック.
+         * サイマルキャスト配信のエンコーダー設定を変更するためのコールバック.
          *
          * 引数の encodings は Sora が送ってきた設定を反映した RtpParameters.Encoding のリストです.
          * デフォルトの実装ではなにも行いません.
          * このコールバックを実装し、引数のオブジェクトを変更することで、アプリケーションの要件に従った
-         * 設定をエンコーダにわたすことができます.
+         * 設定をエンコーダーにわたすことができます.
          *
          * cf. Web 標準の対応 API は次のとおりです. libwebrtc の native(C++) と android の実装は
          * 異なりますので注意してください.
