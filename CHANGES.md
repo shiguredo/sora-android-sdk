@@ -17,6 +17,8 @@
     - @miosakuma
 - [UPDATE] libwebrtc を 111.5563.0.0 に上げる
     - @miosakuma
+- [UPDATE] 映像コーデックに AV1 を追加する
+    - @miosakuma
 - [ADD] SoraMediaOption に audioStreamingLanguageCode を追加する
     - @miosakuma
 - [FIX] テストコード内に廃止された role が残っていたため最新化する
