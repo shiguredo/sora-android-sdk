@@ -4,7 +4,7 @@ apply plugin: 'org.jetbrains.dokka'
 
 buildscript {
     ext.kotlin_version = '1.7.10'
-    ext.libwebrtc_version = '109.5414.2.0'
+    ext.libwebrtc_version = '111.5563.0.0'
 
     ext.dokka_version = '1.7.10'
 
