@@ -15,7 +15,7 @@
     - Android Studio 2022.1.1 以降
     - WebRTC SFU Sora 2022.2.0 以降
     - @miosakuma
-- [UPDATE] libwebrtc を 111.5563.0.0 に上げる
+- [UPDATE] libwebrtc を 112.5615.1.0 に上げる
     - @miosakuma
 - [UPDATE] 映像コーデックに AV1 を追加する
     - @miosakuma
