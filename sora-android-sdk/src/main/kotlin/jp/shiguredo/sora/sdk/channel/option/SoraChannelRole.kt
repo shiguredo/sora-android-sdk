@@ -1,7 +1,5 @@
 package jp.shiguredo.sora.sdk.channel.option
 
-import java.util.Locale
-
 /**
  * チャネルの役割を示します.
  */
@@ -17,5 +15,5 @@ enum class SoraChannelRole {
     SENDRECV;
 
     internal val signaling: String
-        get() = this.toString().toLowerCase(Locale.getDefault())
+        get() = this.toString().lowercase()
 }
