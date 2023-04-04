@@ -15,6 +15,18 @@
     - Android Studio 2022.1.1 以降
     - WebRTC SFU Sora 2022.2.0 以降
     - @miosakuma
+- [UPDATE] Kotlin のバージョンを 1.8.10 に上げる
+    - @miosakuma
+- [UPDATE] Gradle を 7.6.1 に上げる
+    - @miosakuma
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+    - `org.jetbrains.dokka:dokka-gradle-plugin` を 1.8.10 に上げる
+    - com.android.tools.build:gradle を 7.4.2 に上げる
+    - com.github.ben-manes:gradle-versions-plugin を 0.46.0 に上げる
+    - org.jlleitschuh.gradle:ktlint-gradle を 11.3.1 に上げる
+    - com.google.code.gson:gson を 2.10.1 に上げる
+    - androidx.test:core を 1.5.0 に上げる
+    - org.robolectric:robolectric: を 4.9.2 に上げる
 - [UPDATE] libwebrtc を 112.5615.1.0 に上げる
     - @miosakuma
 - [UPDATE] 映像コーデックに AV1 を追加する
