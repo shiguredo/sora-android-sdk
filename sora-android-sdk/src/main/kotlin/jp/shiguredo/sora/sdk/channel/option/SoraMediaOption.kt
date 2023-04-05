@@ -234,7 +234,12 @@ class SoraMediaOption {
     var hardwareVideoEncoderResolutionAdjustment = SoraVideoOption.ResolutionAdjustment.MULTIPLE_OF_16
 
     /**
-     * プロキシ
+     * プロキシ.
      */
     var proxy: SoraProxyOption = SoraProxyOption()
+
+    /**
+     * Sora の音声ストリーミング機能利用時に指定する言語コード.
+     */
+    var audioStreamingLanguageCode: String? = null
 }

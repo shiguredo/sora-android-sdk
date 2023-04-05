@@ -16,7 +16,9 @@ class SoraVideoOption {
         /** VP8 */
         VP8,
         /** VP9 */
-        VP9
+        VP9,
+        /** AV1 */
+        AV1
     }
 
     /**

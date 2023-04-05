@@ -54,6 +54,7 @@ class MessageConverter {
                 clientId = clientId,
                 bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
+                audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
             )
 
             if (mediaOption.upstreamIsRequired) {

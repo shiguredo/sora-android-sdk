@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-105.5195-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5195)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-112.5615-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5615)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -21,8 +21,8 @@ Please read https://github.com/shiguredo/oss before use.
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2021.2.1 以降
-- WebRTC SFU Sora 2022.1.1 以降
+- Android Studio 2022.1.1 以降
+- WebRTC SFU Sora 2022.2.0 以降
 
 ## サンプル
 
@@ -39,7 +39,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 ```
 Copyright 2017, Lyo Kato <lyo.kato at gmail.com> (Original Author)
-Copyright 2017-2022, Shiguredo Inc.
+Copyright 2017-2023, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

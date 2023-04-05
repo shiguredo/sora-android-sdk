@@ -22,10 +22,10 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
 ) : VideoEncoderFactory {
 
-    // ストリーム単位のエンコーダをラップした上で以下を行うクラス。
+    // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
     // - スレッドをひとつ起動する
     // - initEncode の width/height と frame buffer のそれが一致しない場合は事前にスケールする
-    // - 内部のエンコーダをつねにそのスレッド上で呼び出す
+    // - 内部のエンコーダーをつねにそのスレッド上で呼び出す
     private class StreamEncoderWrapper(
         private val encoder: VideoEncoder,
     ) : VideoEncoder {

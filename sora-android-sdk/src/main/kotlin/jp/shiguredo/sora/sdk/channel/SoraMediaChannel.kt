@@ -44,7 +44,7 @@ import kotlin.concurrent.schedule
  * Sora への接続を行うクラスです.
  *
  * [SignalingChannel] と [PeerChannel] の管理、協調動作制御を行っています.
- * このクラスを利用することでシグナリングの詳細が隠蔽され、単一の [Listener] でイベントを受けることが出来ます.
+ * このクラスを利用することでシグナリングの詳細が隠蔽され、単一の [Listener] でイベントを受けることができます.
  *
  * シグナリングの手順とデータに関しては下記の Sora のドキュメントを参照ください.
  *  - [WebSocket 経由のシグナリング](https://sora.shiguredo.jp/doc/SIGNALING)
@@ -311,12 +311,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onPeerConnectionStatsReady(mediaChannel: SoraMediaChannel, statsReport: RTCStatsReport) {}
 
         /**
-         * サイマルキャスト配信のエンコーダ設定を変更するためのコールバック.
+         * サイマルキャスト配信のエンコーダー設定を変更するためのコールバック.
          *
          * 引数の encodings は Sora が送ってきた設定を反映した RtpParameters.Encoding のリストです.
          * デフォルトの実装ではなにも行いません.
          * このコールバックを実装し、引数のオブジェクトを変更することで、アプリケーションの要件に従った
-         * 設定をエンコーダにわたすことができます.
+         * 設定をエンコーダーにわたすことができます.
          *
          * cf. Web 標準の対応 API は次のとおりです. libwebrtc の native(C++) と android の実装は
          * 異なりますので注意してください.
@@ -634,36 +634,37 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(
             TAG,
             """connect: SoraMediaOption
-            |requiredRole            = ${mediaOption.requiredRole}
-            |upstreamIsRequired      = ${mediaOption.upstreamIsRequired}
-            |downstreamIsRequired    = ${mediaOption.downstreamIsRequired}
-            |multistreamEnabled      = ${mediaOption.multistreamEnabled}
-            |audioIsRequired         = ${mediaOption.audioIsRequired}
-            |audioUpstreamEnabled    = ${mediaOption.audioUpstreamEnabled}
-            |audioDownstreamEnabled  = ${mediaOption.audioDownstreamEnabled}
-            |audioCodec              = ${mediaOption.audioCodec}
-            |audioBitRate            = ${mediaOption.audioBitrate}
-            |audioSource             = ${mediaOption.audioOption.audioSource}
-            |useStereoInput          = ${mediaOption.audioOption.useStereoInput}
-            |useStereoOutput         = ${mediaOption.audioOption.useStereoOutput}
-            |videoIsRequired         = ${mediaOption.videoIsRequired}
-            |videoUpstreamEnabled    = ${mediaOption.videoUpstreamEnabled}
-            |videoUpstreamContext    = ${mediaOption.videoUpstreamContext}
-            |videoDownstreamEnabled  = ${mediaOption.videoDownstreamEnabled}
-            |videoDownstreamContext  = ${mediaOption.videoDownstreamContext}
-            |videoEncoderFactory     = ${mediaOption.videoEncoderFactory}
-            |videoDecoderFactory     = ${mediaOption.videoDecoderFactory}
-            |videoCodec              = ${mediaOption.videoCodec}
-            |videoBitRate            = ${mediaOption.videoBitrate}
-            |videoCapturer           = ${mediaOption.videoCapturer}
-            |simulcastEnabled        = ${mediaOption.simulcastEnabled}
-            |simulcastRid            = ${mediaOption.simulcastRid}
-            |spotlightEnabled        = ${mediaOption.spotlightEnabled}
-            |spotlightNumber         = ${mediaOption.spotlightOption?.spotlightNumber}
-            |signalingMetadata       = ${this.signalingMetadata}
-            |clientId                = ${this.clientId}
-            |bundleId                = ${this.bundleId}
-            |signalingNotifyMetadata = ${this.signalingNotifyMetadata}
+            |requiredRole               = ${mediaOption.requiredRole}
+            |upstreamIsRequired         = ${mediaOption.upstreamIsRequired}
+            |downstreamIsRequired       = ${mediaOption.downstreamIsRequired}
+            |multistreamEnabled         = ${mediaOption.multistreamEnabled}
+            |audioIsRequired            = ${mediaOption.audioIsRequired}
+            |audioUpstreamEnabled       = ${mediaOption.audioUpstreamEnabled}
+            |audioDownstreamEnabled     = ${mediaOption.audioDownstreamEnabled}
+            |audioCodec                 = ${mediaOption.audioCodec}
+            |audioBitRate               = ${mediaOption.audioBitrate}
+            |audioSource                = ${mediaOption.audioOption.audioSource}
+            |useStereoInput             = ${mediaOption.audioOption.useStereoInput}
+            |useStereoOutput            = ${mediaOption.audioOption.useStereoOutput}
+            |videoIsRequired            = ${mediaOption.videoIsRequired}
+            |videoUpstreamEnabled       = ${mediaOption.videoUpstreamEnabled}
+            |videoUpstreamContext       = ${mediaOption.videoUpstreamContext}
+            |videoDownstreamEnabled     = ${mediaOption.videoDownstreamEnabled}
+            |videoDownstreamContext     = ${mediaOption.videoDownstreamContext}
+            |videoEncoderFactory        = ${mediaOption.videoEncoderFactory}
+            |videoDecoderFactory        = ${mediaOption.videoDecoderFactory}
+            |videoCodec                 = ${mediaOption.videoCodec}
+            |videoBitRate               = ${mediaOption.videoBitrate}
+            |videoCapturer              = ${mediaOption.videoCapturer}
+            |simulcastEnabled           = ${mediaOption.simulcastEnabled}
+            |simulcastRid               = ${mediaOption.simulcastRid}
+            |spotlightEnabled           = ${mediaOption.spotlightEnabled}
+            |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}
+            |audioStreamingLanguageCode = ${mediaOption.audioStreamingLanguageCode}
+            |signalingMetadata          = ${this.signalingMetadata}
+            |clientId                   = ${this.clientId}
+            |bundleId                   = ${this.bundleId}
+            |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
             """.trimMargin()
         )
 
