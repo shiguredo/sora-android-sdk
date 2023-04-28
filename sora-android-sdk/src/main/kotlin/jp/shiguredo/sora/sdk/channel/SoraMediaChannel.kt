@@ -8,6 +8,7 @@ import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.BuildConfig
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
 import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
+import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl

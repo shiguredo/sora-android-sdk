@@ -1,3 +1,5 @@
+package jp.shiguredo.sora.sdk.channel.option
+
 /**
  * 転送フィルター機能の設定を表すクラスです。
  *
@@ -5,8 +7,8 @@
  * @param rules フィルターの適用ルール
  */
 class SoraForwardingFilterOption(
-        val action: Action,
-        val rules: List<List<Rule>>
+    val action: Action,
+    val rules: List<List<Rule>>
 ) {
     /**
      * フィルター適用時の挙動を表します。
@@ -27,9 +29,9 @@ class SoraForwardingFilterOption(
      * @param values フィルターの値
      */
     class Rule(
-            val field: Field,
-            val operator: Operator,
-            val values: List<String>
+        val field: Field,
+        val operator: Operator,
+        val values: List<String>
     ) {
         /**
          * フィルター対象のフィールドを表します。
