@@ -68,7 +68,7 @@ import kotlin.concurrent.schedule
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
  * @param bundleId connect メッセージに含める `bundle_id`
- * @param forwardingFilter 転送フィルター機能の設定
+ * @param forwardingFilterOption 転送フィルター機能の設定
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -86,7 +86,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     ignoreDisconnectWebSocket: Boolean? = null,
     dataChannels: List<Map<String, Any>>? = null,
     private var bundleId: String? = null,
-    private val forwardingFilter: SoraForwardingFilterOption? = null,
+    private val forwardingFilterOption: SoraForwardingFilterOption? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -668,6 +668,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |clientId                   = ${this.clientId}
             |bundleId                   = ${this.bundleId}
             |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
+            |forwardingFilter           = ${this.forwardingFilterOption}
             """.trimMargin()
         )
 
@@ -776,7 +777,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             bundleId = bundleId,
             signalingNotifyMetadata = signalingNotifyMetadata,
             connectDataChannels = connectDataChannels,
-            redirect = redirectLocation != null
+            redirect = redirectLocation != null,
+            forwardingFilterOption = forwardingFilterOption
         )
         signaling!!.connect()
     }

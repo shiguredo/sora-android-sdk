@@ -58,4 +58,20 @@ class SoraForwardingFilterOption(
             IS_NOT_IN
         }
     }
+
+    internal val signaling: Any
+        get() {
+            return mapOf(
+                "action" to action.name.lowercase(),
+                "rules" to rules.map { outerRule ->
+                    outerRule.map { rule ->
+                        mapOf(
+                            "field" to rule.field.name.lowercase(),
+                            "operator" to rule.operator.name.lowercase(),
+                            "values" to rule.values
+                        )
+                    }
+                }
+            )
+        }
 }
