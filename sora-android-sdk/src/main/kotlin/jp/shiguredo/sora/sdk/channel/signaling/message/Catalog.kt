@@ -48,7 +48,8 @@ data class ConnectMessage(
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
     @SerializedName("audio_streaming_language_code")
     val audioStreamingLanguageCode: String? = null,
-    @SerializedName("redirect") var redirect: Boolean? = null
+    @SerializedName("redirect") var redirect: Boolean? = null,
+    @SerializedName("forwarding_filter") val forwardingFilter: Any? = null
 )
 
 data class VideoSetting(

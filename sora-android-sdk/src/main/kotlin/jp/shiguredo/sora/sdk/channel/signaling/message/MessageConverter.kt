@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
+import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -39,7 +40,8 @@ class MessageConverter {
             bundleId: String? = null,
             signalingNotifyMetadata: Any? = null,
             dataChannels: List<Map<String, Any>>? = null,
-            redirect: Boolean = false
+            redirect: Boolean = false,
+            forwardingFilterOption: SoraForwardingFilterOption? = null,
         ): String {
 
             val msg = ConnectMessage(
@@ -55,6 +57,7 @@ class MessageConverter {
                 bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
+                forwardingFilter = forwardingFilterOption?.signaling,
             )
 
             if (mediaOption.upstreamIsRequired) {
