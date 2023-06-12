@@ -90,7 +90,8 @@ data class Encoding(
     @SerializedName("active") val active: Boolean?,
     @SerializedName("maxBitrate") val maxBitrate: Int?,
     @SerializedName("maxFramerate") val maxFramerate: Int?,
-    @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
+    @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
+    @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
 
 data class RedirectMessage(
