@@ -11,6 +11,11 @@
 
 ## develop
 
+- [ADD]
+  - scalability mode に対応する
+  - VP9 / AV1 のサイマルキャストに対応可能になる
+  - @szktty
+
 ## 2023.1.0
 
 - [UPDATE] システム条件を更新する
