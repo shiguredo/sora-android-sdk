@@ -77,6 +77,9 @@ class MessageConverter {
                 if (mediaOption.videoUpstreamEnabled) {
                     val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
                     mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
+                    mediaOption.videoVp9Params?.let { videoSetting.vp9Params = it }
+                    mediaOption.videoAv1Params?.let { videoSetting.av1Params = it }
+                    mediaOption.videoH264Params?.let { videoSetting.h264Params = it }
                     msg.video = videoSetting
                 } else {
                     msg.video = false

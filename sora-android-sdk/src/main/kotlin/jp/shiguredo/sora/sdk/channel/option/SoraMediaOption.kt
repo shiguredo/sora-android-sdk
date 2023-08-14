@@ -56,6 +56,21 @@ class SoraMediaOption {
     var videoBitrate: Int? = null
 
     /**
+     * VP9 向け映像コーデックパラメーター.
+     */
+    var videoVp9Params: Any? = null
+
+    /**
+     * AV1 向け映像コーデックパラメーター.
+     */
+    var videoAv1Params: Any? = null
+
+    /**
+     * H.264 向け映像コーデックパラメーター.
+     */
+    var videoH264Params: Any? = null
+
+    /**
      * 映像の視聴を有効にします.
      *
      * cf.
