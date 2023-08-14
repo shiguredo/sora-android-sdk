@@ -12,7 +12,9 @@
 ## develop
 
 - [UPDATE] libwebrtc を 115.5790.8.0 に上げる
-  - @miosakuma
+    - @miosakuma
+- [ADD] 転送フィルター機能を追加する
+    - @szktty
 
 ## 2023.1.0
 
