@@ -385,6 +385,7 @@ class PeerChannelImpl(
             offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
             offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+            offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }
 
         // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
@@ -398,6 +399,7 @@ class PeerChannelImpl(
                         "rid=$rid, " +
                         "active=$active, " +
                         "scaleResolutionDownBy=$scaleResolutionDownBy, " +
+                        "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
                         "ssrc=$ssrc"
