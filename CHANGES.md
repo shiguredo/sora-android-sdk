@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 115.5790.8.0 に上げる
+    - @miosakuma
+- [ADD] 転送フィルター機能を追加する
+    - @szktty
 - [ADD]
   - scalability mode に対応する
   - VP9 / AV1 のサイマルキャストに対応可能になる
