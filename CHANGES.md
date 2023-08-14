@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 115.5790.8.0 に上げる
+  - @miosakuma
+
 ## 2023.1.0
 
 - [UPDATE] システム条件を更新する
