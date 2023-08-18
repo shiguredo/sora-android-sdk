@@ -54,7 +54,10 @@ data class ConnectMessage(
 
 data class VideoSetting(
     @SerializedName("codec_type") val codecType: String,
-    @SerializedName("bit_rate") var bitRate: Int? = null
+    @SerializedName("bit_rate") var bitRate: Int? = null,
+    @SerializedName("vp9_params") var vp9Params: Any? = null,
+    @SerializedName("av1_params") var av1Params: Any? = null,
+    @SerializedName("h264_params") var h264Params: Any? = null
 )
 
 data class AudioSetting(

@@ -42,10 +42,33 @@ class SoraMediaOption {
     internal var videoDownstreamContext: EglBase.Context? = null
     internal var videoUpstreamContext: EglBase.Context? = null
 
+    /**
+     * 映像コーデック.
+     *
+     * 未設定の場合、 Sora Android SDK は VP9 を設定します.
+     */
     var videoCodec = SoraVideoOption.Codec.VP9
 
+    /**
+     * 映像ビットレート.
+     */
     // videoBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     var videoBitrate: Int? = null
+
+    /**
+     * VP9 向け映像コーデックパラメーター.
+     */
+    var videoVp9Params: Any? = null
+
+    /**
+     * AV1 向け映像コーデックパラメーター.
+     */
+    var videoAv1Params: Any? = null
+
+    /**
+     * H.264 向け映像コーデックパラメーター.
+     */
+    var videoH264Params: Any? = null
 
     /**
      * 映像の視聴を有効にします.

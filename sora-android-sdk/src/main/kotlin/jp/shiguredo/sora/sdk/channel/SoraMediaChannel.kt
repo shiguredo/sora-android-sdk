@@ -658,6 +658,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             |videoDecoderFactory        = ${mediaOption.videoDecoderFactory}
             |videoCodec                 = ${mediaOption.videoCodec}
             |videoBitRate               = ${mediaOption.videoBitrate}
+            |videoVp9Params             = ${mediaOption.videoVp9Params}
+            |videoAv1Params             = ${mediaOption.videoAv1Params}
+            |videoH264Params            = ${mediaOption.videoH264Params}
             |videoCapturer              = ${mediaOption.videoCapturer}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
