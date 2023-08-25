@@ -33,6 +33,17 @@ Please read https://github.com/shiguredo/oss before use.
 
 [Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/) 
 
+## 有償での優先実装が可能な機能一覧
+
+**詳細は Discord またはメールにてお問い合わせください**
+
+- オープンソースでの公開が前提
+- 可能であれば企業名の公開
+    - 公開が難しい場合は `企業名非公開` と書かせていただきます
+
+### 機能
+
+- デバイス切り替え機能
 
 ## ライセンス
 
