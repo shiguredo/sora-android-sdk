@@ -43,7 +43,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 ### 機能
 
-- デバイス切り替え機能
+- 音声出力先変更機能
 
 ## ライセンス
 
