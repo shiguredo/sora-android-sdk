@@ -48,12 +48,16 @@ data class ConnectMessage(
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
     @SerializedName("audio_streaming_language_code")
     val audioStreamingLanguageCode: String? = null,
-    @SerializedName("redirect") var redirect: Boolean? = null
+    @SerializedName("redirect") var redirect: Boolean? = null,
+    @SerializedName("forwarding_filter") val forwardingFilter: Any? = null
 )
 
 data class VideoSetting(
     @SerializedName("codec_type") val codecType: String,
-    @SerializedName("bit_rate") var bitRate: Int? = null
+    @SerializedName("bit_rate") var bitRate: Int? = null,
+    @SerializedName("vp9_params") var vp9Params: Any? = null,
+    @SerializedName("av1_params") var av1Params: Any? = null,
+    @SerializedName("h264_params") var h264Params: Any? = null
 )
 
 data class AudioSetting(
@@ -89,7 +93,8 @@ data class Encoding(
     @SerializedName("active") val active: Boolean?,
     @SerializedName("maxBitrate") val maxBitrate: Int?,
     @SerializedName("maxFramerate") val maxFramerate: Int?,
-    @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?
+    @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
+    @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
 
 data class RedirectMessage(

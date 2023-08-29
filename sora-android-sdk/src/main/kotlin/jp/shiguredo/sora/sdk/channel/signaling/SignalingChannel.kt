@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
+import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
@@ -67,6 +68,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val signalingNotifyMetadata: Any? = null,
     private val connectDataChannels: List<Map<String, Any>>? = null,
     private val redirect: Boolean = false,
+    private val forwardingFilterOption: SoraForwardingFilterOption? = null,
 ) : SignalingChannel {
 
     companion object {
@@ -257,7 +259,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 bundleId = bundleId,
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 dataChannels = connectDataChannels,
-                redirect = redirect
+                redirect = redirect,
+                forwardingFilterOption = forwardingFilterOption
             )
             it.send(message)
         }

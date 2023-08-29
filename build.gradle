@@ -4,7 +4,7 @@ apply plugin: 'org.jetbrains.dokka'
 
 buildscript {
     ext.kotlin_version = '1.8.10'
-    ext.libwebrtc_version = '112.5615.1.0'
+    ext.libwebrtc_version = '115.5790.8.0'
 
     ext.dokka_version = '1.8.10'
 
@@ -18,7 +18,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:7.4.2'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
-        classpath 'org.ajoberstar.grgit:grgit-gradle:5.0.0'
+        classpath 'org.ajoberstar.grgit:grgit-gradle:5.2.0'
 
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
         classpath "com.github.ben-manes:gradle-versions-plugin:0.46.0"

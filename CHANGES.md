@@ -11,6 +11,23 @@
 
 ## develop
 
+## 2023.2.0
+
+- [UPDATE] システム条件を更新する
+    - Android Studio 2022.2.1 以降
+    - WebRTC SFU Sora 2023.1.0 以降
+    - @miosakuma
+- [UPDATE] libwebrtc を 115.5790.8.0 に上げる
+    - @miosakuma
+- [ADD] 転送フィルター機能を追加する
+    - @szktty
+- [ADD] scalability mode に対応する
+    - VP9 / AV1 のサイマルキャストに対応可能になる
+    - @szktty
+- [ADD] 映像コーデックパラメータを追加する
+    - `SoraMediaOption` に `videoVp9Params`, `videoAv1Params`, `videoH264Params` を追加する
+    - @miosakuma
+
 ## 2023.1.0
 
 - [UPDATE] システム条件を更新する

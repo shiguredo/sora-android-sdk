@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-112.5615-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5615)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-115.5790-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/5790)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -21,8 +21,8 @@ Please read https://github.com/shiguredo/oss before use.
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2022.1.1 以降
-- WebRTC SFU Sora 2022.2.0 以降
+- Android Studio 2022.2.1 以降
+- WebRTC SFU Sora 2023.1.0 以降
 
 ## サンプル
 
@@ -33,6 +33,17 @@ Please read https://github.com/shiguredo/oss before use.
 
 [Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/) 
 
+## 有償での優先実装が可能な機能一覧
+
+**詳細は Discord またはメールにてお問い合わせください**
+
+- オープンソースでの公開が前提
+- 可能であれば企業名の公開
+    - 公開が難しい場合は `企業名非公開` と書かせていただきます
+
+### 機能
+
+- 音声出力先変更機能
 
 ## ライセンス
 

@@ -8,6 +8,7 @@ import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.BuildConfig
 import jp.shiguredo.sora.sdk.channel.data.ChannelAttendeesCount
 import jp.shiguredo.sora.sdk.channel.option.PeerConnectionOption
+import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
@@ -67,6 +68,7 @@ import kotlin.concurrent.schedule
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
  * @param bundleId connect メッセージに含める `bundle_id`
+ * @param forwardingFilterOption 転送フィルター機能の設定
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -84,6 +86,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     ignoreDisconnectWebSocket: Boolean? = null,
     dataChannels: List<Map<String, Any>>? = null,
     private var bundleId: String? = null,
+    private val forwardingFilterOption: SoraForwardingFilterOption? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -655,6 +658,9 @@ class SoraMediaChannel @JvmOverloads constructor(
             |videoDecoderFactory        = ${mediaOption.videoDecoderFactory}
             |videoCodec                 = ${mediaOption.videoCodec}
             |videoBitRate               = ${mediaOption.videoBitrate}
+            |videoVp9Params             = ${mediaOption.videoVp9Params}
+            |videoAv1Params             = ${mediaOption.videoAv1Params}
+            |videoH264Params            = ${mediaOption.videoH264Params}
             |videoCapturer              = ${mediaOption.videoCapturer}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
@@ -665,6 +671,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |clientId                   = ${this.clientId}
             |bundleId                   = ${this.bundleId}
             |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
+            |forwardingFilter           = ${this.forwardingFilterOption}
             """.trimMargin()
         )
 
@@ -773,7 +780,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             bundleId = bundleId,
             signalingNotifyMetadata = signalingNotifyMetadata,
             connectDataChannels = connectDataChannels,
-            redirect = redirectLocation != null
+            redirect = redirectLocation != null,
+            forwardingFilterOption = forwardingFilterOption
         )
         signaling!!.connect()
     }
