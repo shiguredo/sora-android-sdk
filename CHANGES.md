@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.2.0
+
 - [UPDATE] システム条件を更新する
     - Android Studio 2022.2.1 以降
     - WebRTC SFU Sora 2023.1.0 以降
