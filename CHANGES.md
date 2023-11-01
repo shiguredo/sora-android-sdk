@@ -11,8 +11,6 @@
 
 ## develop
 
-## feature/h265
-
 - [UPDATE] libwebrtc を 119.6045.2.1 に上げる
     - @miosakuma
 - [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
