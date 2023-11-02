@@ -11,6 +11,13 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 119.6045.2.1 に上げる
+    - @miosakuma
+- [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
+    - @enm10k
+- [ADD] H.265 に対応する
+    - @enm10k
+
 ## 2023.2.0
 
 - [UPDATE] システム条件を更新する

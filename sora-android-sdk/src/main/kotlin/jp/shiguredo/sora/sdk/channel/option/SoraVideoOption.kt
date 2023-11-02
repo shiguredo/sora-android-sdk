@@ -13,6 +13,8 @@ class SoraVideoOption {
     enum class Codec {
         /** H.264 */
         H264,
+        /** H.265 */
+        H265,
         /** VP8 */
         VP8,
         /** VP9 */
@@ -43,6 +45,8 @@ class SoraVideoOption {
                 val QVGA = Point(320, 240)
                 /** VGA   640x480 */
                 val VGA = Point(640, 480)
+                /** qHD   960x540 */
+                val qHD = Point(960, 540)
                 /** HD    1280x720 */
                 val HD = Point(1280, 720)
                 /** FHD   1920x1080 */
@@ -73,6 +77,8 @@ class SoraVideoOption {
                 val QVGA = Point(240, 320)
                 /** VGA   480x640 */
                 val VGA = Point(480, 640)
+                /** qHD   540x960 */
+                val qHD = Point(540, 960)
                 /** HD    720x1280 */
                 val HD = Point(720, 1280)
                 /** FHD   1080x1920 */
