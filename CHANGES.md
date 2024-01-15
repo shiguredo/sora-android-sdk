@@ -11,6 +11,10 @@
 
 ## develop
 
+- [CHANGE] NotificationMessage の matadata_list を削除する
+    - 2022.1.0 の Sora で metadata_list が廃止されたため
+    - NotificationMessage の data で値の取得が可能
+    - @miosakuma
 - [UPDATE] libwebrtc を 119.6045.2.1 に上げる
     - @miosakuma
 - [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
