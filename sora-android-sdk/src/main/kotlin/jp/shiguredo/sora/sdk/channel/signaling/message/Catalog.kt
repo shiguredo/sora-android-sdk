@@ -163,6 +163,7 @@ data class NotificationMessage(
     @SerializedName("type") val type: String = "notify",
     @SerializedName("event_type") val eventType: String,
     @SerializedName("role") val role: String?,
+    @SerializedName("session_id") val sessionId: String,
     @SerializedName("client_id") val clientId: String,
     @SerializedName("bundle_id") val bundleId: String?,
     @SerializedName("connection_id") val connectionId: String?,
@@ -184,6 +185,12 @@ data class NotificationMessage(
     @SerializedName("authz_metadata") val authzMetadata: Any?,
     @SerializedName("data") val data: Any?,
     @SerializedName("turn_transport_type") val turnTransportType: String?,
+    @SerializedName("kind") val kind: String?,
+    @SerializedName("destination_connection_id") val destinationConnectionId: String?,
+    @SerializedName("source_connection_id") val sourceConnectionId: String?,
+    @SerializedName("recv_connection_id") val recvConnectionId: String?,
+    @SerializedName("send_connection_id") val sendConnectionId: String?,
+    @SerializedName("stream_id") val streamId: String?,
 )
 
 data class DisconnectMessage(

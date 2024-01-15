@@ -21,6 +21,15 @@
     - 開発中に develop ブランチなどでの出力が意図せぬ結果になるため修正
     - リリースされた Sora Android SDK では正常な出力になるため、ユーザーへの影響はなし
     - @enm10k
+- [FIX] NotificationMessage に項目を追加する
+    - session_id
+    - kind
+    - destination_connection_id
+    - source_connection_id
+    - recv_connection_id
+    - send_connection_id
+    - stream_id
+    - @miosakuma
 
 ## 2023.2.0
 
