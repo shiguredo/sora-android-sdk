@@ -176,7 +176,6 @@ data class NotificationMessage(
     @SerializedName("channel_sendonly_connections") val numberOfSendonlyConnections: Int?,
     @SerializedName("channel_recvonly_connections") val numberOfRecvonlyConnections: Int?,
     @SerializedName("unstable_level") val unstableLevel: Int?,
-    @SerializedName("channel_id") val channelId: String?,
     @SerializedName("spotlight_id") val spotlightId: String?,
     @SerializedName("fixed") val fixed: Boolean?,
     @SerializedName("authn_metadata") val authnMetadata: Any?,

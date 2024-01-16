@@ -15,6 +15,9 @@
     - 2022.1.0 の Sora で metadata_list が廃止されたため
     - NotificationMessage の data で値の取得が可能
     - @miosakuma
+- [CHANGE] NotificationMessage の channel_id を削除する
+    - Sora から値を通知しておらず利用していない項目のため削除する
+    - @miosakuma
 - [UPDATE] libwebrtc を 119.6045.2.1 に上げる
     - @miosakuma
 - [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
