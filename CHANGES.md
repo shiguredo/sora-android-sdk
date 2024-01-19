@@ -22,12 +22,16 @@
   - @miosakuma
 - [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
   - @enm10k
+- [UPDATE] ForwardingFilter に version と metadata　を追加する
+  - @miosakuma
 - [ADD] H.265 に対応する
   - @enm10k
 - [FIX] connect メッセージに設定するバージョンの取得に git describe を使うのを止める
   - 開発中に develop ブランチなどでの出力が意図せぬ結果になるため修正
   - リリースされた Sora Android SDK では正常な出力になるため、ユーザーへの影響はなし
   - @enm10k
+- [FIX] ForwardingFilter の action を未指定にできるようにする
+  - @miosakuma
 - [FIX] NotificationMessage に項目を追加する
   - session_id
   - kind
