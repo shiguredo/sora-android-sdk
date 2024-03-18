@@ -18,7 +18,8 @@
 - [CHANGE] NotificationMessage の channel_id を削除する
   - Sora から値を通知しておらず利用していない項目のため削除する
   - @miosakuma
-- [UPDATE] libwebrtc を 119.6045.2.1 に上げる
+- [UPDATE] libwebrtc を 121.6167.4.0 に上げる
+  - コンバイルに利用する Java のバージョンを 1.8 に上げる
   - @miosakuma
 - [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
   - @enm10k
