@@ -5,12 +5,11 @@ import jp.shiguredo.sora.sdk.BuildConfig
 import org.webrtc.WebrtcBuildVersion
 
 class SDKInfo {
-
     companion object {
+        const val version = "2024.1.0"
 
         fun sdkInfo(): String {
-            return "Sora Android SDK " + BuildConfig.VERSION_NAME +
-                " (" + BuildConfig.REVISION + ")"
+            return "Sora Android SDK $version (${BuildConfig.REVISION})"
         }
 
         fun libwebrtcInfo(): String {

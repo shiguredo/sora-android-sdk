@@ -3,15 +3,19 @@ package jp.shiguredo.sora.sdk.channel.option
 /**
  * 転送フィルター機能の設定を表すクラスです。
  *
- * @param action フィルター適用時の挙動
- * @param rules フィルターの適用ルール
+ * @param action 転送フィルター適用時の挙動
+ * @param rules 転送フィルターの適用ルール
+ * @param version 転送フィルターのバージョン
+ * @param metadata 転送フィルターのメタデータ
  */
 class SoraForwardingFilterOption(
-    val action: Action,
-    val rules: List<List<Rule>>
+    val action: Action? = null,
+    val rules: List<List<Rule>>,
+    val version: String? = null,
+    val metadata: Any? = null
 ) {
     /**
-     * フィルター適用時の挙動を表します。
+     * 転送フィルター適用時の挙動を表します。
      */
     enum class Action {
         /** block */
@@ -22,11 +26,11 @@ class SoraForwardingFilterOption(
     }
 
     /**
-     * フィルターの適用ルールを表します。
+     * 転送フィルターの適用ルールを表します。
      *
-     * @param field フィルター対象のフィールド
-     * @param operator フィルターの演算子
-     * @param values フィルターの値
+     * @param field 転送フィルター対象のフィールド
+     * @param operator 転送フィルターの演算子
+     * @param values 転送フィルターの値
      */
     class Rule(
         val field: Field,
@@ -34,7 +38,7 @@ class SoraForwardingFilterOption(
         val values: List<String>
     ) {
         /**
-         * フィルター対象のフィールドを表します。
+         * 転送フィルター対象のフィールドを表します。
          */
         enum class Field {
             /** connection_id */
@@ -48,7 +52,7 @@ class SoraForwardingFilterOption(
         }
 
         /**
-         * フィルターの演算子を表します。
+         * 転送フィルターの演算子を表します。
          */
         enum class Operator {
             /** is_in */
@@ -62,7 +66,7 @@ class SoraForwardingFilterOption(
     internal val signaling: Any
         get() {
             return mapOf(
-                "action" to action.name.lowercase(),
+                "action" to (action?.name?.lowercase() ?: null),
                 "rules" to rules.map { outerRule ->
                     outerRule.map { rule ->
                         mapOf(
@@ -71,7 +75,9 @@ class SoraForwardingFilterOption(
                             "values" to rule.values
                         )
                     }
-                }
+                },
+                "version" to version,
+                "metadata" to metadata
             )
         }
 }
