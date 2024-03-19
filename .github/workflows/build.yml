@@ -29,3 +29,11 @@ jobs:
         run: ./gradlew build
       - name: Lint Check
         run: ./gradlew ktlintCheck
+      - name: Slack Notification
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: sora-android-sdk
+          SLACK_COLOR: danger
+          SLACK_TITLE: Build failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
