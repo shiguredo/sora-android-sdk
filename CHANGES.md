@@ -11,36 +11,37 @@
 
 ## develop
 
-- [CHANGE] NotificationMessage の matadata_list を削除する
+- [CHANGE] `NotificationMessage` の `matadata_list` を削除する
   - 2022.1.0 の Sora で metadata_list が廃止されたため
   - NotificationMessage の data で値の取得が可能
   - @miosakuma
-- [CHANGE] NotificationMessage の channel_id を削除する
+- [CHANGE] `NotificationMessage` の `channel_id` を削除する
   - Sora から値を通知しておらず利用していない項目のため削除する
   - @miosakuma
 - [UPDATE] libwebrtc を 121.6167.4.0 に上げる
   - コンバイルに利用する Java のバージョンを 1.8 に上げる
   - @miosakuma
-- [UPDATE] 解像度に qHD (960x540, 540x960) を追加する
+- [UPDATE] 解像度に `qHD` (960x540, 540x960) を追加する
   - @enm10k
-- [UPDATE] ForwardingFilter に version と metadata　を追加する
+- [UPDATE] `ForwardingFilter` に `version` と `metadata`　を追加する
   - @miosakuma
 - [ADD] H.265 に対応する
+  - `SoraVideoOption` の `Codec` に `H265` を追加しました
   - @enm10k
 - [FIX] connect メッセージに設定するバージョンの取得に git describe を使うのを止める
   - 開発中に develop ブランチなどでの出力が意図せぬ結果になるため修正
   - リリースされた Sora Android SDK では正常な出力になるため、ユーザーへの影響はなし
   - @enm10k
-- [FIX] ForwardingFilter の action を未指定にできるようにする
+- [FIX] `ForwardingFilter` の `action` を未指定にできるようにする
   - @miosakuma
-- [FIX] NotificationMessage に項目を追加する
-  - session_id
-  - kind
-  - destination_connection_id
-  - source_connection_id
-  - recv_connection_id
-  - send_connection_id
-  - stream_id
+- [FIX] `NotificationMessage` に項目を追加する
+  - `session_id`
+  - `kind`
+  - `destination_connection_id`
+  - `source_connection_id`
+  - `recv_connection_id`
+  - `send_connection_id`
+  - `stream_id`
   - @miosakuma
 
 ## 2023.2.0
