@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.1.1
+
 - [FIX] jitpack.yml を追加して jdk のバージョンを 11 に指定する
   - JitPack で jdk 8 でビルドが走ってエラーとなったため、明示的に利用する jdk を指定する
   - @miosakuma
