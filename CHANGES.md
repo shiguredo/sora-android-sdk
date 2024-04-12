@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] Github Actions の actions/setup-java@v4 にあげる
+  - @miosakuma
+
 ## 2024.1.1
 
 - [FIX] jitpack.yml を追加して jdk のバージョンを 11 に指定する
