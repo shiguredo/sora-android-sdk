@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 122.6261.1.0 に上げる
+  - @miosakuma
 - [UPDATE] Github Actions の actions/setup-java@v4 にあげる
   - @miosakuma
 
