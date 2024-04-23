@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2024.2.0
+
+- [UPDATE] libwebrtc を 122.6261.1.0 に上げる
+  - @miosakuma
+- [UPDATE] Github Actions の actions/setup-java@v4 にあげる
+  - @miosakuma
+
 ## 2024.1.1
 
 - [FIX] jitpack.yml を追加して jdk のバージョンを 11 に指定する
