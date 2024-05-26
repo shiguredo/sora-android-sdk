@@ -663,6 +663,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |videoH264Params            = ${mediaOption.videoH264Params}
             |videoCapturer              = ${mediaOption.videoCapturer}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
+            |simulcastEnabled           = ${mediaOption.simulcastMulticodecEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
             |spotlightEnabled           = ${mediaOption.spotlightEnabled}
             |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}

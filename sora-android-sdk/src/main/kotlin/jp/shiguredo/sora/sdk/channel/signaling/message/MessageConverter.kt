@@ -106,6 +106,7 @@ class MessageConverter {
 
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = mediaOption.simulcastEnabled
+                msg.simulcastMulticodec = mediaOption.simulcastMulticodecEnabled
                 msg.simulcastRid = mediaOption.simulcastRid?.toString()
             }
 

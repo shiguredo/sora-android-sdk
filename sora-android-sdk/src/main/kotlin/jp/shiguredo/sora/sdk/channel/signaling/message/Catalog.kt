@@ -33,6 +33,7 @@ data class ConnectMessage(
     @SerializedName("spotlight_focus_rid") var spotlightFocusRid: String? = null,
     @SerializedName("spotlight_unfocus_rid") var spotlightUnfocusRid: String? = null,
     @SerializedName("simulcast") var simulcast: Boolean? = false,
+    @SerializedName("simulcast_multicodec") var simulcastMulticodec: Boolean? = null,
     @SerializedName("simulcast_rid")
     var simulcastRid: String? = null,
     @SerializedName("video") var video: Any? = null,

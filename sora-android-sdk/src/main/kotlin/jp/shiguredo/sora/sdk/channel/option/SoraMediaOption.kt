@@ -23,6 +23,7 @@ class SoraMediaOption {
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
+    internal var simulcastMulticodecEnabled: Boolean? = null
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
@@ -112,6 +113,18 @@ class SoraMediaOption {
     @JvmOverloads
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
         simulcastEnabled = true
+        simulcastRid = rid
+    }
+
+    /**
+     * サイマルキャストマルチコーデック機能を有効にします.
+     *
+     * @param rid デフォルトで受信する映像の種類
+     */
+    @JvmOverloads
+    fun enableSimulcastMulticodec(rid: SoraVideoOption.SimulcastRid? = null) {
+        simulcastEnabled = true
+        simulcastMulticodecEnabled = true
         simulcastRid = rid
     }
 
