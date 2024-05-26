@@ -11,6 +11,11 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 122.6261.1.4 に上げる
+  - @melpon
+- [ADD] マルチコーデックサイマルキャストに対応する
+  - @melpon
+
 ## 2024.2.0
 
 - [UPDATE] libwebrtc を 122.6261.1.0 に上げる
