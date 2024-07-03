@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 125.6422.2.5 に上げる
+  - @miosakuma
+
 ## 2024.2.0
 
 - [UPDATE] libwebrtc を 122.6261.1.0 に上げる
