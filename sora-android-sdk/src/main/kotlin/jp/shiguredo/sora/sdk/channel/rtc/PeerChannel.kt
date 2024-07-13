@@ -383,7 +383,7 @@ class PeerChannelImpl(
         parameters.encodings.zip(offerEncodings!!).forEach { (senderEncoding, offerEncoding) ->
             offerEncoding.active?.also { senderEncoding.active = it }
             offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
-            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it.toInt() }
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }
