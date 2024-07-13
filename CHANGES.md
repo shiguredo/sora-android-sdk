@@ -13,6 +13,14 @@
 
 - [UPDATE] libwebrtc を 125.6422.2.5 に上げる
   - @miosakuma
+- [FIX] maxFramerate の値が整数でない場合にエラーとなる問題を修正
+  - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっていたため、SDK も Integer を使用していた
+  - W3C の定義に従い、SDK が整数以外の値を受け取るとエラーとなっていた問題を修正
+  - SDK 側を Double を受け入れるように修正し、int にキャストするように変更
+  - 参考
+    - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
+    - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
+  - @torikizi
 
 ## 2024.2.0
 
