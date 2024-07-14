@@ -13,6 +13,8 @@
 
 - [UPDATE] libwebrtc を 125.6422.2.5 に上げる
   - @miosakuma
+- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
+  - @zztkm
 
 ## 2024.2.0
 
