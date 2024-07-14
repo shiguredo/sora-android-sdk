@@ -18,7 +18,7 @@
 
 - [UPDATE] libwebrtc を 122.6261.1.0 に上げる
   - @miosakuma
-- [UPDATE] Github Actions の actions/setup-java@v4 にあげる
+- [UPDATE] Github Actions の actions/setup-java@v4 に上げる
   - @miosakuma
 
 ## 2024.1.1
@@ -41,7 +41,7 @@
   - @miosakuma
 - [UPDATE] 解像度に `qHD` (960x540, 540x960) を追加する
   - @enm10k
-- [UPDATE] `ForwardingFilter` に `version` と `metadata`　を追加する
+- [UPDATE] `ForwardingFilter` に `version` と `metadata` を追加する
   - @miosakuma
 - [ADD] H.265 に対応する
   - `SoraVideoOption` の `Codec` に `H265` を追加しました
