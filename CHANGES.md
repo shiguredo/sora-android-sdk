@@ -13,6 +13,8 @@
 
 - [UPDATE] libwebrtc を 125.6422.2.5 に上げる
   - @miosakuma
+- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
+  - @zztkm
 - [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
   - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
   - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
@@ -26,7 +28,7 @@
 
 - [UPDATE] libwebrtc を 122.6261.1.0 に上げる
   - @miosakuma
-- [UPDATE] Github Actions の actions/setup-java@v4 にあげる
+- [UPDATE] Github Actions の actions/setup-java@v4 に上げる
   - @miosakuma
 
 ## 2024.1.1
@@ -49,7 +51,7 @@
   - @miosakuma
 - [UPDATE] 解像度に `qHD` (960x540, 540x960) を追加する
   - @enm10k
-- [UPDATE] `ForwardingFilter` に `version` と `metadata`　を追加する
+- [UPDATE] `ForwardingFilter` に `version` と `metadata` を追加する
   - @miosakuma
 - [ADD] H.265 に対応する
   - `SoraVideoOption` の `Codec` に `H265` を追加しました
