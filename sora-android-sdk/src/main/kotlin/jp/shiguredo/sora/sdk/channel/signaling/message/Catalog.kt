@@ -92,7 +92,7 @@ data class Encoding(
     @SerializedName("rid") val rid: String?,
     @SerializedName("active") val active: Boolean?,
     @SerializedName("maxBitrate") val maxBitrate: Int?,
-    @SerializedName("maxFramerate") val maxFramerate: Int?,
+    @SerializedName("maxFramerate") val maxFramerate: Double?,
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
