@@ -108,6 +108,7 @@ data class OfferMessage(
     @SerializedName("client_id") val clientId: String,
     @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("connection_id") val connectionId: String,
+    @SerializedName("simulcast") val simulcast: Boolean = false,
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
     @SerializedName("mid") val mid: Map<String, String>? = null,

@@ -797,6 +797,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 mediaOption = mediaOption
             ),
             mediaOption = mediaOption,
+            simulcastEnabled = offerMessage.simulcast,
             dataChannelConfigs = offerMessage.dataChannels,
             listener = peerListener
         )
