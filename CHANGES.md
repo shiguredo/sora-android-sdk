@@ -15,6 +15,14 @@
   - @miosakuma
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
+- [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
+  - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
+  - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
+  - 方針に合わせ SDK に対して maxFramerate を Double を受け入れるように修正し、int にキャストして設定するように変更
+  - 参考
+    - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
+    - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
+  - @torikizi
 
 ## 2024.2.0
 
