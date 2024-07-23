@@ -15,6 +15,9 @@
   - @miosakuma
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
+- [UPDATE] GitHub Actions の定期実行をやめる
+  - build.yml の起動イベントから schedule を削除
+  - @zztkm
 - [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
   - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
   - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
