@@ -11,8 +11,9 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 125.6422.2.5 に上げる
+- [UPDATE] libwebrtc を 127.6533.1.1 に上げる
   - @miosakuma
+  - @zztkm
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
