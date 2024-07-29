@@ -172,6 +172,9 @@ class SoraMediaOption {
      * - Sora ドキュメントのマルチストリーム
      *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
      */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。"
+    )
     fun enableMultistream() {
         multistreamEnabled = true
     }

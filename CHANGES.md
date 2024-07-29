@@ -14,6 +14,9 @@
 - [UPDATE] libwebrtc を 127.6533.1.1 に上げる
   - @miosakuma
   - @zztkm
+- [UPDATE] `SoraMediaOption.enableMultistream()` を非推奨にする
+  - Sora のレガシーストリーム機能が 2025 年 6 月リリースにて廃止されるため
+  - @zztkm
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
