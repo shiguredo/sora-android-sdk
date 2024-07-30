@@ -27,6 +27,8 @@
       - classifier は Gradle 8.0 で削除された
       - https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
     - compileSdkVersion と targetSdkVersion を 34 に上げる
+  - GitHub Actions で利用する JDK のバージョンを 17 にする
+  - JitPack でのビルドで利用する JDK のバージョンを 17 にする
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
