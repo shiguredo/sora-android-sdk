@@ -24,21 +24,19 @@ android {
             java.srcDirs += 'src/test/kotlin'
         }
     }
-    buildTypes {
-        debug {
-            debuggable true
-        }
-        release {
-        }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    buildTypes {
+        release {
+        }
     }
 
     testOptions {
         unitTests.includeAndroidResources = true
     }
+    namespace 'jp.shiguredo.sora.sdk'
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
