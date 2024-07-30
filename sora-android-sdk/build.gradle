@@ -30,10 +30,10 @@ android {
         }
         release {
         }
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
     }
 
     testOptions {
@@ -110,7 +110,9 @@ configurations.all {
 }
 
 task sourcesJar(type: Jar) {
-    classifier = 'sources'
+    // classifier は archiveClassifier に置き換えられました
+    // https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
+    archiveClassifier = 'sources'
     from android.sourceSets.main.java.srcDirs
 }
 
