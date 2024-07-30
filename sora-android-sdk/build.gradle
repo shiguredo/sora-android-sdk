@@ -29,6 +29,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildFeatures {
+        // AGP 8.0 からデフォルトで false になった
+        // このオプションが true でないと、defaultConfig に含まれている
+        // buidlConfigField オプションが無効になってしまうため、true に設定する
+        // 参考: https://developer.android.com/build/releases/past-releases/agp-8-0-0-release-notes#default-changes
         buildConfig true
     }
     buildTypes {
@@ -41,6 +45,8 @@ android {
     testOptions {
         unitTests.includeAndroidResources = true
     }
+    // AGP 8.0 からモジュールレベルの build script 内に namespace が必要になった
+    // 参考: https://developer.android.com/build/releases/past-releases/agp-8-0-0-release-notes#namespace-dsl
     namespace 'jp.shiguredo.sora.sdk'
 }
 
