@@ -29,6 +29,7 @@
     - compileSdkVersion と targetSdkVersion を 34 に上げる
   - GitHub Actions で利用する JDK のバージョンを 17 にする
   - JitPack でのビルドで利用する JDK のバージョンを 17 にする
+  - @zztkm
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
