@@ -14,6 +14,19 @@
 - [UPDATE] libwebrtc を 127.6533.1.1 に上げる
   - @miosakuma
   - @zztkm
+- [UPDATE] Android Gradle Plugin (AGP) を 8.5.0 にアップグレードする
+  - Android Studion の AGP Upgrade Assistant を利用してアップグレードされた内容
+    - `com.android.tools.build:gradle` を 8.5.0 に上げる
+    - ビルドに利用される Gradle を 8.7 に上げる
+    - Android マニフェストからビルドファイルにパッケージを移動する
+  - AGP 8.5.0 対応で発生したビルドスクリプトのエラーを手動で修正した内容
+    - compileOptions を buildTypes から android ブロックに移動する
+      - Android 公式ドキュメントを参考にした修正
+      - https://developer.android.com/build/jdks?hl=ja#source-compat
+    - classifier を archiveClassifier に置き換える
+      - classifier は Gradle 8.0 で削除された
+      - https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
+    - compileSdkVersion と targetSdkVersion を 34 に上げる
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
