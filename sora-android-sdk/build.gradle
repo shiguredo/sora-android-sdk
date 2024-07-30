@@ -29,6 +29,8 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildTypes {
+        // Android Studio でのデバッグビルドタイプはデフォルトで debuggable true としてビルドされるため
+        // AGP Upgrade Assistant によって debug ブロックは削除された。
         release {
         }
     }
