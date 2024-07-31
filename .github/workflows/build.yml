@@ -20,7 +20,10 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '18'
+          # java-version を 17 にしている理由は以下です
+          # - Android Gradle plugin 8.5 のデフォルト JDK version が 17
+          # - 17 は LTS であり、temurin では 2027年10月までサポート予定
+          java-version: '17'
           cache: 'gradle'
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
