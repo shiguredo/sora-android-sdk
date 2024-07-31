@@ -31,7 +31,7 @@ android {
     buildFeatures {
         // AGP 8.0 からデフォルトで false になった
         // このオプションが true でないと、defaultConfig に含まれている
-        // buidlConfigField オプションが無効になってしまうため、true に設定する
+        // buildConfigField オプションが無効になってしまうため、true に設定する
         // 参考: https://developer.android.com/build/releases/past-releases/agp-8-0-0-release-notes#default-changes
         buildConfig true
     }
@@ -61,7 +61,7 @@ dokkaHtml.configure {
     // デフォルトの出力先は "${buildDir}/dokka". 変更したいときにコメントアウトを行う.
     // outputDirectory.set(new File("${buildDir}/dokka"))
     moduleName.set("sora-android-sdk")
-    // "dafault" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
+    // "default" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
     // cacheRoot.set(file("default"))
 
     dokkaSourceSets {
