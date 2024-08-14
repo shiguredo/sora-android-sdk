@@ -8,10 +8,6 @@
   - 下位互換がある追加
 - FIX
   - バグ修正
-- TEST
-  - テスト関連
-- DOC
-  - ドキュメント関連
 
 ## develop
 
@@ -38,11 +34,6 @@
   - GitHub Actions で利用する JDK のバージョンを 17 にする
   - JitPack でのビルドで利用する JDK のバージョンを 17 にする
   - @zztkm
-- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
-  - @zztkm
-- [UPDATE] GitHub Actions の定期実行をやめる
-  - build.yml の起動イベントから schedule を削除
-  - @zztkm
 - [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
   - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
   - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
@@ -51,6 +42,14 @@
     - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
     - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
   - @torikizi
+
+### misc
+
+- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
+  - @zztkm
+- [UPDATE] GitHub Actions の定期実行をやめる
+  - build.yml の起動イベントから schedule を削除
+  - @zztkm
 
 ## 2024.2.0
 
