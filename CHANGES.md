@@ -8,6 +8,10 @@
   - 下位互換がある追加
 - FIX
   - バグ修正
+- TEST
+  - テスト関連
+- DOC
+  - ドキュメント関連
 
 ## develop
 
@@ -25,10 +29,10 @@
   - AGP 8.5.0 対応で発生したビルドスクリプトのエラーを手動で修正した内容
     - compileOptions を buildTypes から android ブロックに移動する
       - Android 公式ドキュメントを参考にした修正
-      - https://developer.android.com/build/jdks?hl=ja#source-compat
+      - <https://developer.android.com/build/jdks?hl=ja#source-compat>
     - classifier を archiveClassifier に置き換える
       - classifier は Gradle 8.0 で削除された
-      - https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
+      - <https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier>
     - compileSdkVersion と targetSdkVersion を 34 に上げる
     - AGP 8.0 から buildConfig がデフォルト false になったので、true に設定する
   - GitHub Actions で利用する JDK のバージョンを 17 にする
