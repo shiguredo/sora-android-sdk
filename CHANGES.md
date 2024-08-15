@@ -25,19 +25,14 @@
   - AGP 8.5.0 対応で発生したビルドスクリプトのエラーを手動で修正した内容
     - compileOptions を buildTypes から android ブロックに移動する
       - Android 公式ドキュメントを参考にした修正
-      - https://developer.android.com/build/jdks?hl=ja#source-compat
+      - <https://developer.android.com/build/jdks?hl=ja#source-compat>
     - classifier を archiveClassifier に置き換える
       - classifier は Gradle 8.0 で削除された
-      - https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
+      - <https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier>
     - compileSdkVersion と targetSdkVersion を 34 に上げる
     - AGP 8.0 から buildConfig がデフォルト false になったので、true に設定する
   - GitHub Actions で利用する JDK のバージョンを 17 にする
   - JitPack でのビルドで利用する JDK のバージョンを 17 にする
-  - @zztkm
-- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
-  - @zztkm
-- [UPDATE] GitHub Actions の定期実行をやめる
-  - build.yml の起動イベントから schedule を削除
   - @zztkm
 - [UPDATE] 依存ライブラリーのバージョンを上げる
   - com.google.code.gson:gson を 2.11.0 に上げる
@@ -56,6 +51,14 @@
     - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
     - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
   - @torikizi
+
+### misc
+
+- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
+  - @zztkm
+- [UPDATE] GitHub Actions の定期実行をやめる
+  - build.yml の起動イベントから schedule を削除
+  - @zztkm
 
 ## 2024.2.0
 
