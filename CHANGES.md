@@ -34,6 +34,15 @@
   - GitHub Actions で利用する JDK のバージョンを 17 にする
   - JitPack でのビルドで利用する JDK のバージョンを 17 にする
   - @zztkm
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - com.google.code.gson:gson を 2.11.0 に上げる
+  - com.squareup.okhttp3:okhttp を 4.12.0 に上げる
+  - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.8.1 に上げる
+  - androidx.test:core を 1.6.1 に上げる
+  - org.robolectric:robolectric を 4.13 に上げる
+  - @zztkm
+- [UPDATE] Kotlin のバージョンを 1.9.25 に上げる
+  - @zztkm
 - [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
   - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
   - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
