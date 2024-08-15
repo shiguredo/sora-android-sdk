@@ -14,6 +14,7 @@ import org.webrtc.audio.JavaAudioDeviceModule
 
 class RTCComponentFactory(
     private val mediaOption: SoraMediaOption,
+    private val simulcastEnabled: Boolean,
     private val listener: PeerChannel.Listener?
 ) {
     companion object {
@@ -36,7 +37,7 @@ class RTCComponentFactory(
         val encoderFactory = when {
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
-            mediaOption.simulcastEnabled ->
+            simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,

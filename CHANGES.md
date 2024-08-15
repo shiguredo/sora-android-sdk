@@ -51,6 +51,8 @@
     - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
     - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
   - @torikizi
+- [FIX] Offer メッセージでサイマルキャスト有効を指定した場合にサイマルキャストが有効にならない問題を修正
+  - 接続時にクライアントが指定したサイマルキャスト有効/無効の設定により SimulcastVideoEncoder を利用していたが、Sora 側でサイマルキャスト有効の指定は変更できるためサイマルキャスト有効/無効の判断は Offer メッセージの `simulcast` の値を元に行う必要があった
 
 ### misc
 
