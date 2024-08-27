@@ -56,6 +56,10 @@
 
 ### misc
 
+- [UPDATE] システム条件を更新する
+  - Android Studio 2024.1.1 以降
+  - WebRTC SFU Sora 2024.1.0 以降
+  - @miosakuma
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
