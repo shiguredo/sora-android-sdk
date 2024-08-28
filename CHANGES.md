@@ -53,13 +53,13 @@
   - @torikizi
 - [FIX] Offer メッセージでサイマルキャスト有効を指定した場合にサイマルキャストが有効にならない問題を修正
   - 接続時にクライアントが指定したサイマルキャスト有効/無効の設定により SimulcastVideoEncoder を利用していたが、Sora 側でサイマルキャスト有効の指定は変更できるためサイマルキャスト有効/無効の判断は Offer メッセージの `simulcast` の値を元に行う必要があった
-- [FIX] `type: connect` message の metadata に null または、値に null を含むオブジェクトを設定できない問題を修正
-  - Gson はデフォルトで、null オブジェクト・フィールドを無視するので、metadata に null オブジェクト・フィールドを設定することができなかった
+- [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが省略されてしまう問題を修正
+  - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドを設定することができなかった
   - これを回避するために Gson をインスタンス化するときに `serializeNulls()` を呼び出したインスタンスを追加した
     - <https://github.com/google/gson/blob/main/UserGuide.md#null-object-support>
-  - 今回は metadata のみ null を許容し、他のフィールドには null を許容しないようにしたかったので以下の手順で回避した
+  - 今回は `signalingMetadata` と `signalingNotifyMetadata` のみ null フィールドを許容するようにしたかったので以下のような手順で JSON シリアライズを行うようにした
     - まず、デフォルトの Gson インスタンスで ConnectMessage をシリアライズする
-    - その後、シリアライズした JSON 文字列を JsonObject に変換する (この時点で null のオブジェクト・フィールドは省略されている)
+    - その後、シリアライズした JSON 文字列を JsonObject に変換する (この時点で null のフィールドは省略されている)
     - JsonObject に metadata をセットし直す
     - JsonObject を `serializeNulls()` を呼び出した Gson インスタンスでシリアライズする
   - @zztkm
