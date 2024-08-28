@@ -1,12 +1,12 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
+import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
-import jp.shiguredo.sora.sdk.util.SignalingConnectMessageSerializer
-import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
 
@@ -26,7 +26,8 @@ class MessageConverter {
 
         val TAG = MessageConverter::class.simpleName
 
-        val gson = GsonBuilder().registerTypeAdapter(ConnectMessage::class.java, SignalingConnectMessageSerializer()).create()!!
+        val gson = Gson()
+        private val gsonSerializeNulls = GsonBuilder().serializeNulls().create()!!
 
         @JvmOverloads
         fun buildConnectMessage(
@@ -121,13 +122,14 @@ class MessageConverter {
                 msg.redirect = true
             }
 
-            // TODO(zztkm): ここが metadata に null を入れることができない原因になっているので修正する
-            // カスタムシリアライザで省略されないようにしてみたが、結局省略されてしまう
-            // toJson 内部で jsonWriter というのが使われているが、これは serializeNulls が有効になっていないと null を書き出さない
-            // ConnectMessage.metadata のみ serializeNulls を有効にして JSON 文字列に書き出す方法がわからないので要調査
+            // まず null 許容せずに JSON 文字列にシリアライズし、次に JsonObject にデシリアライズする
+            // その後、デシリアライズした JsonObject の metadata を設定し直して、SerializeNulls を有効にして JSON 文字列にシリアライズする
+            // こうすることで、metadata だけ null を含む JSON 文字列を生成できる
             val jsonMsg = gson.toJson(msg)
-            SoraLogger.d("kensaku", "connect: message=$jsonMsg")
-            return jsonMsg
+            val connectMessageJsonObject = gson.fromJson(jsonMsg, JsonObject::class.java)
+            connectMessageJsonObject.remove("metadata")
+            connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
+            return gsonSerializeNulls.toJson(connectMessageJsonObject)
         }
 
         fun buildPongMessage(stats: RTCStatsReport?): String {
