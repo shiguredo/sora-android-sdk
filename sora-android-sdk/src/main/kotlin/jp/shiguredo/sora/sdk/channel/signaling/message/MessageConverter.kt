@@ -122,13 +122,20 @@ class MessageConverter {
                 msg.redirect = true
             }
 
+            // 1部フィールドだけを null 許容して JSON 文字列にシリアライズするために以下の処理を行う
             // まず null 許容せずに JSON 文字列にシリアライズし、次に JsonObject にデシリアライズする
-            // その後、デシリアライズした JsonObject の metadata を設定し直して、SerializeNulls を有効にして JSON 文字列にシリアライズする
-            // こうすることで、metadata だけ null を含む JSON 文字列を生成できる
+            // その後、デシリアライズした JsonObject の null 許容したいフィールドを設定し直し、SerializeNulls を有効にして JSON 文字列にシリアライズする
+            // こうすることで、1部フィールドだけ null を許容した JSON 文字列を生成できる
             val jsonMsg = gson.toJson(msg)
             val connectMessageJsonObject = gson.fromJson(jsonMsg, JsonObject::class.java)
-            connectMessageJsonObject.remove("metadata")
-            connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
+            if (metadata != null) {
+                connectMessageJsonObject.remove("metadata")
+                connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
+            }
+            if (signalingNotifyMetadata != null) {
+                connectMessageJsonObject.remove("signalingNotifyMetadata")
+                connectMessageJsonObject.add("signalingNotifyMetadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
+            }
             return gsonSerializeNulls.toJson(connectMessageJsonObject)
         }
 
