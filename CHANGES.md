@@ -11,9 +11,12 @@
 
 ## develop
 
+## 2024.3.0
+
+**リリース日**: 2024-08-29
+
 - [UPDATE] libwebrtc を 127.6533.1.1 に上げる
-  - @miosakuma
-  - @zztkm
+  - @miosakuma @zztkm
 - [UPDATE] Android Gradle Plugin (AGP) を 8.5.0 にアップグレードする
   - Android Studion の AGP Upgrade Assistant を利用してアップグレードされた内容
     - `com.android.tools.build:gradle` を 8.5.0 に上げる
