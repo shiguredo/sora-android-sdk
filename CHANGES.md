@@ -11,9 +11,23 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 127.6533.1.1 に上げる
-  - @miosakuma
+- [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが省略されてしまう問題を修正
+  - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドを設定することができなかった
+  - これを回避するために Gson をインスタンス化するときに `serializeNulls()` を呼び出したインスタンスを追加した
+    - <https://github.com/google/gson/blob/main/UserGuide.md#null-object-support>
+  - 今回は `signalingMetadata` と `signalingNotifyMetadata` のみ null フィールドを許容するようにしたかったので以下のような手順で JSON シリアライズを行うようにした
+    - まず、デフォルトの Gson インスタンスで ConnectMessage をシリアライズする
+    - その後、シリアライズした JSON 文字列を JsonObject に変換する (この時点で null のフィールドは省略されている)
+    - JsonObject に metadata をセットし直す
+    - JsonObject を `serializeNulls()` を呼び出した Gson インスタンスでシリアライズする
   - @zztkm
+
+## 2024.3.0
+
+**リリース日**: 2024-08-29
+
+- [UPDATE] libwebrtc を 127.6533.1.1 に上げる
+  - @miosakuma @zztkm
 - [UPDATE] Android Gradle Plugin (AGP) を 8.5.0 にアップグレードする
   - Android Studion の AGP Upgrade Assistant を利用してアップグレードされた内容
     - `com.android.tools.build:gradle` を 8.5.0 に上げる
@@ -53,19 +67,14 @@
   - @torikizi
 - [FIX] Offer メッセージでサイマルキャスト有効を指定した場合にサイマルキャストが有効にならない問題を修正
   - 接続時にクライアントが指定したサイマルキャスト有効/無効の設定により SimulcastVideoEncoder を利用していたが、Sora 側でサイマルキャスト有効の指定は変更できるためサイマルキャスト有効/無効の判断は Offer メッセージの `simulcast` の値を元に行う必要があった
-- [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが省略されてしまう問題を修正
-  - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドを設定することができなかった
-  - これを回避するために Gson をインスタンス化するときに `serializeNulls()` を呼び出したインスタンスを追加した
-    - <https://github.com/google/gson/blob/main/UserGuide.md#null-object-support>
-  - 今回は `signalingMetadata` と `signalingNotifyMetadata` のみ null フィールドを許容するようにしたかったので以下のような手順で JSON シリアライズを行うようにした
-    - まず、デフォルトの Gson インスタンスで ConnectMessage をシリアライズする
-    - その後、シリアライズした JSON 文字列を JsonObject に変換する (この時点で null のフィールドは省略されている)
-    - JsonObject に metadata をセットし直す
-    - JsonObject を `serializeNulls()` を呼び出した Gson インスタンスでシリアライズする
-  - @zztkm
+  - @miosakuma
 
 ### misc
 
+- [UPDATE] システム条件を更新する
+  - Android Studio 2024.1.1 以降
+  - WebRTC SFU Sora 2024.1.0 以降
+  - @miosakuma
 - [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
   - @zztkm
 - [UPDATE] GitHub Actions の定期実行をやめる
