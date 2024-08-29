@@ -125,12 +125,11 @@ task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
 }
 
-
-// generateMetadataFileForSora-android-sdkPublication が存在する場合は、sourcesJar 生成後に実行する
-def publicationTask = tasks.findByName("generateMetadataFileForSora-android-sdkPublication")
-if (publicationTask != null) {
-    println("publicationTask depends on sourcesJar")
-    publicationTask.dependsOn(tasks.named("sourcesJar"))
+tasks.whenTaskAdded { task ->
+    println("task.name = ${task.name}")
+    if (task.name == "generateMetadataFileForSora-android-sdkPublication") {
+        task.dependsOn("sourcesJar")
+    }
 }
 
 artifacts {
