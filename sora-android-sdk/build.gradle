@@ -126,7 +126,6 @@ task sourcesJar(type: Jar) {
 }
 
 tasks.whenTaskAdded { task ->
-    println("task.name = ${task.name}")
     if (task.name == "generateMetadataFileForSora-android-sdkPublication") {
         task.dependsOn("sourcesJar")
     }
