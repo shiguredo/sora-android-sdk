@@ -11,11 +11,69 @@
 
 ## develop
 
+## 2024.3.0
+
+**リリース日**: 2024-08-29
+
+- [UPDATE] libwebrtc を 127.6533.1.1 に上げる
+  - @miosakuma @zztkm
+- [UPDATE] Android Gradle Plugin (AGP) を 8.5.0 にアップグレードする
+  - Android Studion の AGP Upgrade Assistant を利用してアップグレードされた内容
+    - `com.android.tools.build:gradle` を 8.5.0 に上げる
+    - ビルドに利用される Gradle を 8.7 に上げる
+    - Android マニフェストからビルドファイルにパッケージを移動
+      - Android マニフェストに定義されていた package を削除
+      - ビルドファイルに namespace を追加
+    - buildTypes に定義されていた debug ブロックを削除
+  - AGP 8.5.0 対応で発生したビルドスクリプトのエラーを手動で修正した内容
+    - compileOptions を buildTypes から android ブロックに移動する
+      - Android 公式ドキュメントを参考にした修正
+      - <https://developer.android.com/build/jdks?hl=ja#source-compat>
+    - classifier を archiveClassifier に置き換える
+      - classifier は Gradle 8.0 で削除された
+      - <https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier>
+    - compileSdkVersion と targetSdkVersion を 34 に上げる
+    - AGP 8.0 から buildConfig がデフォルト false になったので、true に設定する
+  - GitHub Actions で利用する JDK のバージョンを 17 にする
+  - JitPack でのビルドで利用する JDK のバージョンを 17 にする
+  - @zztkm
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - com.google.code.gson:gson を 2.11.0 に上げる
+  - com.squareup.okhttp3:okhttp を 4.12.0 に上げる
+  - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.8.1 に上げる
+  - androidx.test:core を 1.6.1 に上げる
+  - org.robolectric:robolectric を 4.13 に上げる
+  - @zztkm
+- [UPDATE] Kotlin のバージョンを 1.9.25 に上げる
+  - @zztkm
+- [FIX] Offer メッセージの encodings 内 maxFramerate の値が整数でない値であった場合にエラーとなる問題を修正
+  - W3C では maxFramerate を Double で定義しているが、libwebrtc では Integer となっているため、SDK も Integer を使用していた
+  - W3C の定義に合わせて Double を受け入れるようにし、また SDK 内部では libwebrtc に合わせて Integer とする方針となった
+  - 方針に合わせ SDK に対して maxFramerate を Double を受け入れるように修正し、int にキャストして設定するように変更
+  - 参考
+    - [W3C の定義](https://w3c.github.io/webrtc-pc/#dom-rtcrtpencodingparameters-maxframerate)
+    - [libwebrtc の定義](https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/RtpParameters.java;l=72-73;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c)
+  - @torikizi
+- [FIX] Offer メッセージでサイマルキャスト有効を指定した場合にサイマルキャストが有効にならない問題を修正
+  - 接続時にクライアントが指定したサイマルキャスト有効/無効の設定により SimulcastVideoEncoder を利用していたが、Sora 側でサイマルキャスト有効の指定は変更できるためサイマルキャスト有効/無効の判断は Offer メッセージの `simulcast` の値を元に行う必要があった
+
+### misc
+
+- [UPDATE] システム条件を更新する
+  - Android Studio 2024.1.1 以降
+  - WebRTC SFU Sora 2024.1.0 以降
+  - @miosakuma
+- [UPDATE] GitHub Actions の起動イベントに workflow_dispatch を追加
+  - @zztkm
+- [UPDATE] GitHub Actions の定期実行をやめる
+  - build.yml の起動イベントから schedule を削除
+  - @zztkm
+
 ## 2024.2.0
 
 - [UPDATE] libwebrtc を 122.6261.1.0 に上げる
   - @miosakuma
-- [UPDATE] Github Actions の actions/setup-java@v4 にあげる
+- [UPDATE] Github Actions の actions/setup-java@v4 に上げる
   - @miosakuma
 
 ## 2024.1.1
@@ -38,7 +96,7 @@
   - @miosakuma
 - [UPDATE] 解像度に `qHD` (960x540, 540x960) を追加する
   - @enm10k
-- [UPDATE] `ForwardingFilter` に `version` と `metadata`　を追加する
+- [UPDATE] `ForwardingFilter` に `version` と `metadata` を追加する
   - @miosakuma
 - [ADD] H.265 に対応する
   - `SoraVideoOption` の `Codec` に `H265` を追加しました

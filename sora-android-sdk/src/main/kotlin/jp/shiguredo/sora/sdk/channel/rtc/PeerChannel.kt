@@ -79,6 +79,7 @@ class PeerChannelImpl(
     private val appContext: Context,
     private val networkConfig: PeerNetworkConfig,
     private val mediaOption: SoraMediaOption,
+    private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
     private var useTracer: Boolean = false
@@ -104,7 +105,7 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption, listener)
+    private val componentFactory = RTCComponentFactory(mediaOption, simulcastEnabled, listener)
 
     private var conn: PeerConnection? = null
 
@@ -309,7 +310,7 @@ class PeerChannelImpl(
 
         return setRemoteDescription(offerSDP).flatMap {
             // active: false が無効化されてしまう問題に対応
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+            if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             }
             return@flatMap createAnswer()
@@ -359,7 +360,7 @@ class PeerChannelImpl(
                 }
             } ?: SoraLogger.d(TAG, "mid for video not found")
 
-            if (mediaOption.simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+            if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             }
 
@@ -383,7 +384,7 @@ class PeerChannelImpl(
         parameters.encodings.zip(offerEncodings!!).forEach { (senderEncoding, offerEncoding) ->
             offerEncoding.active?.also { senderEncoding.active = it }
             offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
-            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it }
+            offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it.toInt() }
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }

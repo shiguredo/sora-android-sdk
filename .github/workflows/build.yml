@@ -1,14 +1,13 @@
 name: Build
 
 on:
+  workflow_dispatch:
   push:
     paths-ignore:
       - 'README.md'
       - 'CHANGES.md'
       - 'LICENSE'
       - 'THANKS'
-  schedule:
-    - cron: "0 0 * * *"
 
 jobs:
   build:
@@ -21,7 +20,10 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '18'
+          # java-version を 17 にしている理由は以下です
+          # - Android Gradle plugin 8.5 のデフォルト JDK version が 17
+          # - 17 は LTS であり、temurin では 2027年10月までサポート予定
+          java-version: '17'
           cache: 'gradle'
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
@@ -30,10 +32,20 @@ jobs:
       - name: Lint Check
         run: ./gradlew ktlintCheck
       - name: Slack Notification
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: sora-android-sdk
+          SLACK_COLOR: good
+          SLACK_TITLE: SUCCEEDED
+          SLACK_ICON_EMOJI: ":star-struck:"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Slack Notification
         if: failure()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_CHANNEL: sora-android-sdk
           SLACK_COLOR: danger
-          SLACK_TITLE: Build failed
+          SLACK_TITLE: "FAILED"
+          SLACK_ICON_EMOJI: ":japanese_ogre:"
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
