@@ -126,6 +126,10 @@ task sourcesJar(type: Jar) {
 }
 
 tasks.whenTaskAdded { task ->
+    // kotlin 1.9 に上げたタイミングで、generateMetadataFileForSora-android-sdkPublication が
+    // sourcesJar より先に実行されるようになってしまい JitPack でビルドエラーが発生した。
+    // 、generateMetadataFileForSora-android-sdkPublication は sourcesJar の出力を使用するためである。
+    // この問題に対処するために、generateMetadataFileForSora-android-sdkPublication が sourcesJar に依存していることを明示的に宣言する。
     if (task.name == "generateMetadataFileForSora-android-sdkPublication") {
         task.dependsOn("sourcesJar")
     }
