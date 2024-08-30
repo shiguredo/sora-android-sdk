@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2024.3.1
+
+**リリース日**: 2024-08-30
+
 - [FIX] JitPack で発生した Gradle Task の暗黙的な依存関係によるビルドエラーを修正する
   - `generateMetadataFileForSora-android-sdkPublication` は暗黙的に `sourcesJar` に依存していた
   - このため、タスクの実行順序によってはビルドエラーが発生する状況になっており、kotlin 1.9 に上げたタイミングで問題が発現した
