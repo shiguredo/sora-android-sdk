@@ -11,6 +11,16 @@
 
 ## develop
 
+## 2024.3.1
+
+**リリース日**: 2024-08-30
+
+- [FIX] JitPack で発生した Gradle Task の暗黙的な依存関係によるビルドエラーを修正する
+  - `generateMetadataFileForSora-android-sdkPublication` は暗黙的に `sourcesJar` に依存していた
+  - このため、タスクの実行順序によってはビルドエラーが発生する状況になっており、kotlin 1.9 に上げたタイミングで問題が発現した
+  - この問題に対処するために、`generateMetadataFileForSora-android-sdkPublication` が `sourcesJar` に依存していることを明示的に宣言した
+  - @zztkm
+
 ## 2024.3.0
 
 **リリース日**: 2024-08-29
@@ -56,6 +66,7 @@
   - @torikizi
 - [FIX] Offer メッセージでサイマルキャスト有効を指定した場合にサイマルキャストが有効にならない問題を修正
   - 接続時にクライアントが指定したサイマルキャスト有効/無効の設定により SimulcastVideoEncoder を利用していたが、Sora 側でサイマルキャスト有効の指定は変更できるためサイマルキャスト有効/無効の判断は Offer メッセージの `simulcast` の値を元に行う必要があった
+  - @miosakuma
 
 ### misc
 
