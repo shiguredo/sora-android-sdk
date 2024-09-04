@@ -11,6 +11,18 @@
 
 ## develop
 
+- [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが connect メッセージ送信時に省略されてしまう問題を修正
+  - `signalingMetadata` と `signalingNotifyMetadata` に設定する情報はユーザが任意に設定する項目であり value 値が null の情報も送信できるようにする必要がある
+  - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドは省略される
+    - これを回避するために Gson をインスタンス化するときに `serializeNulls()` を利用してインスタンスを作成する必要がある
+    - <https://github.com/google/gson/blob/main/UserGuide.md#null-object-support>
+  - `signalingMetadata` と `signalingNotifyMetadata` のみ null フィールドを省略しないようにする必要があるため、以下のような手順で JSON シリアライズを行うようにした
+    - まず、デフォルトの Gson インスタンスで ConnectMessage をシリアライズする
+    - その後、シリアライズした JSON 文字列を JsonObject に変換する (この時点で null のフィールドは省略されている)
+    - JsonObject に metadata, signalingNotifyMetadata をセットし直す
+    - JsonObject を `serializeNulls()` を呼び出した Gson インスタンスでシリアライズする
+  - @zztkm
+
 ## 2024.3.1
 
 **リリース日**: 2024-08-30
