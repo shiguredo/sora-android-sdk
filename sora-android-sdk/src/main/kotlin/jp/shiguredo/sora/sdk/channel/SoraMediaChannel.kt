@@ -220,6 +220,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param code WebSocket 接続終了コード
+         * @param reason WebSocket 接続終了理由
+         */
+        fun onClose(mediaChannel: SoraMediaChannel, code: Int, reason: String) {}
+
+        /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
@@ -398,6 +407,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 internalDisconnect(disconnectReason)
             }
+        }
+
+        override fun onDisconnectWebSocket(code: Int, reason: String) {
+            listener?.onClose(this@SoraMediaChannel, code, reason)
         }
 
         override fun onConnect(endpoint: String) {

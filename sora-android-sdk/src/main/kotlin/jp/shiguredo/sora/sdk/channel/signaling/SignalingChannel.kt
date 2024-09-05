@@ -41,6 +41,7 @@ interface SignalingChannel {
     interface Listener {
         fun onConnect(endpoint: String)
         fun onDisconnect(disconnectReason: SoraDisconnectReason?)
+        fun onDisconnectWebSocket(code: Int, reason: String)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
