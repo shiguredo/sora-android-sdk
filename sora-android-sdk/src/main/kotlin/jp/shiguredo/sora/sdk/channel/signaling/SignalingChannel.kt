@@ -41,7 +41,7 @@ interface SignalingChannel {
     interface Listener {
         fun onConnect(endpoint: String)
         fun onDisconnect(disconnectReason: SoraDisconnectReason?)
-        fun onDisconnectWebSocket(code: Int, reason: String)
+        fun onDisconnectWebSocket(code: Int, reason: String?)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -222,6 +222,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
             SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
             it.send(disconnectMessage)
         }
+    }
+
+    private fun disconnect(code: Int, reason: String?, disconnectReason: SoraDisconnectReason?) {
+        listener?.onDisconnectWebSocket(code, reason)
+        disconnect(disconnectReason)
     }
 
     override fun disconnect(disconnectReason: SoraDisconnectReason?) {
@@ -473,10 +478,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 }
 
-                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+                disconnect(code, reason, SoraDisconnectReason.WEBSOCKET_ONCLOSE)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }
+            listener?.onDisconnectWebSocket(code, reason)
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -487,7 +493,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+            // TODO(zztkm): 疑問: ここで disconnect する必要があるか？
+            // OkHttp のコードを読むと、たしかに onClosed が呼ばれない可能性もあるが、ここで disconnect する必要があるかはわからないため確認したい
+            disconnect(code, reason, SoraDisconnectReason.WEBSOCKET_ONCLOSE)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -501,7 +509,15 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
 
             try {
-                listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                // OkHttp で type: disconnect を送信すると、onFailure で java.io.EOFException が発生するケースがある
+                // その場合、
+                if (closing.get()) {
+                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: but signaling is closing")
+                    listener?.onDisconnectWebSocket(1006, "")
+                    return
+                } else {
+                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                }
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
