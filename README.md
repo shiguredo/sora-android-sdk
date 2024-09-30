@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-127.6533-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/6533)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-129.6668-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/6668)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
