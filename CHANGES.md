@@ -25,6 +25,12 @@
     - JsonObject を `serializeNulls()` を呼び出した Gson インスタンスでシリアライズする
   - @zztkm
 
+### misc
+
+- [UPDATE] システム条件を更新する
+  - Android Studio 2024.1.2 以降
+  - @miosakuma
+
 ## 2024.3.1
 
 **リリース日**: 2024-08-30
