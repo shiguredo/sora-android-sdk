@@ -220,6 +220,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param code WebSocket 接続終了コード
+         * @param reason WebSocket 接続終了理由
+         */
+        fun onClose(mediaChannel: SoraMediaChannel, code: Int, reason: String?) {}
+
+        /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
@@ -398,6 +407,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 internalDisconnect(disconnectReason)
             }
+        }
+
+        override fun onDisconnectWebSocket(code: Int, reason: String?) {
+            listener?.onClose(this@SoraMediaChannel, code, reason)
         }
 
         override fun onConnect(endpoint: String) {
@@ -948,9 +961,6 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
         compositeDisposable.dispose()
 
-        listener?.onClose(this)
-        listener = null
-
         // アプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
         contactSignalingEndpoint = null
         connectedSignalingEndpoint = null
@@ -965,6 +975,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
         peer?.disconnect(null)
         peer = null
+
+        // TODO: onClose に WebSocket の切断理由なども入れたいけど、ここでは WebSocket の切断理由が取れない...
+        // onClose はちゃんと WebSocket 切断してから呼びたい感じもあるな
+        listener?.onClose(this)
+        listener = null
     }
 
     private fun sendDisconnectOverWebSocket(disconnectReason: SoraDisconnectReason) {
@@ -977,6 +992,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Sora
+     */
     private fun sendDisconnectIfNeeded(disconnectReason: SoraDisconnectReason) {
         val state = peer?.connectionState()
         SoraLogger.d(
