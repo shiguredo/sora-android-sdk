@@ -19,7 +19,7 @@ class SoraMediaOption {
     internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
     internal var videoUpstreamEnabled = false
-    internal var multistreamEnabled = false
+    internal var multistreamEnabled: Boolean? = null
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
@@ -172,8 +172,21 @@ class SoraMediaOption {
      * - Sora ドキュメントのマルチストリーム
      *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
      */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
     fun enableMultistream() {
         multistreamEnabled = true
+    }
+
+    /**
+     * レガシーストリームを有効にします.
+     */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
+    fun enableLegacyStream() {
+        multistreamEnabled = false
     }
 
     /**
@@ -209,7 +222,8 @@ class SoraMediaOption {
                 // 双方向通信の場合は multistream フラグを立てる
                 true
             else ->
-                multistreamEnabled
+                // 未設定の場合は true として扱う
+                multistreamEnabled ?: true
         }
         set(value) {
             _multistreamIsRequired = value
