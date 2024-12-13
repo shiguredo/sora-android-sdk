@@ -51,7 +51,7 @@ data class ConnectMessage(
     @SerializedName("redirect") var redirect: Boolean? = null,
     @Deprecated(
         "2025 年 12 月に廃止します。",
-        ReplaceWith("forwardingFiltersOption"),
+        ReplaceWith("forwardingFilters"),
         DeprecationLevel.WARNING
     )
     @SerializedName("forwarding_filter") val forwardingFilter: Any? = null,
