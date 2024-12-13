@@ -9,6 +9,8 @@ package jp.shiguredo.sora.sdk.channel.option
  * @param metadata 転送フィルターのメタデータ
  */
 class SoraForwardingFilterOption(
+    var name: String? = null,
+    var priority: Int? = null,
     val action: Action? = null,
     val rules: List<List<Rule>>,
     val version: String? = null,
@@ -66,6 +68,8 @@ class SoraForwardingFilterOption(
     internal val signaling: Any
         get() {
             return mapOf(
+                "name" to name,
+                "priority" to priority,
                 "action" to (action?.name?.lowercase() ?: null),
                 "rules" to rules.map { outerRule ->
                     outerRule.map { rule ->

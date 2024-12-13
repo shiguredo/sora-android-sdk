@@ -69,6 +69,7 @@ import kotlin.concurrent.schedule
  * @param dataChannels connect メッセージに含める `data_channels`
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
+ * @param forwardingFiltersOption マルチ転送フィルター機能の設定
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -87,6 +88,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     dataChannels: List<Map<String, Any>>? = null,
     private var bundleId: String? = null,
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
+    private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -672,6 +674,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             |bundleId                   = ${this.bundleId}
             |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
             |forwardingFilter           = ${this.forwardingFilterOption}
+            |forwardingFilters           = ${this.forwardingFiltersOption}
             """.trimMargin()
         )
 
@@ -781,7 +784,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             signalingNotifyMetadata = signalingNotifyMetadata,
             connectDataChannels = connectDataChannels,
             redirect = redirectLocation != null,
-            forwardingFilterOption = forwardingFilterOption
+            forwardingFilterOption = forwardingFilterOption,
+            forwardingFiltersOption = forwardingFiltersOption
         )
         signaling!!.connect()
     }
