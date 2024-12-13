@@ -49,6 +49,11 @@ data class ConnectMessage(
     @SerializedName("audio_streaming_language_code")
     val audioStreamingLanguageCode: String? = null,
     @SerializedName("redirect") var redirect: Boolean? = null,
+    @Deprecated(
+        "2025 年 12 月に廃止します。",
+        ReplaceWith("forwardingFiltersOption"),
+        DeprecationLevel.WARNING
+    )
     @SerializedName("forwarding_filter") val forwardingFilter: Any? = null,
     @SerializedName("forwarding_filters") val forwardingFilters: List<Any>? = null
 )
