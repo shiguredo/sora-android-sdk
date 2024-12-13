@@ -87,6 +87,11 @@ class SoraMediaChannel @JvmOverloads constructor(
     ignoreDisconnectWebSocket: Boolean? = null,
     dataChannels: List<Map<String, Any>>? = null,
     private var bundleId: String? = null,
+    @Deprecated(
+        "2025 年 12 月に廃止します。",
+        ReplaceWith("forwardingFiltersOption"),
+        DeprecationLevel.WARNING
+    )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
 ) {
