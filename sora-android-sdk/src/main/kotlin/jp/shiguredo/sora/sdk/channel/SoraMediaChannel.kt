@@ -69,7 +69,7 @@ import kotlin.concurrent.schedule
  * @param dataChannels connect メッセージに含める `data_channels`
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
- * @param forwardingFiltersOption マルチ転送フィルター機能の設定
+ * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,

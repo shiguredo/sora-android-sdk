@@ -13,16 +13,16 @@
 
 - [UPDATE] libwebrtc を 129.6668.1.0 に上げる
   - @miosakuma
-- [UPDATE] 転送フィルター機能の設定を 2025 年 12 月の廃止に向けて非推奨にする
-  - 転送フィルター機能の設定が非推奨になるクラス
+- [UPDATE] 単一の転送フィルターを設定するためのプロパティを 2025 年 12 月の廃止に向けて非推奨にする
+  - 単一の転送フィルター設定プロパティが非推奨になるクラス
     - SoraMediaChannel
     - SignalingChannelImpl
     - ConnectMessage
   - @zztkm
 - [ADD] 転送フィルター機能の設定を表すクラス `SoraForwardingFilterOption` に `name` と `priority` を追加する
   - @zztkm
-- [ADD] マルチ転送フィルター機能の設定用プロパティを追加する
-  - マルチ転送フィルター機能の設定用プロパティが追加されるクラス
+- [ADD] 転送フィルターをリスト形式で指定するためのプロパティを追加する
+  - プロパティが追加されるクラス
     - SoraMediaChannel に `forwardingFiltersOption` を追加する
     - SignalingChannelImpl に `forwardingFiltersOption` を追加する
     - ConnectMessage に `forwardingFilters` を追加する
