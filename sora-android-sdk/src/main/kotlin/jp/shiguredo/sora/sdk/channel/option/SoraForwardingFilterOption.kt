@@ -3,6 +3,8 @@ package jp.shiguredo.sora.sdk.channel.option
 /**
  * 転送フィルター機能の設定を表すクラスです。
  *
+ * @param name 転送フィルターの名前
+ * @param priority 転送フィルターの優先度
  * @param action 転送フィルター適用時の挙動
  * @param rules 転送フィルターの適用ルール
  * @param version 転送フィルターのバージョン
