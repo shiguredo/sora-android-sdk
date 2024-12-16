@@ -69,7 +69,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val connectDataChannels: List<Map<String, Any>>? = null,
     private val redirect: Boolean = false,
     @Deprecated(
-        "2025 年 12 月に廃止します。",
+        "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
         ReplaceWith("forwardingFiltersOption"),
         DeprecationLevel.WARNING
     )
