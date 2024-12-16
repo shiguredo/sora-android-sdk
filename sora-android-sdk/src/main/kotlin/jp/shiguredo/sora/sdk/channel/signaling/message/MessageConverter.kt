@@ -44,6 +44,7 @@ class MessageConverter {
             dataChannels: List<Map<String, Any>>? = null,
             redirect: Boolean = false,
             forwardingFilterOption: SoraForwardingFilterOption? = null,
+            forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         ): String {
 
             val msg = ConnectMessage(
@@ -60,6 +61,7 @@ class MessageConverter {
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
                 forwardingFilter = forwardingFilterOption?.signaling,
+                forwardingFilters = forwardingFiltersOption?.map { it.signaling }
             )
 
             if (mediaOption.upstreamIsRequired) {
