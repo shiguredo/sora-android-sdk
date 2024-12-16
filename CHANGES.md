@@ -18,7 +18,7 @@
   - 非推奨になるクラス
     - SoraMediaChannel
     - SignalingChannelImpl
-    - ConnectMessage (Any で定義されていますが、実態は SoraForwardingFilterOption)
+    - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
   - @zztkm
 - [ADD] 転送フィルター機能の設定を表すクラス `SoraForwardingFilterOption` に `name` と `priority` を追加する
   - @zztkm
