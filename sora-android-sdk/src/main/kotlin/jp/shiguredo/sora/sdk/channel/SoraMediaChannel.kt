@@ -88,7 +88,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     dataChannels: List<Map<String, Any>>? = null,
     private var bundleId: String? = null,
     @Deprecated(
-        "2025 年 12 月に廃止します。",
+        "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
         ReplaceWith("forwardingFiltersOption"),
         DeprecationLevel.WARNING
     )
