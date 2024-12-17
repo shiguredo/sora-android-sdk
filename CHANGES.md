@@ -11,8 +11,8 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 129.6668.1.0 に上げる
-  - @miosakuma
+- [UPDATE] libwebrtc を 131.6778.4.0 に上げる
+  - @miosakuma @zztkm
 - [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
   - 今後はリスト形式の転送フィルター設定を利用してもらう
   - 非推奨になるクラス
