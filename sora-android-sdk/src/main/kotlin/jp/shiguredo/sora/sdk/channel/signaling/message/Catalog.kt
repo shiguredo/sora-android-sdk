@@ -111,15 +111,31 @@ data class RedirectMessage(
 data class OfferMessage(
     @SerializedName("type") val type: String = "offer",
     @SerializedName("sdp") val sdp: String,
+    @SerializedName("version") val version: String,
+
+    @SerializedName("multistream") val multistream: Boolean,
+    @SerializedName("simulcast") val simulcast: Boolean,
+    @SerializedName("simulcast_multicodec") val simulcastMulticodec: Boolean,
+    @SerializedName("spotlight") val spotlight: Boolean,
+
+    @SerializedName("channel_id") val channelId: String,
     @SerializedName("client_id") val clientId: String,
     @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("connection_id") val connectionId: String,
-    @SerializedName("simulcast") val simulcast: Boolean = false,
+    @SerializedName("session_id") val sessionId: String?,
+
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
     @SerializedName("mid") val mid: Map<String, String>? = null,
     @SerializedName("encodings") val encodings: List<Encoding>?,
-    @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null
+    @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
+
+    @SerializedName("audio") val audio: Boolean?,
+    @SerializedName("audio_codec_type") val audioCodecType: String?,
+    @SerializedName("audio_bit_rate") val audioBitRate: Int?,
+    @SerializedName("video") val video: Boolean?,
+    @SerializedName("video_codec_type") val videoCodecType: String?,
+    @SerializedName("video_bit_rate") val videoBitRate: Int?,
 )
 
 data class SwitchedMessage(
