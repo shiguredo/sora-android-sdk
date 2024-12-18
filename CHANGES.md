@@ -13,6 +13,21 @@
 
 - [UPDATE] libwebrtc を 131.6778.4.0 に上げる
   - @miosakuma @zztkm
+- [UPDATE] OfferMessage に項目を追加する
+  - 追加した項目
+    - `version`
+    - `multistream`
+    - `simulcast_multicodec`
+    - `spotlight`
+    - `channel_id`
+    - `session_id`
+    - `audio`
+    - `audio_codec_type`
+    - `audio_bit_rate`
+    - `video`
+    - `video_codec_type`
+    - `video_bit_rate`
+  - @zztkm
 - [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
   - 今後はリスト形式の転送フィルター設定を利用してもらう
   - 非推奨になるクラス
