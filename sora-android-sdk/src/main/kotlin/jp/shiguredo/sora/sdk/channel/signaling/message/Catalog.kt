@@ -1,12 +1,9 @@
-/**
- * Signaling メッセージのデータクラスを定義します。
- *
- * NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
- */
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.annotations.SerializedName
 import jp.shiguredo.sora.sdk.util.SDKInfo
+
+// NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
 
 data class MessageCommonPart(
     @SerializedName("type") val type: String?
