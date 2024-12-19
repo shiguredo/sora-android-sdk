@@ -96,7 +96,7 @@ data class OfferConfig(
     @SerializedName("iceTransportPolicy") val iceTransportPolicy: String
 )
 
-data class ScaleResolutionDownTo (
+data class ScaleResolutionDownTo(
     @SerializedName("width") var width: Int,
     @SerializedName("height") var height: Int
 )
