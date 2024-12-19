@@ -97,8 +97,8 @@ data class OfferConfig(
 )
 
 data class ScaleResolutionDownTo(
-    @SerializedName("width") var width: Int,
-    @SerializedName("height") var height: Int
+    @SerializedName("maxWidth") var maxWidth: Int,
+    @SerializedName("maxHeight") var maxHeight: Int
 )
 
 data class Encoding(
