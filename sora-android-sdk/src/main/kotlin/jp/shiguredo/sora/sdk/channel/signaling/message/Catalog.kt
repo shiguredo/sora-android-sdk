@@ -96,12 +96,18 @@ data class OfferConfig(
     @SerializedName("iceTransportPolicy") val iceTransportPolicy: String
 )
 
+data class ScaleResolutionDownTo (
+    @SerializedName("width") var width: Int,
+    @SerializedName("height") var height: Int
+)
+
 data class Encoding(
     @SerializedName("rid") val rid: String?,
     @SerializedName("active") val active: Boolean?,
     @SerializedName("maxBitrate") val maxBitrate: Int?,
     @SerializedName("maxFramerate") val maxFramerate: Double?,
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
+    @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: ScaleResolutionDownTo?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
 

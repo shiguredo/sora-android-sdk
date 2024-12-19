@@ -44,6 +44,8 @@
     - ConnectMessage に `forwardingFilters` を追加する
     - クラスそのものに変更はないが `MessageConverter.buildConnectMessage` に `forwardingFiltersOption` を追加する
   - @zztkm
+- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+  - @zztkm
 - [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが connect メッセージ送信時に省略されてしまう問題を修正
   - `signalingMetadata` と `signalingNotifyMetadata` に設定する情報はユーザが任意に設定する項目であり value 値が null の情報も送信できるようにする必要がある
   - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドは省略される
