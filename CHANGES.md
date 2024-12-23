@@ -35,6 +35,14 @@
     - SignalingChannelImpl
     - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
   - @zztkm
+- [UPDATE] NotificationMessage に項目を追加する
+  - 追加した項目
+    - `timestamp`
+    - `spotlightNumber`
+    - `failedConnectionId`
+    - `currentState`
+    - `previousState`
+  - @zztkm
 - [ADD] 転送フィルター機能の設定を表すクラス `SoraForwardingFilterOption` に `name` と `priority` を追加する
   - @zztkm
 - [ADD] 転送フィルターをリスト形式で指定するためのプロパティを追加する
