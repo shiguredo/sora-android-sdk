@@ -187,11 +187,13 @@ data class StatsMessage(
 data class NotificationMessage(
     @SerializedName("type") val type: String = "notify",
     @SerializedName("event_type") val eventType: String,
+    @SerializedName("timestamp") val timestamp: String,
     @SerializedName("role") val role: String?,
     @SerializedName("session_id") val sessionId: String?,
     @SerializedName("client_id") val clientId: String?,
     @SerializedName("bundle_id") val bundleId: String?,
     @SerializedName("connection_id") val connectionId: String?,
+    @SerializedName("spotlight_number") val spotlightNumber: Int?,
     @SerializedName("audio") val audio: Boolean?,
     @SerializedName("video") val video: Boolean?,
     @SerializedName("metadata") val metadata: Any?,
@@ -213,6 +215,9 @@ data class NotificationMessage(
     @SerializedName("recv_connection_id") val recvConnectionId: String?,
     @SerializedName("send_connection_id") val sendConnectionId: String?,
     @SerializedName("stream_id") val streamId: String?,
+    @SerializedName("failed_connection_id") val failedConnectionId: String?,
+    @SerializedName("current_state") val currentState: String?,
+    @SerializedName("previous_state") val previousState: String?,
 )
 
 data class DisconnectMessage(
