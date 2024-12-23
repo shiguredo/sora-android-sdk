@@ -386,6 +386,7 @@ class PeerChannelImpl(
             offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
             offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it.toInt() }
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
+            offerEncoding.scaleResolutionDownTo?.also { senderEncoding.scaleResolutionDownTo = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }
 
