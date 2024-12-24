@@ -17,16 +17,16 @@
   - 追加した項目
     - `version`
     - `multistream`
-    - `simulcast_multicodec`
+    - `simulcastMulticodec`
     - `spotlight`
-    - `channel_id`
-    - `session_id`
+    - `channelId`
+    - `sessionId`
     - `audio`
-    - `audio_codec_type`
-    - `audio_bit_rate`
+    - `audioCodecType`
+    - `audioBitRate`
     - `video`
-    - `video_codec_type`
-    - `video_bit_rate`
+    - `videoCodecType`
+    - `videoBitRate`
   - @zztkm
 - [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
   - 今後はリスト形式の転送フィルター設定を利用してもらう
