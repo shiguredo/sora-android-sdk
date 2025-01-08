@@ -16,7 +16,6 @@
 - [UPDATE] OfferMessage に項目を追加する
   - 追加した項目
     - `version`
-    - `multistream`
     - `simulcastMulticodec`
     - `spotlight`
     - `channelId`

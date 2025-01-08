@@ -115,7 +115,6 @@ data class OfferMessage(
     @SerializedName("sdp") val sdp: String,
     @SerializedName("version") val version: String? = null,
 
-    @SerializedName("multistream") val multistream: Boolean? = null,
     @SerializedName("simulcast") val simulcast: Boolean = false,
     @SerializedName("simulcast_multicodec") val simulcastMulticodec: Boolean? = null,
     @SerializedName("spotlight") val spotlight: Boolean? = null,
