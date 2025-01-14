@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 131.6778.4.0 に上げる
+- [UPDATE] libwebrtc を 132.6834.5.0 に上げる
   - @miosakuma @zztkm
 - [UPDATE] OfferMessage に項目を追加する
   - 追加した項目
