@@ -2,8 +2,6 @@ import argparse
 import re
 import subprocess
 
-# 更新対象のPackageInfoファイル
-PACKAGEINFO_FILE = "Sora/PackageInfo.swift"
 
 SDKINFO_FILE = "sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt"
 
@@ -132,7 +130,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # PackageInfoファイルを読み込んでバージョンを更新
+    # SDKInfo.kt を読み込んでバージョンを更新
     with open(SDKINFO_FILE, "r") as file:
         packageinfo_content = file.readlines()
     updated_packageinfo_content, new_version = update_sdkinfo_version(
