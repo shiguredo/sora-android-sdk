@@ -68,8 +68,8 @@
 - [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更する
   - @voluntas
 - [UPDATE] システム条件を更新する
-  - Android Studio 2024.1.2 以降
-  - @miosakuma
+  - Android Studio 2024.2.2 以降
+  - @miosakuma @zztkm
 - [ADD] Canary Release 用スクリプトの canary.py を追加する
   - @zztkm
 
