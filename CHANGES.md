@@ -70,6 +70,8 @@
 - [UPDATE] システム条件を更新する
   - Android Studio 2024.1.2 以降
   - @miosakuma
+- [ADD] Canary Release 用スクリプトの canary.py を追加する
+  - @zztkm
 
 ## 2024.3.1
 
