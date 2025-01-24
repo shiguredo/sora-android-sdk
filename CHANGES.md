@@ -13,6 +13,13 @@
 
 - [UPDATE] libwebrtc を 132.6834.5.0 に上げる
   - @miosakuma @zztkm
+- [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
+  - 今後はリスト形式の転送フィルター設定を利用してもらう
+  - 非推奨になるクラス
+    - SoraMediaChannel
+    - SignalingChannelImpl
+    - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
+  - @zztkm
 - [UPDATE] OfferMessage に項目を追加する
   - 追加した項目
     - `version`
@@ -26,13 +33,6 @@
     - `video`
     - `videoCodecType`
     - `videoBitRate`
-  - @zztkm
-- [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
-  - 今後はリスト形式の転送フィルター設定を利用してもらう
-  - 非推奨になるクラス
-    - SoraMediaChannel
-    - SignalingChannelImpl
-    - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
   - @zztkm
 - [UPDATE] NotificationMessage に項目を追加する
   - 追加した項目
