@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
 - [UPDATE] libwebrtc を 132.6834.5.0 に上げる
   - @miosakuma @zztkm
 - [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
