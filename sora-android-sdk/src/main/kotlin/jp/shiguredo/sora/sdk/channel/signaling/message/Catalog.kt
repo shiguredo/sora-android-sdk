@@ -3,6 +3,8 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.annotations.SerializedName
 import jp.shiguredo.sora.sdk.util.SDKInfo
 
+// NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
+
 data class MessageCommonPart(
     @SerializedName("type") val type: String?
 )
@@ -49,7 +51,13 @@ data class ConnectMessage(
     @SerializedName("audio_streaming_language_code")
     val audioStreamingLanguageCode: String? = null,
     @SerializedName("redirect") var redirect: Boolean? = null,
-    @SerializedName("forwarding_filter") val forwardingFilter: Any? = null
+    @Deprecated(
+        "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
+        ReplaceWith("forwardingFilters"),
+        DeprecationLevel.WARNING
+    )
+    @SerializedName("forwarding_filter") val forwardingFilter: Any? = null,
+    @SerializedName("forwarding_filters") val forwardingFilters: List<Any>? = null
 )
 
 data class VideoSetting(
@@ -105,15 +113,30 @@ data class RedirectMessage(
 data class OfferMessage(
     @SerializedName("type") val type: String = "offer",
     @SerializedName("sdp") val sdp: String,
+    @SerializedName("version") val version: String? = null,
+
+    @SerializedName("simulcast") val simulcast: Boolean = false,
+    @SerializedName("simulcast_multicodec") val simulcastMulticodec: Boolean? = null,
+    @SerializedName("spotlight") val spotlight: Boolean? = null,
+
+    @SerializedName("channel_id") val channelId: String? = null,
     @SerializedName("client_id") val clientId: String,
     @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("connection_id") val connectionId: String,
-    @SerializedName("simulcast") val simulcast: Boolean = false,
+    @SerializedName("session_id") val sessionId: String? = null,
+
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
     @SerializedName("mid") val mid: Map<String, String>? = null,
     @SerializedName("encodings") val encodings: List<Encoding>?,
-    @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null
+    @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
+
+    @SerializedName("audio") val audio: Boolean? = null,
+    @SerializedName("audio_codec_type") val audioCodecType: String? = null,
+    @SerializedName("audio_bit_rate") val audioBitRate: Int? = null,
+    @SerializedName("video") val video: Boolean? = null,
+    @SerializedName("video_codec_type") val videoCodecType: String? = null,
+    @SerializedName("video_bit_rate") val videoBitRate: Int? = null,
 )
 
 data class SwitchedMessage(
@@ -163,11 +186,13 @@ data class StatsMessage(
 data class NotificationMessage(
     @SerializedName("type") val type: String = "notify",
     @SerializedName("event_type") val eventType: String,
+    @SerializedName("timestamp") val timestamp: String,
     @SerializedName("role") val role: String?,
     @SerializedName("session_id") val sessionId: String?,
     @SerializedName("client_id") val clientId: String?,
     @SerializedName("bundle_id") val bundleId: String?,
     @SerializedName("connection_id") val connectionId: String?,
+    @SerializedName("spotlight_number") val spotlightNumber: Int?,
     @SerializedName("audio") val audio: Boolean?,
     @SerializedName("video") val video: Boolean?,
     @SerializedName("metadata") val metadata: Any?,
@@ -189,6 +214,9 @@ data class NotificationMessage(
     @SerializedName("recv_connection_id") val recvConnectionId: String?,
     @SerializedName("send_connection_id") val sendConnectionId: String?,
     @SerializedName("stream_id") val streamId: String?,
+    @SerializedName("failed_connection_id") val failedConnectionId: String?,
+    @SerializedName("current_state") val currentState: String?,
+    @SerializedName("previous_state") val previousState: String?,
 )
 
 data class DisconnectMessage(

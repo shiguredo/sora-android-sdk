@@ -88,6 +88,11 @@ obj/
 .idea/sqlDataSources.xml
 .idea/dynamic.xml
 .idea/uiDesigner.xml
+.idea/deploymentTargetSelector.xml
+.idea/gradle.xml
+.idea/kotlinc.xml
+.idea/migrations.xml
+.idea/caches/deviceStreaming.xml
 
 # OS-specific files
 .DS_Store

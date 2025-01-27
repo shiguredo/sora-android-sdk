@@ -1,11 +1,12 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
-import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
 
@@ -26,6 +27,7 @@ class MessageConverter {
         val TAG = MessageConverter::class.simpleName
 
         val gson = Gson()
+        private val gsonSerializeNulls = GsonBuilder().serializeNulls().create()!!
 
         @JvmOverloads
         fun buildConnectMessage(
@@ -42,6 +44,7 @@ class MessageConverter {
             dataChannels: List<Map<String, Any>>? = null,
             redirect: Boolean = false,
             forwardingFilterOption: SoraForwardingFilterOption? = null,
+            forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         ): String {
 
             val msg = ConnectMessage(
@@ -58,6 +61,7 @@ class MessageConverter {
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
                 forwardingFilter = forwardingFilterOption?.signaling,
+                forwardingFilters = forwardingFiltersOption?.map { it.signaling }
             )
 
             if (mediaOption.upstreamIsRequired) {
@@ -120,9 +124,21 @@ class MessageConverter {
                 msg.redirect = true
             }
 
+            // 1部フィールドだけを null 許容して JSON 文字列にシリアライズするために以下の処理を行う
+            // まず null 許容せずに JSON 文字列にシリアライズし、次に JsonObject にデシリアライズする
+            // その後、デシリアライズした JsonObject の null 許容したいフィールドを設定し直し、SerializeNulls を有効にして JSON 文字列にシリアライズする
+            // こうすることで、1部フィールドだけ null を許容した JSON 文字列を生成できる
             val jsonMsg = gson.toJson(msg)
-            SoraLogger.d(TAG, "connect: message=$jsonMsg")
-            return jsonMsg
+            val connectMessageJsonObject = gson.fromJson(jsonMsg, JsonObject::class.java)
+            if (metadata != null) {
+                connectMessageJsonObject.remove("metadata")
+                connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
+            }
+            if (signalingNotifyMetadata != null) {
+                connectMessageJsonObject.remove("signalingNotifyMetadata")
+                connectMessageJsonObject.add("signalingNotifyMetadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
+            }
+            return gsonSerializeNulls.toJson(connectMessageJsonObject)
         }
 
         fun buildPongMessage(stats: RTCStatsReport?): String {
