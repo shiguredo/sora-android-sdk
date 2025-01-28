@@ -11,6 +11,12 @@
 
 ## develop
 
+- [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
+  - @zztkm
+- [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
+  - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
+  - @zztkm
+
 ## 2025.1.0
 
 **リリース日**: 2025-01-27
