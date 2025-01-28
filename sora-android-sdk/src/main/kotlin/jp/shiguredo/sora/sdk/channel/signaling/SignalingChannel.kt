@@ -68,7 +68,13 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val signalingNotifyMetadata: Any? = null,
     private val connectDataChannels: List<Map<String, Any>>? = null,
     private val redirect: Boolean = false,
+    @Deprecated(
+        "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
+        ReplaceWith("forwardingFiltersOption"),
+        DeprecationLevel.WARNING
+    )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
+    private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
 ) : SignalingChannel {
 
     companion object {
@@ -260,7 +266,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 signalingNotifyMetadata = signalingNotifyMetadata,
                 dataChannels = connectDataChannels,
                 redirect = redirect,
-                forwardingFilterOption = forwardingFilterOption
+                forwardingFilterOption = forwardingFilterOption,
+                forwardingFiltersOption = forwardingFiltersOption
             )
             it.send(message)
         }

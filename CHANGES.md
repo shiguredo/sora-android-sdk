@@ -11,8 +11,50 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 129.6668.1.0 に上げる
-  - @miosakuma
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
+- [UPDATE] libwebrtc を 132.6834.5.0 に上げる
+  - @miosakuma @zztkm
+- [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
+  - 今後はリスト形式の転送フィルター設定を利用してもらう
+  - 非推奨になるクラス
+    - SoraMediaChannel
+    - SignalingChannelImpl
+    - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
+  - @zztkm
+- [UPDATE] OfferMessage に項目を追加する
+  - 追加した項目
+    - `version`
+    - `simulcastMulticodec`
+    - `spotlight`
+    - `channelId`
+    - `sessionId`
+    - `audio`
+    - `audioCodecType`
+    - `audioBitRate`
+    - `video`
+    - `videoCodecType`
+    - `videoBitRate`
+  - @zztkm
+- [UPDATE] NotificationMessage に項目を追加する
+  - 追加した項目
+    - `timestamp`
+    - `spotlightNumber`
+    - `failedConnectionId`
+    - `currentState`
+    - `previousState`
+  - @zztkm
+- [ADD] 転送フィルター機能の設定を表すクラス `SoraForwardingFilterOption` に `name` と `priority` を追加する
+  - @zztkm
+- [ADD] 転送フィルターをリスト形式で指定するためのプロパティを追加する
+  - プロパティが追加されるクラス
+    - SoraMediaChannel に `forwardingFiltersOption` を追加する
+    - SignalingChannelImpl に `forwardingFiltersOption` を追加する
+    - ConnectMessage に `forwardingFilters` を追加する
+    - クラスそのものに変更はないが `MessageConverter.buildConnectMessage` に `forwardingFiltersOption` を追加する
+  - @zztkm
 - [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが connect メッセージ送信時に省略されてしまう問題を修正
   - `signalingMetadata` と `signalingNotifyMetadata` に設定する情報はユーザが任意に設定する項目であり value 値が null の情報も送信できるようにする必要がある
   - Gson は JSON シリアライズ時、デフォルトで null フィールドを無視するので、null を持つフィールドは省略される
@@ -27,9 +69,13 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更する
+  - @voluntas
 - [UPDATE] システム条件を更新する
-  - Android Studio 2024.1.2 以降
-  - @miosakuma
+  - Android Studio 2024.2.2 以降
+  - @miosakuma @zztkm
+- [ADD] Canary Release 用スクリプトの canary.py を追加する
+  - @zztkm
 
 ## 2024.3.1
 

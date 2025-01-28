@@ -3,12 +3,16 @@ package jp.shiguredo.sora.sdk.channel.option
 /**
  * 転送フィルター機能の設定を表すクラスです。
  *
+ * @param name 転送フィルターの名前
+ * @param priority 転送フィルターの優先度
  * @param action 転送フィルター適用時の挙動
  * @param rules 転送フィルターの適用ルール
  * @param version 転送フィルターのバージョン
  * @param metadata 転送フィルターのメタデータ
  */
 class SoraForwardingFilterOption(
+    var name: String? = null,
+    var priority: Int? = null,
     val action: Action? = null,
     val rules: List<List<Rule>>,
     val version: String? = null,
@@ -66,6 +70,8 @@ class SoraForwardingFilterOption(
     internal val signaling: Any
         get() {
             return mapOf(
+                "name" to name,
+                "priority" to priority,
                 "action" to (action?.name?.lowercase() ?: null),
                 "rules" to rules.map { outerRule ->
                     outerRule.map { rule ->
