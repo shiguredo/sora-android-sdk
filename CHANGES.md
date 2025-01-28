@@ -11,6 +11,11 @@
 
 ## develop
 
+- [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
+  - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
+  - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
+    - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
+  - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
   - @zztkm
 - [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
