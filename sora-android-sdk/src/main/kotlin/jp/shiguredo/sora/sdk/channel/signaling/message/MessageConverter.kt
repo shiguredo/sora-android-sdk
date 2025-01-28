@@ -54,7 +54,7 @@ class MessageConverter {
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                 dataChannels = dataChannels,
                 metadata = metadata,
-                multistream = mediaOption.multistreamIsRequired,
+                multistream = mediaOption.multistreamEnabled,
                 sdp = sdp,
                 clientId = clientId,
                 bundleId = bundleId,
