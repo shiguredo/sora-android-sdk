@@ -19,7 +19,7 @@ class SoraMediaOption {
     internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
     internal var videoUpstreamEnabled = false
-    internal var multistreamEnabled = false
+    internal var multistreamEnabled: Boolean? = null
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
@@ -128,8 +128,6 @@ class SoraMediaOption {
     @JvmOverloads
     fun enableSpotlight(option: SoraSpotlightOption, enableSimulcast: Boolean = true) {
         spotlightOption = option
-        multistreamEnabled = true
-
         if (enableSimulcast) {
             enableSimulcast()
         }
@@ -172,8 +170,21 @@ class SoraMediaOption {
      * - Sora ドキュメントのマルチストリーム
      *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
      */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
     fun enableMultistream() {
         multistreamEnabled = true
+    }
+
+    /**
+     * レガシーストリームを有効にします.
+     */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
+    fun enableLegacyStream() {
+        multistreamEnabled = false
     }
 
     /**
@@ -199,24 +210,12 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
         get() = audioUpstreamEnabled || videoUpstreamEnabled
 
-    internal var _multistreamIsRequired: Boolean? = null
-
-    internal var multistreamIsRequired: Boolean
-        get() = when {
-            _multistreamIsRequired != null ->
-                _multistreamIsRequired!!
-            downstreamIsRequired && upstreamIsRequired ->
-                // 双方向通信の場合は multistream フラグを立てる
-                true
-            else ->
-                multistreamEnabled
-        }
-        set(value) {
-            _multistreamIsRequired = value
-        }
-
+    // TODO(zztkm): internal かつ 未使用なので削除して良い
     internal var _requiredRole: SoraChannelRole? = null
 
+    /**
+     * Upstream と Downstream の設定から、必要なロールを決定します.
+     */
     internal val requiredRole: SoraChannelRole
         get() = if (upstreamIsRequired && downstreamIsRequired)
             SoraChannelRole.SENDRECV

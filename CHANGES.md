@@ -11,29 +11,51 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 131.6778.4.0 に上げる
-  - @miosakuma @zztkm
-- [UPDATE] OfferMessage に項目を追加する
-  - 追加した項目
-    - `version`
-    - `multistream`
-    - `simulcast_multicodec`
-    - `spotlight`
-    - `channel_id`
-    - `session_id`
-    - `audio`
-    - `audio_codec_type`
-    - `audio_bit_rate`
-    - `video`
-    - `video_codec_type`
-    - `video_bit_rate`
+- [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
+  - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
+  - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
+    - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
   - @zztkm
+- [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
+  - @zztkm
+- [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
+  - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
+  - @zztkm
+
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
+- [UPDATE] libwebrtc を 132.6834.5.0 に上げる
+  - @miosakuma @zztkm
 - [UPDATE] SoraForwardingFilterOption 型の引数を Sora での 2025 年 12 月の廃止に向けて非推奨にする
   - 今後はリスト形式の転送フィルター設定を利用してもらう
   - 非推奨になるクラス
     - SoraMediaChannel
     - SignalingChannelImpl
     - ConnectMessage (Any で定義されているが、実態は SoraForwardingFilterOption を Map に変換したもの)
+  - @zztkm
+- [UPDATE] OfferMessage に項目を追加する
+  - 追加した項目
+    - `version`
+    - `simulcastMulticodec`
+    - `spotlight`
+    - `channelId`
+    - `sessionId`
+    - `audio`
+    - `audioCodecType`
+    - `audioBitRate`
+    - `video`
+    - `videoCodecType`
+    - `videoBitRate`
+  - @zztkm
+- [UPDATE] NotificationMessage に項目を追加する
+  - 追加した項目
+    - `timestamp`
+    - `spotlightNumber`
+    - `failedConnectionId`
+    - `currentState`
+    - `previousState`
   - @zztkm
 - [ADD] 転送フィルター機能の設定を表すクラス `SoraForwardingFilterOption` に `name` と `priority` を追加する
   - @zztkm
@@ -63,8 +85,10 @@
 - [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更する
   - @voluntas
 - [UPDATE] システム条件を更新する
-  - Android Studio 2024.1.2 以降
-  - @miosakuma
+  - Android Studio 2024.2.2 以降
+  - @miosakuma @zztkm
+- [ADD] Canary Release 用スクリプトの canary.py を追加する
+  - @zztkm
 
 ## 2024.3.1
 
