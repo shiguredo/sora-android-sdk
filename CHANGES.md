@@ -23,6 +23,8 @@
 - [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
   - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
   - @zztkm
+- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+  - @zztkm
 
 ## 2025.1.0
 
@@ -67,8 +69,6 @@
     - SignalingChannelImpl に `forwardingFiltersOption` を追加する
     - ConnectMessage に `forwardingFilters` を追加する
     - クラスそのものに変更はないが `MessageConverter.buildConnectMessage` に `forwardingFiltersOption` を追加する
-  - @zztkm
-- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] SoraMediaChannel のコンストラクタで `signalingMetadata` と `signalingNotifyMetadata` に Map オブジェクトを指定した場合、null を持つフィールドが connect メッセージ送信時に省略されてしまう問題を修正
   - `signalingMetadata` と `signalingNotifyMetadata` に設定する情報はユーザが任意に設定する項目であり value 値が null の情報も送信できるようにする必要がある
