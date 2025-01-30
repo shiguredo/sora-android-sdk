@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.annotations.SerializedName
 import jp.shiguredo.sora.sdk.util.SDKInfo
+import org.webrtc.RtpParameters
 
 // NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
 
@@ -102,6 +103,7 @@ data class Encoding(
     @SerializedName("maxBitrate") val maxBitrate: Int?,
     @SerializedName("maxFramerate") val maxFramerate: Double?,
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
+    @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: RtpParameters.ResolutionRestriction?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
 
