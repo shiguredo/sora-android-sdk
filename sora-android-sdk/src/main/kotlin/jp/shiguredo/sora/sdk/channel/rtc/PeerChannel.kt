@@ -401,6 +401,7 @@ class PeerChannelImpl(
                         "rid=$rid, " +
                         "active=$active, " +
                         "scaleResolutionDownBy=$scaleResolutionDownBy, " +
+                        "scaleResolutionDownTo=$scaleResolutionDownTo, " +
                         "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
