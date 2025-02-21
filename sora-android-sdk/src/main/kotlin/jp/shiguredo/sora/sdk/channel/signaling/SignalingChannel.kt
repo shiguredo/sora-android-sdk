@@ -233,6 +233,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         if (closing.get()) {
             return
         }
+        SoraLogger.d(TAG, "[signaling:$role] disconnect: reason=$disconnectReason, code=$code, reason=$reason")
 
         closing.set(true)
         client.dispatcher.executorService.shutdown()
@@ -479,7 +480,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 }
 
-                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE, code, reason)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }
@@ -493,7 +494,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE, code, reason)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {

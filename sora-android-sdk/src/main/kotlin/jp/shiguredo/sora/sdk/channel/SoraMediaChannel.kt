@@ -412,8 +412,10 @@ class SoraMediaChannel @JvmOverloads constructor(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
                     "switchedToDataChannel=$switchedToDataChannel, " +
-                    "switchedIgnoreDisconnectWebSocket=$switchedIgnoreDisconnectWebSocket"
-
+                    "switchedIgnoreDisconnectWebSocket=$switchedIgnoreDisconnectWebSocket, " +
+                    "disconnectReason=$disconnectReason, " +
+                    "webSocketCloseCode=$code, " +
+                    "webSocketCloseReason=$reason"
             )
 
             if (code != null && reason != null) {
@@ -608,6 +610,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
 
             // DataChannel が閉じられたが、その理由を知る方法がないため reason は null にする
+            // TODO(zztkm): Sora 2024.2.0 から label = "signaling" に type: "close" が追加されて
+            //  code と reason が含まれるようになったので、実装する (ここに実装するかは未定)
             internalDisconnect(null)
         }
 
@@ -986,6 +990,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         connectedSignalingEndpoint = null
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
+        // TODO(zztkm): ここで SignalingChannelImpl.disconnect(null) を呼ぶと
+        //  WebSocket の onClosing, onClosed が呼ばれる前に SignalingChannelImpl.disconnect() が実行され
+        //  onClosing, onClosed から SignalingChannelImpl.disconnect() が呼ばれても切断処理実行済としてスキップされてしまう
+        //  この箇所では code と reason はデフォルト値の null として扱われるので、onWebSocketSignalingClose() が実行されない状態になる
+        //  どうにか onWebSocketSignalingClose() が呼び出されるようにする
         signaling?.disconnect(null)
         signaling = null
 
