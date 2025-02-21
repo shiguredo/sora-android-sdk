@@ -36,11 +36,11 @@ interface SignalingChannel {
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
     fun sendDisconnect(disconnectReason: SoraDisconnectReason)
-    fun disconnect(disconnectReason: SoraDisconnectReason?)
+    fun disconnect(disconnectReason: SoraDisconnectReason?, code: Int? = null, reason: String? = null)
 
     interface Listener {
         fun onConnect(endpoint: String)
-        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?, code: Int? = null, reason: String? = null)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -229,7 +229,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?, code: Int?, reason: String?) {
         if (closing.get()) {
             return
         }
@@ -240,7 +240,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         // type: redirect を受信している場合は onDisconnect を発火させない
         if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(disconnectReason)
+            listener?.onDisconnect(disconnectReason, code, reason)
         }
         listener = null
     }

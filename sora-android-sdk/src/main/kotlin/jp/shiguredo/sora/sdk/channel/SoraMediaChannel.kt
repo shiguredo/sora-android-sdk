@@ -227,6 +227,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
+         * WebSocket シグナリングが切断されたときに呼び出されるコールバック.
+         *
+         * WebSocket Close Frame のステータスコードと理由を取得が取得できなかった場合、
+         * このコールバックは呼び出されません.
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param code WebSocket 切断時のステータスコード
+         * @param reason WebSocket 切断理由
+         */
+        fun onWebSocketSignalingClose(mediaChannel: SoraMediaChannel, code: Int, reason: String) {}
+
+        /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
@@ -391,7 +403,11 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(disconnectReason: SoraDisconnectReason?) {
+        override fun onDisconnect(
+            disconnectReason: SoraDisconnectReason?,
+            code: Int?,
+            reason: String?
+        ) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -399,6 +415,11 @@ class SoraMediaChannel @JvmOverloads constructor(
                     "switchedIgnoreDisconnectWebSocket=$switchedIgnoreDisconnectWebSocket"
 
             )
+
+            if (code != null && reason != null) {
+                listener?.onWebSocketSignalingClose(this@SoraMediaChannel, code, reason)
+            }
+
             if (switchedToDataChannel && switchedIgnoreDisconnectWebSocket) {
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
