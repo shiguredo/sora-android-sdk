@@ -11,12 +11,12 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 132.6834.5.3 に上げる
-  - @zztkm
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
     - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
+  - @zztkm
+- [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
   - @zztkm
@@ -24,6 +24,10 @@
   - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+  - @zztkm
+- [ADD] `SoraMediaChannel.Listener` に `onWebSocketSignalingClose` を追加する
+  - `onWebSocketSignalingClose` は WebSocket シグナリングが切断されたときに呼び出されるコールバック 
+  - これによって WebSocket Close Frame の code と reason を SDK ユーザーが取得できるようになる
   - @zztkm
 
 ## 2025.1.0
