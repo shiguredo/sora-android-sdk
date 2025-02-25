@@ -957,13 +957,6 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
         compositeDisposable.dispose()
 
-        listener?.onClose(this)
-        listener = null
-
-        // アプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
-        contactSignalingEndpoint = null
-        connectedSignalingEndpoint = null
-
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
         signaling?.disconnect(null)
         signaling = null
@@ -974,6 +967,13 @@ class SoraMediaChannel @JvmOverloads constructor(
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
         peer?.disconnect(null)
         peer = null
+
+        listener?.onClose(this)
+        listener = null
+
+        // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
+        contactSignalingEndpoint = null
+        connectedSignalingEndpoint = null
     }
 
     private fun sendDisconnectOverWebSocket(disconnectReason: SoraDisconnectReason) {
