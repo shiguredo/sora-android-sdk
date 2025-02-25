@@ -1,5 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
+import jp.shiguredo.sora.sdk.channel.SignalingDisconnectResult
+import jp.shiguredo.sora.sdk.channel.data.SoraCloseEvent
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -36,7 +38,7 @@ interface SignalingChannel {
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
     fun sendDisconnect(disconnectReason: SoraDisconnectReason)
-    fun disconnect(disconnectReason: SoraDisconnectReason?)
+    fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingDisconnectResult?
 
     interface Listener {
         fun onConnect(endpoint: String)
@@ -229,9 +231,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingDisconnectResult? {
         if (closing.get()) {
-            return
+            return null
         }
 
         closing.set(true)
@@ -243,6 +245,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             listener?.onDisconnect(disconnectReason)
         }
         listener = null
+        return null
     }
 
     private fun sendConnectMessage() {
