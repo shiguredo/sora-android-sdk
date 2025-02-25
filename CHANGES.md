@@ -25,6 +25,9 @@
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
+- [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
+  - 説明には「Sora との接続が切断されたときに呼び出される」と記載していたが、実際には切断処理が完了する前に呼び出していたので、説明に合わせて修正を行った
+  - @zztkm
 
 ## 2025.1.0
 
