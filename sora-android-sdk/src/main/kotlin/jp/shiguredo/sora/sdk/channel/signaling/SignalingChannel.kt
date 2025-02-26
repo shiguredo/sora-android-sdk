@@ -546,7 +546,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+            // TODO(zztkm): この処理は onClosed で行うべきなので、削除して問題ないか確認する
+            // disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
