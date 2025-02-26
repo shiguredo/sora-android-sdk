@@ -15,6 +15,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
+import jp.shiguredo.sora.sdk.channel.signaling.SignalingDisconnectResult
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
@@ -225,6 +226,17 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          */
         fun onClose(mediaChannel: SoraMediaChannel) {}
+
+        /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * cf.
+         * - [PeerChannel]
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param result イベントの結果
+         */
+        fun onClose(mediaChannel: SoraMediaChannel, result: SignalingDisconnectResult?) {}
 
         /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
@@ -958,7 +970,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         compositeDisposable.dispose()
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
-        signaling?.disconnect(null)
+        val signalingDisconnectResult = signaling?.disconnect(null)
         signaling = null
 
         getStatsTimer?.cancel()
@@ -969,6 +981,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
+        listener?.onClose(this, signalingDisconnectResult)
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
