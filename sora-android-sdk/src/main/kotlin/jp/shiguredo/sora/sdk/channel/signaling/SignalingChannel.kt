@@ -411,7 +411,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onRedirect(msg.location)
     }
 
-    // WebSocketListener の onClosed, onClosing, onFailure で使用する
+    // WebSocketListener の onClosed, onFailure で使用する
     @Synchronized
     private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
         // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
@@ -509,6 +509,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
             // This time, we don't use byte-data, so ignore this message
         }
 
+        /**
+         * 接続が正常終了したときに呼び出される.
+         */
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             if (code == 1000) {
                 SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
@@ -527,9 +530,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     disconnectResult = SignalingDisconnectResult(code, reason)
                     try {
                         if (code != 1000) {
+                            // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
                             listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                         }
-
                         disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
                     } catch (e: Exception) {
                         SoraLogger.w(TAG, e.toString())
@@ -538,18 +541,21 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
         }
 
+        /**
+         * サーバーから Close フレームを受信したときに呼び出される.
+         *
+         * NOTE: OkHttp (4.12.0) の実装を確認したところ、異常が発生しなければ onClosed が必ず呼ばれるため
+         * onClosing では終了処理を行わず、debug ログを出力するのみとしている (異常発生時は onFailure が呼ばれる).
+         *
+         * もし onClosing だけ呼ばれるような事象を特定したときは、onClosing での終了処理を検討する.
+         */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
-
-            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
-                SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
-                return
-            }
-
-            // TODO(zztkm): この処理は onClosed で行うべきなので、削除して問題ないか確認する
-            // disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
         }
 
+        /**
+         * ネットワーク関連の問題が発生し、WebSocket が閉じられたときに呼び出される.
+         */
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             response?.let {
                 SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
@@ -561,6 +567,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
 
             try {
+                // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
             } catch (e: Exception) {
