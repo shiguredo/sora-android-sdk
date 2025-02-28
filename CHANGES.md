@@ -28,9 +28,17 @@
   - onClosed のみで disconnect メソッドを呼ぶようにしても問題がないか OkHttp 4.12.0 の実装を確認したところ、ネットワーク問題などの異常が発生しない場合は onClosed が必ず呼び出されることがわかった
   - onClosing で disconnect メソッドを呼ぶ必要がないことがわかったため、disconnect メソッドを onClosing で呼び出す処理を削除した
   - @zztkm
-- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+- [UPDATE] Sora 切断処理の結果を表す `SoraCloseResult` を追加する
   - @zztkm
-- [ADD] WebSocket シグナリングを切断したときの結果を表す `SignalingDisconnectResult` を追加する
+- [UPDATE] WebSocket シグナリングを切断したときの結果を表す `SignalingDisconnectResult` を追加する
+  - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` に切断処理の結果 `SoraCloseResult` を取得できるコールバック `onClose` を追加する
+  - @zztkm
+- [UPDATE] SignalingChannelImpl の `disconenct` の返り値を `SignalingDisconnectResult?` に変更する
+  - `WebSocketListener.onClosed` の処理を待ち、`SignalingDisconnectResult` を `disconnect` 内で参照できるようにした
+  - SDK ユーザーが WebSocket シグナリングの切断処理結果を受け取ることができるようになった
+  - @zztkm
+- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
