@@ -23,6 +23,11 @@
 - [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
   - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
   - @zztkm
+- [UPDATE] SignalingChannelImpl の WebSocketListener.onClosing では disconnect メソッドを呼ばないようにする
+  - onClosing が呼ばれてから onClosed が呼ばれるまでは WebSocket メッセージを送信中である可能性があるため、disconnect を onClosing で呼び出すより、onClosed でだけ呼び出すようにするほうが安全だと判断した
+  - onClosed のみで disconnect メソッドを呼ぶようにしても問題がないか OkHttp 4.12.0 の実装を確認したところ、ネットワーク問題などの異常が発生しない場合は onClosed が必ず呼び出されることがわかった
+  - onClosing で disconnect メソッドを呼ぶ必要がないことがわかったため、disconnect メソッドを onClosing で呼び出す処理を削除した
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
