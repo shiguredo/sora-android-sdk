@@ -84,6 +84,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     companion object {
         private val TAG = SignalingChannelImpl::class.simpleName
+        // TODO(zztkm): タイムアウト値を外部から設定できるようにするか検討する
         private const val DISCONNECT_TIMEOUT_MS = 5000L // 5 秒のタイムアウト
     }
 
@@ -252,6 +253,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             webSocket.close(1000, null)
 
             // WebSocketのcloseが完了するのを待つ
+            // TODO(zztkm): main スレッドをブロックしてる可能性があるので、問題がないか確認する
             return runBlocking(Dispatchers.IO) {
                 try {
                     // onClosedが呼ばれるのを最大DISCONNECT_TIMEOUT_MSミリ秒待つ
