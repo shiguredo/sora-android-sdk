@@ -15,7 +15,6 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
-import jp.shiguredo.sora.sdk.channel.signaling.SignalingDisconnectResult
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
