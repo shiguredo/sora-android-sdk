@@ -253,7 +253,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             webSocket.close(1000, null)
 
             // WebSocketのcloseが完了するのを待つ
-            // TODO(zztkm): main スレッドをブロックしてる可能性があるので、問題がないか確認する
+            // TODO(zztkm): main スレッドをブロックしてしまうので、問題がないか確認する
             return runBlocking(Dispatchers.IO) {
                 try {
                     // onClosedが呼ばれるのを最大DISCONNECT_TIMEOUT_MSミリ秒待つ
@@ -262,6 +262,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                         while (!connectionClosed) {
                             kotlinx.coroutines.delay(100)
                         }
+                        SoraLogger.d(TAG, "[signaling:$role] WebSocket is closed")
                     }
                 } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
                     SoraLogger.w(TAG, "[signaling:$role] Timed out waiting for WebSocket to close")
@@ -504,12 +505,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
          * 接続が正常終了したときに呼び出される.
          */
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            if (code == 1000) {
-                SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
-            } else {
-                SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
-            }
-
             if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
                 SoraLogger.d(TAG, "[signaling:$role] @onClosed: skipped")
                 return
@@ -517,6 +512,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
             CoroutineScope(Dispatchers.IO).launch {
                 mutex.withLock {
+                    if (code == 1000) {
+                        SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
+                    } else {
+                        SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
+                    }
+
                     connectionClosed = true
                     try {
                         if (code != 1000) {
