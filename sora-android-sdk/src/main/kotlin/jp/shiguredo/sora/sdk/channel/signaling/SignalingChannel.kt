@@ -11,8 +11,13 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -79,6 +84,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     companion object {
         private val TAG = SignalingChannelImpl::class.simpleName
+        private const val DISCONNECT_TIMEOUT_MS = 5000L // 5 秒のタイムアウト
     }
 
     private val client: OkHttpClient
@@ -142,6 +148,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val closing = AtomicBoolean(false)
 
     private val receivedRedirectMessage = AtomicBoolean(false)
+
+    // disconnect したときに WebSocketListener.onClosed が呼ばれるまで待機するために利用する
+    private val mutex = Mutex()
+    private var connectionClosed = false
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -236,13 +246,39 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         closing.set(true)
         client.dispatcher.executorService.shutdown()
-        ws?.close(1000, null)
 
-        // type: redirect を受信している場合は onDisconnect を発火させない
-        if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(disconnectReason)
+        val webSocket = ws
+        if (webSocket != null) {
+            webSocket.close(1000, null)
+
+            // WebSocketのcloseが完了するのを待つ
+            return runBlocking(Dispatchers.IO) {
+                try {
+                    // onClosedが呼ばれるのを最大DISCONNECT_TIMEOUT_MSミリ秒待つ
+                    withTimeout(DISCONNECT_TIMEOUT_MS) {
+                        // connectionClosedがtrueになるまで待機
+                        while (!connectionClosed) {
+                            kotlinx.coroutines.delay(100)
+                        }
+                    }
+                } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                    SoraLogger.w(TAG, "[signaling:$role] Timed out waiting for WebSocket to close")
+                } finally {
+                    // type: redirect を受信している場合は onDisconnect を発火させない
+                    if (!receivedRedirectMessage.get()) {
+                        listener?.onDisconnect(disconnectReason)
+                    }
+                    listener = null
+                }
+            }
+        } else {
+            // WebSocketが存在しない場合は即座に終了
+            // type: redirect を受信している場合は onDisconnect を発火させない
+            if (!receivedRedirectMessage.get()) {
+                listener?.onDisconnect(disconnectReason)
+            }
+            listener = null
         }
-        listener = null
     }
 
     private fun sendConnectMessage() {
@@ -477,15 +513,19 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            try {
-                if (code != 1000) {
-                    // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+            CoroutineScope(Dispatchers.IO).launch {
+                mutex.withLock {
+                    connectionClosed = true
+                    try {
+                        if (code != 1000) {
+                            // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
+                            listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                        }
+                        disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+                    } catch (e: Exception) {
+                        SoraLogger.w(TAG, e.toString())
+                    }
                 }
-
-                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
-            } catch (e: Exception) {
-                SoraLogger.w(TAG, e.toString())
             }
         }
 
