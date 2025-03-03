@@ -32,7 +32,7 @@
   - onClosed が 5 秒以内に呼ばれない場合はタイムアウト処理を行う
   - onClosed を待つことで WebSocket Close Frame に含まれる code と reason を取得できるようになる
   - @zztkm
-- [UPDATE] SignalingChannelImpl の `disconenct` の返り値を `SignalingDisconnectResult?` に変更する
+- [UPDATE] SignalingChannelImpl の `disconnect` の返り値を `SignalingDisconnectResult?` に変更する
   - `WebSocketListener.onClosed` で取得できる code と reason を`SignalingDisconnectResult` に格納して返すようにした
   - code と reason が取得できない場合は null を返すようにした
   - @zztkm
