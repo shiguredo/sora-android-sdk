@@ -41,7 +41,7 @@ interface SignalingChannel {
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
     fun sendDisconnect(disconnectReason: SoraDisconnectReason)
-    fun disconnect(disconnectReason: SoraDisconnectReason?)
+    fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingChannelDisconnectResult?
 
     interface Listener {
         fun onConnect(endpoint: String)
@@ -154,6 +154,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val mutex = Mutex()
     private var connectionClosed = false
 
+    // disconnect の結果を保持するために利用する
+    private var disconectResult: SignalingChannelDisconnectResult? = null
+
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
@@ -240,9 +243,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingChannelDisconnectResult? {
         if (closing.get()) {
-            return
+            return null
         }
 
         closing.set(true)
@@ -263,9 +266,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
                             kotlinx.coroutines.delay(100)
                         }
                         SoraLogger.d(TAG, "[signaling:$role] WebSocket is closed")
+                        val result = disconectResult
+                        result
                     }
                 } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
                     SoraLogger.w(TAG, "[signaling:$role] Timed out waiting for WebSocket to close")
+                    null
                 } finally {
                     // type: redirect を受信している場合は onDisconnect を発火させない
                     if (!receivedRedirectMessage.get()) {
@@ -281,6 +287,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 listener?.onDisconnect(disconnectReason)
             }
             listener = null
+            return null
         }
     }
 
@@ -518,6 +525,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
                         SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
                     }
 
+                    // disconnectResult は disconnect() 内で利用される
+                    disconectResult = SignalingChannelDisconnectResult(code, reason)
                     connectionClosed = true
                     try {
                         if (code != 1000) {
