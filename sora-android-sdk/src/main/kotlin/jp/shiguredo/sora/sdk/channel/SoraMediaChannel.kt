@@ -227,6 +227,17 @@ class SoraMediaChannel @JvmOverloads constructor(
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * cf.
+         * - [PeerChannel]
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         * @param result 切断処理結果
+         */
+        fun onClose(mediaChannel: SoraMediaChannel, result: SoraCloseResult?) {}
+
+        /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
          *
          * cf.
@@ -958,7 +969,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         compositeDisposable.dispose()
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
-        signaling?.disconnect(null)
+        val signalingChannelDisconnectResult = signaling?.disconnect(null)
         signaling = null
 
         getStatsTimer?.cancel()
@@ -968,7 +979,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer?.disconnect(null)
         peer = null
 
+        var soraCloseResult: SoraCloseResult? = null
+        // NOTE: 現在の実装だと DataChannel シグナリングのみの場合は signalingDisconnectResult は null になる
+        if (signalingChannelDisconnectResult != null) {
+            // TODO(zztkm): soraCloseResult の初期化はシグナリング方式によって異なるため
+            //  DataChannel シグナリング切断の結果取得を実装したらこの処理は修正が必要になる
+            soraCloseResult = SoraCloseResult(
+                code = signalingChannelDisconnectResult.code,
+                reason = signalingChannelDisconnectResult.reason,
+            )
+        }
         listener?.onClose(this)
+        listener?.onClose(this, soraCloseResult)
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする

@@ -36,6 +36,8 @@
   - `WebSocketListener.onClosed` で取得できる code と reason を`SignalingDisconnectResult` に格納して返すようにした
   - code と reason が取得できない場合は null を返すようにした
   - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` に切断処理の結果 `SoraCloseResult` を取得できるコールバック `onClose` を追加する
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
