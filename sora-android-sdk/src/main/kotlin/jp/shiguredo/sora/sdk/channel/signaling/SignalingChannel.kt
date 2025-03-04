@@ -499,6 +499,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
          */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
+            ws?.close(1000, null)
         }
 
         /**
