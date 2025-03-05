@@ -493,12 +493,18 @@ class SignalingChannelImpl @JvmOverloads constructor(
          * サーバーから Close フレームを受信したときに呼び出される.
          *
          * NOTE: OkHttp (4.12.0) の実装を確認したところ、異常が発生しなければ onClosed が必ず呼ばれるため
-         * onClosing では終了処理を行わず、debug ログを出力するのみとしている (異常発生時は onFailure が呼ばれる).
+         * onClosing では disconnect 呼び出しはせずに、 ws.close() を呼ぶのみとしている。
          *
          * もし onClosing だけ呼ばれるような事象を特定したときは、onClosing での終了処理を検討する.
          */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
+            // NOTE: ws.close() は正常に処理を開始した場合、2 回目以降の呼び出しを無視する。
+            // 先に disconnect() 内で ws.close() を呼び出した場合、ここでの呼び出しは無視され、
+            // 先にここで呼び出した場合、disconnect() 内での呼び出しは無視される。
+            //
+            // onClosing を起点に ws.close() する場合は、サーバーから受信したステータスコードを送り返す
+            ws?.close(code, null)
         }
 
         /**
