@@ -24,8 +24,11 @@
   - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
   - @zztkm
 - [UPDATE] SignalingChannelImpl の `WebSocketListener.onClosing` では `disconnect` メソッドを呼ばないようにする
-  - サーバーに対してクライアントから Close Frame を送るために `disconnect` メソッドを呼ばない代わりに、`WebSocket.close` メソッドを呼び出すようにした
-  - サーバーが先に Close Frame を送信した場合は SDK はサーバーから受信したステータスコードを送り返すようにした
+  - onClosing の役割はサーバーから Close Frame を受け取ったことを検知することで、WebSocket 接続が終了したことを表すものではないため、disconnect メソッドを呼び出さないようにコードを整理した
+  - ただし `WebSocket.close` を呼ばないと OkHttp は onClosed を呼ばないため、onClosing で `WebSocket.close` を呼び出すようにした
+  - @zztkm
+- [UPDATE] `WebSocket.close` 呼び出し時のステータスコードを 1000 固定にしていたが、サーバーから切断されたときはサーバーから受信した Close フレームのステータスコードを送り返すようにする
+  - RFC 6455 The WebSocket Protocol に記載された挙動に合わせるために修正した
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
