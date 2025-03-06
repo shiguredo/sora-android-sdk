@@ -27,8 +27,11 @@
   - onClosing の役割はサーバーから Close Frame を受け取ったことを検知することで、WebSocket 接続が終了したことを表すものではないため、disconnect メソッドを呼び出さないようにコードを整理した
   - ただし `WebSocket.close` を呼ばないと OkHttp は onClosed を呼ばないため、onClosing で `WebSocket.close` を呼び出すようにした
   - @zztkm
-- [UPDATE] `WebSocket.close` 呼び出し時のステータスコードを 1000 固定にしていたが、サーバーから切断されたときはサーバーから受信した Close フレームのステータスコードを送り返すようにする
-  - RFC 6455 The WebSocket Protocol に記載された挙動に合わせるために修正した
+- [UPDATE] サーバーから Close Frame を受信し、クライアントが Close Frame を送り返す場合は、サーバーから受信したステータスコードをそのまま送り返すようにする
+  - 以下に引用している RFC 6455 の 5.5.1 節に記載されている内容を参考に、サーバーから受信したステータスコードをそのまま送り返すようにした
+    - > When sending a Close frame in response, the endpoint typically echos the status code it received.
+    - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
+  - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm

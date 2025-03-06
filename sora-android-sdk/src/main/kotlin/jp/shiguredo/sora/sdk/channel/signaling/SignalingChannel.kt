@@ -499,11 +499,16 @@ class SignalingChannelImpl @JvmOverloads constructor(
          */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
-            // NOTE: ws.close() は正常に処理を開始した場合、2 回目以降の呼び出しを無視する。
+            // NOTE: OkHttp の WebSocket.close() の実装について
+            // close() を正常に開始した場合、2 回目以降の呼び出しは無視される。
             // 先に disconnect() 内で ws.close() を呼び出した場合、ここでの呼び出しは無視され、
             // 先にここで呼び出した場合、disconnect() 内での呼び出しは無視される。
             //
-            // onClosing を起点に ws.close() する場合は、サーバーから受信したステータスコードを送り返す
+            // NOTE: Close Frame のステータスコードについて
+            // サーバーから Close Frame を受信し、クライアントが Close Frame を送り返す場合は
+            // サーバーから受信したステータスコードをそのまま送り返す。
+            // > When sending a Close frame in response, the endpoint typically echos the status code it received.
+            // 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
             ws?.close(code, null)
         }
 
