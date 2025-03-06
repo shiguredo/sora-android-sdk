@@ -152,6 +152,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     // disconnect したときに WebSocketListener.onClosed が呼ばれるまで待機するために利用する
     private val mutex = Mutex()
+    // TODO(zztkm): この変数を AtomicBoolean にすることで mutex を使わなくてもよくなるか検討する
     private var connectionClosed = false
 
     override fun connect() {
@@ -560,20 +561,21 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
 
             CoroutineScope(Dispatchers.IO).launch {
-                response?.let {
-                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
-                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
+                mutex.withLock {
+                    response?.let {
+                        SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
+                    } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
 
-                connectionClosed = true
-                try {
-                    // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                    disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
-                } catch (e: Exception) {
-                    SoraLogger.w(TAG, e.toString())
+                    connectionClosed = true
+                    try {
+                        // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
+                        listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                        disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
+                    } catch (e: Exception) {
+                        SoraLogger.w(TAG, e.toString())
+                    }
                 }
             }
-
         }
     }
 }
