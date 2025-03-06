@@ -554,22 +554,26 @@ class SignalingChannelImpl @JvmOverloads constructor(
          * ネットワーク関連の問題が発生し、WebSocket が閉じられたときに呼び出される.
          */
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            response?.let {
-                SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
-            } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
-
             if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
                 SoraLogger.d(TAG, "[signaling:$role] @onFailure: skipped")
                 return
             }
 
-            try {
-                // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
-            } catch (e: Exception) {
-                SoraLogger.w(TAG, e.toString())
+            CoroutineScope(Dispatchers.IO).launch {
+                response?.let {
+                    SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
+                } ?: SoraLogger.i(TAG, "[signaling:$role] @onFailure: $t")
+
+                connectionClosed = true
+                try {
+                    // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
+                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                    disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
+                } catch (e: Exception) {
+                    SoraLogger.w(TAG, e.toString())
+                }
             }
+
         }
     }
 }

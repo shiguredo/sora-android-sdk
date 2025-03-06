@@ -30,9 +30,10 @@
 - [UPDATE] `WebSocket.close` 呼び出し時のステータスコードを 1000 固定にしていたが、サーバーから切断されたときはサーバーから受信した Close フレームのステータスコードを送り返すようにする
   - RFC 6455 The WebSocket Protocol に記載された挙動に合わせるために修正した
   - @zztkm
-- [UPDATE] `SignalingChannelImpl.disconnect` 内で WebSocketListener の onClosed が上がってくるのを待つようにする
-  - onClosed が 5 秒以内に呼ばれない場合はタイムアウト処理を行う
+- [UPDATE] `SignalingChannelImpl.disconnect` 内で WebSocketListener の onClosed, onFailure が上がってくるのを待つようにする
+  - onClosed, onFailure が 5 秒以内に呼ばれない場合はタイムアウト処理を行う
   - onClosed を待つことで WebSocket Close Frame に含まれる code と reason を取得できるようになる
+    - OkHttp の仕様上 onFailure が上がった場合は code と reason は取得できない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
