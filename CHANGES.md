@@ -29,8 +29,9 @@
   - @zztkm
 - [UPDATE] サーバーから Close Frame を受信し、クライアントが Close Frame を送り返す場合は、サーバーから受信したステータスコードをそのまま送り返すようにする
   - 以下に引用している RFC 6455 の 5.5.1 節に記載されている内容を参考に、サーバーから受信したステータスコードをそのまま送り返すようにした
-  - > When sending a Close frame in response, the endpoint typically echos the status code it received.
-  - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
+    - > When sending a Close frame in response, the endpoint typically echos the status code it received.
+    - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
+  - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
