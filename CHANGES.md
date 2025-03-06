@@ -23,10 +23,12 @@
 - [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
   - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
   - @zztkm
-- [UPDATE] SignalingChannelImpl の WebSocketListener.onClosing では disconnect メソッドを呼ばないようにする
-  - onClosing が呼ばれてから onClosed が呼ばれるまでは WebSocket メッセージを送信中である可能性があるため、disconnect を onClosing で呼び出すより、onClosed でだけ呼び出すようにするほうが安全だと判断した
-  - onClosed のみで disconnect メソッドを呼ぶようにしても問題がないか OkHttp 4.12.0 の実装を確認したところ、ネットワーク問題などの異常が発生しない場合は onClosed が必ず呼び出されることがわかった
-  - onClosing で disconnect メソッドを呼ぶ必要がないことがわかったため、disconnect メソッドを onClosing で呼び出す処理を削除した
+- [UPDATE] SignalingChannelImpl の `WebSocketListener.onClosing` では `disconnect` メソッドを呼ばないようにする
+  - onClosing の役割はサーバーから Close Frame を受け取ったことを検知することで、WebSocket 接続が終了したことを表すものではないため、disconnect メソッドを呼び出さないようにコードを整理した
+  - ただし `WebSocket.close` を呼ばないと OkHttp は onClosed を呼ばないため、onClosing で `WebSocket.close` を呼び出すようにした
+  - @zztkm
+- [UPDATE] `WebSocket.close` 呼び出し時のステータスコードを 1000 固定にしていたが、サーバーから切断されたときはサーバーから受信した Close フレームのステータスコードを送り返すようにする
+  - RFC 6455 The WebSocket Protocol に記載された挙動に合わせるために修正した
   - @zztkm
 - [UPDATE] `SignalingChannelImpl.disconnect` 内で WebSocketListener の onClosed が上がってくるのを待つようにする
   - onClosed が 5 秒以内に呼ばれない場合はタイムアウト処理を行う
