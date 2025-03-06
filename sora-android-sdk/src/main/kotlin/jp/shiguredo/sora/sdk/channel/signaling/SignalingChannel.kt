@@ -252,6 +252,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         val webSocket = ws
         if (webSocket != null) {
             webSocket.close(1000, null)
+            SoraLogger.d(TAG, "[signaling:$role] WebSocket is closing")
 
             // WebSocketのcloseが完了するのを待つ
             // TODO(zztkm): main スレッドをブロックしてしまうので、問題がないか確認する
@@ -401,6 +402,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
+        // TODO(zztkm): お試し実装のためあとで修正する
+        connectionClosed = true
         listener?.onRedirect(msg.location)
     }
 
