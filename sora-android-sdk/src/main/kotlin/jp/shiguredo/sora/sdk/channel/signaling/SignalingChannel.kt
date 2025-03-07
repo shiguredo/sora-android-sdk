@@ -11,8 +11,10 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -41,7 +43,7 @@ interface SignalingChannel {
     fun sendReAnswer(sdp: String)
     fun sendCandidate(sdp: String)
     fun sendDisconnect(disconnectReason: SoraDisconnectReason)
-    fun disconnect(disconnectReason: SoraDisconnectReason?)
+    fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingChannelDisconnectResult?
 
     interface Listener {
         fun onConnect(endpoint: String)
@@ -96,6 +98,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         // android.os.NetworkOnMainThreadException が起きてしまう
         // それを防ぐためにコルーチンを利用して別スレッドで初期化する
         client = runBlocking(Dispatchers.IO) {
+            SoraLogger.d("kensaku", Thread.currentThread().name)
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
@@ -154,6 +157,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val mutex = Mutex()
     // TODO(zztkm): この変数を AtomicBoolean にすることで mutex を使わなくてもよくなるか検討する
     private var connectionClosed = false
+    // disconnect したときに WebSocketListener.onClosed が呼ばれるまで待機するために利用する
+    private val onClosedDeferred = CompletableDeferred<SignalingChannelDisconnectResult>()
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -241,49 +246,35 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    override fun disconnect(disconnectReason: SoraDisconnectReason?) {
+    override fun disconnect(disconnectReason: SoraDisconnectReason?): SignalingChannelDisconnectResult? {
         if (closing.get()) {
-            return
+            return null
         }
 
         closing.set(true)
         client.dispatcher.executorService.shutdown()
+        ws?.close(1000, null)
 
-        val webSocket = ws
-        if (webSocket != null) {
-            webSocket.close(1000, null)
-            SoraLogger.d(TAG, "[signaling:$role] WebSocket is closing")
-
-            // WebSocketのcloseが完了するのを待つ
-            // TODO(zztkm): main スレッドをブロックしてしまうので、問題がないか確認する
-            return runBlocking(Dispatchers.IO) {
-                try {
-                    // onClosedが呼ばれるのを最大DISCONNECT_TIMEOUT_MSミリ秒待つ
-                    withTimeout(DISCONNECT_TIMEOUT_MS) {
-                        // connectionClosedがtrueになるまで待機
-                        while (!connectionClosed) {
-                            kotlinx.coroutines.delay(100)
-                        }
-                        SoraLogger.d(TAG, "[signaling:$role] WebSocket is closed")
-                    }
-                } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                    SoraLogger.w(TAG, "[signaling:$role] Timed out waiting for WebSocket to close")
-                } finally {
-                    // type: redirect を受信している場合は onDisconnect を発火させない
-                    if (!receivedRedirectMessage.get()) {
-                        listener?.onDisconnect(disconnectReason)
-                    }
-                    listener = null
+        // WebSocketListener.onClosed が上がってくるまで待つ
+        var result: SignalingChannelDisconnectResult? = null
+        try {
+            CoroutineScope(Dispatchers.Main).launch {
+                SoraLogger.d(TAG, "waiting for WebSocket.onClosed: ${Thread.currentThread().name}")
+                withTimeout(DISCONNECT_TIMEOUT_MS) {
+                    result = onClosedDeferred.await()
                 }
+                SoraLogger.d(TAG, "WebSocket.onClosed received: ${result?.code}")
             }
-        } else {
-            // WebSocketが存在しない場合は即座に終了
-            // type: redirect を受信している場合は onDisconnect を発火させない
-            if (!receivedRedirectMessage.get()) {
-                listener?.onDisconnect(disconnectReason)
-            }
-            listener = null
+        } catch (e: TimeoutCancellationException) {
+            SoraLogger.w(TAG, "timeout occurred while waiting for WebSocket.onClosed")
         }
+
+        if (!receivedRedirectMessage.get()) {
+            listener?.onDisconnect(disconnectReason)
+        }
+        SoraLogger.d(TAG, "disconnect result => code: ${result?.code}, reason: ${result?.reason}")
+        listener = null
+        return result
     }
 
     private fun sendConnectMessage() {
@@ -403,7 +394,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         val msg = MessageConverter.parseRedirectMessage(text)
         SoraLogger.d(TAG, "redirect to ${msg.location}")
         // TODO(zztkm): お試し実装のためあとで修正する
-        connectionClosed = true
+        // connectionClosed = true
         listener?.onRedirect(msg.location)
     }
 
@@ -509,30 +500,29 @@ class SignalingChannelImpl @JvmOverloads constructor(
          * 接続が正常終了したときに呼び出される.
          */
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            if (code == 1000) {
+                SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
+            } else {
+                SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
+            }
+
             if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
                 SoraLogger.d(TAG, "[signaling:$role] @onClosed: skipped")
                 return
             }
 
-            CoroutineScope(Dispatchers.IO).launch {
-                mutex.withLock {
-                    if (code == 1000) {
-                        SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
-                    } else {
-                        SoraLogger.w(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
-                    }
+            // code と reason を CompletableDeferred に格納する
+            // これにより disconnect() が呼ばれたときに onClosed の code と reason を disconnect() 内で取得できる
+            onClosedDeferred.complete(SignalingChannelDisconnectResult(code, reason))
 
-                    connectionClosed = true
-                    try {
-                        if (code != 1000) {
-                            // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                            listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                        }
-                        disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
-                    } catch (e: Exception) {
-                        SoraLogger.w(TAG, e.toString())
-                    }
+            try {
+                if (code != 1000) {
+                    // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
+                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 }
+                disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, e.toString())
             }
         }
 

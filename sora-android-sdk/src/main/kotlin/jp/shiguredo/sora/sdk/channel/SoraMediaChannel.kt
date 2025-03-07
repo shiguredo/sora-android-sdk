@@ -958,8 +958,9 @@ class SoraMediaChannel @JvmOverloads constructor(
         compositeDisposable.dispose()
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
-        signaling?.disconnect(null)
+        val signalingDisconnectResult = signaling?.disconnect(null)
         signaling = null
+        SoraLogger.d(TAG, "[channel:$role] signalingDisconnectResult: code=${signalingDisconnectResult?.code} message=${signalingDisconnectResult?.reason}")
 
         getStatsTimer?.cancel()
         getStatsTimer = null
