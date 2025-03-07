@@ -14,6 +14,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
+import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelDisconnectResult
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
@@ -39,6 +40,7 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
 
 /**
@@ -223,8 +225,19 @@ class SoraMediaChannel @JvmOverloads constructor(
          * - [PeerChannel]
          *
          * @param mediaChannel イベントが発生したチャネル
+         * @param closeResult 切断結果
          */
-        fun onClose(mediaChannel: SoraMediaChannel) {}
+        fun onClose(mediaChannel: SoraMediaChannel, closeResult: SoraCloseResult?) {}
+
+        /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * cf.
+         * - [PeerChannel]
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         */
+        fun onClose(mediaChannel: SoraMediaChannel,) {}
 
         /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
@@ -361,7 +374,8 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling: SignalingChannel? = null
 
     private var switchedToDataChannel = false
-    private var closing = false
+    // TODO(zztkm): AtomicBoolean にすべきか確認・検討する
+    private var closing = AtomicBoolean(false)
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
@@ -391,7 +405,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(disconnectReason: SoraDisconnectReason?) {
+        override fun onDisconnect(disconnectReason: SoraDisconnectReason?, result: SignalingChannelDisconnectResult?) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -403,6 +417,11 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
+                if (result != null) {
+                    val closeResult = SoraCloseResult(result.code, result.reason)
+                    internalDisconnectFromSora(disconnectReason, closeResult)
+                    return
+                }
                 internalDisconnect(disconnectReason)
             }
         }
@@ -683,7 +702,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             """.trimMargin()
         )
 
-        if (closing) {
+        if (closing.get()) {
             return
         }
         startTimer()
@@ -946,10 +965,15 @@ class SoraMediaChannel @JvmOverloads constructor(
         internalDisconnect(SoraDisconnectReason.NO_ERROR)
     }
 
+    /**
+     * クライアント側から切断する際に呼び出される切断処理.
+     *
+     * @param disconnectReason 切断理由
+     */
     private fun internalDisconnect(disconnectReason: SoraDisconnectReason?) {
-        if (closing)
+        if (closing.get())
             return
-        closing = true
+        closing.set(true)
 
         stopTimer()
         disconnectReason?.let {
@@ -969,6 +993,45 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
+        // ここでは closeResult が取得できないので null で良い
+        listener?.onClose(this, null)
+        listener = null
+
+        // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
+        contactSignalingEndpoint = null
+        connectedSignalingEndpoint = null
+    }
+
+    /**
+     * Sora 側からの切断を受信した際に呼び出される切断処理.
+     *
+     * @param disconnectReason 切断理由
+     * @param closeResult 切断結果
+     */
+    private fun internalDisconnectFromSora(disconnectReason: SoraDisconnectReason?, closeResult: SoraCloseResult?) {
+        if (closing.get())
+            return
+        closing.set(true)
+
+        stopTimer()
+        disconnectReason?.let {
+            sendDisconnectIfNeeded(it)
+        }
+        compositeDisposable.dispose()
+
+        // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
+        signaling?.disconnect(null)
+        signaling = null
+
+        getStatsTimer?.cancel()
+        getStatsTimer = null
+
+        // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
+        peer?.disconnect(null)
+        peer = null
+
+        listener?.onClose(this)
+        listener?.onClose(this, closeResult)
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする

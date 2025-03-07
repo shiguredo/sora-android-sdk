@@ -33,6 +33,8 @@
     - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
   - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose` を追加する
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
