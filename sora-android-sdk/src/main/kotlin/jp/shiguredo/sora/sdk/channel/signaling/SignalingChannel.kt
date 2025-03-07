@@ -255,25 +255,29 @@ class SignalingChannelImpl @JvmOverloads constructor(
         client.dispatcher.executorService.shutdown()
         ws?.close(1000, null)
 
-        // WebSocketListener.onClosed が上がってくるまで待つ
+        // WebSocketListener.onClosed が呼ばれるまで同期的に待つ
         var result: SignalingChannelDisconnectResult? = null
         try {
-            CoroutineScope(Dispatchers.Main).launch {
-                SoraLogger.d(TAG, "waiting for WebSocket.onClosed: ${Thread.currentThread().name}")
-                withTimeout(DISCONNECT_TIMEOUT_MS) {
-                    result = onClosedDeferred.await()
+            // runBlockingを使用して同期的に処理結果を待つ
+            result = runBlocking(Dispatchers.IO) {
+                try {
+                    withTimeout(DISCONNECT_TIMEOUT_MS) {
+                        onClosedDeferred.await()
+                    }
+                } catch (e: TimeoutCancellationException) {
+                    SoraLogger.w(TAG, "timeout occurred while waiting for WebSocket.onClosed")
+                    null
                 }
-                SoraLogger.d(TAG, "WebSocket.onClosed received: ${result?.code}")
             }
-        } catch (e: TimeoutCancellationException) {
-            SoraLogger.w(TAG, "timeout occurred while waiting for WebSocket.onClosed")
+        } catch (e: Exception) {
+            SoraLogger.e(TAG, "error while waiting for WebSocket.onClosed", e)
         }
 
         if (!receivedRedirectMessage.get()) {
             listener?.onDisconnect(disconnectReason)
         }
-        SoraLogger.d(TAG, "disconnect result => code: ${result?.code}, reason: ${result?.reason}")
         listener = null
+
         return result
     }
 
