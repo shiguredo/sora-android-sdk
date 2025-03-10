@@ -374,6 +374,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling: SignalingChannel? = null
 
     private var switchedToDataChannel = false
+    // 切断処理を開始したことを示すフラグ
     private var closing = AtomicBoolean(false)
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
@@ -965,7 +966,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     /**
-     * クライアント側から切断する際に呼び出される切断処理.
+     * アプリケーションから切断する際に呼び出される切断処理.
      *
      * @param disconnectReason 切断理由
      */
@@ -973,6 +974,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (closing.get())
             return
         closing.set(true)
+        SoraLogger.d(TAG, "[channel:$role] internalDisconnect: $disconnectReason")
 
         stopTimer()
         disconnectReason?.let {
@@ -1011,6 +1013,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         if (closing.get())
             return
         closing.set(true)
+        SoraLogger.d(TAG, "[channel:$role] internalDisconnectFromSora: $disconnectReason")
 
         stopTimer()
         disconnectReason?.let {
@@ -1080,6 +1083,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
 
             SoraDisconnectReason.WEBSOCKET_ONCLOSE, SoraDisconnectReason.WEBSOCKET_ONERROR -> {
+                // DataChannel シグナリング利用かつ、WebSocket 切断を無視しない場合
                 if (switchedToDataChannel && !switchedIgnoreDisconnectWebSocket) {
                     sendDisconnectOverDataChannel(disconnectReason)
                 }
