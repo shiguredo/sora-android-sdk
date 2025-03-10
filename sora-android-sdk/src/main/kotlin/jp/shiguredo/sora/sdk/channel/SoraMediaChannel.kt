@@ -374,7 +374,6 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling: SignalingChannel? = null
 
     private var switchedToDataChannel = false
-    // TODO(zztkm): AtomicBoolean にすべきか確認・検討する
     private var closing = AtomicBoolean(false)
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
