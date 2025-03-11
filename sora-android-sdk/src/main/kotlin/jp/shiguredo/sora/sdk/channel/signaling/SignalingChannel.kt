@@ -488,16 +488,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
             signalingChannelDisconnectResult.set(SignalingChannelDisconnectResult(code, reason))
 
             try {
-                // TODO(zztkm): 以下のコメント内容について対応を検討する
-                // Sora から切断されたときに code が 1000 以外（認証エラーなど）だと onError を起点にユーザーがアプリの切断処理を開始してしまい
-                // SoraMediaChannel.Listener.onClose を受け取る前に SoraMediaChannel インスタンスを破棄してしまう可能性があるため
-                // code != 1000 というだけで、WebSocket の onFailure （異常な切断）と同じように onError を呼び出すのは適切ではないかもしれない。
-                // これを改善しようとするとコールバックの使い方の破壊的変更になる可能性もあるので、慎重に検討する
-                if (code != 1000) {
-                    // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                }
-
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
