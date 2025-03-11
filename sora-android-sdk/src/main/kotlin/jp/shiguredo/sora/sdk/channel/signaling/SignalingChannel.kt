@@ -364,7 +364,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onRedirect(msg.location)
     }
 
-    // WebSocketListener の onClosed, onFailure で使用する
+    /**
+     * WebSocket シグナリングに採用された WebSocket インスタンスかどうかを判定する関数.
+     *
+     * WebSocket エンドポイントが複数指定された場合、採用した WebSocket インスタンスでのみ切断処理を行うため、
+     * 採用しなかった WebSocket インスタンスから呼び出される onClosed, onClosing, onFailure は無視する。
+     */
     @Synchronized
     private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
         // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
@@ -499,6 +504,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
          */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
+                return
+            }
             // NOTE: OkHttp の WebSocket.close() の実装について
             // close() を正常に開始した場合、2 回目以降の呼び出しは無視される。
             // 先に disconnect() 内で ws.close() を呼び出した場合、ここでの呼び出しは無視され、
