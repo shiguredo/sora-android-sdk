@@ -364,7 +364,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onRedirect(msg.location)
     }
 
-    // WebSocketListener の onClosed, onFailure で使用する
+    /**
+     * WebSocket シグナリングに採用された WebSocket インスタンスかどうかを判定する関数.
+     *
+     * WebSocket エンドポイントが複数指定された場合、採用した WebSocket インスタンスでのみ切断処理を行うため、
+     * 採用しなかった WebSocket インスタンスから呼び出される onClosed, onClosing, onFailure は無視する。
+     */
     @Synchronized
     private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
         // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
