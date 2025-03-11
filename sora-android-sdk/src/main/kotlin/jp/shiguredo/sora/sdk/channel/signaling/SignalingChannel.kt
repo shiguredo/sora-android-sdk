@@ -499,6 +499,10 @@ class SignalingChannelImpl @JvmOverloads constructor(
          */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
+            if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
+                SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
+                return
+            }
             // NOTE: OkHttp の WebSocket.close() の実装について
             // close() を正常に開始した場合、2 回目以降の呼び出しは無視される。
             // 先に disconnect() 内で ws.close() を呼び出した場合、ここでの呼び出しは無視され、
