@@ -419,7 +419,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 if (result != null) {
                     val closeResult = SoraCloseResult(result.code, result.reason)
-                    internalDisconnectFromSora(disconnectReason, closeResult)
+                    internalDisconnect(disconnectReason, closeResult)
                     return
                 }
                 internalDisconnect(disconnectReason)
@@ -965,12 +965,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         internalDisconnect(SoraDisconnectReason.NO_ERROR)
     }
 
-    /**
-     * アプリケーションから切断する際に呼び出される切断処理.
-     *
-     * @param disconnectReason 切断理由
-     */
-    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?) {
+    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeResult: SoraCloseResult? = null) {
         if (closing.get())
             return
         closing.set(true)
@@ -995,44 +990,6 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         listener?.onClose(this)
         // ここでは closeResult が取得できないので null で良い
-        listener?.onClose(this, null)
-        listener = null
-
-        // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
-        contactSignalingEndpoint = null
-        connectedSignalingEndpoint = null
-    }
-
-    /**
-     * Sora 側からの切断を受信した際に呼び出される切断処理.
-     *
-     * @param disconnectReason 切断理由
-     * @param closeResult 切断結果
-     */
-    private fun internalDisconnectFromSora(disconnectReason: SoraDisconnectReason?, closeResult: SoraCloseResult?) {
-        if (closing.get())
-            return
-        closing.set(true)
-        SoraLogger.d(TAG, "[channel:$role] internalDisconnectFromSora: $disconnectReason")
-
-        stopTimer()
-        disconnectReason?.let {
-            sendDisconnectIfNeeded(it)
-        }
-        compositeDisposable.dispose()
-
-        // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
-        signaling?.disconnect(null)
-        signaling = null
-
-        getStatsTimer?.cancel()
-        getStatsTimer = null
-
-        // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
-        peer?.disconnect(null)
-        peer = null
-
-        listener?.onClose(this)
         listener?.onClose(this, closeResult)
         listener = null
 
