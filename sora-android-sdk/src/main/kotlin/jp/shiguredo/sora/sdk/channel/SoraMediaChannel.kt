@@ -40,7 +40,6 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.schedule
 
 /**
