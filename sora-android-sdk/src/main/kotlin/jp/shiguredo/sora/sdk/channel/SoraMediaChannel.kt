@@ -404,7 +404,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(disconnectReason: SoraDisconnectReason?, result: SignalingChannelCloseEvent?) {
+        override fun onDisconnect(disconnectReason: SoraDisconnectReason?, event: SignalingChannelCloseEvent?) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -416,8 +416,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
-                if (result != null) {
-                    internalDisconnect(disconnectReason, SoraCloseEvent(result.code, result.reason))
+                if (event != null) {
+                    internalDisconnect(disconnectReason, SoraCloseEvent(event.code, event.reason))
                     return
                 }
                 internalDisconnect(disconnectReason)

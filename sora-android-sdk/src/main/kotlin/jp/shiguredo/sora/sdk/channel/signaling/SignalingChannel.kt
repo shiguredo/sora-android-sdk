@@ -41,7 +41,7 @@ interface SignalingChannel {
 
     interface Listener {
         fun onConnect(endpoint: String)
-        fun onDisconnect(disconnectReason: SoraDisconnectReason?, result: SignalingChannelCloseEvent?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?, event: SignalingChannelCloseEvent?)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
