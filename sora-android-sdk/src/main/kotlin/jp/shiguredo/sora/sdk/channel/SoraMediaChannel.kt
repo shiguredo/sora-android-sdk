@@ -375,7 +375,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private var switchedToDataChannel = false
     // 切断処理を開始したことを示すフラグ
-    private var closing = AtomicBoolean(false)
+    private var closing = false
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
@@ -702,7 +702,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             """.trimMargin()
         )
 
-        if (closing.get()) {
+        if (closing) {
             return
         }
         startTimer()
@@ -966,9 +966,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     }
 
     private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeResult: SoraCloseResult? = null) {
-        if (closing.get())
+        if (closing)
             return
-        closing.set(true)
+        closing = true
         SoraLogger.d(TAG, "[channel:$role] internalDisconnect: $disconnectReason")
 
         stopTimer()
