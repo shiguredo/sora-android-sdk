@@ -989,7 +989,6 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
-        // ここでは closeResult が取得できないので null で良い
         listener?.onClose(this, closeResult)
         listener = null
 
