@@ -41,7 +41,7 @@ interface SignalingChannel {
 
     interface Listener {
         fun onConnect(endpoint: String)
-        fun onDisconnect(disconnectReason: SoraDisconnectReason?, result: SignalingChannelDisconnectResult?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?, event: SignalingChannelCloseEvent?)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -144,7 +144,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val receivedRedirectMessage = AtomicBoolean(false)
 
-    private val signalingChannelDisconnectResult = AtomicReference<SignalingChannelDisconnectResult?>()
+    private val signalingChannelCloseEvent = AtomicReference<SignalingChannelCloseEvent?>()
 
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
@@ -243,7 +243,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         // type: redirect を受信している場合は onDisconnect を発火させない
         if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(disconnectReason, signalingChannelDisconnectResult.get())
+            listener?.onDisconnect(disconnectReason, signalingChannelCloseEvent.get())
         }
         listener = null
     }
@@ -485,7 +485,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            signalingChannelDisconnectResult.set(SignalingChannelDisconnectResult(code, reason))
+            signalingChannelCloseEvent.set(SignalingChannelCloseEvent(code, reason))
 
             try {
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
