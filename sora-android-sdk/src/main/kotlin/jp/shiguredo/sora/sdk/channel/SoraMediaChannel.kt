@@ -236,7 +236,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * @param mediaChannel イベントが発生したチャネル
          */
-        fun onClose(mediaChannel: SoraMediaChannel,) {}
+        fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
