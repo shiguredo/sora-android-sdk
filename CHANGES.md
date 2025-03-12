@@ -38,7 +38,7 @@
   - WebSocket シグナリングの切断結果を表す `SignalingChannelDisconnectResult` を追加した
   - @zztkm
 - [UPDATE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で WebSocket ステータスコードが 1000 以外の場合に onError を呼び出さないようにする
-  - 2025.1.0 までも onError のコールバック呼び出しが定義されていましたが、onClosing が実行された時点で SignalingChannelImpl の listener の参照が削除される影響で、onError は呼び出されなかったため SDK ユーザーには影響がない
+  - 2025.1.0 まで onError のコールバック呼び出しが定義されていたが、実際は onClosing が実行された時点で SignalingChannelImpl の listener の参照が削除され、onError は呼び出されなかったため動作に変更はない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
