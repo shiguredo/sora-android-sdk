@@ -11,12 +11,12 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 132.6834.5.3 に上げる
-  - @zztkm
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
     - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
+  - @zztkm
+- [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
   - @zztkm
@@ -36,6 +36,9 @@
 - [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose` を追加する
   - Sora からの切断結果を表す `SoraCloseResult` を追加した
   - WebSocket シグナリングの切断結果を表す `SignalingChannelDisconnectResult` を追加した
+  - @zztkm
+- [UPDATE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で WebSocket ステータスコードが 1000 以外の場合に onError を呼び出さないようにする
+  - 2025.1.0 までも onError のコールバック呼び出しが定義されていましたが、onClosing が実行された時点で SignalingChannelImpl の listener の参照が削除される影響で、onError は呼び出されなかったため SDK ユーザーには影響がない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
