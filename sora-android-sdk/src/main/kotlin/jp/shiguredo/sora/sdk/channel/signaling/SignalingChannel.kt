@@ -27,6 +27,7 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 interface SignalingChannel {
 
@@ -40,7 +41,7 @@ interface SignalingChannel {
 
     interface Listener {
         fun onConnect(endpoint: String)
-        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?, result: SignalingChannelDisconnectResult?)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -143,6 +144,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val receivedRedirectMessage = AtomicBoolean(false)
 
+    private val signalingChannelDisconnectResult = AtomicReference<SignalingChannelDisconnectResult?>()
+
     override fun connect() {
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
@@ -240,7 +243,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         // type: redirect を受信している場合は onDisconnect を発火させない
         if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(disconnectReason)
+            listener?.onDisconnect(disconnectReason, signalingChannelDisconnectResult.get())
         }
         listener = null
     }
@@ -482,12 +485,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            try {
-                if (code != 1000) {
-                    // TODO(zztkm): WebSocketListener.onFailure で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                }
+            signalingChannelDisconnectResult.set(SignalingChannelDisconnectResult(code, reason))
 
+            try {
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
