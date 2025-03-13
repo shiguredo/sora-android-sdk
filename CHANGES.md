@@ -16,6 +16,10 @@
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
     - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
   - @zztkm
+- [CHANGE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で WebSocket ステータスコードが 1000 以外の場合に onError を呼び出さないようにする
+  - WebSocket シグナリング利用時にステータスコード 1000 以外が返ってきた場合に、onError が呼ばれることがあったが、onClose でステータスコードと切断理由を取得できるようになったため、onError を呼び出さないようにした
+  - 実装上、onError よりも先に onClose が呼ばれるため、ステータスコードに関わらず onClose で切断処理を行っていた SDK ユーザーへの影響はない
+  - @zztkm
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
@@ -36,9 +40,6 @@
 - [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose` を追加する
   - Sora から切断した時に通知されるイベントである `SoraCloseEvent` を追加した
   - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
-  - @zztkm
-- [UPDATE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で WebSocket ステータスコードが 1000 以外の場合に onError を呼び出さないようにする
-  - 2025.1.0 まで onError のコールバック呼び出しが定義されていたが、実際は onClosing が実行された時点で SignalingChannelImpl の listener の参照が削除され、onError は呼び出されなかったため動作に変更はない
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
