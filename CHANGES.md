@@ -18,7 +18,7 @@
   - @zztkm
 - [CHANGE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で WebSocket ステータスコードが 1000 以外の場合に onError を呼び出さないようにする
   - WebSocket シグナリング利用時にステータスコード 1000 以外が返ってきた場合に、onError が呼ばれることがあったが、onClose でステータスコードと切断理由を取得できるようになったため、onError を呼び出さないようにした
-  - 実装上、onError よりも先に onClose が呼ばれるため、ステータスコードに関わらず onClose で切断処理を行っていた SDK ユーザーへの影響はない
+  - ステータスコード 1000 以外で Sora から切断された場合に onError が上がることを期待した onError の実装がある場合は、onClose でステータスコードと切断理由を取得するように修正する必要がある
   - @zztkm
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
