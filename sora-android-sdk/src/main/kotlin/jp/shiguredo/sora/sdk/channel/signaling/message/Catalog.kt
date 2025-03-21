@@ -156,6 +156,12 @@ data class ReOfferMessage(
     @SerializedName("sdp") val sdp: String
 )
 
+data class CloseMessage(
+    @SerializedName("type") val type: String = "close",
+    @SerializedName("code") val code: Int,
+    @SerializedName("reason") val reason: String,
+)
+
 data class ReAnswerMessage(
     @SerializedName("type") val type: String = "re-answer",
     @SerializedName("sdp") val sdp: String

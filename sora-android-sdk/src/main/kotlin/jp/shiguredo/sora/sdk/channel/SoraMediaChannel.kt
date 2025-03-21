@@ -554,44 +554,18 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 try {
                     val message = dataToString(buffer)
-
-                    val expectedType = when (label) {
-                        "signaling" -> "re-offer"
-                        "notify" -> "notify"
-                        "push" -> "push"
-                        "stats" -> "req-stats"
-                        "e2ee" -> "NOT-IMPLEMENTED"
-                        else -> label // 追加が発生した時に備えて許容する
-                    }
-
                     MessageConverter.parseType(message)?.let { type ->
-                        when (type) {
-                            expectedType -> {
-                                when (label) {
-                                    "signaling" -> {
-                                        val reOfferMessage = MessageConverter.parseReOfferMessage(message)
-                                        handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
-                                    }
-                                    "notify" -> {
-                                        val notificationMessage = MessageConverter.parseNotificationMessage(message)
-                                        handleNotificationMessage(notificationMessage)
-                                    }
-                                    "push" -> {
-                                        val pushMessage = MessageConverter.parsePushMessage(message)
-                                        listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
-                                    }
-                                    "stats" -> {
-                                        // req-stats は type しかないので parse しない
-                                        handleReqStats(dataChannel)
-                                    }
-                                    "e2ee" -> {
-                                        SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
-                                    }
-                                    else ->
-                                        SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
-                                }
+                        when (label) {
+                            "signaling" -> handleSignalingViaDataChannel(dataChannel, type, message)
+                            "notify" -> handleNotifyViaDataChannel(type, message)
+                            "push" -> handlePushViaDataChannel(type, message)
+                            "stats" -> handleStatsViaDataChannel(dataChannel, type, message)
+                            "e2ee" -> {
+                                SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$message")
+                            else -> {
+                                SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -912,6 +886,26 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
+    /**
+     * DataChannel 経由のシグナリングの signaling ラベルで受信したメッセージを処理します.
+     */
+    private fun handleSignalingViaDataChannel(dataChannel: DataChannel, type: String, message: String) {
+        when (type) {
+            "re-offer" -> {
+                val reOfferMessage = MessageConverter.parseReOfferMessage(message)
+                handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+            }
+            "close" -> {
+                val closeMessage = MessageConverter.parseCloseMessage(message)
+                // TODO(zztkm): この Logger はこのブランチの作業中だけ使うのであとで消す
+                SoraLogger.d(TAG, "[channel:$role] @peer:close: $closeMessage")
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown signaling type: type=$type, message=$message")
+            }
+        }
+    }
+
     private fun handleReOfferViaDataChannel(dataChannel: DataChannel, sdp: String) {
         peer?.run {
             val subscription = handleUpdatedRemoteOffer(sdp)
@@ -928,6 +922,51 @@ class SoraMediaChannel @JvmOverloads constructor(
                     }
                 )
             compositeDisposable.add(subscription)
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの notify ラベルで受信したメッセージを処理します.
+     */
+    private fun handleNotifyViaDataChannel(type: String, message: String) {
+        when (type) {
+            "notify" -> {
+                val notificationMessage = MessageConverter.parseNotificationMessage(message)
+                handleNotificationMessage(notificationMessage)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown notify type: type=$type, message=$message")
+            }
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの push ラベルで受信したメッセージを処理します.
+     */
+    private fun handlePushViaDataChannel(type: String, message: String) {
+        when (type) {
+            "push" -> {
+                val pushMessage = MessageConverter.parsePushMessage(message)
+                listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown push type: type=$type, message=$message")
+            }
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの stats ラベルで受信したメッセージを処理します.
+     */
+    private fun handleStatsViaDataChannel(dataChannel: DataChannel, type: String, message: String) {
+        when (type) {
+            "req-stats" -> {
+                // req-stats は type しかないので parse しない
+                handleReqStats(dataChannel)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown stats type: type=$type, message=$message")
+            }
         }
     }
 
