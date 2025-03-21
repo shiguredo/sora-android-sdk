@@ -379,6 +379,9 @@ class SoraMediaChannel @JvmOverloads constructor(
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
 
+    // DataChannel のみのシグナリングで signaling label の type: close を受信したときに取得する code と reason を保持する
+    private var dataChannelSignalingCloseEvent: SoraCloseEvent? = null
+
     /**
      * コネクション ID.
      */
@@ -577,7 +580,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
 
-            // DataChannel が閉じられたが、その理由を知る方法がないため reason は null にする
+            dataChannelSignalingCloseEvent?.let { event ->
+                internalDisconnect(SoraDisconnectReason.DATACHANNEL_ONCLOSE, event)
+                return
+            }
+
+            // dataChannelSignalingCloseEvent が null の場合、DataChannel が閉じられた理由を知る方法がないため reason は null にする
             internalDisconnect(null)
         }
 
@@ -897,8 +905,10 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
             "close" -> {
                 val closeMessage = MessageConverter.parseCloseMessage(message)
-                // TODO(zztkm): この Logger はこのブランチの作業中だけ使うのであとで消す
-                SoraLogger.d(TAG, "[channel:$role] @peer:close: $closeMessage")
+                // DataChannel のみのシグナリング かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合に
+                // Sora から切断が発生した際、DataChannel を閉じる前に `type: close` メッセージが送られてくるため、
+                // dataChannelSignalingCloseEvent に code と reason を設定する
+                dataChannelSignalingCloseEvent = SoraCloseEvent(closeMessage.code, closeMessage.reason)
             }
             else -> {
                 SoraLogger.i(TAG, "Unknown signaling type: type=$type, message=$message")
@@ -1084,6 +1094,10 @@ class SoraMediaChannel @JvmOverloads constructor(
 
             SoraDisconnectReason.SIGNALING_FAILURE, SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
                 // メッセージの送信は不要
+            }
+
+            SoraDisconnectReason.DATACHANNEL_ONCLOSE -> {
+                // DataChannel のみのシグナリング利用時に Sora から type: close を受信した場合、メッセージの送信は不要
             }
 
             else -> {
