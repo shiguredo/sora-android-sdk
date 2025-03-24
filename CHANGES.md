@@ -27,7 +27,7 @@
   - 今回の変更により、未設定の場合は `video.codec_type` を送信しなくなった
   - 未設定時は、Sora 側でデフォルトのビデオコーデックが設定される。現時点では Sora が自動的に `VP9` を設定する
     - 参考: https://sora-doc.shiguredo.jp/SIGNALING#d47f4d
-  - connect メッセージで VP9 を明示的に設定する場合は、`SoraMediaOption.videoCodec` に `SoraVideoOption.Codec.VP9` を設定する必要がある
+  - `SoraMediaOption.videoCodec` が未設定、かつ `SoraMediaOption.videoVp9Params` を設定している場合は今回の影響を受けるため、明示的に `SoraMediaOption.videoCodec` に `SoraVideoOption.Codec.VP9` を設定する必要がある
   - @zztkmk
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
