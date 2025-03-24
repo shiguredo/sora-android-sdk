@@ -81,13 +81,8 @@ class MessageConverter {
                 }
 
                 if (mediaOption.videoUpstreamEnabled) {
-                    val isDefault = mediaOption.videoCodec == SoraVideoOption.Codec.DEFAULT &&
-                        mediaOption.videoBitrate == null &&
-                        mediaOption.videoVp9Params == null &&
-                        mediaOption.videoAv1Params == null &&
-                        mediaOption.videoH264Params == null
                     // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
-                    if (!isDefault) {
+                    if (!mediaOption.isDefaultVideoOption()) {
                         msg.video = VideoSetting().apply {
                             if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
                                 codecType = mediaOption.videoCodec.toString()
@@ -113,17 +108,20 @@ class MessageConverter {
                     msg.audio = false
                 }
 
-                msg.video = if (mediaOption.videoDownstreamEnabled) {
-                    VideoSetting().apply {
-                        if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
-                            codecType = mediaOption.videoCodec.toString()
+                if (mediaOption.videoDownstreamEnabled) {
+                    // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
+                    if (!mediaOption.isDefaultVideoOption()) {
+                        msg.video = VideoSetting().apply {
+                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                codecType = mediaOption.videoCodec.toString()
+                            }
+                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                            // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
+                            mediaOption.videoBitrate?.let { bitRate = it }
                         }
-                        // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                        // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
-                        mediaOption.videoBitrate?.let { bitRate = it }
                     }
                 } else {
-                    false
+                    msg.video = false
                 }
             }
 

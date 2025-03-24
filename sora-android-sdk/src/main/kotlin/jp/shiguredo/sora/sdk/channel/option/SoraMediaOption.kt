@@ -265,4 +265,15 @@ class SoraMediaOption {
      * Sora の音声ストリーミング機能利用時に指定する言語コード.
      */
     var audioStreamingLanguageCode: String? = null
+
+    /**
+     * シグナリング type: connect メッセージの video に含めるデータがすべてデフォルト値かどうか.
+     */
+    fun isDefaultVideoOption(): Boolean {
+        return videoCodec == SoraVideoOption.Codec.DEFAULT &&
+            videoBitrate == null &&
+            videoVp9Params == null &&
+            videoAv1Params == null &&
+            videoH264Params == null
+    }
 }
