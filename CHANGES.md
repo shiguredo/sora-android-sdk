@@ -40,8 +40,11 @@
   - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
 - [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose` を追加する
-  - Sora から切断した時に通知されるイベントである `SoraCloseEvent` を追加した
+  - Sora から切断されたときに通知されるイベントである `SoraCloseEvent` を追加した
   - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
+  - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
+    - WebSocket シグナリングを利用している場合
+    - DataChannel のみをシグナリングに利用する場合、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
