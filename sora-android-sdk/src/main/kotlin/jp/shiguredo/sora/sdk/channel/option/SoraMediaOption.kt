@@ -45,9 +45,10 @@ class SoraMediaOption {
     /**
      * 映像コーデック.
      *
-     * 未設定の場合、 Sora Android SDK は VP9 を設定します.
+     * 未設定の場合、 Sora Android SDK は DEFAULT を設定します.
+     * DEFAULT は Sora のデフォルト値を利用します.
      */
-    var videoCodec = SoraVideoOption.Codec.VP9
+    var videoCodec = SoraVideoOption.Codec.DEFAULT
 
     /**
      * 映像ビットレート.

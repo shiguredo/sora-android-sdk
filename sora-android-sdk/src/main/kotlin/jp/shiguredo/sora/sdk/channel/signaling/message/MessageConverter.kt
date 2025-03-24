@@ -1,11 +1,13 @@
 package jp.shiguredo.sora.sdk.channel.signaling.message
 
+import android.provider.MediaStore.Video
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
@@ -78,15 +80,19 @@ class MessageConverter {
                 } else {
                     msg.audio = false
                 }
-                if (mediaOption.videoUpstreamEnabled) {
-                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
-                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
-                    mediaOption.videoVp9Params?.let { videoSetting.vp9Params = it }
-                    mediaOption.videoAv1Params?.let { videoSetting.av1Params = it }
-                    mediaOption.videoH264Params?.let { videoSetting.h264Params = it }
-                    msg.video = videoSetting
+
+                msg.video = if (mediaOption.videoUpstreamEnabled) {
+                    VideoSetting().apply {
+                        if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                            codecType = mediaOption.videoCodec.toString()
+                        }
+                        mediaOption.videoBitrate?.let { bitRate = it }
+                        mediaOption.videoVp9Params?.let { vp9Params = it }
+                        mediaOption.videoAv1Params?.let { av1Params = it }
+                        mediaOption.videoH264Params?.let { h264Params = it }
+                    }
                 } else {
-                    msg.video = false
+                    false
                 }
             } else {
                 // 視聴者では audio, video は視聴の設定
@@ -98,13 +104,18 @@ class MessageConverter {
                 } else {
                     msg.audio = false
                 }
-                if (mediaOption.videoDownstreamEnabled) {
-                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
-                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
-                    msg.video = videoSetting
+
+                msg.video = if (mediaOption.videoDownstreamEnabled) {
+                    VideoSetting().apply {
+                        if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                            codecType = mediaOption.videoCodec.toString()
+                        }
+                        // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                        // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
+                        mediaOption.videoBitrate?.let { bitRate = it }
+                    }
                 } else {
-                    msg.video = false
+                    false
                 }
             }
 

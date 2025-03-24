@@ -11,6 +11,8 @@ class SoraVideoOption {
      * 利用できる映像コーデックを示します.
      */
     enum class Codec {
+        /** Sora のデフォルト値を利用 */
+        DEFAULT,
         /** H.264 */
         H264,
         /** H.265 */
