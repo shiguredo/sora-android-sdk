@@ -80,18 +80,27 @@ class MessageConverter {
                     msg.audio = false
                 }
 
-                msg.video = if (mediaOption.videoUpstreamEnabled) {
-                    VideoSetting().apply {
-                        if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
-                            codecType = mediaOption.videoCodec.toString()
+                if (mediaOption.videoUpstreamEnabled) {
+                    val isDefault = mediaOption.videoCodec == SoraVideoOption.Codec.DEFAULT &&
+                        mediaOption.videoBitrate == null &&
+                        mediaOption.videoVp9Params == null &&
+                        mediaOption.videoAv1Params == null &&
+                        mediaOption.videoH264Params == null
+                    // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
+                    if (!isDefault) {
+                        msg.video = VideoSetting().apply {
+                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                codecType = mediaOption.videoCodec.toString()
+                            }
+                            mediaOption.videoBitrate?.let { bitRate = it }
+                            mediaOption.videoVp9Params?.let { vp9Params = it }
+                            mediaOption.videoAv1Params?.let { av1Params = it }
+                            mediaOption.videoH264Params?.let { h264Params = it }
                         }
-                        mediaOption.videoBitrate?.let { bitRate = it }
-                        mediaOption.videoVp9Params?.let { vp9Params = it }
-                        mediaOption.videoAv1Params?.let { av1Params = it }
-                        mediaOption.videoH264Params?.let { h264Params = it }
                     }
                 } else {
-                    false
+                    // ビデオを無効化したいため false を設定する
+                    msg.video = false
                 }
             } else {
                 // 視聴者では audio, video は視聴の設定
