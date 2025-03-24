@@ -206,6 +206,10 @@ class MessageConverter {
             return gson.fromJson(text, ReOfferMessage::class.java)
         }
 
+        fun parseCloseMessage(text: String): CloseMessage {
+            return gson.fromJson(text, CloseMessage::class.java)
+        }
+
         fun parseNotificationMessage(text: String): NotificationMessage {
             return gson.fromJson(text, NotificationMessage::class.java)
         }
