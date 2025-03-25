@@ -7,22 +7,23 @@ import android.graphics.Point
  */
 class SoraVideoOption {
 
+    // TODO(zztkm): 破壊的変更にはなるが、Codec の並び順を Sora のドキュメントに合わせて変更する
     /**
      * 利用できる映像コーデックを示します.
      */
     enum class Codec {
-        /** Sora のデフォルト値を利用 */
-        DEFAULT,
-        /** VP8 */
-        VP8,
-        /** VP9 */
-        VP9,
         /** H.264 */
         H264,
         /** H.265 */
         H265,
+        /** VP8 */
+        VP8,
+        /** VP9 */
+        VP9,
         /** AV1 */
-        AV1
+        AV1,
+        /** Sora のデフォルト値を利用 */
+        DEFAULT,
     }
 
     /**

@@ -45,8 +45,8 @@ class SoraMediaOption {
     /**
      * 映像コーデック.
      *
-     * 未設定の場合、 Sora Android SDK は DEFAULT を設定します.
-     * DEFAULT は Sora のデフォルト値を利用します.
+     * 未設定の場合 Sora Android SDK は DEFAULT を設定する.
+     * DEFAULT は Sora のデフォルト値を利用する.
      */
     var videoCodec = SoraVideoOption.Codec.DEFAULT
 
