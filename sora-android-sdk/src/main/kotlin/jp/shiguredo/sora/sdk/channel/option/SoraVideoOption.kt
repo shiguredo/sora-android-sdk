@@ -7,6 +7,7 @@ import android.graphics.Point
  */
 class SoraVideoOption {
 
+    // TODO(zztkm): 破壊的変更にはなるが、Codec の並び順を Sora のドキュメントに合わせて変更する
     /**
      * 利用できる映像コーデックを示します.
      */
@@ -20,7 +21,9 @@ class SoraVideoOption {
         /** VP9 */
         VP9,
         /** AV1 */
-        AV1
+        AV1,
+        /** Sora のデフォルト値を利用 */
+        DEFAULT,
     }
 
     /**

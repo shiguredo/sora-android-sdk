@@ -45,9 +45,10 @@ class SoraMediaOption {
     /**
      * 映像コーデック.
      *
-     * 未設定の場合、 Sora Android SDK は VP9 を設定します.
+     * 未設定の場合 Sora Android SDK は DEFAULT を設定する.
+     * DEFAULT は Sora のデフォルト値を利用する.
      */
-    var videoCodec = SoraVideoOption.Codec.VP9
+    var videoCodec = SoraVideoOption.Codec.DEFAULT
 
     /**
      * 映像ビットレート.
@@ -264,4 +265,15 @@ class SoraMediaOption {
      * Sora の音声ストリーミング機能利用時に指定する言語コード.
      */
     var audioStreamingLanguageCode: String? = null
+
+    /**
+     * シグナリング type: connect メッセージの video に含めるデータがすべてデフォルト値かどうか.
+     */
+    fun isDefaultVideoOption(): Boolean {
+        return videoCodec == SoraVideoOption.Codec.DEFAULT &&
+            videoBitrate == null &&
+            videoVp9Params == null &&
+            videoAv1Params == null &&
+            videoH264Params == null
+    }
 }

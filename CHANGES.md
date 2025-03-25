@@ -22,6 +22,13 @@
   - これにより、`onError` はネットワーク切断などによる異常終了のみを通知する仕様になる
   - もし、ステータスコード 1000 以外の Sora からの切断を `onError` によって検知する実装を行っていた場合、今後は `onClose` のステータスコードを参照して適切な処理を行う必要がある
   - @zztkm 
+- [CHANGE] SoraMediaOption.videoCodec 未設定時の動作変更
+  - 以前は、`SoraMediaOption.videoCodec` が未設定の場合、connect メッセージの `video.codec_type` に自動で `VP9` が設定され送信されていた
+  - 今回の変更により、未設定の場合は `video.codec_type` を送信しなくなった
+  - 未設定時は、Sora 側でデフォルトのビデオコーデックが設定される。現時点では Sora が自動的に `VP9` を設定する
+    - 参考: https://sora-doc.shiguredo.jp/SIGNALING#d47f4d
+  - `SoraMediaOption.videoCodec` が未設定、かつ `SoraMediaOption.videoVp9Params` を設定している場合は破壊的変更の影響を受けるため、明示的に `SoraMediaOption.videoCodec` に `SoraVideoOption.Codec.VP9` を設定する必要がある
+  - @zztkm
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする

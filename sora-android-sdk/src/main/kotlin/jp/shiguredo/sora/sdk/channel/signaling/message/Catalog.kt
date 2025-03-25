@@ -62,7 +62,7 @@ data class ConnectMessage(
 )
 
 data class VideoSetting(
-    @SerializedName("codec_type") val codecType: String,
+    @SerializedName("codec_type") var codecType: String? = null,
     @SerializedName("bit_rate") var bitRate: Int? = null,
     @SerializedName("vp9_params") var vp9Params: Any? = null,
     @SerializedName("av1_params") var av1Params: Any? = null,
