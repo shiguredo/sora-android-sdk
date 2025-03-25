@@ -35,6 +35,7 @@
   - 未設定時は、Sora 側でデフォルトのオーディオコーデックが設定される。現時点では Sora が自動的に `OPUS` を設定する
     - 参考: https://sora-doc.shiguredo.jp/SIGNALING#0fcf4e
   - `SoraMediaOption.audioCodec` が未設定、かつ `SoraMediaOption.audioOption.opusParams` を設定している場合は破壊的変更の影響を受けるため、明示的に `SoraMediaOption.audioCodec` に `SoraAudioOption.Codec.OPUS` を設定する必要がある
+  - @zztkm
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
