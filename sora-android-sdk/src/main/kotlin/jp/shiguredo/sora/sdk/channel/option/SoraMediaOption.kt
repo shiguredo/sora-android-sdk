@@ -155,8 +155,11 @@ class SoraMediaOption {
 
     /**
      * 音声コーデック.
+     *
+     * 未設定の場合 Sora Android SDK は DEFAULT を設定する.
+     * DEFAULT は Sora のデフォルト値を利用する.
      */
-    var audioCodec = SoraAudioOption.Codec.OPUS
+    var audioCodec = SoraAudioOption.Codec.DEFAULT
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     /**
@@ -269,11 +272,20 @@ class SoraMediaOption {
     /**
      * シグナリング type: connect メッセージの video に含めるデータがすべてデフォルト値かどうか.
      */
-    fun isDefaultVideoOption(): Boolean {
+    internal fun isDefaultVideoOption(): Boolean {
         return videoCodec == SoraVideoOption.Codec.DEFAULT &&
             videoBitrate == null &&
             videoVp9Params == null &&
             videoAv1Params == null &&
             videoH264Params == null
+    }
+
+    /**
+     * シグナリング type: connect メッセージの audio に含めるデータがすべてデフォルト値かどうか.
+     */
+    internal fun isDefaultAudioOption(): Boolean {
+        return audioCodec == SoraAudioOption.Codec.DEFAULT &&
+            audioBitrate == null &&
+            audioOption.opusParams == null
     }
 }

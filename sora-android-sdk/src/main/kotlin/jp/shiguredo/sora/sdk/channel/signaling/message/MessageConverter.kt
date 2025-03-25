@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -68,14 +69,15 @@ class MessageConverter {
             if (mediaOption.upstreamIsRequired) {
                 // 配信者では audio, video は配信の設定
                 if (mediaOption.audioUpstreamEnabled) {
-                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
-                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
-
-                    if (mediaOption.audioOption.opusParams != null) {
-                        audioSetting.opusParams = mediaOption.audioOption.opusParams
+                    if (!mediaOption.isDefaultAudioOption()) {
+                        msg.audio = AudioSetting().apply {
+                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                codecType = mediaOption.audioCodec.toString()
+                            }
+                            mediaOption.audioBitrate?.let { bitRate = it }
+                            mediaOption.audioOption.opusParams?.let { opusParams = it }
+                        }
                     }
-
-                    msg.audio = audioSetting
                 } else {
                     msg.audio = false
                 }

@@ -70,7 +70,7 @@ data class VideoSetting(
 )
 
 data class AudioSetting(
-    @SerializedName("codec_type") val codecType: String?,
+    @SerializedName("codec_type") var codecType: String? = null,
     @SerializedName("bit_rate") var bitRate: Int? = null,
     @SerializedName("opus_params") var opusParams: OpusParams? = null
 )
