@@ -102,10 +102,15 @@ class MessageConverter {
             } else {
                 // 視聴者では audio, video は視聴の設定
                 if (mediaOption.audioDownstreamEnabled) {
-                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
-                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
-                    msg.audio = audioSetting
+                    if (!mediaOption.isDefaultAudioOption()) {
+                        msg.audio = AudioSetting().apply {
+                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                codecType = mediaOption.audioCodec.toString()
+                            }
+                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                            mediaOption.audioBitrate?.let { bitRate = it }
+                        }
+                    }
                 } else {
                     msg.audio = false
                 }
