@@ -248,10 +248,16 @@ class SoraMediaChannel @JvmOverloads constructor(
          *
          * @param reason エラーの理由
          */
+        @Deprecated(
+            "エラー発生時のコールバックは onError(mediaChannel, reason, message) に集約するため、このメソッドは非推奨です",
+            ReplaceWith("onError(mediaChannel, reason, message)"),
+            DeprecationLevel.WARNING
+        )
         fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
 
         /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
+         * message の内容がない場合は、空文字列が渡されます.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
@@ -479,6 +485,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
                 listener?.onError(this@SoraMediaChannel, reason)
+                listener?.onError(this@SoraMediaChannel, reason, "")
             }
         }
 
@@ -597,6 +604,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onError(reason: SoraErrorReason) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason")
             listener?.onError(this@SoraMediaChannel, reason)
+            listener?.onError(this@SoraMediaChannel, reason, "")
         }
 
         override fun onError(reason: SoraErrorReason, message: String) {
@@ -713,6 +721,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private fun onTimeout() {
         SoraLogger.d(TAG, "[channel:$role] @peer:onTimeout")
         listener?.onError(this, SoraErrorReason.TIMEOUT)
+        listener?.onError(this, SoraErrorReason.TIMEOUT, "")
 
         // ここに来た場合、 Sora に接続出来ていない = disconnect メッセージを送信する必要がない
         // そのため、 reason は null で良い
