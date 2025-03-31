@@ -36,6 +36,11 @@
     - 参考: https://sora-doc.shiguredo.jp/SIGNALING#0fcf4e
   - `SoraMediaOption.audioCodec` が未設定、かつ `SoraMediaOption.audioOption.opusParams` を設定している場合は破壊的変更の影響を受けるため、明示的に `SoraMediaOption.audioCodec` に `SoraAudioOption.Codec.OPUS` を設定する必要がある
   - @zztkm
+- [CHANGE] SoraMediaChannel.Listener の `onError(SoraMediaChannel, SoraErrorReason)` を廃止する
+  - `onError(SoraMediaChannel, SoraErrorReason)` を呼び出していた箇所は `onError(SoraMediaChannel, SoraErrorReason, String)` に置き換えられる
+  - String にはエラーの詳細情報を設定する
+    - 詳細がない場合は空文字列を設定する
+  - @zztkm
 - [UPDATE] libwebrtc を 132.6834.5.3 に上げる
   - @zztkm
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
@@ -59,9 +64,6 @@
   - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
     - WebSocket 経由のシグナリングを利用している場合
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
-  - @zztkm
-- [UPDATE] SoraMediaChannel.Listener の `onError(SoraMediaChannel, SoraErrorReason)` を非推奨にする
-  - `onError(SoraMediaChannel, SoraErrorReason)` は `onError(SoraMediaChannel, SoraErrorReason, String)` に置き換えられる
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
