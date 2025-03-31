@@ -60,6 +60,9 @@
     - WebSocket 経由のシグナリングを利用している場合
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
   - @zztkm
+- [UPDATE] SoraMediaChannel.Listener の `onError(SoraMediaChannel, SoraErrorReason)` を非推奨にする
+  - `onError(SoraMediaChannel, SoraErrorReason)` は `onError(SoraMediaChannel, SoraErrorReason, String)` に置き換えられる
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
