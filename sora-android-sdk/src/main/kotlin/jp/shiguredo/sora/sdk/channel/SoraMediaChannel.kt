@@ -720,7 +720,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun onTimeout() {
         SoraLogger.d(TAG, "[channel:$role] @peer:onTimeout")
-        listener?.onError(this, SoraErrorReason.TIMEOUT )
+        listener?.onError(this, SoraErrorReason.TIMEOUT)
         listener?.onError(this, SoraErrorReason.TIMEOUT, "")
 
         // ここに来た場合、 Sora に接続出来ていない = disconnect メッセージを送信する必要がない
