@@ -66,7 +66,7 @@
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
   - @zztkm
 - [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
-  - 今後は ``onClose(SoraMediaChannel, SoraCloseEvent?)`` を利用してもらう
+  - 今後は `onClose(SoraMediaChannel, SoraCloseEvent?)` を利用してもらう
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
