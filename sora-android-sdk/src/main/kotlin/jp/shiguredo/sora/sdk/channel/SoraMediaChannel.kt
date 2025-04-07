@@ -237,8 +237,9 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          */
         @Deprecated(
-            "onClose(mediaChannel: SoraMediaChannel) は非推奨です. " +
-                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) を利用してください",
+            "onClose(mediaChannel: SoraMediaChannel) は非推奨です " +
+                    "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) を利用してください." +
+                    " このコールバックは 2027 年中に廃止予定です.",
             ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent?)"),
             DeprecationLevel.WARNING
         )
