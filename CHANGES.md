@@ -18,10 +18,10 @@
   - @zztkm
 - [CHANGE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で、WebSocket ステータスコードが 1000 以外の場合でも `onError` を呼び出さないように変更する
   - これまでの実装では、onError のコールバック呼び出しが定義されていたが、実際には `onClosing` が実行された時点で `SignalingChannelImpl` の listener の参照が削除されるため、`onError` が確実に呼び出される保証はなかった
-  - 今回の変更により、`onClose` でステータスコードと切断理由を取得できるようになり、エラー判定が可能となったため、`onError` の呼び出しを不要とした
+  - 今回の変更により、`onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?)` でステータスコードと切断理由を取得できるようになり、エラー判定が可能となったため、`onError` の呼び出しを不要とした
   - これにより、`onError` はネットワーク切断などによる異常終了のみを通知する仕様になる
   - もし、ステータスコード 1000 以外の Sora からの切断を `onError` によって検知する実装を行っていた場合、今後は `onClose` のステータスコードを参照して適切な処理を行う必要がある
-  - @zztkm 
+  - @zztkm
 - [CHANGE] SoraMediaOption.videoCodec 未設定時の動作変更
   - 以前は、`SoraMediaOption.videoCodec` が未設定の場合、connect メッセージの `video.codec_type` に自動で `VP9` が設定され送信されていた
   - 今回の変更により、未設定の場合は `video.codec_type` を送信しなくなった
@@ -58,12 +58,15 @@
     - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
   - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
-- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose` を追加する
+- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?)` を追加する
   - Sora から切断されたときに通知されるイベントである `SoraCloseEvent` を追加した
   - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
   - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
     - WebSocket 経由のシグナリングを利用している場合
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
+  - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
+  - 今後は `onClose(SoraMediaChannel, SoraCloseEvent?)` を利用してもらう
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
