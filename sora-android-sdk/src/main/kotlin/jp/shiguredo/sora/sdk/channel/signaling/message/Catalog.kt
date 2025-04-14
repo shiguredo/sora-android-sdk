@@ -146,6 +146,9 @@ data class SwitchedMessage(
     @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null
 )
 
+/**
+ * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+ */
 data class UpdateMessage(
     @SerializedName("type") val type: String = "update",
     @SerializedName("sdp") val sdp: String
