@@ -212,6 +212,9 @@ class MessageConverter {
             return gson.fromJson(text, SwitchedMessage::class.java)
         }
 
+        /**
+         * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+         */
         fun parseUpdateMessage(text: String): UpdateMessage {
             return gson.fromJson(text, UpdateMessage::class.java)
         }

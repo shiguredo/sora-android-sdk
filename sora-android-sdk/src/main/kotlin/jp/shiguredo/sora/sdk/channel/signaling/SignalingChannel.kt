@@ -124,17 +124,17 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    /*
-      接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
-      その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
-      メソッドから同時にアクセスされる可能性があるため、スレッドセーフである必要がある
-      - ws
-      - wsCandidates
-      - receivedRedirectMessage
-      - closing
+    /**
+     接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
+     その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
+     メソッドから同時にアクセスされる可能性があるため、スレッドセーフである必要がある
+     - ws
+     - wsCandidates
+     - receivedRedirectMessage
+     - closing
 
-      ws と wsCandidates については両方を同時に更新するため、このクラスのインスタンスで排他制御する
-      receivedRedirectMessage と closing には上記のような要件がないため、 AtomicBoolean を使う
+     ws と wsCandidates については両方を同時に更新するため、このクラスのインスタンスで排他制御する
+     receivedRedirectMessage と closing には上記のような要件がないため、 AtomicBoolean を使う
      */
     private var ws: WebSocket? = null
 
@@ -305,6 +305,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onSwitched(switchMessage)
     }
 
+    /**
+     * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+     */
     private fun onUpdateMessage(text: String) {
         val update = MessageConverter.parseUpdateMessage(text)
 
