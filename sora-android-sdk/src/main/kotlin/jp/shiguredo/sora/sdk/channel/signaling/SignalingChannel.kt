@@ -25,9 +25,14 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.KeyStore
+import java.security.cert.Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 interface SignalingChannel {
 
@@ -76,6 +81,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
+    private val caCertificate: Certificate? = null,
 ) : SignalingChannel {
 
     companion object {
@@ -91,6 +97,33 @@ class SignalingChannelImpl @JvmOverloads constructor(
         // それを防ぐためにコルーチンを利用して別スレッドで初期化する
         client = runBlocking(Dispatchers.IO) {
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
+
+            if (caCertificate != null) {
+                SoraLogger.i(TAG, "set caCertificate")
+                // CA証明書を含むキーストアを作成
+                val keyStoreType = KeyStore.getDefaultType()
+                val keyStore = KeyStore.getInstance(keyStoreType)
+                keyStore.load(null, null) // 空のキーストアを初期化
+                keyStore.setCertificateEntry("ca", caCertificate) // エイリアス "ca" で証明書を追加
+
+                // そのキーストアを使用するTrustManagerを作成
+                val tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm()
+                val trustManagerFactory = TrustManagerFactory.getInstance(tmfAlgorithm)
+                trustManagerFactory.init(keyStore) // カスタムキーストアで初期化
+
+                val trustManagers = trustManagerFactory.trustManagers
+                if (trustManagers.size != 1 || trustManagers[0] !is X509TrustManager) {
+                    SoraLogger.w(TAG, "Unexpected default trust managers:" + trustManagers.contentToString())
+                    // TODO(zztkm): ここで例外を投げるべきかどうかを検討する
+                    throw IllegalStateException("Unexpected default trust managers:" + trustManagers.contentToString())
+                }
+                val trustManager = trustManagers[0] as X509TrustManager
+
+                // カスタムTrustManagerを使用するSSLContextを作成
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
+                builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+            }
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
                 SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")

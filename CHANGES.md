@@ -68,6 +68,11 @@
 - [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
   - 今後は `onClose(SoraMediaChannel, SoraCloseEvent?)` を利用してもらう
   - @zztkm
+- [UPDATE] シグナリング接続時に CA 証明書を指定できるようにする
+  - `SoraMediaChannel` に `caCertificate: Certificate` を追加する
+    - TODO(zztkm): X509Certificate と Certificate のどちらが良いか確認する
+  - `SoraMediaChannel` で CA 証明書を指定しない場合はシステムのデフォルトが利用される
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
