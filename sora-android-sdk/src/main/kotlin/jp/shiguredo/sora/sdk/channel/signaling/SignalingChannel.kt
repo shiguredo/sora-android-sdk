@@ -112,12 +112,16 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 trustManagerFactory.init(keyStore) // カスタムキーストアで初期化
 
                 val trustManagers = trustManagerFactory.trustManagers
-                if (trustManagers.size != 1 || trustManagers[0] !is X509TrustManager) {
+                val x509TrustManagers = trustManagers.filterIsInstance<X509TrustManager>()
+                if (x509TrustManagers.isEmpty()) {
                     // 予期しない TrustManager が返された場合はログを出力し、カスタムの SSLSocketFactory を使用しない
-                    SoraLogger.w(TAG, "Unexpected default trust managers: ${trustManagers.contentToString()}")
-                    SoraLogger.w(TAG, "Falling back to default SSL context due to unexpected trust managers.")
+                    SoraLogger.w(TAG, "No X509TrustManager found in trust managers: ${trustManagers.contentToString()}")
+                    SoraLogger.w(TAG, "Falling back to default SSL context due to missing X509TrustManager.")
                 } else {
-                    val trustManager = trustManagers[0] as X509TrustManager
+                    if (x509TrustManagers.size > 1) {
+                        SoraLogger.w(TAG, "Multiple X509TrustManagers found. Using the first one.")
+                    }
+                    val trustManager = x509TrustManagers[0]
 
                     // カスタムTrustManagerを使用するSSLContextを作成
                     val sslContext = SSLContext.getInstance("TLS")
