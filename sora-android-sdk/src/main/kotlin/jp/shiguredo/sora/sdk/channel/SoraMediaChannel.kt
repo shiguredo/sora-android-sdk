@@ -72,6 +72,7 @@ import kotlin.concurrent.schedule
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
+ * @param caCertificate Sora との接続に利用する CA 証明書
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -96,7 +97,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    // 参考 URL
+    // Certificate についての参考 URL
     // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
     // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
     private val caCertificate: Certificate? = null,
