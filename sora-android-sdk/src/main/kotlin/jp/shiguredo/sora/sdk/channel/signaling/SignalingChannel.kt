@@ -113,16 +113,17 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
                 val trustManagers = trustManagerFactory.trustManagers
                 if (trustManagers.size != 1 || trustManagers[0] !is X509TrustManager) {
-                    SoraLogger.w(TAG, "Unexpected default trust managers:" + trustManagers.contentToString())
-                    // TODO(zztkm): ここで例外を投げるべきかどうかを検討する
-                    throw IllegalStateException("Unexpected default trust managers:" + trustManagers.contentToString())
-                }
-                val trustManager = trustManagers[0] as X509TrustManager
+                    // 予期しない TrustManager が返された場合はログを出力し、カスタムの SSLSocketFactory を使用しない
+                    SoraLogger.w(TAG, "Unexpected default trust managers: ${trustManagers.contentToString()}")
+                    SoraLogger.w(TAG, "Falling back to default SSL context due to unexpected trust managers.")
+                } else {
+                    val trustManager = trustManagers[0] as X509TrustManager
 
-                // カスタムTrustManagerを使用するSSLContextを作成
-                val sslContext = SSLContext.getInstance("TLS")
-                sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
-                builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                    // カスタムTrustManagerを使用するSSLContextを作成
+                    val sslContext = SSLContext.getInstance("TLS")
+                    sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
+                    builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                }
             }
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
