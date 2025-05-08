@@ -99,6 +99,8 @@ class CustomSSLCertificateVerifier(
         buildTrustManager(caCertificate)
 
     override fun verify(cert: ByteArray?): Boolean {
+        // TODO(zztkm): caCertificate がユーザー指定されていない場合は、OS の CA 証明書を使うように実装する
+        // 例 LetsEncrypt の証明書を検証する場合など
         if (cert == null) {
             SoraLogger.w("CustomSSLCertificateVerifier", "cert is null")
             return false
