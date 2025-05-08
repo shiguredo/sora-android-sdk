@@ -31,9 +31,15 @@ import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.security.KeyStore
+import java.security.cert.Certificate
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
 interface PeerChannel {
     fun handleInitialRemoteOffer(
@@ -76,11 +82,65 @@ interface PeerChannel {
     }
 }
 
-class CustomSSLCertificateVerifier : SSLCertificateVerifier {
+/**
+ * TURN-TLS のサーバ証明書を、指定した CA 証明書で検証する Verifier。
+ *
+ * @param caCertificate   X.509 形式 (PEM / DER どちらでも可) の CA 証明書
+ */
+class CustomSSLCertificateVerifier(
+    private val caCertificate: Certificate
+) : SSLCertificateVerifier {
+
+    /**
+     * コンストラクタ実行時に TrustManager を生成して保持しておく。
+     * これで `lazy` を使わずに済み、スレッドセーフでもある。
+     */
+    private val trustManager: X509TrustManager =
+        buildTrustManager(caCertificate)
+
     override fun verify(cert: ByteArray?): Boolean {
-        // TODO(zztkm): SSL 証明書の検証を行う
-        SoraLogger.d("CustomSSLCertificateVerifier", "verify")
-        return true
+        if (cert == null) {
+            SoraLogger.w("CustomSSLCertificateVerifier", "cert is null")
+            return false
+        }
+
+        return try {
+            // DER → X509Certificate に変換
+            val serverCert = CertificateFactory.getInstance("X.509")
+                .generateCertificate(ByteArrayInputStream(cert)) as X509Certificate
+
+            // 有効期限チェック
+            serverCert.checkValidity()
+
+            // チェーン検証
+            trustManager.checkServerTrusted(
+                arrayOf(serverCert),
+                serverCert.publicKey.algorithm
+            )
+            true
+        } catch (e: Exception) {
+            // 例外＝検証失敗
+            false
+        }
+    }
+
+    /** 指定 CA だけを信頼する X509TrustManager を作る */
+    private fun buildTrustManager(ca: Certificate): X509TrustManager {
+        // 空の KeyStore を用意し、自前 CA を 1 枚だけ登録
+        val ks = KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+            load(null, null)
+            setCertificateEntry("custom_ca", ca)
+        }
+
+        // その KeyStore で TrustManagerFactory を初期化
+        val tmf = TrustManagerFactory.getInstance(
+            TrustManagerFactory.getDefaultAlgorithm()
+        ).apply { init(ks) }
+
+        // X509TrustManager を取得（1 個のみのはず）
+        return tmf.trustManagers
+            .filterIsInstance<X509TrustManager>()
+            .first()
     }
 }
 
@@ -91,7 +151,8 @@ class PeerChannelImpl(
     private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
-    private var useTracer: Boolean = false
+    private var useTracer: Boolean = false,
+    private val caCertificate: Certificate? = null,
 ) : PeerChannel {
 
     companion object {
@@ -479,7 +540,12 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
         // TODO(zztkm): CA Cert が指定された場合のみ
-        dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier())
+
+        if (caCertificate != null) {
+            SoraLogger.d(TAG, "setupInternal: caCertificate")
+            dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate))
+        }
+
         if (mediaOption.proxy.type != ProxyType.NONE) {
             dependenciesBuilder.setProxy(
                 mediaOption.proxy.type,

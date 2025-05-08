@@ -736,7 +736,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 mediaOption = mediaOption
             ),
             mediaOption = mediaOption,
-            listener = null
+            listener = null,
+            caCertificate = caCertificate,
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -810,7 +811,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             mediaOption = mediaOption,
             simulcastEnabled = offerMessage.simulcast,
             dataChannelConfigs = offerMessage.dataChannels,
-            listener = peerListener
+            listener = peerListener,
+            caCertificate = caCertificate,
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {
