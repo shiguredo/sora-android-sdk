@@ -26,6 +26,7 @@ import org.webrtc.RtpParameters
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
 import org.webrtc.RtpTransceiver
+import org.webrtc.SSLCertificateVerifier
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
@@ -72,6 +73,14 @@ interface PeerChannel {
         fun onError(reason: SoraErrorReason, message: String)
         fun onWarning(reason: SoraErrorReason)
         fun onWarning(reason: SoraErrorReason, message: String)
+    }
+}
+
+class CustomSSLCertificateVerifier : SSLCertificateVerifier {
+    override fun verify(cert: ByteArray?): Boolean {
+        // TODO(zztkm): SSL 証明書の検証を行う
+        SoraLogger.d("CustomSSLCertificateVerifier", "verify")
+        return true
     }
 }
 
@@ -469,6 +478,8 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
+        // TODO(zztkm): CA Cert が指定された場合のみ
+        dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier())
         if (mediaOption.proxy.type != ProxyType.NONE) {
             dependenciesBuilder.setProxy(
                 mediaOption.proxy.type,
