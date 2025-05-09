@@ -38,6 +38,7 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
+import java.security.cert.Certificate
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -71,6 +72,7 @@ import kotlin.concurrent.schedule
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
+ * @param caCertificate Sora との接続に利用する CA 証明書
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -95,6 +97,10 @@ class SoraMediaChannel @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
+    // Certificate についての参考 URL
+    // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
+    // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
+    private val caCertificate: Certificate? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -785,7 +791,8 @@ class SoraMediaChannel @JvmOverloads constructor(
             connectDataChannels = connectDataChannels,
             redirect = redirectLocation != null,
             forwardingFilterOption = forwardingFilterOption,
-            forwardingFiltersOption = forwardingFiltersOption
+            forwardingFiltersOption = forwardingFiltersOption,
+            caCertificate = caCertificate,
         )
         signaling!!.connect()
     }
