@@ -38,7 +38,7 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
-import java.security.cert.Certificate
+import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -100,7 +100,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     // Certificate についての参考 URL
     // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
     // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
-    private val caCertificate: Certificate? = null,
+    private val caCertificate: X509Certificate? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName

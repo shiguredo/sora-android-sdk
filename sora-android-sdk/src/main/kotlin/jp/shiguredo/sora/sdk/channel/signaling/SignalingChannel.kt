@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.tls.CustomX509TrustManagerBuilder
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -25,14 +26,11 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.KeyStore
-import java.security.cert.Certificate
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManagerFactory
-import javax.net.ssl.X509TrustManager
 
 interface SignalingChannel {
 
@@ -81,7 +79,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    private val caCertificate: Certificate? = null,
+    private val caCertificate: X509Certificate? = null,
 ) : SignalingChannel {
 
     companion object {
@@ -99,34 +97,18 @@ class SignalingChannelImpl @JvmOverloads constructor(
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
             if (caCertificate != null) {
-                SoraLogger.i(TAG, "set caCertificate")
-                // CA証明書を含むキーストアを作成
-                val keyStoreType = KeyStore.getDefaultType()
-                val keyStore = KeyStore.getInstance(keyStoreType)
-                keyStore.load(null, null) // 空のキーストアを初期化
-                keyStore.setCertificateEntry("ca", caCertificate) // エイリアス "ca" で証明書を追加
-
-                // そのキーストアを使用するTrustManagerを作成
-                val tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm()
-                val trustManagerFactory = TrustManagerFactory.getInstance(tmfAlgorithm)
-                trustManagerFactory.init(keyStore) // カスタムキーストアで初期化
-
-                val trustManagers = trustManagerFactory.trustManagers
-                val x509TrustManagers = trustManagers.filterIsInstance<X509TrustManager>()
-                if (x509TrustManagers.isEmpty()) {
-                    // 予期しない TrustManager が返された場合はログを出力し、カスタムの SSLSocketFactory を使用しない
-                    SoraLogger.w(TAG, "No X509TrustManager found in trust managers: ${trustManagers.contentToString()}")
-                    SoraLogger.w(TAG, "Falling back to default SSL context due to missing X509TrustManager.")
-                } else {
-                    if (x509TrustManagers.size > 1) {
-                        SoraLogger.w(TAG, "Multiple X509TrustManagers found. Using the first one.")
-                    }
-                    val trustManager = x509TrustManagers[0]
+                val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
+                try {
+                    // カスタムTrustManagerを作成
+                    val trustManager = customX509TrustManagerBuilder.build()
 
                     // カスタムTrustManagerを使用するSSLContextを作成
                     val sslContext = SSLContext.getInstance("TLS")
                     sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                } catch (e: Exception) {
+                    // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
+                    SoraLogger.w(TAG, "Failed to create custom X509TrustManager", e)
                 }
             }
 
