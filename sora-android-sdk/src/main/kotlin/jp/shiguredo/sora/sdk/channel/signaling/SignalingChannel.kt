@@ -107,6 +107,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 } catch (e: Exception) {
+                    // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
                     SoraLogger.w(TAG, "Failed to create custom X509TrustManager", e)
                 }
             }
