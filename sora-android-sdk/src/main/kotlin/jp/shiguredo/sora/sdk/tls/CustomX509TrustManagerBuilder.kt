@@ -35,6 +35,7 @@ class CustomX509TrustManagerBuilder(
         }
 
         // X509TrustManager を取り出す
+        // 万が一、X509TrustManager が見つからない場合は、NoSuchElementException がスローされる
         return trustManagerFactory.trustManagers
             .filterIsInstance<X509TrustManager>()
             .first()
