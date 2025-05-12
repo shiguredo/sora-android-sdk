@@ -27,20 +27,14 @@ import org.webrtc.RtpParameters
 import org.webrtc.RtpReceiver
 import org.webrtc.RtpSender
 import org.webrtc.RtpTransceiver
-import org.webrtc.SSLCertificateVerifier
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
-import java.security.KeyStore
-import java.security.cert.Certificate
-import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
-import javax.net.ssl.TrustManagerFactory
-import javax.net.ssl.X509TrustManager
 
 interface PeerChannel {
     fun handleInitialRemoteOffer(
