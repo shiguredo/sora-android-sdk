@@ -26,7 +26,7 @@ import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.security.KeyStore
-import java.security.cert.Certificate
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
@@ -81,7 +81,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    private val caCertificate: Certificate? = null,
+    private val caCertificate: X509Certificate? = null,
 ) : SignalingChannel {
 
     companion object {
