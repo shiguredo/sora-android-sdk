@@ -9,6 +9,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.tls.CustomSSLCertificateVerifier
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import jp.shiguredo.sora.sdk.util.ZipHelper
 import org.webrtc.DataChannel
@@ -30,6 +31,7 @@ import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
@@ -82,7 +84,8 @@ class PeerChannelImpl(
     private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
-    private var useTracer: Boolean = false
+    private var useTracer: Boolean = false,
+    private val caCertificate: X509Certificate? = null,
 ) : PeerChannel {
 
     companion object {
@@ -469,6 +472,17 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
+
+        if (caCertificate != null) {
+            try {
+                dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate))
+            } catch (e: Exception) {
+                // CustomSSLCertificateVerifier の初期化に失敗した場合はログを出力して
+                // カスタムのサーバー証明書検証処理を設定しない
+                SoraLogger.w(TAG, "skip setting CustomSSLCertificateVerifier: $e")
+            }
+        }
+
         if (mediaOption.proxy.type != ProxyType.NONE) {
             dependenciesBuilder.setProxy(
                 mediaOption.proxy.type,
