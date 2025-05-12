@@ -483,7 +483,7 @@ class PeerChannelImpl(
         if (caCertificate != null) {
             try {
                 dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate))
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 // CustomSSLCertificateVerifier の初期化に失敗した場合はログを出力して
                 // カスタムのサーバー証明書検証処理を設定しない
                 SoraLogger.w(TAG, "skip setting CustomSSLCertificateVerifier: $e")
