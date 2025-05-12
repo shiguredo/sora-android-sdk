@@ -472,7 +472,6 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
-        // TODO(zztkm): CA Cert が指定された場合のみ
 
         if (caCertificate != null) {
             try {
