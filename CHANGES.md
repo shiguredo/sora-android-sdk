@@ -68,7 +68,7 @@
 - [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
   - 今後は `onClose(SoraMediaChannel, SoraCloseEvent?)` を利用してもらう
   - @zztkm
-- [UPDATE] CA 証明書を指定できるようにする
+- [ADD] CA 証明書を指定できるようにする
   - この証明書は以下のタイミングで利用される
     - WebSocket シグナリング利用時
     - TURN-TLS 利用時
@@ -76,6 +76,10 @@
   - `SoraMediaChannel` で CA 証明書を指定しない場合のデフォルトの動作は以下
     - WebSocket シグナリングは OkHttp によりシステムのデフォルトが利用される
     - TURN-TLS は libwebrtc に内蔵されている証明書が利用される
+  - @zztkm
+- [ADD] サーバー証明書の検証を無効化できる ``insecure`` を ``SoraMediaChannel`` に追加する
+  - `true` に設定した場合、サーバー証明書の検証を行わない
+  - デフォルト値は ``false``
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
