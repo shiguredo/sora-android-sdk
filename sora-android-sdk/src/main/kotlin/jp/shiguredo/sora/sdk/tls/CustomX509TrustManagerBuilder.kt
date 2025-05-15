@@ -2,6 +2,8 @@ package jp.shiguredo.sora.sdk.tls
 
 import java.security.KeyStore
 import java.security.cert.X509Certificate
+import java.security.cert.CertificateExpiredException
+import java.security.cert.CertificateNotYetValidException
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
@@ -19,6 +21,10 @@ class CustomX509TrustManagerBuilder(
      * CA 証明書を使用して TLS 接続を行うためのカスタムされた TrustManager を構築します。
      *
      * @return 指定された CA 証明書を使用する X509TrustManager
+     *
+     * @throws CertificateExpiredException CA 証明書の有効期限が切れている場合
+     * @throws CertificateNotYetValidException CA 証明書がまだ有効でない場合
+     * @throws NoSuchElementException X509TrustManager が取得できなかった場合
      */
     fun build(): X509TrustManager {
 
