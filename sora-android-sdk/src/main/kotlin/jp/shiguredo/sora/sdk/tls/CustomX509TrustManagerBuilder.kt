@@ -1,9 +1,9 @@
 package jp.shiguredo.sora.sdk.tls
 
 import java.security.KeyStore
-import java.security.cert.X509Certificate
 import java.security.cert.CertificateExpiredException
 import java.security.cert.CertificateNotYetValidException
+import java.security.cert.X509Certificate
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
