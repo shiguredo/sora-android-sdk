@@ -100,6 +100,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
                 try {
                     // カスタムTrustManagerを作成
+                    // build() は CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
                     val trustManager = customX509TrustManagerBuilder.build()
 
                     // カスタムTrustManagerを使用するSSLContextを作成

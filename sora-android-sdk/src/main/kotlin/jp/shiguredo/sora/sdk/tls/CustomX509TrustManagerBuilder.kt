@@ -21,6 +21,10 @@ class CustomX509TrustManagerBuilder(
      * @return 指定された CA 証明書を使用する X509TrustManager
      */
     fun build(): X509TrustManager {
+
+        // CA 証明書の有効期限を確認
+        caCertificate.checkValidity()
+
         // 空の KeyStore を用意し、指定された CA 証明書を登録
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType()).apply {
             load(null, null)
