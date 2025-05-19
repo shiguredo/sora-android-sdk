@@ -475,6 +475,8 @@ class PeerChannelImpl(
 
         if (caCertificate != null) {
             try {
+                // CustomSSLCertificateVerifier の初期化
+                // 初期化時点で、CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
                 dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate))
             } catch (e: Exception) {
                 // CustomSSLCertificateVerifier の初期化に失敗した場合はログを出力して

@@ -99,7 +99,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
             if (caCertificate != null) {
                 val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
                 try {
+                    // NOTE: OkHttp で信頼する CA をカスタムする実装は以下の OkHttp のドキュメントを参考にした
+                    // https://square.github.io/okhttp/features/https/#customizing-trusted-certificates-kt-java
+
                     // カスタムTrustManagerを作成
+                    // build() は CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
                     val trustManager = customX509TrustManagerBuilder.build()
 
                     // カスタムTrustManagerを使用するSSLContextを作成
@@ -108,7 +112,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 } catch (e: Exception) {
                     // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
-                    SoraLogger.w(TAG, "Failed to create custom X509TrustManager", e)
+                    SoraLogger.w(TAG, "skip setting customizing trusted certificate", e)
                 }
             }
 
