@@ -16,13 +16,6 @@ class CustomX509TrustManagerBuilder(
      * CA 証明書を指定します。
      */
     private val caCertificate: X509Certificate,
-
-    /**
-     * すべての証明書を信頼するかどうかを指定します。
-     *
-     * デフォルトは false です。
-     */
-    private val insecure: Boolean = false,
 ) {
     /**
      * CA 証明書を使用して TLS 接続を行うためのカスタムされた TrustManager を構築します。
@@ -34,14 +27,6 @@ class CustomX509TrustManagerBuilder(
      * @throws NoSuchElementException X509TrustManager が取得できなかった場合
      */
     fun build(): X509TrustManager {
-        // insecure が true の場合、すべての証明書を信頼する TrustManager を返す
-        if (insecure) {
-             return object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = Unit
-                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) = Unit
-                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-            }
-        }
 
         // CA 証明書の有効期限を確認
         caCertificate.checkValidity()

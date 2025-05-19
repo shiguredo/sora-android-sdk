@@ -86,6 +86,7 @@ class PeerChannelImpl(
     private var listener: PeerChannel.Listener?,
     private var useTracer: Boolean = false,
     private val caCertificate: X509Certificate? = null,
+    private val insecure: Boolean = false,
 ) : PeerChannel {
 
     companion object {
@@ -473,11 +474,11 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
 
-        if (caCertificate != null) {
+        if (caCertificate != null || insecure) {
             try {
                 // CustomSSLCertificateVerifier の初期化
                 // 初期化時点で、CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
-                dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate))
+                dependenciesBuilder.setSSLCertificateVerifier(CustomSSLCertificateVerifier(caCertificate, insecure))
             } catch (e: Exception) {
                 // CustomSSLCertificateVerifier の初期化に失敗した場合はログを出力して
                 // カスタムのサーバー証明書検証処理を設定しない

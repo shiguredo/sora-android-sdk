@@ -73,6 +73,7 @@ import kotlin.concurrent.schedule
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param caCertificate Sora との接続に利用する CA 証明書
+ * @param insecure Sora との接続時にすべての証明書を信頼するかどうかを決めるフラグ。開発時以外の利用は推奨しない。
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -101,6 +102,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
     // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
     private val caCertificate: X509Certificate? = null,
+    private val insecure: Boolean = false,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -738,6 +740,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             mediaOption = mediaOption,
             listener = null,
             caCertificate = caCertificate,
+            insecure = insecure,
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -794,6 +797,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             forwardingFilterOption = forwardingFilterOption,
             forwardingFiltersOption = forwardingFiltersOption,
             caCertificate = caCertificate,
+            insecure = insecure,
         )
         signaling!!.connect()
     }
@@ -813,6 +817,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             dataChannelConfigs = offerMessage.dataChannels,
             listener = peerListener,
             caCertificate = caCertificate,
+            insecure = insecure,
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {

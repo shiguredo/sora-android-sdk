@@ -80,6 +80,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
     private val caCertificate: X509Certificate? = null,
+    private val insecure: Boolean = false,
 ) : SignalingChannel {
 
     companion object {
@@ -96,7 +97,23 @@ class SignalingChannelImpl @JvmOverloads constructor(
         client = runBlocking(Dispatchers.IO) {
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
-            if (caCertificate != null) {
+            if (insecure) {
+                // insecure は開発時
+                SoraLogger.w(TAG, "insecure option is enabled. SSL certificate validation will be skipped.")
+                // OkHttpClient の SSL 証明書の検証をスキップするため
+                // TrustManager の実装をカスタムする
+                val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
+                    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+                })
+
+                val sslContext = SSLContext.getInstance("TLS")
+                sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+                val sslSocketFactory = sslContext.socketFactory
+                builder = builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+                builder = builder.hostnameVerifier { _, _ -> true }
+            } else if (caCertificate != null) {
                 val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
                 try {
                     // NOTE: OkHttp で信頼する CA をカスタムする実装は以下の OkHttp のドキュメントを参考にした
