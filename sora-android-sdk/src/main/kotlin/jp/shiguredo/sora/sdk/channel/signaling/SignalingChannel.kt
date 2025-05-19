@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 interface SignalingChannel {
 
@@ -98,20 +99,11 @@ class SignalingChannelImpl @JvmOverloads constructor(
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
             if (insecure) {
-                // insecure は開発時
                 SoraLogger.w(TAG, "insecure option is enabled. SSL certificate validation will be skipped.")
-                // OkHttpClient の SSL 証明書の検証をスキップするため
-                // TrustManager の実装をカスタムする
-                val trustAllCerts = arrayOf<javax.net.ssl.TrustManager>(object : javax.net.ssl.X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-                    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-                })
-
-                val sslContext = SSLContext.getInstance("TLS")
-                sslContext.init(null, trustAllCerts, java.security.SecureRandom())
-                val sslSocketFactory = sslContext.socketFactory
-                builder = builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as javax.net.ssl.X509TrustManager)
+                // SSL証明書の検証をスキップする
+                val trustManager = CustomX509TrustManagerBuilder.createInsecureTrustManager()
+                val sslContext = getCustomSSLContext(trustManager)
+                builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 builder = builder.hostnameVerifier { _, _ -> true }
             } else if (caCertificate != null) {
                 val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
@@ -124,8 +116,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     val trustManager = customX509TrustManagerBuilder.build()
 
                     // カスタムTrustManagerを使用するSSLContextを作成
-                    val sslContext = SSLContext.getInstance("TLS")
-                    sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
+                    val sslContext = getCustomSSLContext(trustManager)
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 } catch (e: Exception) {
                     // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
@@ -586,5 +577,17 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.w(TAG, e.toString())
             }
         }
+    }
+
+    /**
+     * 指定されたTrustManagerを使用してSSLContextを生成します。
+     *
+     * @param trustManager 使用するTrustManager
+     * @return 初期化されたSSLContext
+     */
+    private fun getCustomSSLContext(trustManager: X509TrustManager): SSLContext {
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf(trustManager), java.security.SecureRandom())
+        return sslContext
     }
 }

@@ -17,6 +17,23 @@ class CustomX509TrustManagerBuilder(
      */
     private val caCertificate: X509Certificate,
 ) {
+    companion object {
+        /**
+         * すべての証明書を信頼するTrustManagerを生成します。
+         * 開発環境やテスト環境でのみ使用してください。
+         *
+         * @return すべての証明書を信頼するX509TrustManager
+         */
+        @JvmStatic
+        fun createInsecureTrustManager(): X509TrustManager {
+            return object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            }
+        }
+    }
+
     /**
      * CA 証明書を使用して TLS 接続を行うためのカスタムされた TrustManager を構築します。
      *
