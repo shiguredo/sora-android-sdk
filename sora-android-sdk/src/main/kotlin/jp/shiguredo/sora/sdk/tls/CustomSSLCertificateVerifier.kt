@@ -8,7 +8,8 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
 /**
- * TURN-TLS のサーバ証明書を、指定した CA 証明書で検証する Verifier。
+ * CA 証明書が指定された場合には TURN-TLS のサーバ証明書をその CA 証明書で検証し、
+ * insecure が true の場合にはすべての証明書を信頼する Verifier。
  *
  * @param caCertificate   X.509 形式 (PEM / DER どちらでも可) の CA 証明書
  * @param insecure        すべての証明書を信頼するかどうか

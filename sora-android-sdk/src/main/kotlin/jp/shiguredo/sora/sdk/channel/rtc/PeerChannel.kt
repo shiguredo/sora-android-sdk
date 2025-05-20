@@ -474,6 +474,8 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
 
+        // CA 証明書が指定されいる、または insecure が true の場合は
+        // CustomSSLCertificateVerifier を設定する
         if (caCertificate != null || insecure) {
             try {
                 // CustomSSLCertificateVerifier の初期化
