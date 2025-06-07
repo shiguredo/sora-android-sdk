@@ -15,7 +15,7 @@ class CustomX509TrustManagerBuilder(
     /**
      * CA 証明書を指定します。
      */
-    private val caCertificate: X509Certificate,
+    private val caCertificate: X509Certificate
 ) {
     companion object {
         /**
