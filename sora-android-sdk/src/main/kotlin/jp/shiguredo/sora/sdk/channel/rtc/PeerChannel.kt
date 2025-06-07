@@ -626,7 +626,6 @@ class PeerChannelImpl(
                             it.onError(Error(s))
                         }
                     },
-                    sdp
                 )
             }
         ).subscribeOn(Schedulers.from(executor))

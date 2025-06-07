@@ -77,6 +77,8 @@
     - WebSocket シグナリングは OkHttp によりシステムのデフォルトが利用される
     - TURN-TLS は libwebrtc に内蔵されている証明書が利用される
   - @zztkm
+- [UPDATE] 引数なしの setLocalDescription() に移行する
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
