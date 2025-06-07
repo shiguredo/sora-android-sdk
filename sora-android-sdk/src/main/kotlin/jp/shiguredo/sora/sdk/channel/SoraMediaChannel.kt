@@ -1014,7 +1014,7 @@ class SoraMediaChannel @JvmOverloads constructor(
      */
     fun disconnect() {
         // アプリケーションから切断された場合は NO-ERROR とする
-        internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent(code = 1000, reason = "NO-ERROR"))
+        internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent.createClientDisconnectEvent())
     }
 
     private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent? = null) {
