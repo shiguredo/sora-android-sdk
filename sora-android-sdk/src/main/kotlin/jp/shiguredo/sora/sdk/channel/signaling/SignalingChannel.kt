@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import javax.net.ssl.SSLContext
+import javax.net.ssl.X509TrustManager
 
 interface SignalingChannel {
 
@@ -80,6 +81,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
     private val caCertificate: X509Certificate? = null,
+    private val insecure: Boolean = false,
 ) : SignalingChannel {
 
     companion object {
@@ -96,7 +98,14 @@ class SignalingChannelImpl @JvmOverloads constructor(
         client = runBlocking(Dispatchers.IO) {
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
-            if (caCertificate != null) {
+            if (insecure) {
+                SoraLogger.w(TAG, "insecure option is enabled. SSL certificate validation will be skipped.")
+                // SSL証明書の検証をスキップする
+                val trustManager = CustomX509TrustManagerBuilder.createInsecureTrustManager()
+                val sslContext = getCustomSSLContext(trustManager)
+                builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                builder = builder.hostnameVerifier { _, _ -> true }
+            } else if (caCertificate != null) {
                 val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
                 try {
                     // NOTE: OkHttp で信頼する CA をカスタムする実装は以下の OkHttp のドキュメントを参考にした
@@ -107,8 +116,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     val trustManager = customX509TrustManagerBuilder.build()
 
                     // カスタムTrustManagerを使用するSSLContextを作成
-                    val sslContext = SSLContext.getInstance("TLS")
-                    sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
+                    val sslContext = getCustomSSLContext(trustManager)
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 } catch (e: Exception) {
                     // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
@@ -569,5 +577,17 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.w(TAG, e.toString())
             }
         }
+    }
+
+    /**
+     * 指定されたTrustManagerを使用してSSLContextを生成します。
+     *
+     * @param trustManager 使用するTrustManager
+     * @return 初期化されたSSLContext
+     */
+    private fun getCustomSSLContext(trustManager: X509TrustManager): SSLContext {
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf(trustManager), java.security.SecureRandom())
+        return sslContext
     }
 }
