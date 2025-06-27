@@ -62,6 +62,7 @@
   - Sora から切断されたときに通知されるイベントである `SoraCloseEvent` を追加した
   - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
   - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
+    - `SoraMediaChannel.disconnect()` を呼び出した場合
     - WebSocket 経由のシグナリングを利用している場合
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
   - @zztkm
