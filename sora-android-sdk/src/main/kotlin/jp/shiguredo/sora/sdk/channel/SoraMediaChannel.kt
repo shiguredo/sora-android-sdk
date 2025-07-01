@@ -234,7 +234,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param closeEvent 切断イベント
          */
-        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) {}
+        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) {}
 
         /**
          * Sora との接続が切断されたときに呼び出されるコールバック.
@@ -246,9 +246,9 @@ class SoraMediaChannel @JvmOverloads constructor(
          */
         @Deprecated(
             "onClose(mediaChannel: SoraMediaChannel) は非推奨です " +
-                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) を利用してください." +
+                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) を利用してください." +
                 " このコールバックは 2027 年中に廃止予定です.",
-            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent?)"),
+            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent)"),
             DeprecationLevel.WARNING
         )
         fun onClose(mediaChannel: SoraMediaChannel) {}
@@ -384,7 +384,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var clientOffer: SessionDescription? = null
 
     // DataChannel のみのシグナリングで signaling label の type: close を受信したときに取得する code と reason を保持する
-    private var dataChannelSignalingCloseEvent: SoraCloseEvent? = null
+    private var dataChannelSignalingCloseEvent: SoraCloseEvent = SoraCloseEvent.createClientDisconnectEvent()
 
     /**
      * コネクション ID.
@@ -1023,7 +1023,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent.createClientDisconnectEvent())
     }
 
-    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent? = null) {
+    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent = SoraCloseEvent.createClientDisconnectEvent()) {
         if (closing)
             return
         closing = true
