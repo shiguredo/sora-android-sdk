@@ -384,7 +384,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var clientOffer: SessionDescription? = null
 
     // DataChannel のみのシグナリングで signaling label の type: close を受信したときに取得する code と reason を保持する
-    private var dataChannelSignalingCloseEvent: SoraCloseEvent = SoraCloseEvent.createClientDisconnectEvent()
+    private var dataChannelSignalingCloseEvent: SoraCloseEvent? = null
 
     /**
      * コネクション ID.
