@@ -1023,7 +1023,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent.createClientDisconnectEvent())
     }
 
-    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent = SoraCloseEvent.createClientDisconnectEvent()) {
+    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent? = null) {
         if (closing)
             return
         closing = true
@@ -1047,7 +1047,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
-        listener?.onClose(this, closeEvent)
+        if (closeEvent != null) {
+            listener?.onClose(this, closeEvent)
+        } else {
+            listener?.onClose(this, SoraCloseEvent.createClientDisconnectEvent())
+        }
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
