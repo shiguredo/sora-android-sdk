@@ -234,7 +234,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param closeEvent 切断イベント
          */
-        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) {}
+        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) {}
 
         /**
          * Sora との接続が切断されたときに呼び出されるコールバック.
@@ -246,9 +246,9 @@ class SoraMediaChannel @JvmOverloads constructor(
          */
         @Deprecated(
             "onClose(mediaChannel: SoraMediaChannel) は非推奨です " +
-                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) を利用してください." +
+                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) を利用してください." +
                 " このコールバックは 2027 年中に廃止予定です.",
-            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent?)"),
+            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent)"),
             DeprecationLevel.WARNING
         )
         fun onClose(mediaChannel: SoraMediaChannel) {}
@@ -1047,7 +1047,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
-        listener?.onClose(this, closeEvent)
+        if (closeEvent != null) {
+            listener?.onClose(this, closeEvent)
+        } else {
+            listener?.onClose(this, SoraCloseEvent.createClientDisconnectEvent())
+        }
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
