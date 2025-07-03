@@ -69,6 +69,17 @@
 - [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
   - 今後は `onClose(SoraMediaChannel, SoraCloseEvent)` を利用してもらう
   - @zztkm
+- [UPDATE] compileSdkVersion と targetSdkVersion を 36 に上げる
+  - @miosakuma
+- [UPDATE] Android Gradle Plugin (AGP) を 8.10.1 にアップグレードする
+  - ビルドに利用される Gradle を 8.11.1 に上げる
+  - @miosakuma
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - com.google.code.gson:gson を 2.13.1 に上げる
+  - org.ajoberstar.grgit:grgit-gradle を 5.3.2 に上げる
+  - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.9.0 に上げる
+  - org.robolectric:robolectric を 4.15.1 に上げる
+  - @miosakuma
 - [ADD] CA 証明書を指定できるようにする
   - この証明書は以下のタイミングで利用される
     - WebSocket シグナリング利用時
