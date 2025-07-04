@@ -75,6 +75,7 @@
   - ビルドに利用される Gradle を 8.11.1 に上げる
   - @miosakuma
 - [UPDATE] 依存ライブラリーのバージョンを上げる
+  - org.jetbrains.dokka:dokka-gradle-plugin を 1.9.20 に上げる
   - com.google.code.gson:gson を 2.13.1 に上げる
   - org.ajoberstar.grgit:grgit-gradle を 5.3.2 に上げる
   - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.9.0 に上げる
