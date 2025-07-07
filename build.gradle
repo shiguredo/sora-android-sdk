@@ -6,7 +6,7 @@ buildscript {
     ext.kotlin_version = '1.9.25'
     ext.libwebrtc_version = '136.7103.0.0'
 
-    ext.dokka_version = '1.8.10'
+    ext.dokka_version = '1.9.20'
 
     repositories {
         google()
@@ -15,10 +15,10 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.5.0'
+        classpath 'com.android.tools.build:gradle:8.10.1'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}"
-        classpath 'org.ajoberstar.grgit:grgit-gradle:5.2.0'
+        classpath 'org.ajoberstar.grgit:grgit-gradle:5.3.2'
 
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
         classpath "com.github.ben-manes:gradle-versions-plugin:0.46.0"
