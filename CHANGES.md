@@ -87,14 +87,21 @@
     - TURN-TLS 利用時
   - `SoraMediaChannel` に `caCertificate: X509Certificate?` を追加する
   - `SoraMediaChannel` で CA 証明書を指定しない場合のデフォルトの動作は以下
-    - WebSocket シグナリングは OkHttp によりシステムのデフォルトが利用される
-    - TURN-TLS は libwebrtc に内蔵されている証明書が利用される
+    - WebSocket シグナリングは OkHttp がホスト OS (Android) の信頼ストアの CA 証明書が利用される
+    - TURN-TLS は libwebrtc に内蔵されている CA 証明書が利用される
+  - 指定した CA 証明書が有効期間内ではなかった場合（証明書の有効開始前または有効期限切れ)は `SoraMediaChannel.Listener.onError` が発火する
+    - このときの SoraErrorReason は `CA_CERTIFICATE_VALIDATION_FAILED` になる
+  - シグナリング時にサーバー証明書の検証に失敗した場合は WebSocket 接続のエラーが発生し、`SoraMediaChannel.Listener.onError` が発火する
+    - このときの SoraErrorReason は `SIGNALING_FAILURE` になる
+    - TURN-TLS の接続より前にシグナリングが行われるため、WebSocket 接続のエラーによってサーバー証明書の検証エラーが検知される
   - @zztkm
 - [ADD] サーバー証明書の検証を無効化できる ``insecure`` を ``SoraMediaChannel`` に追加する
   - `true` に設定した場合、サーバー証明書の検証を行わない
   - デフォルト値は ``false``
   - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+  - @zztkm
+- [ADD] `SoraErrorReason` に CA 証明書の検証に失敗した場合のエラーである、`CA_CERTIFICATE_VALIDATION_FAILED` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正

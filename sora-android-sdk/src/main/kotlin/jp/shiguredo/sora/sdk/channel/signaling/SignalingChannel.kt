@@ -89,6 +89,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private val client: OkHttpClient
+    private val closing = AtomicBoolean(false)
 
     init {
         // OkHttpClient は main スレッドで初期化しない
@@ -119,8 +120,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     val sslContext = getCustomSSLContext(trustManager)
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
                 } catch (e: Exception) {
-                    // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
-                    SoraLogger.w(TAG, "skip setting customizing trusted certificate", e)
+                    // CA証明書の検証に失敗した場合は接続を中断
+                    SoraLogger.e(TAG, "failed to validate CA certificate", e)
+                    listener?.onError(SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
+                    // initブロック内なのでdisconnectは呼ばない
+                    // connect()が呼ばれても接続処理をスキップするフラグを設定
+                    closing.set(true)
                 }
             }
 
@@ -172,13 +177,17 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val wsCandidates = mutableListOf<WebSocket>()
 
-    private val closing = AtomicBoolean(false)
-
     private val receivedRedirectMessage = AtomicBoolean(false)
 
     private val signalingChannelCloseEvent = AtomicReference<SignalingChannelCloseEvent?>()
 
     override fun connect() {
+        // 指定された CA 証明書の検証に失敗した場合など、初期化時にエラーが発生している場合は接続をスキップ
+        if (closing.get()) {
+            SoraLogger.w(TAG, "[signaling:$role] connection is disabled due to initialization error")
+            return
+        }
+
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
             for (endpoint in endpoints) {
