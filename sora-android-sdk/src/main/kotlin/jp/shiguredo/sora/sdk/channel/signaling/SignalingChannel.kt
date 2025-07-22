@@ -26,6 +26,8 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.cert.CertificateExpiredException
+import java.security.cert.CertificateNotYetValidException
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -91,6 +93,26 @@ class SignalingChannelImpl @JvmOverloads constructor(
     private val client: OkHttpClient
     private val closing = AtomicBoolean(false)
 
+    /**
+     * 初期化時にエラーが発生した場合の共通処理
+     * エラーをログに記録し、リスナーに通知して接続を無効化する
+     *
+     * @param errorMessage ログに出力するエラーメッセージ
+     * @param exception 発生した例外
+     * @param errorReason 通知するエラーの種類
+     */
+    private fun handleInitializationError(
+        errorMessage: String,
+        exception: Exception,
+        errorReason: SoraErrorReason
+    ) {
+        SoraLogger.e(TAG, errorMessage, exception)
+        listener?.onError(errorReason)
+        // initブロック内なのでdisconnectは呼ばない
+        // connect()が呼ばれても接続処理をスキップするフラグを設定
+        closing.set(true)
+    }
+
     init {
         // OkHttpClient は main スレッドで初期化しない
         // プロキシの設定としてホスト名が指定された場合、名前解決のネットワーク通信が発生し、
@@ -119,13 +141,15 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     // カスタムTrustManagerを使用するSSLContextを作成
                     val sslContext = getCustomSSLContext(trustManager)
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                } catch (e: CertificateExpiredException) {
+                    // CA証明書の有効期限が切れている場合
+                    handleInitializationError("CA certificate has expired", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
+                } catch (e: CertificateNotYetValidException) {
+                    // CA証明書がまだ有効でない場合
+                    handleInitializationError("CA certificate is not yet valid", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
                 } catch (e: Exception) {
-                    // CA証明書の検証に失敗した場合は接続を中断
-                    SoraLogger.e(TAG, "failed to validate CA certificate", e)
-                    listener?.onError(SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
-                    // initブロック内なのでdisconnectは呼ばない
-                    // connect()が呼ばれても接続処理をスキップするフラグを設定
-                    closing.set(true)
+                    // その他のカスタムTrustManager作成に関するエラー
+                    handleInitializationError("failed to create custom trust manager", e, SoraErrorReason.SIGNALING_FAILURE)
                 }
             }
 
