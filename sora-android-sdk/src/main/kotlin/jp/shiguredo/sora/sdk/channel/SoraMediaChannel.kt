@@ -482,7 +482,18 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
-                listener?.onError(this@SoraMediaChannel, reason, "")
+                when (reason) {
+                    SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED,
+                    SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED -> {
+                        // CA証明書エラーまたはカスタムTrustManager作成エラーの場合は即座に接続を終了する
+                        SoraLogger.d(TAG, "[channel:$role] Certificate or TrustManager error, stopping connection: $reason")
+                        listener?.onError(this@SoraMediaChannel, reason, "")
+                        internalDisconnect(SoraDisconnectReason.SIGNALING_FAILURE)
+                    }
+                    else -> {
+                        listener?.onError(this@SoraMediaChannel, reason, "")
+                    }
+                }
             }
         }
 

@@ -107,6 +107,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
         errorReason: SoraErrorReason
     ) {
         SoraLogger.e(TAG, errorMessage, exception)
+        // 即座にエラーを通知
         listener?.onError(errorReason)
         // initブロック内なのでdisconnectは呼ばない
         // connect()が呼ばれても接続処理をスキップするフラグを設定
@@ -149,7 +150,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     handleInitializationError("CA certificate is not yet valid", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
                 } catch (e: Exception) {
                     // その他のカスタムTrustManager作成に関するエラー
-                    handleInitializationError("failed to create custom trust manager", e, SoraErrorReason.SIGNALING_FAILURE)
+                    handleInitializationError("failed to create custom trust manager", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
                 }
             }
 
@@ -207,6 +208,8 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     override fun connect() {
         // 指定された CA 証明書の検証に失敗した場合など、初期化時にエラーが発生している場合は接続をスキップ
+        // init で handleInitializationError が呼ばれた場合、 closing が true になり、onError が発火する
+        // そのため、ここで onError を呼び出す必要はなく、接続をスキップするだけでよい
         if (closing.get()) {
             SoraLogger.w(TAG, "[signaling:$role] connection is disabled due to initialization error")
             return
