@@ -148,9 +148,13 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 } catch (e: CertificateNotYetValidException) {
                     // CA証明書がまだ有効でない場合
                     handleInitializationError("CA certificate is not yet valid", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
+                } catch (e: NoSuchElementException) {
+                    // X509TrustManagerが取得できなかった場合
+                    handleInitializationError("failed to get X509TrustManager from TrustManagerFactory", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
                 } catch (e: Exception) {
-                    // その他のカスタムTrustManager作成に関するエラー
-                    handleInitializationError("failed to create custom trust manager", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
+                    // その他のシステム関連エラー（KeyStoreException, NoSuchAlgorithmException, IOException等）
+                    // これらの例外が発生した場合も、接続処理を継続できないと判断し、handleInitializationErrorを呼び出して終了する
+                    handleInitializationError("failed to create custom trust manager due to system error", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
                 }
             }
 
