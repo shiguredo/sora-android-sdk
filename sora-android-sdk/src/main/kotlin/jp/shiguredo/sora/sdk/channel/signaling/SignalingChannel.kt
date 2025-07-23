@@ -26,6 +26,8 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.cert.CertificateExpiredException
+import java.security.cert.CertificateNotYetValidException
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -89,6 +91,28 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private val client: OkHttpClient
+    private val closing = AtomicBoolean(false)
+
+    /**
+     * 初期化時にエラーが発生した場合の共通処理
+     * エラーをログに記録し、リスナーに通知して接続を無効化する
+     *
+     * @param errorMessage ログに出力するエラーメッセージ
+     * @param exception 発生した例外
+     * @param errorReason 通知するエラーの種類
+     */
+    private fun handleInitializationError(
+        errorMessage: String,
+        exception: Exception,
+        errorReason: SoraErrorReason
+    ) {
+        SoraLogger.e(TAG, errorMessage, exception)
+        // 即座にエラーを通知
+        listener?.onError(errorReason)
+        // initブロック内なのでdisconnectは呼ばない
+        // connect()が呼ばれても接続処理をスキップするフラグを設定
+        closing.set(true)
+    }
 
     init {
         // OkHttpClient は main スレッドで初期化しない
@@ -118,9 +142,19 @@ class SignalingChannelImpl @JvmOverloads constructor(
                     // カスタムTrustManagerを使用するSSLContextを作成
                     val sslContext = getCustomSSLContext(trustManager)
                     builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
+                } catch (e: CertificateExpiredException) {
+                    // CA証明書の有効期限が切れている場合
+                    handleInitializationError("CA certificate has expired", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
+                } catch (e: CertificateNotYetValidException) {
+                    // CA証明書がまだ有効でない場合
+                    handleInitializationError("CA certificate is not yet valid", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
+                } catch (e: NoSuchElementException) {
+                    // X509TrustManagerが取得できなかった場合
+                    handleInitializationError("failed to get X509TrustManager from TrustManagerFactory", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
                 } catch (e: Exception) {
-                    // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
-                    SoraLogger.w(TAG, "skip setting customizing trusted certificate", e)
+                    // その他のシステム関連エラー（KeyStoreException, NoSuchAlgorithmException, IOException等）
+                    // これらの例外が発生した場合も、接続処理を継続できないと判断し、handleInitializationErrorを呼び出して終了する
+                    handleInitializationError("failed to create custom trust manager due to system error", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
                 }
             }
 
@@ -172,13 +206,19 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val wsCandidates = mutableListOf<WebSocket>()
 
-    private val closing = AtomicBoolean(false)
-
     private val receivedRedirectMessage = AtomicBoolean(false)
 
     private val signalingChannelCloseEvent = AtomicReference<SignalingChannelCloseEvent?>()
 
     override fun connect() {
+        // 指定された CA 証明書の検証に失敗した場合など、初期化時にエラーが発生している場合は接続をスキップ
+        // init で handleInitializationError が呼ばれた場合、 closing が true になり、onError が発火する
+        // そのため、ここで onError を呼び出す必要はなく、接続をスキップするだけでよい
+        if (closing.get()) {
+            SoraLogger.w(TAG, "[signaling:$role] connection is disabled due to initialization error")
+            return
+        }
+
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
             for (endpoint in endpoints) {

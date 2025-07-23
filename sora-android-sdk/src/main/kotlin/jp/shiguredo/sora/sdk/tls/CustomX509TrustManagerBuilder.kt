@@ -19,7 +19,7 @@ class CustomX509TrustManagerBuilder(
 ) {
     companion object {
         /**
-         * すべての証明書を信頼するTrustManagerを生成します。
+         * insecure が設定された時用に、すべての証明書を信頼するTrustManagerを生成します。
          * 開発環境やテスト環境でのみ使用してください。
          *
          * @return すべての証明書を信頼するX509TrustManager

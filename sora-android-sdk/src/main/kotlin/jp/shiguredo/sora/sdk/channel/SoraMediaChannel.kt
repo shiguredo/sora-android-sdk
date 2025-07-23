@@ -482,7 +482,20 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
+                // エラーをリスナーに通知
                 listener?.onError(this@SoraMediaChannel, reason, "")
+
+                // エラーの種類に応じて接続終了の判断を行う
+                when (reason) {
+                    // 致命的なエラー：即座に接続を終了する必要があるエラー
+                    SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED,
+                    SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED -> {
+                        internalDisconnect(SoraDisconnectReason.SIGNALING_FAILURE)
+                    }
+                    else -> {
+                        // リスナー通知のみ
+                    }
+                }
             }
         }
 
