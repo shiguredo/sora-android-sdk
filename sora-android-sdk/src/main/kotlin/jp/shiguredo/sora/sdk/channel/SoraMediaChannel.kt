@@ -26,6 +26,11 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -99,6 +104,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+        private const val WEBSOCKET_DISCONNECT_DELAY_MSEC = 10000L
     }
 
     // connect メッセージに含める `data_channel_signaling`
@@ -365,6 +371,10 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
+
+    // WebSocket切断の遅延処理用のCoroutineJob
+    private var websocketDisconnectJob: Job? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     /**
      * コネクション ID.
@@ -852,7 +862,10 @@ class SoraMediaChannel @JvmOverloads constructor(
         switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
         val earlyCloseWebSocket = switchedIgnoreDisconnectWebSocket
         if (earlyCloseWebSocket) {
-            signaling?.disconnect(null)
+            websocketDisconnectJob = coroutineScope.launch {
+                delay(WEBSOCKET_DISCONNECT_DELAY_MSEC)
+                signaling?.disconnect(null)
+            }
         }
         listener?.onDataChannel(this, dataChannelsForMessaging)
     }
@@ -952,6 +965,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         closing = true
 
         stopTimer()
+        websocketDisconnectJob?.cancel()
+        websocketDisconnectJob = null
         disconnectReason?.let {
             sendDisconnectIfNeeded(it)
         }
