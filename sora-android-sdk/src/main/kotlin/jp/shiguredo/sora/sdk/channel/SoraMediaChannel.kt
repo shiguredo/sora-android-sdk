@@ -104,7 +104,7 @@ class SoraMediaChannel @JvmOverloads constructor(
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
-        private const val WEBSOCKET_DISCONNECT_DELAY_MSEC = 10000L
+        private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
     }
 
     // connect メッセージに含める `data_channel_signaling`
@@ -373,8 +373,8 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var clientOffer: SessionDescription? = null
 
     // WebSocket切断の遅延処理用のCoroutineJob
-    private var websocketDisconnectJob: Job? = null
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private var delayedWebSocketDisconnectJob: Job? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     /**
      * コネクション ID.
@@ -862,8 +862,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
         val earlyCloseWebSocket = switchedIgnoreDisconnectWebSocket
         if (earlyCloseWebSocket) {
-            websocketDisconnectJob = coroutineScope.launch {
-                delay(WEBSOCKET_DISCONNECT_DELAY_MSEC)
+            delayedWebSocketDisconnectJob = coroutineScope.launch {
+                delay(WEBSOCKET_DISCONNECT_DELAY_SECONDS * 1000)
                 signaling?.disconnect(null)
             }
         }
@@ -965,8 +965,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         closing = true
 
         stopTimer()
-        websocketDisconnectJob?.cancel()
-        websocketDisconnectJob = null
+        delayedWebSocketDisconnectJob?.cancel()
+        delayedWebSocketDisconnectJob = null
         disconnectReason?.let {
             sendDisconnectIfNeeded(it)
         }
