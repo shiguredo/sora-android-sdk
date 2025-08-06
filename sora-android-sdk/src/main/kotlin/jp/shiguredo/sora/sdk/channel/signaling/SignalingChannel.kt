@@ -10,7 +10,6 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
-import jp.shiguredo.sora.sdk.tls.CustomX509TrustManagerBuilder
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -26,14 +25,9 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.cert.CertificateExpiredException
-import java.security.cert.CertificateNotYetValidException
-import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import javax.net.ssl.SSLContext
-import javax.net.ssl.X509TrustManager
 
 interface SignalingChannel {
 
@@ -82,8 +76,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    private val caCertificate: X509Certificate? = null,
-    private val insecure: Boolean = false,
 ) : SignalingChannel {
 
     companion object {
@@ -121,42 +113,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         // それを防ぐためにコルーチンを利用して別スレッドで初期化する
         client = runBlocking(Dispatchers.IO) {
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
-
-            if (insecure) {
-                SoraLogger.w(TAG, "insecure option is enabled. SSL certificate validation will be skipped.")
-                // SSL証明書の検証をスキップする
-                val trustManager = CustomX509TrustManagerBuilder.createInsecureTrustManager()
-                val sslContext = getCustomSSLContext(trustManager)
-                builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
-                builder = builder.hostnameVerifier { _, _ -> true }
-            } else if (caCertificate != null) {
-                val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
-                try {
-                    // NOTE: OkHttp で信頼する CA をカスタムする実装は以下の OkHttp のドキュメントを参考にした
-                    // https://square.github.io/okhttp/features/https/#customizing-trusted-certificates-kt-java
-
-                    // カスタムTrustManagerを作成
-                    // build() は CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
-                    val trustManager = customX509TrustManagerBuilder.build()
-
-                    // カスタムTrustManagerを使用するSSLContextを作成
-                    val sslContext = getCustomSSLContext(trustManager)
-                    builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
-                } catch (e: CertificateExpiredException) {
-                    // CA証明書の有効期限が切れている場合
-                    handleInitializationError("CA certificate has expired", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
-                } catch (e: CertificateNotYetValidException) {
-                    // CA証明書がまだ有効でない場合
-                    handleInitializationError("CA certificate is not yet valid", e, SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED)
-                } catch (e: NoSuchElementException) {
-                    // X509TrustManagerが取得できなかった場合
-                    handleInitializationError("failed to get X509TrustManager from TrustManagerFactory", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
-                } catch (e: Exception) {
-                    // その他のシステム関連エラー（KeyStoreException, NoSuchAlgorithmException, IOException等）
-                    // これらの例外が発生した場合も、接続処理を継続できないと判断し、handleInitializationErrorを呼び出して終了する
-                    handleInitializationError("failed to create custom trust manager due to system error", e, SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED)
-                }
-            }
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
                 SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
@@ -617,17 +573,5 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 SoraLogger.w(TAG, e.toString())
             }
         }
-    }
-
-    /**
-     * 指定されたTrustManagerを使用してSSLContextを生成します。
-     *
-     * @param trustManager 使用するTrustManager
-     * @return 初期化されたSSLContext
-     */
-    private fun getCustomSSLContext(trustManager: X509TrustManager): SSLContext {
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, arrayOf(trustManager), java.security.SecureRandom())
-        return sslContext
     }
 }
