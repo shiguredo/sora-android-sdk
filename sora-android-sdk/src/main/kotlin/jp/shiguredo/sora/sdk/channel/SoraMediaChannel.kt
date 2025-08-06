@@ -372,7 +372,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
 
-    // WebSocket切断の遅延処理用のCoroutineJob
+    // WebSocket切断の遅延処理用の CoroutineJob
     private var delayedWebSocketDisconnectJob: Job? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -861,9 +861,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         switchedToDataChannel = true
         switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
         val earlyCloseWebSocket = switchedIgnoreDisconnectWebSocket
+        // ignore_disconnect_websocket が true の場合は、 WebSocket の接続は不要となるので切断する
+        // WebSocket 経由でシグナリングメッセージを送信する際、
+        // WebSocket 切断とのレースコンディションを最小限に抑えるため WebSocket の切断までに遅延を入れる。
+        // TODO: WebSocket 切断の遅延より長く DataChannel の確立が遅延した場合、 WebSocket 切断と
+        //       type: disconnect のレースコンディションは存在するため
+        //       DataChannel の signaling ラベルがオープンしてることを確認してから WebSocket の切断を行う必要がある
+        //       ただし現在の実装でも実用上はほぼ問題ないと想定されるため、対応優先度は低い
         if (earlyCloseWebSocket) {
             delayedWebSocketDisconnectJob = coroutineScope.launch {
+                // delay はミリ秒
                 delay(WEBSOCKET_DISCONNECT_DELAY_SECONDS * 1000)
+                // WebSocket の切断を行う
                 signaling?.disconnect(null)
             }
         }

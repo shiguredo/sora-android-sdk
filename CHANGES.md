@@ -18,6 +18,7 @@
 - [FIX] Sora の設定が、DataChannel 経由のシグナリングの設定、かつ、WebSocket の切断を Sora への接続が切断したと判断しない設定の場合に、SDP 再交換に失敗することがある問題を修正する
   - WebSocket 経由から DataChannel 経由へのシグナリング切替時に `type: switched` と `type: re-offer` をほぼ同時に受信した際、`type: re-answer` を WebSocket 経由で送信する前に WebSocket を切断してしまい `type: re-answer` の送信に失敗することがあるため
   - DataChannel 経由へのシグナリング切替後でも、まだ WebSocket 経由で送信中のメッセージが存在する可能性を考慮し、余裕を持って切断するために 10 秒の待機時間を設けるようにした
+    - この遅延処理はコルーチンを利用して非同期で行う
   - @miosakuma
 
 ## 2025.1.0
