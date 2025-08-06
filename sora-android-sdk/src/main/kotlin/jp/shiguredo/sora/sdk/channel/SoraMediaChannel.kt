@@ -372,7 +372,7 @@ class SoraMediaChannel @JvmOverloads constructor(
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
 
-    // WebSocket切断の遅延処理用の CoroutineJob
+    // WebSocket 切断の遅延処理用の CoroutineJob
     private var delayedWebSocketDisconnectJob: Job? = null
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
