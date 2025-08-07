@@ -13,7 +13,7 @@
 
 ## 2025.1.1
 
-**リリース日**: 2025-08-xx
+**リリース日**: 2025-08-07
 
 - [FIX] Sora の設定が、DataChannel 経由のシグナリングの設定、かつ、WebSocket の切断を Sora への接続が切断したと判断しない設定の場合に、`type: switched` と `type: re-offer` をほぼ同時に受信すると SDP 再交換に失敗することがある問題を修正する
   - `type: re-answer` を WebSocket 経由で Sora へ送信する前に、Sora から `type: switched` を受信して、WebSocket 経由から DataChannel 経由へのシグナリングの切り替えの処理が実行されて、WebSocket の切断処理が実行されたため、`type: re-answer` を Sora へ送信できなくなり、SDP の再交換に失敗する
