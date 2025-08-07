@@ -38,7 +38,6 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
-import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -72,8 +71,6 @@ import kotlin.concurrent.schedule
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
- * @param caCertificate Sora との接続に利用する CA 証明書
- * @param insecure Sora との接続時にすべての証明書を信頼するかどうかを決めるフラグ。開発時以外の利用は推奨しない。
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -98,11 +95,6 @@ class SoraMediaChannel @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    // Certificate についての参考 URL
-    // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
-    // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
-    private val caCertificate: X509Certificate? = null,
-    private val insecure: Boolean = false,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
@@ -484,18 +476,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 // エラーをリスナーに通知
                 listener?.onError(this@SoraMediaChannel, reason, "")
-
-                // エラーの種類に応じて接続終了の判断を行う
-                when (reason) {
-                    // 致命的なエラー：即座に接続を終了する必要があるエラー
-                    SoraErrorReason.CA_CERTIFICATE_VALIDATION_FAILED,
-                    SoraErrorReason.CUSTOM_TRUST_MANAGER_CREATION_FAILED -> {
-                        internalDisconnect(SoraDisconnectReason.SIGNALING_FAILURE)
-                    }
-                    else -> {
-                        // リスナー通知のみ
-                    }
-                }
             }
         }
 
@@ -752,8 +732,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             ),
             mediaOption = mediaOption,
             listener = null,
-            caCertificate = caCertificate,
-            insecure = insecure,
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -809,8 +787,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             redirect = redirectLocation != null,
             forwardingFilterOption = forwardingFilterOption,
             forwardingFiltersOption = forwardingFiltersOption,
-            caCertificate = caCertificate,
-            insecure = insecure,
         )
         signaling!!.connect()
     }
@@ -829,8 +805,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             simulcastEnabled = offerMessage.simulcast,
             dataChannelConfigs = offerMessage.dataChannels,
             listener = peerListener,
-            caCertificate = caCertificate,
-            insecure = insecure,
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {

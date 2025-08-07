@@ -16,12 +16,6 @@ enum class SoraErrorReason {
     PEER_CONNECTION_CLOSED,
     TIMEOUT,
 
-    // CA証明書の検証に失敗した場合のエラー
-    CA_CERTIFICATE_VALIDATION_FAILED,
-
-    // カスタムTrustManager作成に失敗した場合のエラー
-    CUSTOM_TRUST_MANAGER_CREATION_FAILED,
-
     // Sora との接続の警告
     ICE_DISCONNECTED,
     PEER_CONNECTION_DISCONNECTED,
