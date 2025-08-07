@@ -6,7 +6,7 @@ import org.webrtc.WebrtcBuildVersion
 
 class SDKInfo {
     companion object {
-        const val version = "2025.1.0"
+        const val version = "2025.1.1"
 
         fun sdkInfo(): String {
             return "Sora Android SDK $version (${BuildConfig.REVISION})"
