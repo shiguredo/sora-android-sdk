@@ -88,6 +88,11 @@
   - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更
   - @zztkm
 
+### misc
+
+- [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
+  - @torikizi
+
 ## 2025.1.1
 
 **リリース日**: 2025-08-07
