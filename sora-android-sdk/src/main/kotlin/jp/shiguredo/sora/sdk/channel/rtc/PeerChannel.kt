@@ -386,7 +386,7 @@ class PeerChannelImpl(
             offerEncoding.maxBitrate?.also { senderEncoding.maxBitrateBps = it }
             offerEncoding.maxFramerate?.also { senderEncoding.maxFramerate = it.toInt() }
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
-            offerEncoding.scaleResolutionDownTo?.also { senderEncoding.scaleResolutionDownTo = it }
+            // offerEncoding.scaleResolutionDownTo?.also { senderEncoding.scaleResolutionDownTo = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }
 
@@ -394,12 +394,12 @@ class PeerChannelImpl(
         listener?.onSenderEncodings(parameters.encodings)
         parameters.encodings.forEach {
             with(it) {
-                val scaleResolutionDownTo = scaleResolutionDownTo
-                val scaleResolutionDownToMessage = if (scaleResolutionDownTo != null) {
-                    "(maxWidth: ${scaleResolutionDownTo.maxWidth}, maxHeight: ${scaleResolutionDownTo.maxHeight})"
-                } else {
-                    "null"
-                }
+                //val scaleResolutionDownTo = scaleResolutionDownTo
+                //val scaleResolutionDownToMessage = if (scaleResolutionDownTo != null) {
+                //    "(maxWidth: ${scaleResolutionDownTo.maxWidth}, maxHeight: ${scaleResolutionDownTo.maxHeight})"
+                //} else {
+                //    "null"
+                //}
                 SoraLogger.d(
                     TAG,
                     "update sender encoding: " +
@@ -407,7 +407,7 @@ class PeerChannelImpl(
                         "rid=$rid, " +
                         "active=$active, " +
                         "scaleResolutionDownBy=$scaleResolutionDownBy, " +
-                        "scaleResolutionDownTo=$scaleResolutionDownToMessage, " +
+                        //"scaleResolutionDownTo=$scaleResolutionDownToMessage, " +
                         "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
