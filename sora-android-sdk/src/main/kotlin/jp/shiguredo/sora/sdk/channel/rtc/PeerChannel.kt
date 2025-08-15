@@ -394,12 +394,12 @@ class PeerChannelImpl(
         listener?.onSenderEncodings(parameters.encodings)
         parameters.encodings.forEach {
             with(it) {
-                //val scaleResolutionDownTo = scaleResolutionDownTo
-                //val scaleResolutionDownToMessage = if (scaleResolutionDownTo != null) {
+                // val scaleResolutionDownTo = scaleResolutionDownTo
+                // val scaleResolutionDownToMessage = if (scaleResolutionDownTo != null) {
                 //    "(maxWidth: ${scaleResolutionDownTo.maxWidth}, maxHeight: ${scaleResolutionDownTo.maxHeight})"
-                //} else {
+                // } else {
                 //    "null"
-                //}
+                // }
                 SoraLogger.d(
                     TAG,
                     "update sender encoding: " +
@@ -407,7 +407,7 @@ class PeerChannelImpl(
                         "rid=$rid, " +
                         "active=$active, " +
                         "scaleResolutionDownBy=$scaleResolutionDownBy, " +
-                        //"scaleResolutionDownTo=$scaleResolutionDownToMessage, " +
+                        // "scaleResolutionDownTo=$scaleResolutionDownToMessage, " +
                         "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
