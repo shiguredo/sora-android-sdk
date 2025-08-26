@@ -1,3 +1,11 @@
+pluginManagement {
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
 include(":sora-android-sdk")
 
 val dirFile = file("./include_app_dir.txt")
