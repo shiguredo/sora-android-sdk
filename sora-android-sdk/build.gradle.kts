@@ -2,7 +2,7 @@ import org.ajoberstar.grgit.Grgit
 
 plugins {
     alias(libs.plugins.android.library)
-    kotlin("android")
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
 }
@@ -35,8 +35,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.javaCompatibility.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.javaCompatibility.get())
     }
 
     buildFeatures {
@@ -67,7 +67,7 @@ android {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     finalizedBy("ktlintFormat")
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = libs.versions.jvmTarget.get()
     }
 }
 
@@ -93,6 +93,10 @@ tasks.dokkaHtml.configure {
 }
 
 ktlint {
+    // ktlint バージョンは以下の理由によりハードコーディングしている
+    // - Gradleの設計上の制限: プラグイン設定の評価タイミングが早すぎる
+    // - ktlint-gradleプラグインの仕様: 動的な値の解決に対応していない
+    // - Version Catalogの制約: プラグイン設定フェーズでは利用不可
     version.set("0.45.2")
     android.set(false)
     outputToConsole.set(true)
