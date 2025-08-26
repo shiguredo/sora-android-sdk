@@ -31,6 +31,9 @@ robolectric = "4.15.1"
 ktlint = "0.45.2"
 
 [libraries]
+# Kotlin BOM
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+
 # Build tools
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android-gradle-plugin" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -68,4 +71,4 @@ versions = { id = "com.github.ben-manes.versions", version.ref = "versions-plugi
 
 [bundles]
 reactive = ["rxjava2", "rxandroid2", "rxkotlin2"]
-test = ["junit", "androidx-test-core", "robolectric", "kotlin-test-junit"]
+testBase = ["junit", "androidx-test-core", "kotlin-test-junit"]

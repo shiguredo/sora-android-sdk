@@ -1,10 +1,10 @@
 import org.ajoberstar.grgit.Grgit
 
 plugins {
-    id("com.android.library")
+    alias(libs.plugins.android.library)
     kotlin("android")
     alias(libs.plugins.dokka)
-    id("org.jlleitschuh.gradle.ktlint")
+    alias(libs.plugins.ktlint)
 }
 
 group = "com.github.shiguredo"
@@ -103,6 +103,9 @@ ktlint {
 }
 
 dependencies {
+    // Kotlin BOMで整合性を保証
+    implementation(platform(libs.kotlin.bom))
+
     api(libs.shiguredo.webrtc.android)
 
     implementation(libs.kotlin.reflect)
@@ -116,12 +119,10 @@ dependencies {
     // required by "rtc" part
     implementation(libs.bundles.reactive)
 
-    testImplementation(libs.junit)
-    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.bundles.testBase)
     testImplementation(libs.robolectric) {
         exclude(group = "com.google.auto.service", module = "auto-service")
     }
-    testImplementation(libs.kotlin.test.junit)
 }
 
 configurations.all {
