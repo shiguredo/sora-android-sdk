@@ -3,27 +3,26 @@ import org.ajoberstar.grgit.Grgit
 plugins {
     id("com.android.library")
     kotlin("android")
-    id("org.jetbrains.dokka")
+    alias(libs.plugins.dokka)
     id("org.jlleitschuh.gradle.ktlint")
 }
 
 group = "com.github.shiguredo"
 
 val grgit = Grgit.open(mapOf("currentDir" to rootProject.projectDir))
-val libwebrtcVersion = rootProject.extra["libwebrtc_version"] as String
 
 android {
-    compileSdk = 36
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 21
+        minSdk = libs.versions.minSdk.get().toInt()
 
         buildConfigField("String", "REVISION", "\"${grgit.head().abbreviatedId}\"")
-        buildConfigField("String", "LIBWEBRTC_VERSION", "\"$libwebrtcVersion\"")
+        buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
     }
 
     lint {
-        targetSdk = 36
+        targetSdk = libs.versions.targetSdk.get().toInt()
     }
 
     sourceSets {
@@ -56,7 +55,7 @@ android {
     }
 
     testOptions {
-        targetSdk = 36
+        targetSdk = libs.versions.targetSdk.get().toInt()
         unitTests.isIncludeAndroidResources = true
     }
 
@@ -103,30 +102,26 @@ ktlint {
     ignoreFailures.set(false)
 }
 
-val kotlinVersion = rootProject.extra["kotlin_version"] as String
-
 dependencies {
-    api("com.github.shiguredo:shiguredo-webrtc-android:$libwebrtcVersion")
+    api(libs.shiguredo.webrtc.android)
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
+    implementation(libs.kotlin.reflect)
 
     // required by "signaling" part
-    implementation("com.google.code.gson:gson:2.13.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.gson)
+    implementation(libs.okhttp)
     // kotlinx.coroutines requires kotlin 2.1.0
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation(libs.kotlinx.coroutines.android)
 
     // required by "rtc" part
-    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
-    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
-    implementation("io.reactivex.rxjava2:rxkotlin:2.4.0")
+    implementation(libs.bundles.reactive)
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("androidx.test:core:1.6.1")
-    testImplementation("org.robolectric:robolectric:4.15.1") {
+    testImplementation(libs.junit)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric) {
         exclude(group = "com.google.auto.service", module = "auto-service")
     }
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion")
+    testImplementation(libs.kotlin.test.junit)
 }
 
 configurations.all {
