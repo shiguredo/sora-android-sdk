@@ -21,14 +21,19 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 
+// 不安定バージョンを除外する設定
+fun isNonStable(version: String): Boolean {
+    val qualifiers = listOf("alpha", "beta", "rc", "M")
+    return qualifiers.any { qualifier ->
+        version.matches(Regex("(?i).*[.-]$qualifier[.\\d-]*"))
+    }
+}
+
 tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
     resolutionStrategy {
         componentSelection {
             all {
-                val rejected = listOf("alpha", "beta", "rc", "M").any { qualifier ->
-                    candidate.version.matches(Regex("(?i).*[.-]$qualifier[.\\d-]*"))
-                }
-                if (rejected) {
+                if (isNonStable(candidate.version)) {
                     reject("Release candidate")
                 }
             }
