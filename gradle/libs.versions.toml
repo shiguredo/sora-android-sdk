@@ -31,9 +31,6 @@ junit = "4.13.2"
 androidx-test-core = "1.6.1"
 robolectric = "4.15.1"
 
-# Tools
-ktlint = "0.45.2"
-
 [libraries]
 # Kotlin BOM
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
