@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] kotlin バージョンを 2.0.20 に上げる
+  - @t-miya
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
@@ -90,7 +92,7 @@
 
 ### misc
 
-- [CHANGE] build.gradle を kts 移行する
+- [UPDATE] build.gradle を kts 移行する
   - build.gradle、settings.gradle、sora-android-sdk/build.gradle それぞれを kts に移行
   - ライブラリバージョンをバージョンカタログ管理に移行
   - @t-miya
