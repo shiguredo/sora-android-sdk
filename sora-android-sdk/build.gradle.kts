@@ -66,8 +66,8 @@ android {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     finalizedBy("ktlintFormat")
-    kotlinOptions {
-        jvmTarget = libs.versions.jvmTarget.get()
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
     }
 }
 

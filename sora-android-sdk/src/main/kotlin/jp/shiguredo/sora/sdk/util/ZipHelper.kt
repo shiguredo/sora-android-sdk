@@ -26,6 +26,9 @@ class ZipHelper {
         }
 
         override fun read(bytes: ByteArray?, off: Int, len: Int): Int {
+            if (bytes == null) {
+                throw NullPointerException("byte array is null")
+            }
             var len = len
             if (!buf.hasRemaining()) {
                 return -1
