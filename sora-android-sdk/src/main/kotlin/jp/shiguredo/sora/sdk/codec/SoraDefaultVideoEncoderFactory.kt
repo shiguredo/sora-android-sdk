@@ -13,7 +13,8 @@ internal class SoraDefaultVideoEncoderFactory(
     eglContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
-    resolutionAdjustment: SoraVideoOption.ResolutionAdjustment
+    resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
+    private val softwareOnly: Boolean = false,
 ) : VideoEncoderFactory {
     private val hardwareVideoEncoderFactory: VideoEncoderFactory
     private val softwareVideoEncoderFactory: VideoEncoderFactory = SoftwareVideoEncoderFactory()
@@ -30,6 +31,9 @@ internal class SoraDefaultVideoEncoderFactory(
     }
 
     override fun createEncoder(info: VideoCodecInfo): VideoEncoder? {
+        if (softwareOnly) {
+            return softwareVideoEncoderFactory.createEncoder(info)
+        }
         val softwareEncoder: VideoEncoder? = softwareVideoEncoderFactory.createEncoder(info)
         val hardwareEncoder: VideoEncoder? = hardwareVideoEncoderFactory.createEncoder(info)
         if (hardwareEncoder != null && softwareEncoder != null) {
@@ -39,6 +43,9 @@ internal class SoraDefaultVideoEncoderFactory(
     }
 
     override fun getSupportedCodecs(): Array<VideoCodecInfo> {
+        if (softwareOnly) {
+            return softwareVideoEncoderFactory.supportedCodecs
+        }
         val supportedCodecInfos = LinkedHashSet<VideoCodecInfo>()
         supportedCodecInfos.addAll(listOf(*softwareVideoEncoderFactory.supportedCodecs))
         supportedCodecInfos.addAll(listOf(*hardwareVideoEncoderFactory.supportedCodecs))

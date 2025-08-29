@@ -41,22 +41,26 @@ class RTCComponentFactory(
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
 
             mediaOption.videoDownstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoDownstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
             else ->
                 SoraDefaultVideoEncoderFactory(
                     null,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
         }
 

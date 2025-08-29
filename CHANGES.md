@@ -11,6 +11,13 @@
 
 ## develop
 
+- [ADD] `SoraMediaOption` に `softwareVideoEncoderOnly` を追加する
+  - `true` を指定するとソフトウェアエンコーダーのみを使用する（HW は作成・選択しない）
+  - 既定値は `false`（従来どおり HW 優先 + 必要時 SW フォールバック）。互換性への影響はなし
+  - サイマルキャスト有効時も SW のみ構成に切り替える
+  - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
+  - @zztkm
+
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更

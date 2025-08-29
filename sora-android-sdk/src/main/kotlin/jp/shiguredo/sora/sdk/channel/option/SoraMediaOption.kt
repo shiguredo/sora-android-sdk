@@ -37,6 +37,15 @@ class SoraMediaOption {
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
+    /**
+     * 映像エンコードにソフトウェアエンコーダーのみを使用します.
+     *
+     * - 既定値は false で、ハードウェアエンコーダーを優先し、必要時にソフトウェアへフォールバックします.
+     * - `videoEncoderFactory` を明示的に設定している場合は、このフラグは無視されます.
+     * - サイマルキャストが有効な場合も、ソフトウェアのみの構成でエンコードします.
+     */
+    var softwareVideoEncoderOnly: Boolean = false
+
     internal var videoCapturer: VideoCapturer? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null

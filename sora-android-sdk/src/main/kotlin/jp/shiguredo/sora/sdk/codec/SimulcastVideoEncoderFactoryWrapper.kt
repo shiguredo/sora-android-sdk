@@ -20,6 +20,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
+    private val softwareOnly: Boolean = false,
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
@@ -142,21 +143,27 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     private val native: SimulcastVideoEncoderFactory
 
     init {
-        val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
-            sharedContext, enableIntelVp8Encoder, enableH264HighProfile
-        )
-
-        val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
-            hardwareVideoEncoderFactory
+        if (softwareOnly) {
+            primary = StreamEncoderWrapperFactory(SoftwareVideoEncoderFactory())
+            fallback = null
+            native = SimulcastVideoEncoderFactory(primary, fallback)
         } else {
-            HardwareVideoEncoderWrapperFactory(
-                hardwareVideoEncoderFactory, resolutionAdjustment.value
+            val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
+                sharedContext, enableIntelVp8Encoder, enableH264HighProfile
             )
-        }
 
-        primary = StreamEncoderWrapperFactory(encoderFactory)
-        fallback = SoftwareVideoEncoderFactory()
-        native = SimulcastVideoEncoderFactory(primary, fallback)
+            val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+                hardwareVideoEncoderFactory
+            } else {
+                HardwareVideoEncoderWrapperFactory(
+                    hardwareVideoEncoderFactory, resolutionAdjustment.value
+                )
+            }
+
+            primary = StreamEncoderWrapperFactory(encoderFactory)
+            fallback = SoftwareVideoEncoderFactory()
+            native = SimulcastVideoEncoderFactory(primary, fallback)
+        }
     }
 
     override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? {
