@@ -10,7 +10,6 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
-import jp.shiguredo.sora.sdk.tls.CustomX509TrustManagerBuilder
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -26,11 +25,9 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import javax.net.ssl.SSLContext
 
 interface SignalingChannel {
 
@@ -79,7 +76,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    private val caCertificate: X509Certificate? = null,
 ) : SignalingChannel {
 
     companion object {
@@ -87,6 +83,28 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private val client: OkHttpClient
+    private val closing = AtomicBoolean(false)
+
+    /**
+     * 初期化時にエラーが発生した場合の共通処理
+     * エラーをログに記録し、リスナーに通知して接続を無効化する
+     *
+     * @param errorMessage ログに出力するエラーメッセージ
+     * @param exception 発生した例外
+     * @param errorReason 通知するエラーの種類
+     */
+    private fun handleInitializationError(
+        errorMessage: String,
+        exception: Exception,
+        errorReason: SoraErrorReason
+    ) {
+        SoraLogger.e(TAG, errorMessage, exception)
+        // 即座にエラーを通知
+        listener?.onError(errorReason)
+        // initブロック内なのでdisconnectは呼ばない
+        // connect()が呼ばれても接続処理をスキップするフラグを設定
+        closing.set(true)
+    }
 
     init {
         // OkHttpClient は main スレッドで初期化しない
@@ -95,26 +113,6 @@ class SignalingChannelImpl @JvmOverloads constructor(
         // それを防ぐためにコルーチンを利用して別スレッドで初期化する
         client = runBlocking(Dispatchers.IO) {
             var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
-
-            if (caCertificate != null) {
-                val customX509TrustManagerBuilder = CustomX509TrustManagerBuilder(caCertificate)
-                try {
-                    // NOTE: OkHttp で信頼する CA をカスタムする実装は以下の OkHttp のドキュメントを参考にした
-                    // https://square.github.io/okhttp/features/https/#customizing-trusted-certificates-kt-java
-
-                    // カスタムTrustManagerを作成
-                    // build() は CA 証明書の有効期限を確認するため、例外がスローされる可能性がある
-                    val trustManager = customX509TrustManagerBuilder.build()
-
-                    // カスタムTrustManagerを使用するSSLContextを作成
-                    val sslContext = SSLContext.getInstance("TLS")
-                    sslContext.init(null, arrayOf(trustManager), null) // KeyManagerはnull、TrustManagerはカスタムのものを指定
-                    builder = builder.sslSocketFactory(sslContext.socketFactory, trustManager)
-                } catch (e: Exception) {
-                    // カスタム TrustManager の作成に失敗した場合は、警告ログだけ出力して何もしないようにするため、Exception をキャッチする
-                    SoraLogger.w(TAG, "skip setting customizing trusted certificate", e)
-                }
-            }
 
             if (mediaOption.proxy.type != ProxyType.NONE) {
                 SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")
@@ -164,13 +162,19 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
     private val wsCandidates = mutableListOf<WebSocket>()
 
-    private val closing = AtomicBoolean(false)
-
     private val receivedRedirectMessage = AtomicBoolean(false)
 
     private val signalingChannelCloseEvent = AtomicReference<SignalingChannelCloseEvent?>()
 
     override fun connect() {
+        // 指定された CA 証明書の検証に失敗した場合など、初期化時にエラーが発生している場合は接続をスキップ
+        // init で handleInitializationError が呼ばれた場合、 closing が true になり、onError が発火する
+        // そのため、ここで onError を呼び出す必要はなく、接続をスキップするだけでよい
+        if (closing.get()) {
+            SoraLogger.w(TAG, "[signaling:$role] connection is disabled due to initialization error")
+            return
+        }
+
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
             for (endpoint in endpoints) {

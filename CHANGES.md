@@ -25,7 +25,7 @@
   - @zztkm
 - [CHANGE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で、WebSocket ステータスコードが 1000 以外の場合でも `onError` を呼び出さないように変更する
   - これまでの実装では、onError のコールバック呼び出しが定義されていたが、実際には `onClosing` が実行された時点で `SignalingChannelImpl` の listener の参照が削除されるため、`onError` が確実に呼び出される保証はなかった
-  - 今回の変更により、`onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?)` でステータスコードと切断理由を取得できるようになり、エラー判定が可能となったため、`onError` の呼び出しを不要とした
+  - 今回の変更により、`onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent)` でステータスコードと切断理由を取得できるようになり、エラー判定が可能となったため、`onError` の呼び出しを不要とした
   - これにより、`onError` はネットワーク切断などによる異常終了のみを通知する仕様になる
   - もし、ステータスコード 1000 以外の Sora からの切断を `onError` によって検知する実装を行っていた場合、今後は `onClose` のステータスコードを参照して適切な処理を行う必要がある
   - @zztkm
@@ -48,8 +48,8 @@
   - String にはエラーの詳細情報を設定する
     - 詳細がない場合は空文字列を設定する
   - @zztkm
-- [UPDATE] libwebrtc を 136.7103.0.0 に上げる
-  - @zztkm
+- [UPDATE] libwebrtc を 138.7204.0.2 に上げる
+  - @zztkm @miosakuma
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
   - @zztkm
 - [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
@@ -65,31 +65,50 @@
     - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
   - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
   - @zztkm
-- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?)` を追加する
+- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent)` を追加する
   - Sora から切断されたときに通知されるイベントである `SoraCloseEvent` を追加した
   - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
   - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
+    - `SoraMediaChannel.disconnect()` を呼び出した場合
     - WebSocket 経由のシグナリングを利用している場合
     - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
   - @zztkm
 - [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
-  - 今後は `onClose(SoraMediaChannel, SoraCloseEvent?)` を利用してもらう
+  - 今後は `onClose(SoraMediaChannel, SoraCloseEvent)` を利用してもらう
   - @zztkm
-- [UPDATE] CA 証明書を指定できるようにする
-  - この証明書は以下のタイミングで利用される
-    - WebSocket シグナリング利用時
-    - TURN-TLS 利用時
-  - `SoraMediaChannel` に `caCertificate: X509Certificate?` を追加する
-  - `SoraMediaChannel` で CA 証明書を指定しない場合のデフォルトの動作は以下
-    - WebSocket シグナリングは OkHttp によりシステムのデフォルトが利用される
-    - TURN-TLS は libwebrtc に内蔵されている証明書が利用される
-  - @zztkm
+- [UPDATE] compileSdkVersion と targetSdkVersion を 36 に上げる
+  - @miosakuma
+- [UPDATE] Android Gradle Plugin (AGP) を 8.10.1 にアップグレードする
+  - ビルドに利用される Gradle を 8.11.1 に上げる
+  - @miosakuma
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - org.jetbrains.dokka:dokka-gradle-plugin を 1.9.20 に上げる
+  - com.google.code.gson:gson を 2.13.1 に上げる
+  - org.ajoberstar.grgit:grgit-gradle を 5.3.2 に上げる
+  - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.9.0 に上げる
+  - org.robolectric:robolectric を 4.15.1 に上げる
+  - @miosakuma
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
   - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更
   - @zztkm
+
+### misc
+
+- [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
+  - @torikizi
+
+## 2025.1.1
+
+**リリース日**: 2025-08-07
+
+- [FIX] Sora の設定が、DataChannel 経由のシグナリングの設定、かつ、WebSocket の切断を Sora への接続が切断したと判断しない設定の場合に、`type: switched` と `type: re-offer` をほぼ同時に受信すると SDP 再交換に失敗することがある問題を修正する
+  - `type: re-answer` を WebSocket 経由で Sora へ送信する前に、Sora から `type: switched` を受信して、WebSocket 経由から DataChannel 経由へのシグナリングの切り替えの処理が実行されて、WebSocket の切断処理が実行されたため、`type: re-answer` を Sora へ送信できなくなり、SDP の再交換に失敗する
+  - DataChannel 経由のシグナリングへの切り替え後でも、まだ WebSocket 経由で送信中のメッセージが存在する可能性を考慮し、10 秒間の WebSocket 切断の猶予時間を設けた
+    - この遅延処理はコルーチンを利用して非同期で行う
+  - @miosakuma
 
 ## 2025.1.0
 

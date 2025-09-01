@@ -27,6 +27,11 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
 import jp.shiguredo.sora.sdk.util.ReusableCompositeDisposable
 import jp.shiguredo.sora.sdk.util.SoraLogger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -38,7 +43,6 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
-import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
@@ -72,7 +76,6 @@ import kotlin.concurrent.schedule
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
- * @param caCertificate Sora との接続に利用する CA 証明書
  */
 class SoraMediaChannel @JvmOverloads constructor(
     private val context: Context,
@@ -97,15 +100,12 @@ class SoraMediaChannel @JvmOverloads constructor(
     )
     private val forwardingFilterOption: SoraForwardingFilterOption? = null,
     private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
-    // Certificate についての参考 URL
-    // - https://developer.android.com/reference/kotlin/java/security/cert/Certificate
-    // - https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate
-    private val caCertificate: X509Certificate? = null,
 ) {
     companion object {
         private val TAG = SoraMediaChannel::class.simpleName
 
         const val DEFAULT_TIMEOUT_SECONDS = 10L
+        private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
     }
 
     // connect メッセージに含める `data_channel_signaling`
@@ -232,7 +232,7 @@ class SoraMediaChannel @JvmOverloads constructor(
          * @param mediaChannel イベントが発生したチャネル
          * @param closeEvent 切断イベント
          */
-        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) {}
+        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) {}
 
         /**
          * Sora との接続が切断されたときに呼び出されるコールバック.
@@ -244,9 +244,9 @@ class SoraMediaChannel @JvmOverloads constructor(
          */
         @Deprecated(
             "onClose(mediaChannel: SoraMediaChannel) は非推奨です " +
-                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent?) を利用してください." +
+                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) を利用してください." +
                 " このコールバックは 2027 年中に廃止予定です.",
-            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent?)"),
+            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent)"),
             DeprecationLevel.WARNING
         )
         fun onClose(mediaChannel: SoraMediaChannel) {}
@@ -384,6 +384,10 @@ class SoraMediaChannel @JvmOverloads constructor(
     // DataChannel のみのシグナリングで signaling label の type: close を受信したときに取得する code と reason を保持する
     private var dataChannelSignalingCloseEvent: SoraCloseEvent? = null
 
+    // WebSocket 切断の遅延処理用の CoroutineJob
+    private var delayedWebSocketDisconnectJob: Job? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
     /**
      * コネクション ID.
      */
@@ -480,6 +484,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
+                // エラーをリスナーに通知
                 listener?.onError(this@SoraMediaChannel, reason, "")
             }
         }
@@ -737,7 +742,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             ),
             mediaOption = mediaOption,
             listener = null,
-            caCertificate = caCertificate,
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -793,7 +797,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             redirect = redirectLocation != null,
             forwardingFilterOption = forwardingFilterOption,
             forwardingFiltersOption = forwardingFiltersOption,
-            caCertificate = caCertificate,
         )
         signaling!!.connect()
     }
@@ -812,7 +815,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             simulcastEnabled = offerMessage.simulcast,
             dataChannelConfigs = offerMessage.dataChannels,
             listener = peerListener,
-            caCertificate = caCertificate,
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {
@@ -855,8 +857,20 @@ class SoraMediaChannel @JvmOverloads constructor(
         switchedToDataChannel = true
         switchedIgnoreDisconnectWebSocket = switchedMessage.ignoreDisconnectWebsocket ?: false
         val earlyCloseWebSocket = switchedIgnoreDisconnectWebSocket
+        // ignore_disconnect_websocket が true の場合は、 WebSocket の接続は不要となるので切断する
+        // WebSocket 経由でシグナリングメッセージを送信する際、
+        // WebSocket 切断とのレースコンディションを最小限に抑えるため WebSocket の切断までに遅延を入れる。
+        // TODO: WebSocket 切断の遅延より長く DataChannel の確立が遅延した場合、 WebSocket 切断と
+        //       type: disconnect のレースコンディションは存在するため
+        //       DataChannel の signaling ラベルがオープンしてることを確認してから WebSocket の切断を行う必要がある
+        //       ただし現在の実装でも実用上はほぼ問題ないと想定されるため、対応優先度は低い
         if (earlyCloseWebSocket) {
-            signaling?.disconnect(null)
+            delayedWebSocketDisconnectJob = coroutineScope.launch {
+                // delay はミリ秒
+                delay(WEBSOCKET_DISCONNECT_DELAY_SECONDS * 1000)
+                // WebSocket の切断を行う
+                signaling?.disconnect(null)
+            }
         }
         listener?.onDataChannel(this, dataChannelsForMessaging)
     }
@@ -1013,8 +1027,9 @@ class SoraMediaChannel @JvmOverloads constructor(
      * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います.
      */
     fun disconnect() {
-        // アプリケーションから切断された場合は NO-ERROR とする
-        internalDisconnect(SoraDisconnectReason.NO_ERROR)
+        // SoraMediaChannel.disconnect() 起因で internalDisconnect() を呼んだ場合、
+        // SoraCloseEvent は固定値として code: 1000, reason: "NO-ERROR" を設定する
+        internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent.createClientDisconnectEvent())
     }
 
     private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent? = null) {
@@ -1024,6 +1039,8 @@ class SoraMediaChannel @JvmOverloads constructor(
         SoraLogger.d(TAG, "[channel:$role] internalDisconnect: $disconnectReason")
 
         stopTimer()
+        delayedWebSocketDisconnectJob?.cancel()
+        delayedWebSocketDisconnectJob = null
         disconnectReason?.let {
             sendDisconnectIfNeeded(it)
         }
@@ -1041,7 +1058,11 @@ class SoraMediaChannel @JvmOverloads constructor(
         peer = null
 
         listener?.onClose(this)
-        listener?.onClose(this, closeEvent)
+        if (closeEvent != null) {
+            listener?.onClose(this, closeEvent)
+        } else {
+            listener?.onClose(this, SoraCloseEvent.createClientDisconnectEvent())
+        }
         listener = null
 
         // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
