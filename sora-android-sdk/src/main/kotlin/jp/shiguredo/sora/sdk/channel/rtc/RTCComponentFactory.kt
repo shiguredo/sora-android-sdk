@@ -34,6 +34,7 @@ class RTCComponentFactory(
         // EglBase.Context を与えるとハードウェアエンコーダーを使用する
         SoraLogger.d(TAG, "videoEncoderFactory => ${mediaOption.videoEncoderFactory}")
         SoraLogger.d(TAG, "videoUpstreamContext => ${mediaOption.videoUpstreamContext}")
+        SoraLogger.d(TAG, "softwareVideoEncoderOnly => ${mediaOption.softwareVideoEncoderOnly}")
         val encoderFactory = when {
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
