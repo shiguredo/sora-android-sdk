@@ -437,10 +437,15 @@ class PeerChannelImpl(
 
     private fun configureSenderDegradationPreference(sender: RtpSender) {
         mediaOption.degradationPreference?.let { pref ->
-            val parameters = sender.parameters
-            parameters.degradationPreference = pref.nativeValue
-            sender.parameters = parameters
-            SoraLogger.d(TAG, "set DegradationPreference: ${pref.name}")
+            try {
+                val parameters = sender.parameters
+                parameters.degradationPreference = pref.nativeValue
+                sender.parameters = parameters
+                SoraLogger.d(TAG, "set DegradationPreference: ${pref.name}")
+            } catch (e: Exception) {
+                // 例外が発生しても接続は継続
+                SoraLogger.w(TAG, "Failed to set DegradationPreference: ${e.message}")
+            }
         }
     }
 
