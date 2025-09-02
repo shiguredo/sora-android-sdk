@@ -27,8 +27,6 @@ class CameraCapturerFactory {
          * 複数のカメラがある場合はフロントのカメラを優先します.
          *
          * @param context application context
-         * @param fixedResolution このパラメータは非推奨です。代わりに SoraMediaOption.degradationPreference を使用してください。
-         * このパラメータは互換性のためのみ残されており、実際には使用されません。
          * @param frontFacingFirst true の場合はフロントカメラを優先、false の場合は
          * リアカメラを優先して選択する. デフォルト値は true.
          * @return 生成された `CameraVideoCapturer`
@@ -36,7 +34,6 @@ class CameraCapturerFactory {
         @JvmOverloads
         fun create(
             context: Context,
-            fixedResolution: Boolean = false,
             frontFacingFirst: Boolean = true
         ): CameraVideoCapturer? {
             SoraLogger.d(TAG, "create camera capturer")

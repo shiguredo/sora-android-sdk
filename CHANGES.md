@@ -11,10 +11,10 @@
 
 ## develop
 
-- [CHANGE] `CameraVideoCapturerWrapper` を削除し `SoraMediaOption.DegradationPreference` を追加する破壊的変更
-  - これまではネットワーク状態悪化時の品質優先要素を解像度優先かフレームレート優先か指定するために、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` で制御していたが、`isScreenCast` 本来の使い方ではないため `DegradationPreference` による指定に変更した
-  - `CameraVideoCapturerWrapper` クラスは不要となったため削除
-  - `CameraCapturerFactory.create` の引数 `fixedResolution` は互換性のため残しているが使用されない。今後のリリースで削除される
+- [CHANGE] `CameraVideoCapturerWrapper` を削除する破壊的変更
+  - これまでは送信する映像の解像度維持の方法として、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` を利用していたが、より解像度維持に適した機能である `DegradationPreference` に移行した
+  - `CameraVideoCapturerWrapper` クラスと `CameraCapturerFactory.create` の引数 `fixedResolution` は不要となったため削除した。各 `CameraCapturerFactory.create` 呼び出し箇所の引数からも削除対応が必要となる
+  - `SoraMediaOption.degradationPreference` を追加した。`degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `BALANCED` が適用される
   - @t-miya
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
