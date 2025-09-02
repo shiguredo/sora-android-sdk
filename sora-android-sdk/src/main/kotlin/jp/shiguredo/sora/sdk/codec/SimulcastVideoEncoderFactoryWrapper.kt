@@ -46,7 +46,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     SoraLogger.i(
                         TAG,
                         """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
-                |  encoder=${encoder.implementationName}
+                |  encoder=${safeImplementationName()}
                 |  streamSettings:
                 |    numberOfCores=${settings.numberOfCores}
                 |    width=${settings.width}
@@ -117,8 +117,35 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         }
 
         override fun getImplementationName(): String {
-            val future = executor.submit(Callable { return@Callable encoder.implementationName })
+            val future = executor.submit(
+                Callable {
+                    return@Callable safeImplementationName()
+                }
+            )
             return future.get()
+        }
+
+        /*
+         * safeImplementationName() はエンコーダ実装名をログ用途で取得するためのユーティリティ
+         *
+         * softwareOnly が有効だと implementationName へのアクセスで UnsupportedOperationException が
+         * 発生するため例外を握りつぶして "unknown" を返す。
+         *
+         * "unknown" を返しても、影響はログ表示に限られるため、
+         * エンコード処理の動作、コーデック交渉、エンコーダ選択、ビットレート制御などの機能には
+         * 影響しない。
+         * この対応により、例外によるクラッシュを避けることができる。
+         */
+        private fun safeImplementationName(): String {
+            return try {
+                encoder.implementationName
+            } catch (e: UnsupportedOperationException) {
+                // Some encoders (e.g., WrappedNativeVideoEncoder in certain libwebrtc builds)
+                // do not implement this; avoid crashing and return a placeholder.
+                "unknown"
+            } catch (e: Exception) {
+                "unknown"
+            }
         }
     }
 
