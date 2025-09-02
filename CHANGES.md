@@ -11,13 +11,6 @@
 
 ## develop
 
-- [ADD] `SoraMediaOption` に `softwareVideoEncoderOnly` を追加する
-  - `true` を指定するとソフトウェアエンコーダーのみを使用する（HW は作成・選択しない）
-  - 既定値は `false`（従来どおり HW 優先 + 必要時 SW フォールバック）。互換性への影響はなし
-  - サイマルキャスト有効時も SW のみ構成に切り替える
-  - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
-  - @zztkm
-
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
@@ -88,8 +81,20 @@
   - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.9.0 に上げる
   - org.robolectric:robolectric を 4.15.1 に上げる
   - @miosakuma
+- [UPDATE] `RTCComponentFactory` のビデオエンコーダーファクトリの選択条件を調整
+  - `simulcast == true` かつ `softwareVideoEncoderOnly == true` の場合、`SimulcastVideoEncoderFactoryWrapper` を使わずに `SoraDefaultVideoEncoderFactory` を利用するように変更
+  - ソフトウェアエンコーダーのみを利用するように設定されなければこれまで通り SimulcastVideoEncoderFactoryWrapper を利用する
+  - `SoraMediaOption.videoEncoderFactory` を明示設定している場合は本変更の影響を受けない
+  - @zztkm
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
+- [ADD] `SoraMediaOption` に `softwareVideoEncoderOnly` を追加する
+  - `true` を指定するとソフトウェアエンコーダーのみを使用する（HW は作成・選択しない）
+  - 既定値は `false`（従来どおり HW 優先 + 必要時 SW フォールバック）。互換性への影響はなし
+  - サイマルキャスト有効時も SW のみ構成に切り替える
+  - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
+  - @zztkm
+
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
   - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更

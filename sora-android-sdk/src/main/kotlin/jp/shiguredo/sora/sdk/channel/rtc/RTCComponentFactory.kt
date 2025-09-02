@@ -36,14 +36,26 @@ class RTCComponentFactory(
         SoraLogger.d(TAG, "videoUpstreamContext => ${mediaOption.videoUpstreamContext}")
         SoraLogger.d(TAG, "softwareVideoEncoderOnly => ${mediaOption.softwareVideoEncoderOnly}")
         val encoderFactory = when {
+            // App-provided factory takes precedence
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
-            simulcastEnabled ->
-                SimulcastVideoEncoderFactoryWrapper(
+
+            // If simulcast is enabled AND software-only is requested, do NOT use simulcast wrapper
+            simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
+                SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                     softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
+
+            // Simulcast enabled (HW/SW mixed per default behavior)
+            simulcastEnabled ->
+                SimulcastVideoEncoderFactoryWrapper(
+                    mediaOption.videoUpstreamContext,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                )
+
+            // Non-simulcast: pick encoder factory based on available EGL context
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
@@ -57,6 +69,7 @@ class RTCComponentFactory(
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                     softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
+
             else ->
                 SoraDefaultVideoEncoderFactory(
                     null,

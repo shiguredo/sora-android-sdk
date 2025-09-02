@@ -14,14 +14,12 @@ import org.webrtc.VideoFrame
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ExecutionException
 
 internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
-    private val softwareOnly: Boolean = false,
 ) : VideoEncoderFactory {
 
     // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
@@ -47,7 +45,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     SoraLogger.i(
                         TAG,
                         """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
-                |  encoder=${safeImplementationName()}
+                |  encoder=${encoder.implementationName}
                 |  streamSettings:
                 |    numberOfCores=${settings.numberOfCores}
                 |    width=${settings.width}
@@ -113,53 +111,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         }
 
         override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-            // Some encoders may throw UnsupportedOperationException for scalingSettings.
-            // Avoid propagating to JNI (which would abort) by returning OFF as a safe default.
             val future = executor.submit(Callable { return@Callable encoder.scalingSettings })
-            return try {
-                future.get()
-            } catch (e: ExecutionException) {
-                when (e.cause) {
-                    is UnsupportedOperationException -> VideoEncoder.ScalingSettings(false)
-                    else -> VideoEncoder.ScalingSettings(false)
-                }
-            } catch (e: UnsupportedOperationException) {
-                VideoEncoder.ScalingSettings(false)
-            } catch (e: Exception) {
-                VideoEncoder.ScalingSettings(false)
-            }
-        }
-
-        override fun getImplementationName(): String {
-            val future = executor.submit(
-                Callable {
-                    return@Callable safeImplementationName()
-                }
-            )
             return future.get()
         }
 
-        /*
-         * safeImplementationName() はエンコーダ実装名をログ用途で取得するためのユーティリティ
-         *
-         * softwareOnly が有効だと implementationName へのアクセスで UnsupportedOperationException が
-         * 発生するため例外を握りつぶして "unknown" を返す。
-         *
-         * "unknown" を返しても、影響はログ表示に限られるため、
-         * エンコード処理の動作、コーデック交渉、エンコーダ選択、ビットレート制御などの機能には
-         * 影響しない。
-         * この対応により、例外によるクラッシュを避けることができる。
-         */
-        private fun safeImplementationName(): String {
-            return try {
-                encoder.implementationName
-            } catch (e: UnsupportedOperationException) {
-                // Some encoders (e.g., WrappedNativeVideoEncoder in certain libwebrtc builds)
-                // do not implement this; avoid crashing and return a placeholder.
-                "unknown"
-            } catch (e: Exception) {
-                "unknown"
-            }
+        override fun getImplementationName(): String {
+            val future = executor.submit(Callable { return@Callable encoder.implementationName })
+            return future.get()
         }
     }
 
@@ -184,27 +142,21 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     private val native: SimulcastVideoEncoderFactory
 
     init {
-        if (softwareOnly) {
-            primary = StreamEncoderWrapperFactory(SoftwareVideoEncoderFactory())
-            fallback = null
-            native = SimulcastVideoEncoderFactory(primary, fallback)
+        val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
+            sharedContext, enableIntelVp8Encoder, enableH264HighProfile
+        )
+
+        val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+            hardwareVideoEncoderFactory
         } else {
-            val hardwareVideoEncoderFactory = HardwareVideoEncoderFactory(
-                sharedContext, enableIntelVp8Encoder, enableH264HighProfile
+            HardwareVideoEncoderWrapperFactory(
+                hardwareVideoEncoderFactory, resolutionAdjustment.value
             )
-
-            val encoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
-                hardwareVideoEncoderFactory
-            } else {
-                HardwareVideoEncoderWrapperFactory(
-                    hardwareVideoEncoderFactory, resolutionAdjustment.value
-                )
-            }
-
-            primary = StreamEncoderWrapperFactory(encoderFactory)
-            fallback = SoftwareVideoEncoderFactory()
-            native = SimulcastVideoEncoderFactory(primary, fallback)
         }
+
+        primary = StreamEncoderWrapperFactory(encoderFactory)
+        fallback = SoftwareVideoEncoderFactory()
+        native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 
     override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? {
