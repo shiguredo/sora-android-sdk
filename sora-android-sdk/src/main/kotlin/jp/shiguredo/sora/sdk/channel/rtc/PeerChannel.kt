@@ -402,7 +402,7 @@ class PeerChannelImpl(
         // degradationPreference を再設定（setRemoteDescription でリセットされる可能性があるため）
         mediaOption.degradationPreference?.let { pref ->
             parameters.degradationPreference = pref.nativeValue
-            SoraLogger.d(TAG, "re-set DegradationPreference in updateSenderOfferEncodings: ${pref.name}")
+            SoraLogger.i(TAG, "re-set DegradationPreference in updateSenderOfferEncodings: ${pref.name}")
         }
 
         // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
