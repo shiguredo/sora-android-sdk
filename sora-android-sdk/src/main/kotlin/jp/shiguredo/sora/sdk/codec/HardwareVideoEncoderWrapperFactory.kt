@@ -174,7 +174,13 @@ internal class HardwareVideoEncoderWrapper(
     }
 
     override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        return internalEncoder.scalingSettings
+        return try {
+            internalEncoder.scalingSettings
+        } catch (e: UnsupportedOperationException) {
+            VideoEncoder.ScalingSettings(false)
+        } catch (e: Exception) {
+            VideoEncoder.ScalingSettings(false)
+        }
     }
 
     override fun getImplementationName(): String {

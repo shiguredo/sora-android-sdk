@@ -14,6 +14,7 @@ import org.webrtc.VideoFrame
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ExecutionException
 
 internal class SimulcastVideoEncoderFactoryWrapper(
     sharedContext: EglBase.Context?,
@@ -112,8 +113,21 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         }
 
         override fun getScalingSettings(): VideoEncoder.ScalingSettings {
+            // Some encoders may throw UnsupportedOperationException for scalingSettings.
+            // Avoid propagating to JNI (which would abort) by returning OFF as a safe default.
             val future = executor.submit(Callable { return@Callable encoder.scalingSettings })
-            return future.get()
+            return try {
+                future.get()
+            } catch (e: ExecutionException) {
+                when (e.cause) {
+                    is UnsupportedOperationException -> VideoEncoder.ScalingSettings(false)
+                    else -> VideoEncoder.ScalingSettings(false)
+                }
+            } catch (e: UnsupportedOperationException) {
+                VideoEncoder.ScalingSettings(false)
+            } catch (e: Exception) {
+                VideoEncoder.ScalingSettings(false)
+            }
         }
 
         override fun getImplementationName(): String {
