@@ -11,6 +11,11 @@
 
 ## develop
 
+- [CHANGE] `CameraVideoCapturerWrapper` を削除し `SoraMediaOption.DegradationPreference` を追加する破壊的変更
+  - これまではネットワーク状態悪化時の品質優先要素を解像度優先かフレームレート優先か指定するために、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` で制御していたが、`isScreenCast` 本来の使い方ではないため `DegradationPreference` による指定に変更した
+  - `CameraVideoCapturerWrapper` クラスは不要となったため削除
+  - `CameraCapturerFactory.create` の引数 `fixedResolution` は互換性のため残しているが使用されない。今後のリリースで削除される
+  - @t-miya
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更

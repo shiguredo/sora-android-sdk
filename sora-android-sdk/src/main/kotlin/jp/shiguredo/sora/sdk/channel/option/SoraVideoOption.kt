@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.option
 
 import android.graphics.Point
+import org.webrtc.RtpParameters
 
 /**
  * 映像に関するオプションをまとめるクラスです.
@@ -164,5 +165,37 @@ class SoraVideoOption {
          * 解像度が16の倍数になるように調整する
          */
         MULTIPLE_OF_16(16u),
+    }
+
+    /**
+     * (リソースの逼迫により) 送信する映像の品質が維持できない場合の挙動を示します.
+     *
+     * WebRTC の RtpParameters.DegradationPreference に対応します.
+     * 映像エンコーダーがCPUやネットワーク帯域の制限に直面した際の振る舞いを制御します.
+     */
+    enum class DegradationPreference(val nativeValue: RtpParameters.DegradationPreference) {
+        /**
+         * 品質調整を無効にします.
+         * 解像度とフレームレートの両方を維持しようとします.
+         */
+        DISABLED(RtpParameters.DegradationPreference.DISABLED),
+
+        /**
+         * フレームレートの維持を優先します.
+         * 必要に応じて解像度を下げます.
+         */
+        MAINTAIN_FRAMERATE(RtpParameters.DegradationPreference.MAINTAIN_FRAMERATE),
+
+        /**
+         * 解像度の維持を優先します.
+         * 必要に応じてフレームレートを下げます.
+         */
+        MAINTAIN_RESOLUTION(RtpParameters.DegradationPreference.MAINTAIN_RESOLUTION),
+
+        /**
+         * バランスを取ります.
+         * 解像度とフレームレートの両方を適応的に調整します.
+         */
+        BALANCED(RtpParameters.DegradationPreference.BALANCED),
     }
 }

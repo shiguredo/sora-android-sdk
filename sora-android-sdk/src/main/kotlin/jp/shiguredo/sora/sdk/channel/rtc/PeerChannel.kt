@@ -326,6 +326,17 @@ class PeerChannelImpl(
         transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
         sender!!.streams = listOf(localStreamId)
         sender!!.setTrack(track, false)
+
+        // degradationPreference を設定（video の場合のみ）
+        if (track.kind() == "video") {
+            mediaOption.degradationPreference?.let { pref ->
+                val parameters = sender.parameters
+                parameters.degradationPreference = pref.nativeValue
+                sender.parameters = parameters
+                SoraLogger.d(TAG, "set DegradationPreference: ${pref.name}")
+            }
+        }
+
         SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
         return sender
     }

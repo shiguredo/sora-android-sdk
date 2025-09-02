@@ -269,6 +269,13 @@ class SoraMediaOption {
     var hardwareVideoEncoderResolutionAdjustment = SoraVideoOption.ResolutionAdjustment.MULTIPLE_OF_16
 
     /**
+     * (リソースの逼迫により) 送信する映像の品質が維持できない場合の挙動.
+     * 映像エンコーダーがCPUやネットワーク帯域の制限に直面した際の振る舞いを制御します.
+     * null の場合、WebRTC 側でデフォルトの挙動(BALANCED)が適用されます.
+     */
+    var degradationPreference: SoraVideoOption.DegradationPreference? = null
+
+    /**
      * プロキシ.
      */
     var proxy: SoraProxyOption = SoraProxyOption()
