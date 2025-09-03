@@ -40,12 +40,14 @@ class RTCComponentFactory(
                 mediaOption.videoEncoderFactory!!
 
             simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
-                // NOTE: SimulcastVideoEncoderFactoryWrapper で SoftwareVideoEncoderFactory を primary に設定すると
-                // WrappedNativeVideoEncoder#getImplementationName() の呼び出しで `java.lang.UnsupportedOperationException: Not implemented.`
-                // が発生するため、使うことはできない。そのため、SimulcastVideoEncoderFactoryWrapper には softwareOnly を実装せずに
-                // SoraDefaultVideoEncoderFactory の softwareOnly mode を利用している
-                // SoftwareVideoEncoderFactory にパッチをあてることで回避可能になったら、SimulcastVideoEncoderFactoryWrapper に
-                // softwareOnly を実装する方法にしたほうが良いかもしれない。
+                // NOTE: Simulcast を利用するかつ SW オンリーの場合に SoraDefaultVideoEncoderFactory を使う理由
+                //
+                // softwareOnly の場合に SoraDefaultVideoEncoderFactory 内で SoftwareVideoEncoderFactory が使われる
+                // SoftwareVideoEncoderFactory は JNI で BuiltinVideoEncoderFactory を生成し、
+                // その Create() が SimulcastEncoderAdapter を返すため、SW でも自動的に
+                // Simulcast をサポートできるため SimulcastVideoEncoderFactory を使う SimulcastVideoEncoderFactoryWrapper は不要。
+                // SimulcastEncoderAdapter 自体は与えられた VideoEncoderFactory から複数エンコーダを
+                // 生成してサイマルキャストを実現するため、SoftwareVideoEncoderFactory でも問題なく機能する。
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
