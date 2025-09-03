@@ -36,26 +36,28 @@ class RTCComponentFactory(
         SoraLogger.d(TAG, "videoUpstreamContext => ${mediaOption.videoUpstreamContext}")
         SoraLogger.d(TAG, "softwareVideoEncoderOnly => ${mediaOption.softwareVideoEncoderOnly}")
         val encoderFactory = when {
-            // App-provided factory takes precedence
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
 
-            // If simulcast is enabled AND software-only is requested, do NOT use simulcast wrapper
             simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
+                // NOTE: SimulcastVideoEncoderFactoryWrapper で SoftwareVideoEncoderFactory を primary に設定すると
+                // WrappedNativeVideoEncoder#getImplementationName() の呼び出しで `java.lang.UnsupportedOperationException: Not implemented.`
+                // が発生するため、使うことはできない。そのため、SimulcastVideoEncoderFactoryWrapper には softwareOnly を実装せずに
+                // SoraDefaultVideoEncoderFactory の softwareOnly mode を利用している
+                // SoftwareVideoEncoderFactory にパッチをあてることで回避可能になったら、SimulcastVideoEncoderFactoryWrapper に
+                // softwareOnly を実装する方法にしたほうが良いかもしれない。
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                     softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
 
-            // Simulcast enabled (HW/SW mixed per default behavior)
             simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
 
-            // Non-simulcast: pick encoder factory based on available EGL context
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
