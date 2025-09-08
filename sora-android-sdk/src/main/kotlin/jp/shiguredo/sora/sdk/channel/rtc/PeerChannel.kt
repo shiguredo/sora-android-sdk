@@ -313,7 +313,8 @@ class PeerChannelImpl(
             if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
             } else {
-                // simulcast が無効でも degradationPreference の再設定が必要
+                // setRemoteDescription により RtpSender の
+                // parameters.degradationPreference がリセットされる可能性があるため再設定する
                 videoSender?.let { configureSenderDegradationPreference(it) }
             }
             return@flatMap createAnswer()
