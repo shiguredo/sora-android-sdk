@@ -312,6 +312,10 @@ class PeerChannelImpl(
             // active: false が無効化されてしまう問題に対応
             if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
                 videoSender?.let { updateSenderOfferEncodings(it) }
+            } else {
+                // setRemoteDescription により RtpSender の
+                // parameters.degradationPreference がリセットされる可能性があるため再設定する
+                videoSender?.let { configureSenderDegradationPreference(it) }
             }
             return@flatMap createAnswer()
         }.flatMap {
@@ -326,6 +330,12 @@ class PeerChannelImpl(
         transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
         sender!!.streams = listOf(localStreamId)
         sender!!.setTrack(track, false)
+
+        // degradationPreference を設定（video の場合のみ）
+        if (track.kind() == "video") {
+            configureSenderDegradationPreference(sender)
+        }
+
         SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
         return sender
     }
@@ -390,6 +400,12 @@ class PeerChannelImpl(
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
         }
 
+        // degradationPreference を再設定（setRemoteDescription でリセットされる可能性があるため）
+        mediaOption.degradationPreference?.let { pref ->
+            parameters.degradationPreference = pref.nativeValue
+            SoraLogger.i(TAG, "re-set DegradationPreference in updateSenderOfferEncodings: ${pref.name}")
+        }
+
         // アプリケーションに一旦渡す, encodings は final なので参照渡しで変更してもらう
         listener?.onSenderEncodings(parameters.encodings)
         parameters.encodings.forEach {
@@ -418,6 +434,20 @@ class PeerChannelImpl(
 
         // Java オブジェクト参照先を変更し終えたので RtpSender#setParameters() から JNI 経由で C++ 層に渡す
         sender.parameters = parameters
+    }
+
+    private fun configureSenderDegradationPreference(sender: RtpSender) {
+        mediaOption.degradationPreference?.let { pref ->
+            try {
+                val parameters = sender.parameters
+                parameters.degradationPreference = pref.nativeValue
+                sender.parameters = parameters
+                SoraLogger.d(TAG, "set DegradationPreference: ${pref.name}")
+            } catch (e: Exception) {
+                // 例外が発生しても接続は継続
+                SoraLogger.w(TAG, "Failed to set DegradationPreference: ${e.message}")
+            }
+        }
     }
 
     override fun requestClientOfferSdp(): Single<Result<SessionDescription>> {

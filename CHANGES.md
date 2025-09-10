@@ -11,6 +11,13 @@
 
 ## develop
 
+- [CHANGE] `fixedResolution` を廃止する破壊的変更
+  - これまでは送信する映像の解像度維持の方法として、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` を利用していたが、`DegradationPreference` の追加に伴い `fixedResolution` は廃止した
+  - `CameraCapturerFactory.create` の引数 `fixedResolution` は不要となったため削除した。各 `CameraCapturerFactory.create` 呼び出し箇所の引数からも削除対応が必要となる
+  - @t-miya
+- [CHANGE] `CameraVideoCapturerWrapper` を削除する破壊的変更
+  - `fixedResolution` を使用するのためラッパークラスだったが、`fixedResolution` 廃止につき不要となったため
+  - @t-miya
 - [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
   - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
   - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
@@ -86,6 +93,10 @@
   - ソフトウェアエンコーダーのみを利用するように設定されなければこれまで通り SimulcastVideoEncoderFactoryWrapper を利用する
   - `SoraMediaOption.videoEncoderFactory` を明示設定している場合は本変更の影響を受けない
   - @zztkm
+- [ADD] `SoraMediaOption` に `DegradationPreference` を追加
+  - クライアント側の状況により設定した解像度やフレームレートを維持できなくなった場合にどのように質を下げるか制御できるパラメータとして `SoraMediaOption.degradationPreference` を追加した
+  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `BALANCED` が適用される
+  - @t-miya
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
 - [ADD] `SoraMediaOption` に `softwareVideoEncoderOnly` を追加する
