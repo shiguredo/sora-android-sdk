@@ -48,7 +48,7 @@
   - String にはエラーの詳細情報を設定する
     - 詳細がない場合は空文字列を設定する
   - @zztkm
-- [UPDATE] libwebrtc を 138.7204.0.2 に上げる
+- [UPDATE] libwebrtc を 138.7204.0.5 に上げる
   - @zztkm @miosakuma
 - [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
   - @zztkm
