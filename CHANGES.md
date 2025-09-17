@@ -117,6 +117,12 @@
 
 ### misc
 
+- [CHANGE] Gradle を Kotlin DSL 移行する
+  - build.gradle、settings.gradle、sora-android-sdk/build.gradle それぞれを Kotlin DSL(.kts) に移行
+  - @t-miya
+- [CHANGE] 依存ライブラリバージョンの管理をバージョンカタログに移行する
+  - gradle/libs.versions.toml を追加
+  - @t-miya
 - [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
   - @torikizi
 
