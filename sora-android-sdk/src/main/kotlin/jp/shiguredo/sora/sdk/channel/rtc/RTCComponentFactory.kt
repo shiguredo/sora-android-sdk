@@ -21,6 +21,18 @@ class RTCComponentFactory(
         private val TAG = RTCComponentFactory::class.simpleName
     }
 
+    // Controllable ADM（内部生成時のみ設定）
+    private var controllableAudioDevice: AudioDeviceModuleWrapper? = null
+    private var ownedAudioDeviceModule: AudioDeviceModule? = null
+
+    fun controllableAdm(): AudioDeviceModuleWrapper? = controllableAudioDevice
+
+    fun releaseOwnedAudioDeviceModule() {
+        ownedAudioDeviceModule?.release()
+        ownedAudioDeviceModule = null
+        controllableAudioDevice = null
+    }
+
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(appContext: Context): PeerConnectionFactory {
@@ -106,22 +118,22 @@ class RTCComponentFactory(
         encoderFactory.supportedCodecs.forEach {
             SoraLogger.d(TAG, "encoderFactory supported codec: ${it.name} ${it.params}")
         }
-        val audioDeviceModule =
+        val audioDeviceModule: AudioDeviceModule =
             when {
                 mediaOption.audioOption.audioDeviceModule != null ->
                     mediaOption.audioOption.audioDeviceModule!!
-                else ->
-                    createJavaAudioDevice(appContext)
+                else -> {
+                    val adm = createJavaAudioDevice(appContext)
+                    ownedAudioDeviceModule = adm
+                    controllableAudioDevice = AudioDeviceModuleWrapper(adm)
+                    adm
+                }
             }
         factoryBuilder
             .setAudioDeviceModule(audioDeviceModule)
             .setVideoEncoderFactory(encoderFactory)
             .setVideoDecoderFactory(decoderFactory)
-        // option で渡ってきた場合の所有権はアプリケーションにある。
-        // ここで生成した場合だけ解放する。
-        if (mediaOption.audioOption.audioDeviceModule == null) {
-            audioDeviceModule.release()
-        }
+        // 内部生成の ADM は制御のため保持し、クローズ時に解放する
 
         return factoryBuilder.createPeerConnectionFactory()
     }

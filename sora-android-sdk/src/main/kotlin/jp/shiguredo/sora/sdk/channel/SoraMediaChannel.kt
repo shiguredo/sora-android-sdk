@@ -1304,3 +1304,66 @@ class SoraMediaChannel
             }
         }
     }
+
+    /**
+     * メッセージを送信します.
+     *
+     * @param label ラベル
+     * @param data 送信する文字列
+     * @return エラー
+     */
+    fun sendDataChannelMessage(label: String, data: String): SoraMessagingError {
+        return sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
+    }
+
+    /**
+     * メッセージを送信します.
+     *
+     * @param label ラベル
+     * @param data 送信するデータ
+     * @return エラー
+     */
+    fun sendDataChannelMessage(label: String, data: ByteBuffer): SoraMessagingError {
+        if (!switchedToDataChannel) {
+            return SoraMessagingError.NOT_READY
+        }
+
+        if (!label.startsWith("#")) {
+            SoraLogger.w(TAG, "label must start with \"#\"")
+            return SoraMessagingError.INVALID_LABEL
+        }
+
+        val dataChannel = dataChannels[label]
+
+        if (dataChannel == null) {
+            SoraLogger.w(TAG, "data channel for label: $label not found")
+            return SoraMessagingError.LABEL_NOT_FOUND
+        }
+
+        if (dataChannel.state() != DataChannel.State.OPEN) {
+            return SoraMessagingError.INVALID_STATE
+        }
+
+        if (peer == null) {
+            return SoraMessagingError.PEER_CHANNEL_UNAVAILABLE
+        }
+        val buffer = peer!!.zipBufferIfNeeded(label, data)
+
+        val succeeded = dataChannel.send(DataChannel.Buffer(buffer, true))
+        SoraLogger.d(TAG, "state=${dataChannel.state()}  succeeded=$succeeded")
+        return if (succeeded) {
+            SoraMessagingError.OK
+        } else {
+            SoraMessagingError.SEND_FAILED
+        }
+    }
+
+    // --- Audio hard mute control ---
+    fun setAudioHardwareMuted(muted: Boolean): Boolean {
+        return peer?.setAudioHardwareMuted(muted) ?: false
+    }
+
+    fun isAudioHardwareMuted(): Boolean {
+        return peer?.isAudioHardwareMuted() ?: false
+    }
+}

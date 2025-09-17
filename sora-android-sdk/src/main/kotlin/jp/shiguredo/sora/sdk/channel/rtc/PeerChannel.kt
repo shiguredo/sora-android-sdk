@@ -11,6 +11,9 @@ import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import jp.shiguredo.sora.sdk.util.ZipHelper
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.Logging
@@ -79,6 +82,11 @@ interface PeerChannel {
         label: String,
         buffer: ByteBuffer,
     ): ByteBuffer
+
+    // Audio hardware mute control
+    fun setAudioHardwareMuted(muted: Boolean): Boolean
+
+    fun isAudioHardwareMuted(): Boolean
 
     interface Listener {
         fun onRemoveRemoteStream(label: String)
@@ -174,6 +182,9 @@ class PeerChannelImpl(
     private val localVideoManager = componentFactory.createVideoManager()
 
     private var videoSender: RtpSender? = null
+    private var audioSender: RtpSender? = null
+    private var audioMid: String? = null
+    private var audioHardwareMuted: Boolean = false
     private val localStreamId: String = UUID.randomUUID().toString()
 
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
@@ -427,7 +438,8 @@ class PeerChannelImpl(
                 // setTrack 内も同様
                 mid?.get("audio")?.let { mid ->
                     localAudioManager.track?.let { track ->
-                        setTrack(mid, track)
+                        audioMid = mid
+                        audioSender = setTrack(mid, track)
                     }
                 } ?: SoraLogger.d(TAG, "mid for audio not found")
 
@@ -792,6 +804,8 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "dispose peer connection factory")
         factory?.dispose()
         factory = null
+        // 内部生成の ADM を解放
+        componentFactory.releaseOwnedAudioDeviceModule()
 
         if (useTracer) {
             PeerConnectionFactory.stopInternalTracingCapture()
@@ -812,4 +826,81 @@ class PeerChannelImpl(
             handler(null)
         }
     }
+
+    override fun setAudioHardwareMuted(muted: Boolean): Boolean =
+        runBlocking {
+            setAudioHardwareMutedAsync(muted)
+        }
+
+    private suspend fun setAudioHardwareMutedAsync(muted: Boolean): Boolean =
+        withContext(executor.asCoroutineDispatcher()) {
+            if (muted) {
+                if (audioHardwareMuted) return@withContext true
+                muteAudioHardware()
+            } else {
+                if (!audioHardwareMuted) return@withContext true
+                unmuteAudioHardware()
+            }
+            true
+        }
+
+    private fun muteAudioHardware() {
+        // ADM の録音を停止（インジケータ消灯狙い）
+        SoraLogger.d(TAG, "[audio_hw_mute] request setAudioHardwareMuted(true)")
+        val paused = componentFactory.controllableAdm()?.pauseRecording() ?: false
+        SoraLogger.d(TAG, "[audio_hw_mute] pauseRecording result=$paused")
+        // 念のため送出を停止し、ローカル音声を破棄
+        try {
+            audioSender?.setTrack(null, false)
+        } catch (_: Exception) {
+        }
+        try {
+            localAudioManager.dispose()
+        } catch (_: Exception) {
+        }
+        audioHardwareMuted = true
+    }
+
+    private fun unmuteAudioHardware() {
+        // ローカル音声の再初期化と再アタッチ
+        try {
+            if (factory != null) {
+                localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+                val localTrack = localAudioManager.track
+                var reattached = false
+                try {
+                    audioSender?.setTrack(localTrack!!, false)
+                    reattached = true
+                    SoraLogger.d(TAG, "reattached audio track to existing sender")
+                } catch (e: Exception) {
+                    SoraLogger.w(TAG, "failed to reattach audio track: ${e.message}")
+                }
+                if (!reattached) {
+                    try {
+                        val mid = audioMid
+                        if (mid != null && localTrack != null) {
+                            audioSender = setTrack(mid, localTrack)
+                            reattached = true
+                            SoraLogger.d(TAG, "recreated audio sender and attached track (mid=$mid)")
+                        } else {
+                            SoraLogger.w(TAG, "audioMid or track is null; cannot recreate sender")
+                        }
+                    } catch (e2: Exception) {
+                        SoraLogger.w(TAG, "failed to recreate audio sender: ${e2.message}")
+                    }
+                }
+                localTrack?.setEnabled(true)
+            }
+        } catch (e: Exception) {
+            SoraLogger.w(TAG, "failed on audio track (init/attach): ${e.message}")
+        }
+
+        // ADM の録音再開（ベストエフォート）
+        SoraLogger.d(TAG, "[audio_hw_mute] request setAudioHardwareMuted(false)")
+        val resumed = componentFactory.controllableAdm()?.resumeRecording() ?: false
+        SoraLogger.d(TAG, "[audio_hw_mute] resumeRecording result=$resumed")
+        audioHardwareMuted = false
+    }
+
+    override fun isAudioHardwareMuted(): Boolean = audioHardwareMuted
 }
