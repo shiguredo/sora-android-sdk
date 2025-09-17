@@ -1188,4 +1188,13 @@ class SoraMediaChannel @JvmOverloads constructor(
             SoraMessagingError.SEND_FAILED
         }
     }
+
+    // --- Audio hard mute control ---
+    fun setAudioHardwareMuted(muted: Boolean): Boolean {
+        return peer?.setAudioHardwareMuted(muted) ?: false
+    }
+
+    fun isAudioHardwareMuted(): Boolean {
+        return peer?.isAudioHardwareMuted() ?: false
+    }
 }
