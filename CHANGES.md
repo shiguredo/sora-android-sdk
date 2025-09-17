@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.2.0
+
+**リリース日**: 2025-09-17
+
 - [CHANGE] `fixedResolution` を廃止する破壊的変更
   - これまでは送信する映像の解像度維持の方法として、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` を利用していたが、`DegradationPreference` の追加に伴い `fixedResolution` は廃止した
   - `CameraCapturerFactory.create` の引数 `fixedResolution` は不要となったため削除した。各 `CameraCapturerFactory.create` 呼び出し箇所の引数からも削除対応が必要となる
