@@ -14,6 +14,7 @@ import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannel
+import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelCloseEvent
 import jp.shiguredo.sora.sdk.channel.signaling.SignalingChannelImpl
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
@@ -229,23 +230,30 @@ class SoraMediaChannel @JvmOverloads constructor(
          * - [PeerChannel]
          *
          * @param mediaChannel イベントが発生したチャネル
+         * @param closeEvent 切断イベント
          */
+        fun onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) {}
+
+        /**
+         * Sora との接続が切断されたときに呼び出されるコールバック.
+         *
+         * cf.
+         * - [PeerChannel]
+         *
+         * @param mediaChannel イベントが発生したチャネル
+         */
+        @Deprecated(
+            "onClose(mediaChannel: SoraMediaChannel) は非推奨です " +
+                "onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent) を利用してください." +
+                " このコールバックは 2027 年中に廃止予定です.",
+            ReplaceWith("onClose(SoraMediaChannel, SoraCloseEvent)"),
+            DeprecationLevel.WARNING
+        )
         fun onClose(mediaChannel: SoraMediaChannel) {}
 
         /**
          * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
-         *
-         * cf.
-         * - `org.webrtc.PeerConnection`
-         * - `org.webrtc.PeerConnection.Observer`
-         * - [PeerChannel]
-         *
-         * @param reason エラーの理由
-         */
-        fun onError(mediaChannel: SoraMediaChannel, reason: SoraErrorReason) {}
-
-        /**
-         * Sora との通信やメディアでエラーが発生したときに呼び出されるコールバック.
+         * message の内容がない場合は、空文字列が渡されます.
          *
          * cf.
          * - `org.webrtc.PeerConnection`
@@ -367,10 +375,14 @@ class SoraMediaChannel @JvmOverloads constructor(
     private var signaling: SignalingChannel? = null
 
     private var switchedToDataChannel = false
+    // 切断処理を開始したことを示すフラグ
     private var closing = false
 
     // type: redirect で再利用するために、初回接続時の clientOffer を保持する
     private var clientOffer: SessionDescription? = null
+
+    // DataChannel のみのシグナリングで signaling label の type: close を受信したときに取得する code と reason を保持する
+    private var dataChannelSignalingCloseEvent: SoraCloseEvent? = null
 
     // WebSocket 切断の遅延処理用の CoroutineJob
     private var delayedWebSocketDisconnectJob: Job? = null
@@ -401,7 +413,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private val signalingListener = object : SignalingChannel.Listener {
 
-        override fun onDisconnect(disconnectReason: SoraDisconnectReason?) {
+        override fun onDisconnect(disconnectReason: SoraDisconnectReason?, event: SignalingChannelCloseEvent?) {
             SoraLogger.d(
                 TAG,
                 "[channel:$role] @signaling:onDisconnect " +
@@ -413,6 +425,10 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onDisconnect: IGNORE")
             } else {
+                if (event != null) {
+                    internalDisconnect(disconnectReason, SoraCloseEvent(event.code, event.reason))
+                    return
+                }
                 internalDisconnect(disconnectReason)
             }
         }
@@ -468,7 +484,8 @@ class SoraMediaChannel @JvmOverloads constructor(
                 // なにもしない
                 SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
             } else {
-                listener?.onError(this@SoraMediaChannel, reason)
+                // エラーをリスナーに通知
+                listener?.onError(this@SoraMediaChannel, reason, "")
             }
         }
 
@@ -512,7 +529,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onAddRemoteStream(ms: MediaStream) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=$connectionId")
-            if (mediaOption.multistreamEnabled && connectionId != null && ms.id == connectionId) {
+            if (mediaOption.multistreamEnabled != false && connectionId != null && ms.id == connectionId) {
                 SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                 return
             }
@@ -547,44 +564,18 @@ class SoraMediaChannel @JvmOverloads constructor(
             } else {
                 try {
                     val message = dataToString(buffer)
-
-                    val expectedType = when (label) {
-                        "signaling" -> "re-offer"
-                        "notify" -> "notify"
-                        "push" -> "push"
-                        "stats" -> "req-stats"
-                        "e2ee" -> "NOT-IMPLEMENTED"
-                        else -> label // 追加が発生した時に備えて許容する
-                    }
-
                     MessageConverter.parseType(message)?.let { type ->
-                        when (type) {
-                            expectedType -> {
-                                when (label) {
-                                    "signaling" -> {
-                                        val reOfferMessage = MessageConverter.parseReOfferMessage(message)
-                                        handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
-                                    }
-                                    "notify" -> {
-                                        val notificationMessage = MessageConverter.parseNotificationMessage(message)
-                                        handleNotificationMessage(notificationMessage)
-                                    }
-                                    "push" -> {
-                                        val pushMessage = MessageConverter.parsePushMessage(message)
-                                        listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
-                                    }
-                                    "stats" -> {
-                                        // req-stats は type しかないので parse しない
-                                        handleReqStats(dataChannel)
-                                    }
-                                    "e2ee" -> {
-                                        SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
-                                    }
-                                    else ->
-                                        SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
-                                }
+                        when (label) {
+                            "signaling" -> handleSignalingViaDataChannel(dataChannel, type, message)
+                            "notify" -> handleNotifyViaDataChannel(type, message)
+                            "push" -> handlePushViaDataChannel(type, message)
+                            "stats" -> handleStatsViaDataChannel(dataChannel, type, message)
+                            "e2ee" -> {
+                                SoraLogger.i(TAG, "NOT IMPLEMENTED: label=$label, type=$type, message=$message")
                             }
-                            else -> SoraLogger.i(TAG, "Unknown type: label=$label, type=$type, message=$message")
+                            else -> {
+                                SoraLogger.i(TAG, "Unknown label: label=$label, type=$type, message=$message")
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -596,7 +587,12 @@ class SoraMediaChannel @JvmOverloads constructor(
         override fun onDataChannelClosed(label: String, dataChannel: DataChannel) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onDataChannelClosed label=$label")
 
-            // DataChannel が閉じられたが、その理由を知る方法がないため reason は null にする
+            dataChannelSignalingCloseEvent?.let { event ->
+                internalDisconnect(SoraDisconnectReason.DATACHANNEL_ONCLOSE, event)
+                return
+            }
+
+            // dataChannelSignalingCloseEvent が null の場合、DataChannel が閉じられた理由を知る方法がないため reason は null にする
             internalDisconnect(null)
         }
 
@@ -607,7 +603,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
         override fun onError(reason: SoraErrorReason) {
             SoraLogger.d(TAG, "[channel:$role] @peer:onError:$reason")
-            listener?.onError(this@SoraMediaChannel, reason)
+            listener?.onError(this@SoraMediaChannel, reason, "")
         }
 
         override fun onError(reason: SoraErrorReason, message: String) {
@@ -723,7 +719,7 @@ class SoraMediaChannel @JvmOverloads constructor(
 
     private fun onTimeout() {
         SoraLogger.d(TAG, "[channel:$role] @peer:onTimeout")
-        listener?.onError(this, SoraErrorReason.TIMEOUT)
+        listener?.onError(this, SoraErrorReason.TIMEOUT, "")
 
         // ここに来た場合、 Sora に接続出来ていない = disconnect メッセージを送信する必要がない
         // そのため、 reason は null で良い
@@ -745,7 +741,7 @@ class SoraMediaChannel @JvmOverloads constructor(
                 mediaOption = mediaOption
             ),
             mediaOption = mediaOption,
-            listener = null
+            listener = null,
         )
         clientOfferPeer.run {
             val subscription = requestClientOfferSdp()
@@ -800,7 +796,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             connectDataChannels = connectDataChannels,
             redirect = redirectLocation != null,
             forwardingFilterOption = forwardingFilterOption,
-            forwardingFiltersOption = forwardingFiltersOption
+            forwardingFiltersOption = forwardingFiltersOption,
         )
         signaling!!.connect()
     }
@@ -818,7 +814,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             mediaOption = mediaOption,
             simulcastEnabled = offerMessage.simulcast,
             dataChannelConfigs = offerMessage.dataChannels,
-            listener = peerListener
+            listener = peerListener,
         )
 
         if (offerMessage.dataChannels?.isNotEmpty() == true) {
@@ -917,6 +913,28 @@ class SoraMediaChannel @JvmOverloads constructor(
         }
     }
 
+    /**
+     * DataChannel 経由のシグナリングの signaling ラベルで受信したメッセージを処理します.
+     */
+    private fun handleSignalingViaDataChannel(dataChannel: DataChannel, type: String, message: String) {
+        when (type) {
+            "re-offer" -> {
+                val reOfferMessage = MessageConverter.parseReOfferMessage(message)
+                handleReOfferViaDataChannel(dataChannel, reOfferMessage.sdp)
+            }
+            "close" -> {
+                val closeMessage = MessageConverter.parseCloseMessage(message)
+                // DataChannel のみのシグナリング かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合に
+                // Sora から切断が発生した際、DataChannel を閉じる前に `type: close` メッセージが送られてくるため、
+                // dataChannelSignalingCloseEvent に code と reason を設定する
+                dataChannelSignalingCloseEvent = SoraCloseEvent(closeMessage.code, closeMessage.reason)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown signaling type: type=$type, message=$message")
+            }
+        }
+    }
+
     private fun handleReOfferViaDataChannel(dataChannel: DataChannel, sdp: String) {
         peer?.run {
             val subscription = handleUpdatedRemoteOffer(sdp)
@@ -933,6 +951,51 @@ class SoraMediaChannel @JvmOverloads constructor(
                     }
                 )
             compositeDisposable.add(subscription)
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの notify ラベルで受信したメッセージを処理します.
+     */
+    private fun handleNotifyViaDataChannel(type: String, message: String) {
+        when (type) {
+            "notify" -> {
+                val notificationMessage = MessageConverter.parseNotificationMessage(message)
+                handleNotificationMessage(notificationMessage)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown notify type: type=$type, message=$message")
+            }
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの push ラベルで受信したメッセージを処理します.
+     */
+    private fun handlePushViaDataChannel(type: String, message: String) {
+        when (type) {
+            "push" -> {
+                val pushMessage = MessageConverter.parsePushMessage(message)
+                listener?.onPushMessage(this@SoraMediaChannel, pushMessage)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown push type: type=$type, message=$message")
+            }
+        }
+    }
+
+    /**
+     * DataChannel 経由のシグナリングの stats ラベルで受信したメッセージを処理します.
+     */
+    private fun handleStatsViaDataChannel(dataChannel: DataChannel, type: String, message: String) {
+        when (type) {
+            "req-stats" -> {
+                // req-stats は type しかないので parse しない
+                handleReqStats(dataChannel)
+            }
+            else -> {
+                SoraLogger.i(TAG, "Unknown stats type: type=$type, message=$message")
+            }
         }
     }
 
@@ -964,14 +1027,16 @@ class SoraMediaChannel @JvmOverloads constructor(
      * アプリケーションとして切断後の処理が必要な場合は [Listener.onClose] で行います.
      */
     fun disconnect() {
-        // アプリケーションから切断された場合は NO-ERROR とする
-        internalDisconnect(SoraDisconnectReason.NO_ERROR)
+        // SoraMediaChannel.disconnect() 起因で internalDisconnect() を呼んだ場合、
+        // SoraCloseEvent は固定値として code: 1000, reason: "NO-ERROR" を設定する
+        internalDisconnect(SoraDisconnectReason.NO_ERROR, SoraCloseEvent.createClientDisconnectEvent())
     }
 
-    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?) {
+    private fun internalDisconnect(disconnectReason: SoraDisconnectReason?, closeEvent: SoraCloseEvent? = null) {
         if (closing)
             return
         closing = true
+        SoraLogger.d(TAG, "[channel:$role] internalDisconnect: $disconnectReason")
 
         stopTimer()
         delayedWebSocketDisconnectJob?.cancel()
@@ -980,13 +1045,6 @@ class SoraMediaChannel @JvmOverloads constructor(
             sendDisconnectIfNeeded(it)
         }
         compositeDisposable.dispose()
-
-        listener?.onClose(this)
-        listener = null
-
-        // アプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
-        contactSignalingEndpoint = null
-        connectedSignalingEndpoint = null
 
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
         signaling?.disconnect(null)
@@ -998,6 +1056,18 @@ class SoraMediaChannel @JvmOverloads constructor(
         // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
         peer?.disconnect(null)
         peer = null
+
+        listener?.onClose(this)
+        if (closeEvent != null) {
+            listener?.onClose(this, closeEvent)
+        } else {
+            listener?.onClose(this, SoraCloseEvent.createClientDisconnectEvent())
+        }
+        listener = null
+
+        // onClose によってアプリケーションで定義された切断処理を実行した後に contactSignalingEndpoint と connectedSignalingEndpoint を null にする
+        contactSignalingEndpoint = null
+        connectedSignalingEndpoint = null
     }
 
     private fun sendDisconnectOverWebSocket(disconnectReason: SoraDisconnectReason) {
@@ -1042,6 +1112,7 @@ class SoraMediaChannel @JvmOverloads constructor(
             }
 
             SoraDisconnectReason.WEBSOCKET_ONCLOSE, SoraDisconnectReason.WEBSOCKET_ONERROR -> {
+                // DataChannel シグナリング利用かつ、WebSocket 切断を無視しない場合
                 if (switchedToDataChannel && !switchedIgnoreDisconnectWebSocket) {
                     sendDisconnectOverDataChannel(disconnectReason)
                 }
@@ -1049,6 +1120,10 @@ class SoraMediaChannel @JvmOverloads constructor(
 
             SoraDisconnectReason.SIGNALING_FAILURE, SoraDisconnectReason.PEER_CONNECTION_STATE_FAILED -> {
                 // メッセージの送信は不要
+            }
+
+            SoraDisconnectReason.DATACHANNEL_ONCLOSE -> {
+                // DataChannel のみのシグナリング利用時に Sora から type: close を受信した場合、メッセージの送信は不要
             }
 
             else -> {

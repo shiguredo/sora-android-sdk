@@ -19,7 +19,7 @@ class SoraMediaOption {
     internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
     internal var videoUpstreamEnabled = false
-    internal var multistreamEnabled = false
+    internal var multistreamEnabled: Boolean? = null
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
@@ -37,6 +37,15 @@ class SoraMediaOption {
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
+    /**
+     * 映像エンコードにソフトウェアエンコーダーのみを使用します.
+     *
+     * - 既定値は false で、ハードウェアエンコーダーを優先し、必要時にソフトウェアへフォールバックします.
+     * - `videoEncoderFactory` を明示的に設定している場合は、このフラグは無視されます.
+     * - サイマルキャストが有効な場合も、ソフトウェアのみの構成でエンコードします.
+     */
+    var softwareVideoEncoderOnly: Boolean = false
+
     internal var videoCapturer: VideoCapturer? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null
@@ -45,9 +54,10 @@ class SoraMediaOption {
     /**
      * 映像コーデック.
      *
-     * 未設定の場合、 Sora Android SDK は VP9 を設定します.
+     * 未設定の場合 Sora Android SDK は DEFAULT を設定する.
+     * DEFAULT は Sora のデフォルト値を利用する.
      */
-    var videoCodec = SoraVideoOption.Codec.VP9
+    var videoCodec = SoraVideoOption.Codec.DEFAULT
 
     /**
      * 映像ビットレート.
@@ -128,8 +138,6 @@ class SoraMediaOption {
     @JvmOverloads
     fun enableSpotlight(option: SoraSpotlightOption, enableSimulcast: Boolean = true) {
         spotlightOption = option
-        multistreamEnabled = true
-
         if (enableSimulcast) {
             enableSimulcast()
         }
@@ -156,8 +164,11 @@ class SoraMediaOption {
 
     /**
      * 音声コーデック.
+     *
+     * 未設定の場合 Sora Android SDK は DEFAULT を設定する.
+     * DEFAULT は Sora のデフォルト値を利用する.
      */
-    var audioCodec = SoraAudioOption.Codec.OPUS
+    var audioCodec = SoraAudioOption.Codec.DEFAULT
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     /**
@@ -172,8 +183,21 @@ class SoraMediaOption {
      * - Sora ドキュメントのマルチストリーム
      *   [](https://sora.shiguredo.jp/doc/MULTISTREAM.html)
      */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
     fun enableMultistream() {
         multistreamEnabled = true
+    }
+
+    /**
+     * レガシーストリームを有効にします.
+     */
+    @Deprecated(
+        message = "レガシーストリーム機能は 2025 年 6 月リリースの Sora にて廃止します。",
+    )
+    fun enableLegacyStream() {
+        multistreamEnabled = false
     }
 
     /**
@@ -199,24 +223,12 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
         get() = audioUpstreamEnabled || videoUpstreamEnabled
 
-    internal var _multistreamIsRequired: Boolean? = null
-
-    internal var multistreamIsRequired: Boolean
-        get() = when {
-            _multistreamIsRequired != null ->
-                _multistreamIsRequired!!
-            downstreamIsRequired && upstreamIsRequired ->
-                // 双方向通信の場合は multistream フラグを立てる
-                true
-            else ->
-                multistreamEnabled
-        }
-        set(value) {
-            _multistreamIsRequired = value
-        }
-
+    // TODO(zztkm): internal かつ 未使用なので削除して良い
     internal var _requiredRole: SoraChannelRole? = null
 
+    /**
+     * Upstream と Downstream の設定から、必要なロールを決定します.
+     */
     internal val requiredRole: SoraChannelRole
         get() = if (upstreamIsRequired && downstreamIsRequired)
             SoraChannelRole.SENDRECV
@@ -257,6 +269,13 @@ class SoraMediaOption {
     var hardwareVideoEncoderResolutionAdjustment = SoraVideoOption.ResolutionAdjustment.MULTIPLE_OF_16
 
     /**
+     * (リソースの逼迫により) 送信する映像の品質が維持できない場合の挙動.
+     * 映像エンコーダーがCPUやネットワーク帯域の制限に直面した際の振る舞いを制御します.
+     * null(未指定)の場合、WebRTC 側でデフォルトの挙動(BALANCED)が適用されます.
+     */
+    var degradationPreference: SoraVideoOption.DegradationPreference? = null
+
+    /**
      * プロキシ.
      */
     var proxy: SoraProxyOption = SoraProxyOption()
@@ -265,4 +284,24 @@ class SoraMediaOption {
      * Sora の音声ストリーミング機能利用時に指定する言語コード.
      */
     var audioStreamingLanguageCode: String? = null
+
+    /**
+     * シグナリング type: connect メッセージの video に含めるデータがすべてデフォルト値かどうか.
+     */
+    internal fun isDefaultVideoOption(): Boolean {
+        return videoCodec == SoraVideoOption.Codec.DEFAULT &&
+            videoBitrate == null &&
+            videoVp9Params == null &&
+            videoAv1Params == null &&
+            videoH264Params == null
+    }
+
+    /**
+     * シグナリング type: connect メッセージの audio に含めるデータがすべてデフォルト値かどうか.
+     */
+    internal fun isDefaultAudioOption(): Boolean {
+        return audioCodec == SoraAudioOption.Codec.DEFAULT &&
+            audioBitrate == null &&
+            audioOption.opusParams == null
+    }
 }

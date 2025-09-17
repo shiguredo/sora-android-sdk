@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.annotations.SerializedName
 import jp.shiguredo.sora.sdk.util.SDKInfo
+import org.webrtc.RtpParameters
 
 // NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
 
@@ -28,7 +29,7 @@ data class ConnectMessage(
     @SerializedName("metadata") val metadata: Any? = null,
     @SerializedName("signaling_notify_metadata")
     val signalingNotifyMetadata: Any? = null,
-    @SerializedName("multistream") val multistream: Boolean = false,
+    @SerializedName("multistream") val multistream: Boolean? = null,
     @SerializedName("spotlight") var spotlight: Any? = null,
     @SerializedName("spotlight_number")
     var spotlightNumber: Int? = null,
@@ -61,7 +62,7 @@ data class ConnectMessage(
 )
 
 data class VideoSetting(
-    @SerializedName("codec_type") val codecType: String,
+    @SerializedName("codec_type") var codecType: String? = null,
     @SerializedName("bit_rate") var bitRate: Int? = null,
     @SerializedName("vp9_params") var vp9Params: Any? = null,
     @SerializedName("av1_params") var av1Params: Any? = null,
@@ -69,7 +70,7 @@ data class VideoSetting(
 )
 
 data class AudioSetting(
-    @SerializedName("codec_type") val codecType: String?,
+    @SerializedName("codec_type") var codecType: String? = null,
     @SerializedName("bit_rate") var bitRate: Int? = null,
     @SerializedName("opus_params") var opusParams: OpusParams? = null
 )
@@ -102,6 +103,7 @@ data class Encoding(
     @SerializedName("maxBitrate") val maxBitrate: Int?,
     @SerializedName("maxFramerate") val maxFramerate: Double?,
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
+    @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: RtpParameters.ResolutionRestriction?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?
 )
 
@@ -144,6 +146,9 @@ data class SwitchedMessage(
     @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null
 )
 
+/**
+ * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+ */
 data class UpdateMessage(
     @SerializedName("type") val type: String = "update",
     @SerializedName("sdp") val sdp: String
@@ -152,6 +157,12 @@ data class UpdateMessage(
 data class ReOfferMessage(
     @SerializedName("type") val type: String = "re-offer",
     @SerializedName("sdp") val sdp: String
+)
+
+data class CloseMessage(
+    @SerializedName("type") val type: String = "close",
+    @SerializedName("code") val code: Int,
+    @SerializedName("reason") val reason: String,
 )
 
 data class ReAnswerMessage(

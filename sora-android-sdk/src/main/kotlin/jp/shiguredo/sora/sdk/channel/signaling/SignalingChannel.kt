@@ -27,6 +27,7 @@ import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 interface SignalingChannel {
 
@@ -40,7 +41,7 @@ interface SignalingChannel {
 
     interface Listener {
         fun onConnect(endpoint: String)
-        fun onDisconnect(disconnectReason: SoraDisconnectReason?)
+        fun onDisconnect(disconnectReason: SoraDisconnectReason?, event: SignalingChannelCloseEvent?)
         fun onInitialOffer(offerMessage: OfferMessage, endpoint: String)
         fun onSwitched(switchedMessage: SwitchedMessage)
         fun onUpdatedOffer(sdp: String)
@@ -82,6 +83,28 @@ class SignalingChannelImpl @JvmOverloads constructor(
     }
 
     private val client: OkHttpClient
+    private val closing = AtomicBoolean(false)
+
+    /**
+     * 初期化時にエラーが発生した場合の共通処理
+     * エラーをログに記録し、リスナーに通知して接続を無効化する
+     *
+     * @param errorMessage ログに出力するエラーメッセージ
+     * @param exception 発生した例外
+     * @param errorReason 通知するエラーの種類
+     */
+    private fun handleInitializationError(
+        errorMessage: String,
+        exception: Exception,
+        errorReason: SoraErrorReason
+    ) {
+        SoraLogger.e(TAG, errorMessage, exception)
+        // 即座にエラーを通知
+        listener?.onError(errorReason)
+        // initブロック内なのでdisconnectは呼ばない
+        // connect()が呼ばれても接続処理をスキップするフラグを設定
+        closing.set(true)
+    }
 
     init {
         // OkHttpClient は main スレッドで初期化しない
@@ -123,27 +146,35 @@ class SignalingChannelImpl @JvmOverloads constructor(
         }
     }
 
-    /*
-      接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
-      その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
-      メソッドから同時にアクセスされる可能性があるため、スレッドセーフである必要がある
-      - ws
-      - wsCandidates
-      - receivedRedirectMessage
-      - closing
+    /**
+     接続中 (= type: connect を送信する前) は複数の WebSocket が存在する可能性がある
+     その場合、以下の変数は WebSocketListener 及びそこから呼び出される SignalingChannelImpl の
+     メソッドから同時にアクセスされる可能性があるため、スレッドセーフである必要がある
+     - ws
+     - wsCandidates
+     - receivedRedirectMessage
+     - closing
 
-      ws と wsCandidates については両方を同時に更新するため、このクラスのインスタンスで排他制御する
-      receivedRedirectMessage と closing には上記のような要件がないため、 AtomicBoolean を使う
+     ws と wsCandidates については両方を同時に更新するため、このクラスのインスタンスで排他制御する
+     receivedRedirectMessage と closing には上記のような要件がないため、 AtomicBoolean を使う
      */
     private var ws: WebSocket? = null
 
     private val wsCandidates = mutableListOf<WebSocket>()
 
-    private val closing = AtomicBoolean(false)
-
     private val receivedRedirectMessage = AtomicBoolean(false)
 
+    private val signalingChannelCloseEvent = AtomicReference<SignalingChannelCloseEvent?>()
+
     override fun connect() {
+        // 指定された CA 証明書の検証に失敗した場合など、初期化時にエラーが発生している場合は接続をスキップ
+        // init で handleInitializationError が呼ばれた場合、 closing が true になり、onError が発火する
+        // そのため、ここで onError を呼び出す必要はなく、接続をスキップするだけでよい
+        if (closing.get()) {
+            SoraLogger.w(TAG, "[signaling:$role] connection is disabled due to initialization error")
+            return
+        }
+
         SoraLogger.i(TAG, "[signaling:$role] endpoints=$endpoints")
         synchronized(this) {
             for (endpoint in endpoints) {
@@ -240,7 +271,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
 
         // type: redirect を受信している場合は onDisconnect を発火させない
         if (!receivedRedirectMessage.get()) {
-            listener?.onDisconnect(disconnectReason)
+            listener?.onDisconnect(disconnectReason, signalingChannelCloseEvent.get())
         }
         listener = null
     }
@@ -302,6 +333,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onSwitched(switchMessage)
     }
 
+    /**
+     * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+     */
     private fun onUpdateMessage(text: String) {
         val update = MessageConverter.parseUpdateMessage(text)
 
@@ -364,7 +398,12 @@ class SignalingChannelImpl @JvmOverloads constructor(
         listener?.onRedirect(msg.location)
     }
 
-    // WebSocketListener の onClosed, onClosing, onFailure で使用する
+    /**
+     * WebSocket シグナリングに採用された WebSocket インスタンスかどうかを判定する関数.
+     *
+     * WebSocket エンドポイントが複数指定された場合、採用した WebSocket インスタンスでのみ切断処理を行うため、
+     * 採用しなかった WebSocket インスタンスから呼び出される onClosed, onClosing, onFailure は無視する。
+     */
     @Synchronized
     private fun propagatesWebSocketTerminateEventToSignalingChannel(webSocket: WebSocket): Boolean {
         // 接続状態になる可能性がなくなった WebSocket を wsCandidates から削除
@@ -462,6 +501,9 @@ class SignalingChannelImpl @JvmOverloads constructor(
             // This time, we don't use byte-data, so ignore this message
         }
 
+        /**
+         * 接続が正常終了したときに呼び出される.
+         */
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             if (code == 1000) {
                 SoraLogger.i(TAG, "[signaling:$role] @onClosed: reason = [$reason], code = $code")
@@ -474,28 +516,45 @@ class SignalingChannelImpl @JvmOverloads constructor(
                 return
             }
 
-            try {
-                if (code != 1000) {
-                    listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
-                }
+            signalingChannelCloseEvent.set(SignalingChannelCloseEvent(code, reason))
 
+            try {
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
             } catch (e: Exception) {
                 SoraLogger.w(TAG, e.toString())
             }
         }
 
+        /**
+         * サーバーから Close フレームを受信したときに呼び出される.
+         *
+         * NOTE: OkHttp (4.12.0) の実装を確認したところ、異常が発生しなければ onClosed が必ず呼ばれるため
+         * onClosing では disconnect 呼び出しはせずに、 ws.close() を呼ぶのみとしている。
+         *
+         * もし onClosing だけ呼ばれるような事象を特定したときは、onClosing での終了処理を検討する.
+         */
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             SoraLogger.d(TAG, "[signaling:$role] @onClosing: = [$reason], code = $code")
-
             if (!propagatesWebSocketTerminateEventToSignalingChannel(webSocket)) {
                 SoraLogger.d(TAG, "[signaling:$role] @onClosing: skipped")
                 return
             }
-
-            disconnect(SoraDisconnectReason.WEBSOCKET_ONCLOSE)
+            // NOTE: OkHttp の WebSocket.close() の実装について
+            // close() を正常に開始した場合、2 回目以降の呼び出しは無視される。
+            // 先に disconnect() 内で ws.close() を呼び出した場合、ここでの呼び出しは無視され、
+            // 先にここで呼び出した場合、disconnect() 内での呼び出しは無視される。
+            //
+            // NOTE: Close Frame のステータスコードについて
+            // サーバーから Close Frame を受信し、クライアントが Close Frame を送り返す場合は
+            // サーバーから受信したステータスコードをそのまま送り返す。
+            // > When sending a Close frame in response, the endpoint typically echos the status code it received.
+            // 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
+            ws?.close(code, null)
         }
 
+        /**
+         * ネットワーク関連の問題が発生し、WebSocket が閉じられたときに呼び出される.
+         */
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             response?.let {
                 SoraLogger.i(TAG, "[signaling:$role] @onFailure: ${it.message}, $t")
@@ -507,6 +566,7 @@ class SignalingChannelImpl @JvmOverloads constructor(
             }
 
             try {
+                // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
                 listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
                 disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
             } catch (e: Exception) {

@@ -27,8 +27,6 @@ class CameraCapturerFactory {
          * 複数のカメラがある場合はフロントのカメラを優先します.
          *
          * @param context application context
-         * @param fixedResolution true の場合は解像度維持を優先、false の場合は
-         * フレームレート維持を優先する. デフォルト値は false.
          * @param frontFacingFirst true の場合はフロントカメラを優先、false の場合は
          * リアカメラを優先して選択する. デフォルト値は true.
          * @return 生成された `CameraVideoCapturer`
@@ -36,7 +34,6 @@ class CameraCapturerFactory {
         @JvmOverloads
         fun create(
             context: Context,
-            fixedResolution: Boolean = false,
             frontFacingFirst: Boolean = true
         ): CameraVideoCapturer? {
             SoraLogger.d(TAG, "create camera capturer")
@@ -58,15 +55,7 @@ class CameraCapturerFactory {
             }
 
             SoraLogger.d(TAG, "camera capturer => $videoCapturer")
-            return when (videoCapturer.isScreencast) {
-                fixedResolution -> {
-                    videoCapturer
-                }
-                else -> {
-                    SoraLogger.d(TAG, "Wrap capturer: original.isScreencast=${videoCapturer.isScreencast}, fixedResolution=$fixedResolution")
-                    CameraVideoCapturerWrapper(videoCapturer, fixedResolution)
-                }
-            }
+            return videoCapturer
         }
 
         private fun createCapturer(enumerator: CameraEnumerator, frontFacingFirst: Boolean): CameraVideoCapturer? {

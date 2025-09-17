@@ -3,9 +3,11 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
+import jp.shiguredo.sora.sdk.channel.option.SoraVideoOption
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import org.webrtc.RTCStats
 import org.webrtc.RTCStatsReport
@@ -54,7 +56,7 @@ class MessageConverter {
                 ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
                 dataChannels = dataChannels,
                 metadata = metadata,
-                multistream = mediaOption.multistreamIsRequired,
+                multistream = mediaOption.multistreamEnabled,
                 sdp = sdp,
                 clientId = clientId,
                 bundleId = bundleId,
@@ -67,42 +69,64 @@ class MessageConverter {
             if (mediaOption.upstreamIsRequired) {
                 // 配信者では audio, video は配信の設定
                 if (mediaOption.audioUpstreamEnabled) {
-                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
-                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
-
-                    if (mediaOption.audioOption.opusParams != null) {
-                        audioSetting.opusParams = mediaOption.audioOption.opusParams
+                    if (!mediaOption.isDefaultAudioOption()) {
+                        msg.audio = AudioSetting().apply {
+                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                codecType = mediaOption.audioCodec.toString()
+                            }
+                            mediaOption.audioBitrate?.let { bitRate = it }
+                            mediaOption.audioOption.opusParams?.let { opusParams = it }
+                        }
                     }
-
-                    msg.audio = audioSetting
                 } else {
                     msg.audio = false
                 }
+
                 if (mediaOption.videoUpstreamEnabled) {
-                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
-                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
-                    mediaOption.videoVp9Params?.let { videoSetting.vp9Params = it }
-                    mediaOption.videoAv1Params?.let { videoSetting.av1Params = it }
-                    mediaOption.videoH264Params?.let { videoSetting.h264Params = it }
-                    msg.video = videoSetting
+                    // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
+                    if (!mediaOption.isDefaultVideoOption()) {
+                        msg.video = VideoSetting().apply {
+                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                codecType = mediaOption.videoCodec.toString()
+                            }
+                            mediaOption.videoBitrate?.let { bitRate = it }
+                            mediaOption.videoVp9Params?.let { vp9Params = it }
+                            mediaOption.videoAv1Params?.let { av1Params = it }
+                            mediaOption.videoH264Params?.let { h264Params = it }
+                        }
+                    }
                 } else {
+                    // ビデオを無効化したいため false を設定する
                     msg.video = false
                 }
             } else {
                 // 視聴者では audio, video は視聴の設定
                 if (mediaOption.audioDownstreamEnabled) {
-                    val audioSetting = AudioSetting(mediaOption.audioCodec.toString())
-                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                    mediaOption.audioBitrate?.let { audioSetting.bitRate = it }
-                    msg.audio = audioSetting
+                    if (!mediaOption.isDefaultAudioOption()) {
+                        msg.audio = AudioSetting().apply {
+                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                codecType = mediaOption.audioCodec.toString()
+                            }
+                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                            mediaOption.audioBitrate?.let { bitRate = it }
+                        }
+                    }
                 } else {
                     msg.audio = false
                 }
+
                 if (mediaOption.videoDownstreamEnabled) {
-                    val videoSetting = VideoSetting(mediaOption.videoCodec.toString())
-                    // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                    mediaOption.videoBitrate?.let { videoSetting.bitRate = it }
-                    msg.video = videoSetting
+                    // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
+                    if (!mediaOption.isDefaultVideoOption()) {
+                        msg.video = VideoSetting().apply {
+                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                codecType = mediaOption.videoCodec.toString()
+                            }
+                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                            // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
+                            mediaOption.videoBitrate?.let { bitRate = it }
+                        }
+                    }
                 } else {
                     msg.video = false
                 }
@@ -188,12 +212,19 @@ class MessageConverter {
             return gson.fromJson(text, SwitchedMessage::class.java)
         }
 
+        /**
+         * Sora 2022.1.0 で廃止されたため、現在は利用していません。
+         */
         fun parseUpdateMessage(text: String): UpdateMessage {
             return gson.fromJson(text, UpdateMessage::class.java)
         }
 
         fun parseReOfferMessage(text: String): ReOfferMessage {
             return gson.fromJson(text, ReOfferMessage::class.java)
+        }
+
+        fun parseCloseMessage(text: String): CloseMessage {
+            return gson.fromJson(text, CloseMessage::class.java)
         }
 
         fun parseNotificationMessage(text: String): NotificationMessage {

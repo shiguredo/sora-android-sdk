@@ -34,29 +34,51 @@ class RTCComponentFactory(
         // EglBase.Context を与えるとハードウェアエンコーダーを使用する
         SoraLogger.d(TAG, "videoEncoderFactory => ${mediaOption.videoEncoderFactory}")
         SoraLogger.d(TAG, "videoUpstreamContext => ${mediaOption.videoUpstreamContext}")
+        SoraLogger.d(TAG, "softwareVideoEncoderOnly => ${mediaOption.softwareVideoEncoderOnly}")
         val encoderFactory = when {
             mediaOption.videoEncoderFactory != null ->
                 mediaOption.videoEncoderFactory!!
+
+            simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
+                // NOTE: Simulcast を利用するかつ SW オンリーの場合に SoraDefaultVideoEncoderFactory を使う理由
+                //
+                // softwareOnly の場合に SoraDefaultVideoEncoderFactory 内で SoftwareVideoEncoderFactory が使われる
+                // SoftwareVideoEncoderFactory は JNI で BuiltinVideoEncoderFactory を生成し、
+                // その Create() が SimulcastEncoderAdapter を返すため、SW でも自動的に
+                // Simulcast をサポートできるため SimulcastVideoEncoderFactory を使う SimulcastVideoEncoderFactoryWrapper は不要。
+                // SimulcastEncoderAdapter 自体は与えられた VideoEncoderFactory から複数エンコーダを
+                // 生成してサイマルキャストを実現するため、SoftwareVideoEncoderFactory でも問題なく機能する。
+                SoraDefaultVideoEncoderFactory(
+                    mediaOption.videoUpstreamContext,
+                    resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
+                )
+
             simulcastEnabled ->
                 SimulcastVideoEncoderFactoryWrapper(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
                 )
+
             mediaOption.videoUpstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoUpstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
 
             mediaOption.videoDownstreamContext != null ->
                 SoraDefaultVideoEncoderFactory(
                     mediaOption.videoDownstreamContext,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
+
             else ->
                 SoraDefaultVideoEncoderFactory(
                     null,
                     resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
                 )
         }
 

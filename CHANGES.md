@@ -11,6 +11,115 @@
 
 ## develop
 
+## 2025.2.0
+
+**リリース日**: 2025-09-17
+
+- [CHANGE] `fixedResolution` を廃止する破壊的変更
+  - これまでは送信する映像の解像度維持の方法として、`CameraVideoCapturerWrapper` クラスのコンストラクタ引数 `fixedResolution` からスーパークラスのメソッド `CameraVideoCapturer.isScreenCast` を利用していたが、`DegradationPreference` の追加に伴い `fixedResolution` は廃止した
+  - `CameraCapturerFactory.create` の引数 `fixedResolution` は不要となったため削除した。各 `CameraCapturerFactory.create` 呼び出し箇所の引数からも削除対応が必要となる
+  - @t-miya
+- [CHANGE] `CameraVideoCapturerWrapper` を削除する破壊的変更
+  - `fixedResolution` を使用するのためラッパークラスだったが、`fixedResolution` 廃止につき不要となったため
+  - @t-miya
+- [CHANGE] connect メッセージの `multistream` を true 固定で送信する処理を削除する破壊的変更
+  - `SoraMediaOption.enableSpotlight` を実行したときに multistream を true にする処理を削除
+  - `ConnectMessage` 初期化時に渡す multistream の値を `SoraMediaOption.multistreamEnabled` に変更
+    - `SoraMediaOption.multistreamIsRequired` 利用しなくなったので削除
+  - @zztkm
+- [CHANGE] `SignalingChannelImpl` の `WebSocketListener.onClosed` の処理で、WebSocket ステータスコードが 1000 以外の場合でも `onError` を呼び出さないように変更する
+  - これまでの実装では、onError のコールバック呼び出しが定義されていたが、実際には `onClosing` が実行された時点で `SignalingChannelImpl` の listener の参照が削除されるため、`onError` が確実に呼び出される保証はなかった
+  - 今回の変更により、`onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent)` でステータスコードと切断理由を取得できるようになり、エラー判定が可能となったため、`onError` の呼び出しを不要とした
+  - これにより、`onError` はネットワーク切断などによる異常終了のみを通知する仕様になる
+  - もし、ステータスコード 1000 以外の Sora からの切断を `onError` によって検知する実装を行っていた場合、今後は `onClose` のステータスコードを参照して適切な処理を行う必要がある
+  - @zztkm
+- [CHANGE] SoraMediaOption.videoCodec 未設定時の動作変更
+  - 以前は、`SoraMediaOption.videoCodec` が未設定の場合、connect メッセージの `video.codec_type` に自動で `VP9` が設定され送信されていた
+  - 今回の変更により、未設定の場合は `video.codec_type` を送信しなくなった
+  - 未設定時は、Sora 側でデフォルトのビデオコーデックが設定される。現時点では Sora が自動的に `VP9` を設定する
+    - 参考: https://sora-doc.shiguredo.jp/SIGNALING#d47f4d
+  - `SoraMediaOption.videoCodec` が未設定、かつ `SoraMediaOption.videoVp9Params` を設定している場合は破壊的変更の影響を受けるため、明示的に `SoraMediaOption.videoCodec` に `SoraVideoOption.Codec.VP9` を設定する必要がある
+  - @zztkm
+- [CHANGE] SoraMediaOption.audioCodec 未設定時の動作変更
+  - 以前は、`SoraMediaOption.audioCodec` が未設定の場合、connect メッセージの `audio.codec_type` に自動で `OPUS` が設定され送信されていた
+  - 今回の変更により、未設定の場合は `audio.codec_type` を送信しなくなった
+  - 未設定時は、Sora 側でデフォルトのオーディオコーデックが設定される。現時点では Sora が自動的に `OPUS` を設定する
+    - 参考: https://sora-doc.shiguredo.jp/SIGNALING#0fcf4e
+  - `SoraMediaOption.audioCodec` が未設定、かつ `SoraMediaOption.audioOption.opusParams` を設定している場合は破壊的変更の影響を受けるため、明示的に `SoraMediaOption.audioCodec` に `SoraAudioOption.Codec.OPUS` を設定する必要がある
+  - @zztkm
+- [CHANGE] SoraMediaChannel.Listener の `onError(SoraMediaChannel, SoraErrorReason)` を廃止する
+  - `onError(SoraMediaChannel, SoraErrorReason)` を呼び出していた箇所は `onError(SoraMediaChannel, SoraErrorReason, String)` に置き換えられる
+  - String にはエラーの詳細情報を設定する
+    - 詳細がない場合は空文字列を設定する
+  - @zztkm
+- [UPDATE] libwebrtc を 138.7204.0.5 に上げる
+  - @zztkm @miosakuma
+- [UPDATE] `SoraMediaOption.enableMultistream` を非推奨にする
+  - @zztkm
+- [UPDATE] `SoraMediaOption` に `enableLegacyStream` を追加する
+  - レガシーストリームのための関数だが、レガシーストリームは廃止予定なので最初から非推奨にしている
+  - @zztkm
+- [UPDATE] SignalingChannelImpl の `WebSocketListener.onClosing` では `disconnect` メソッドを呼ばないようにする
+  - onClosing の役割はサーバーから Close Frame を受け取ったことを検知することで、WebSocket 接続が終了したことを表すものではないため、disconnect メソッドを呼び出さないようにコードを整理した
+  - ただし `WebSocket.close` を呼ばないと OkHttp は onClosed を呼ばないため、onClosing で `WebSocket.close` を呼び出すようにした
+  - @zztkm
+- [UPDATE] サーバーから Close Frame を受信し、クライアントが Close Frame を送り返す場合は、サーバーから受信したステータスコードをそのまま送り返すようにする
+  - 以下に引用している RFC 6455 の 5.5.1 節に記載されている内容を参考に、サーバーから受信したステータスコードをそのまま送り返すようにした
+    - > When sending a Close frame in response, the endpoint typically echos the status code it received.
+    - 引用元: https://datatracker.ietf.org/doc/html/rfc6455#section-5.5.1
+  - この修正は Sora との内部的なやり取り部分にのみ影響するため、SDK ユーザーへの影響はない
+  - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` に Sora から切断されたときのステータスコードと理由を取得できる `onClose(mediaChannel: SoraMediaChannel, closeEvent: SoraCloseEvent)` を追加する
+  - Sora から切断されたときに通知されるイベントである `SoraCloseEvent` を追加した
+  - WebSocket シグナリング切断時に通知されるイベントである `SignalingChannelCloseEvent` を追加した
+  - 以下の場合に、Sora から切断された際に `SoraCloseEvent` が通知される:
+    - `SoraMediaChannel.disconnect()` を呼び出した場合
+    - WebSocket 経由のシグナリングを利用している場合
+    - DataChannel 経由のシグナリングを利用する場合、かつ `ignore_disconnect_websocket` が true、かつ Sora の設定で `data_channel_signaling_close_message` が有効な場合
+  - @zztkm
+- [UPDATE] `SoraMediaChannel.Listener` の `onClose(SoraMediaChannel)` を非推奨に変更する
+  - 今後は `onClose(SoraMediaChannel, SoraCloseEvent)` を利用してもらう
+  - @zztkm
+- [UPDATE] compileSdkVersion と targetSdkVersion を 36 に上げる
+  - @miosakuma
+- [UPDATE] Android Gradle Plugin (AGP) を 8.10.1 にアップグレードする
+  - ビルドに利用される Gradle を 8.11.1 に上げる
+  - @miosakuma
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - org.jetbrains.dokka:dokka-gradle-plugin を 1.9.20 に上げる
+  - com.google.code.gson:gson を 2.13.1 に上げる
+  - org.ajoberstar.grgit:grgit-gradle を 5.3.2 に上げる
+  - org.jetbrains.kotlinx:kotlinx-coroutines-android を 1.9.0 に上げる
+  - org.robolectric:robolectric を 4.15.1 に上げる
+  - @miosakuma
+- [UPDATE] `RTCComponentFactory` のビデオエンコーダーファクトリの選択条件を調整
+  - `simulcast == true` かつ `softwareVideoEncoderOnly == true` の場合、`SimulcastVideoEncoderFactoryWrapper` を使わずに `SoraDefaultVideoEncoderFactory` を利用するように変更
+  - ソフトウェアエンコーダーのみを利用するように設定されなければこれまで通り SimulcastVideoEncoderFactoryWrapper を利用する
+  - `SoraMediaOption.videoEncoderFactory` を明示設定している場合は本変更の影響を受けない
+  - @zztkm
+- [ADD] `SoraMediaOption` に `DegradationPreference` を追加
+  - クライアント側の状況により設定した解像度やフレームレートを維持できなくなった場合にどのように質を下げるか制御できるパラメータとして `SoraMediaOption.degradationPreference` を追加した
+  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `BALANCED` が適用される
+  - @t-miya
+- [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
+  - @zztkm
+- [ADD] `SoraMediaOption` に `softwareVideoEncoderOnly` を追加する
+  - `true` を指定するとソフトウェアエンコーダーのみを使用する（HW は作成・選択しない）
+  - 既定値は `false`（従来どおり HW 優先 + 必要時 SW フォールバック）。互換性への影響はなし
+  - サイマルキャスト有効時も SW のみ構成に切り替える
+  - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
+  - @zztkm
+
+- [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
+  - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
+  - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更
+  - @zztkm
+
+### misc
+
+- [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
+  - @torikizi
+
 ## 2025.1.1
 
 **リリース日**: 2025-08-07
