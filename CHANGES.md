@@ -11,6 +11,11 @@
 
 ## develop
 
+### misc
+
+- [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
+  - @t-miya
+
 ## 2025.2.0
 
 **リリース日**: 2025-09-17
@@ -122,8 +127,6 @@
   - @t-miya
 - [CHANGE] 依存ライブラリバージョンの管理をバージョンカタログに移行する
   - gradle/libs.versions.toml を追加
-  - @t-miya
-- [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
   - @t-miya
 - [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
   - @torikizi
