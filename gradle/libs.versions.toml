@@ -1,6 +1,6 @@
 [versions]
 # Build tools
-android-gradle-plugin = "8.10.1"
+android-gradle-plugin = "8.11.1"
 kotlin = "1.9.25"
 dokka = "1.9.20"
 ktlint-gradle = "11.3.1"

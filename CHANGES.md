@@ -11,6 +11,11 @@
 
 ## develop
 
+### misc
+
+- [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
+  - @t-miya
+
 ## 2025.2.0
 
 **リリース日**: 2025-09-17
