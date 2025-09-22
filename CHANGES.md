@@ -104,7 +104,7 @@
   - @zztkm
 - [ADD] `SoraMediaOption` に `DegradationPreference` を追加
   - クライアント側の状況により設定した解像度やフレームレートを維持できなくなった場合にどのように質を下げるか制御できるパラメータとして `SoraMediaOption.degradationPreference` を追加した
-  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `BALANCED` が適用される
+  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `MAINTAIN_FRAMERATE` が適用される
   - @t-miya
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
