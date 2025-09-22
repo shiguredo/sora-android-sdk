@@ -44,7 +44,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 Callable {
                     SoraLogger.i(
                         TAG,
-                        """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
+                        """initEncode() thread=${Thread.currentThread().name} [tid=${android.os.Process.myTid()}]
                 |  encoder=${encoder.implementationName}
                 |  streamSettings:
                 |    numberOfCores=${settings.numberOfCores}

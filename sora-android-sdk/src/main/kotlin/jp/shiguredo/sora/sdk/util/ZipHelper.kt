@@ -25,7 +25,7 @@ class ZipHelper {
             }
         }
 
-        override fun read(bytes: ByteArray?, off: Int, len: Int): Int {
+        override fun read(bytes: ByteArray, off: Int, len: Int): Int {
             var len = len
             if (!buf.hasRemaining()) {
                 return -1
