@@ -18,7 +18,7 @@ jvmTarget = "1.8"
 javaCompatibility = "1.8"
 
 # Libraries
-libwebrtc = "138.7204.0.2"
+libwebrtc = "140.7339.2.2"
 gson = "2.13.1"
 okhttp = "4.12.0"
 kotlinx-coroutines = "1.9.0"
