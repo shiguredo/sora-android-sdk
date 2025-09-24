@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] Kotlin バージョンを 2.0.20 に上げる
+  - @t-miya
+
 ### misc
 
 - [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる

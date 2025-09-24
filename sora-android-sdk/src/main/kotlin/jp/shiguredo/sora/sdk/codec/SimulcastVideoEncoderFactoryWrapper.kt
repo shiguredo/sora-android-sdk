@@ -33,6 +33,15 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             val TAG = StreamEncoderWrapper::class.simpleName
         }
 
+        private fun currentThreadIdForLog(): Long {
+            return if (android.os.Build.VERSION.SDK_INT >= 36) {
+                Thread.currentThread().threadId()
+            } else {
+                @Suppress("DEPRECATION")
+                Thread.currentThread().id
+            }
+        }
+
         // 単一スレッドで実行するための ExecutorService
         // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
         val executor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -44,7 +53,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 Callable {
                     SoraLogger.i(
                         TAG,
-                        """initEncode() thread=${Thread.currentThread().name} [${Thread.currentThread().id}]
+                        """initEncode() thread=${Thread.currentThread().name} [tid=${currentThreadIdForLog()}]
                 |  encoder=${encoder.implementationName}
                 |  streamSettings:
                 |    numberOfCores=${settings.numberOfCores}
