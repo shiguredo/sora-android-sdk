@@ -11,7 +11,6 @@ import org.webrtc.VideoTrack
 import java.util.UUID
 
 class RTCLocalVideoManager(private val capturer: VideoCapturer) {
-
     companion object {
         private val TAG = RTCLocalVideoManager::class.simpleName
     }
@@ -20,7 +19,11 @@ class RTCLocalVideoManager(private val capturer: VideoCapturer) {
     var track: VideoTrack? = null
     var surfaceTextureHelper: SurfaceTextureHelper? = null
 
-    fun initTrack(factory: PeerConnectionFactory, eglContext: EglBase.Context?, appContext: Context) {
+    fun initTrack(
+        factory: PeerConnectionFactory,
+        eglContext: EglBase.Context?,
+        appContext: Context,
+    ) {
         SoraLogger.d(TAG, "initTrack isScreencast=${capturer.isScreencast}")
         surfaceTextureHelper =
             SurfaceTextureHelper.create("CaptureThread", eglContext)

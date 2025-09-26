@@ -7,10 +7,9 @@ import org.webrtc.PeerConnection
 
 class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
-    private val mediaOption: SoraMediaOption
+    private val mediaOption: SoraMediaOption,
 ) {
     fun createConfiguration(): PeerConnection.RTCConfiguration {
-
         val iceServers = gatherIceServerSetting(serverConfig)
 
         val conf = PeerConnection.RTCConfiguration(iceServers)
@@ -22,9 +21,10 @@ class PeerNetworkConfig(
         conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE
         conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         conf.keyType = PeerConnection.KeyType.ECDSA
-        val cryptoOptions = CryptoOptions.builder()
-            .setEnableGcmCryptoSuites(true)
-            .createCryptoOptions()
+        val cryptoOptions =
+            CryptoOptions.builder()
+                .setEnableGcmCryptoSuites(true)
+                .createCryptoOptions()
         conf.cryptoOptions = cryptoOptions
         conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
 
@@ -45,7 +45,7 @@ class PeerNetworkConfig(
                         PeerConnection.IceServer.builder(url)
                             .setUsername(server.username)
                             .setPassword(server.credential)
-                            .createIceServer()
+                            .createIceServer(),
                     )
                 }
             }

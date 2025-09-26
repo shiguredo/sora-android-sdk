@@ -10,7 +10,6 @@ import org.webrtc.VideoEncoderFactory
  * Sora への接続オプションを表すクラスです.
  */
 class SoraMediaOption {
-
     companion object {
         val TAG = SoraMediaOption::class.simpleName
     }
@@ -59,10 +58,11 @@ class SoraMediaOption {
      */
     var videoCodec = SoraVideoOption.Codec.DEFAULT
 
+    // videoBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
+
     /**
      * 映像ビットレート.
      */
-    // videoBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
     var videoBitrate: Int? = null
 
     /**
@@ -107,7 +107,7 @@ class SoraMediaOption {
      */
     fun enableVideoUpstream(
         capturer: VideoCapturer,
-        eglContext: EglBase.Context?
+        eglContext: EglBase.Context?,
     ) {
         videoUpstreamEnabled = true
         videoCapturer = capturer
@@ -136,7 +136,10 @@ class SoraMediaOption {
      * @param enableSimulcast サイマルキャスト機能の利用の有無
      */
     @JvmOverloads
-    fun enableSpotlight(option: SoraSpotlightOption, enableSimulcast: Boolean = true) {
+    fun enableSpotlight(
+        option: SoraSpotlightOption,
+        enableSimulcast: Boolean = true,
+    ) {
         spotlightOption = option
         if (enableSimulcast) {
             enableSimulcast()
@@ -171,6 +174,7 @@ class SoraMediaOption {
     var audioCodec = SoraAudioOption.Codec.DEFAULT
 
     // audioBitRate が正しい綴りだが後方互換性を壊すほどではないので放置する
+
     /**
      * 音声ビットレート.
      */
@@ -223,19 +227,18 @@ class SoraMediaOption {
     internal val upstreamIsRequired: Boolean
         get() = audioUpstreamEnabled || videoUpstreamEnabled
 
-    // TODO(zztkm): internal かつ 未使用なので削除して良い
-    internal var _requiredRole: SoraChannelRole? = null
-
     /**
      * Upstream と Downstream の設定から、必要なロールを決定します.
      */
     internal val requiredRole: SoraChannelRole
-        get() = if (upstreamIsRequired && downstreamIsRequired)
-            SoraChannelRole.SENDRECV
-        else if (upstreamIsRequired)
-            SoraChannelRole.SENDONLY
-        else
-            SoraChannelRole.RECVONLY
+        get() =
+            if (upstreamIsRequired && downstreamIsRequired) {
+                SoraChannelRole.SENDRECV
+            } else if (upstreamIsRequired) {
+                SoraChannelRole.SENDONLY
+            } else {
+                SoraChannelRole.RECVONLY
+            }
 
     /**
      * JavaScript API の "googCpuOveruseDetection" に相当する設定項目です.

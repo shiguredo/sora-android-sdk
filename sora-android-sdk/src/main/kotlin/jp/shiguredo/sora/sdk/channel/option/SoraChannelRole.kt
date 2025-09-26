@@ -4,7 +4,6 @@ package jp.shiguredo.sora.sdk.channel.option
  * チャネルの役割を示します.
  */
 enum class SoraChannelRole {
-
     /** 送信のみ */
     SENDONLY,
 
@@ -12,7 +11,9 @@ enum class SoraChannelRole {
     RECVONLY,
 
     /** 送受信 */
-    SENDRECV;
+    SENDRECV,
+
+    ;
 
     internal val signaling: String
         get() = this.toString().lowercase()

@@ -4,7 +4,6 @@ package jp.shiguredo.sora.sdk.channel.option
  * スポットライト機能のオプションです.
  */
 class SoraSpotlightOption {
-
     /**
      * スポットライト機能のアクティブな配信数を指定します.
      *

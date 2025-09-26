@@ -18,6 +18,10 @@
 
 ### misc
 
+- [UPDATE] ktlint バージョンを上げる
+  - ktlint-gradle を 12.1.1 に上げる
+  - ktlint を 1.2.1 に上げる
+  - @t-miya
 - [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
   - @t-miya
 - [UPDATE] grgit が git worktree のディレクトリでは使えないことが判明したため、`BuildConfig.REVISION` を取得する方法を grgit から git コマンドに移行する

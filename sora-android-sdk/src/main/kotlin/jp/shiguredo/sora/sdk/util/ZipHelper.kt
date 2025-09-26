@@ -25,10 +25,15 @@ class ZipHelper {
             }
         }
 
-        override fun read(bytes: ByteArray, off: Int, len: Int): Int {
+        override fun read(
+            bytes: ByteArray,
+            off: Int,
+            len: Int,
+        ): Int {
             // Java からの呼び出し時の安全性確保（null と範囲チェック）
-            val dst = (bytes as ByteArray?)
-                ?: throw NullPointerException("bytes must not be null")
+            val dst =
+                (bytes as ByteArray?)
+                    ?: throw NullPointerException("bytes must not be null")
 
             if (off < 0 || len < 0 || off > dst.size || len > dst.size - off) {
                 throw IndexOutOfBoundsException("off=$off, len=$len, size=${dst.size}")

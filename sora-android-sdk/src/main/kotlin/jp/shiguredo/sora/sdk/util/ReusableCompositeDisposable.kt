@@ -7,7 +7,6 @@ import io.reactivex.disposables.Disposable
 // http://gfx.hatenablog.com/entry/2015/06/08/091656
 
 class ReusableCompositeDisposable {
-
     private var compositeDisposable: CompositeDisposable? = null
 
     fun add(subscription: Disposable) {

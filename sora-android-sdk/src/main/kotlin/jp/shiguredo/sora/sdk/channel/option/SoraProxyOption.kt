@@ -7,7 +7,6 @@ import org.webrtc.ProxyType
  * プロキシに関するオプションをまとめるクラスです.
  */
 class SoraProxyOption {
-
     /** 種類 */
     var type = ProxyType.NONE
 

@@ -17,15 +17,13 @@ class SoraRTCStats(private val map: Map<String, Any>) : Map<String, Any> by map 
         mapOf(
             "id" to stats.id,
             "type" to stats.type,
-            "timestamp" to stats.timestampUs
-        ) + stats.members
+            "timestamp" to stats.timestampUs,
+        ) + stats.members,
     ) {}
 }
 
 class MessageConverter {
-
     companion object {
-
         val TAG = MessageConverter::class.simpleName
 
         val gson = Gson()
@@ -48,35 +46,36 @@ class MessageConverter {
             forwardingFilterOption: SoraForwardingFilterOption? = null,
             forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         ): String {
-
-            val msg = ConnectMessage(
-                role = role.signaling,
-                channelId = channelId,
-                dataChannelSignaling = dataChannelSignaling,
-                ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
-                dataChannels = dataChannels,
-                metadata = metadata,
-                multistream = mediaOption.multistreamEnabled,
-                sdp = sdp,
-                clientId = clientId,
-                bundleId = bundleId,
-                signalingNotifyMetadata = signalingNotifyMetadata,
-                audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
-                forwardingFilter = forwardingFilterOption?.signaling,
-                forwardingFilters = forwardingFiltersOption?.map { it.signaling }
-            )
+            val msg =
+                ConnectMessage(
+                    role = role.signaling,
+                    channelId = channelId,
+                    dataChannelSignaling = dataChannelSignaling,
+                    ignoreDisconnectWebsocket = ignoreDisconnectWebSocket,
+                    dataChannels = dataChannels,
+                    metadata = metadata,
+                    multistream = mediaOption.multistreamEnabled,
+                    sdp = sdp,
+                    clientId = clientId,
+                    bundleId = bundleId,
+                    signalingNotifyMetadata = signalingNotifyMetadata,
+                    audioStreamingLanguageCode = mediaOption.audioStreamingLanguageCode,
+                    forwardingFilter = forwardingFilterOption?.signaling,
+                    forwardingFilters = forwardingFiltersOption?.map { it.signaling },
+                )
 
             if (mediaOption.upstreamIsRequired) {
                 // 配信者では audio, video は配信の設定
                 if (mediaOption.audioUpstreamEnabled) {
                     if (!mediaOption.isDefaultAudioOption()) {
-                        msg.audio = AudioSetting().apply {
-                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
-                                codecType = mediaOption.audioCodec.toString()
+                        msg.audio =
+                            AudioSetting().apply {
+                                if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                    codecType = mediaOption.audioCodec.toString()
+                                }
+                                mediaOption.audioBitrate?.let { bitRate = it }
+                                mediaOption.audioOption.opusParams?.let { opusParams = it }
                             }
-                            mediaOption.audioBitrate?.let { bitRate = it }
-                            mediaOption.audioOption.opusParams?.let { opusParams = it }
-                        }
                     }
                 } else {
                     msg.audio = false
@@ -85,15 +84,16 @@ class MessageConverter {
                 if (mediaOption.videoUpstreamEnabled) {
                     // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
                     if (!mediaOption.isDefaultVideoOption()) {
-                        msg.video = VideoSetting().apply {
-                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
-                                codecType = mediaOption.videoCodec.toString()
+                        msg.video =
+                            VideoSetting().apply {
+                                if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                    codecType = mediaOption.videoCodec.toString()
+                                }
+                                mediaOption.videoBitrate?.let { bitRate = it }
+                                mediaOption.videoVp9Params?.let { vp9Params = it }
+                                mediaOption.videoAv1Params?.let { av1Params = it }
+                                mediaOption.videoH264Params?.let { h264Params = it }
                             }
-                            mediaOption.videoBitrate?.let { bitRate = it }
-                            mediaOption.videoVp9Params?.let { vp9Params = it }
-                            mediaOption.videoAv1Params?.let { av1Params = it }
-                            mediaOption.videoH264Params?.let { h264Params = it }
-                        }
                     }
                 } else {
                     // ビデオを無効化したいため false を設定する
@@ -103,13 +103,14 @@ class MessageConverter {
                 // 視聴者では audio, video は視聴の設定
                 if (mediaOption.audioDownstreamEnabled) {
                     if (!mediaOption.isDefaultAudioOption()) {
-                        msg.audio = AudioSetting().apply {
-                            if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
-                                codecType = mediaOption.audioCodec.toString()
+                        msg.audio =
+                            AudioSetting().apply {
+                                if (mediaOption.audioCodec != SoraAudioOption.Codec.DEFAULT) {
+                                    codecType = mediaOption.audioCodec.toString()
+                                }
+                                // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                                mediaOption.audioBitrate?.let { bitRate = it }
                             }
-                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                            mediaOption.audioBitrate?.let { bitRate = it }
-                        }
                     }
                 } else {
                     msg.audio = false
@@ -118,14 +119,15 @@ class MessageConverter {
                 if (mediaOption.videoDownstreamEnabled) {
                     // video 関連設定がすべてデフォルト値の場合は video フィールドの設定を省略する
                     if (!mediaOption.isDefaultVideoOption()) {
-                        msg.video = VideoSetting().apply {
-                            if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
-                                codecType = mediaOption.videoCodec.toString()
+                        msg.video =
+                            VideoSetting().apply {
+                                if (mediaOption.videoCodec != SoraVideoOption.Codec.DEFAULT) {
+                                    codecType = mediaOption.videoCodec.toString()
+                                }
+                                // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
+                                // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
+                                mediaOption.videoBitrate?.let { bitRate = it }
                             }
-                            // TODO(shino): 視聴側の bit_rate 設定はサーバで無視される
-                            // TODO(zztkm): ビデオコーデック以外は配信者が設定できる項目で、視聴者は設定不要なので、設定不要な項目は省略する
-                            mediaOption.videoBitrate?.let { bitRate = it }
-                        }
                     }
                 } else {
                     msg.video = false
@@ -168,10 +170,11 @@ class MessageConverter {
         fun buildPongMessage(stats: RTCStatsReport?): String {
             return gson.toJson(
                 PongMessage(
-                    stats = stats?.let {
-                        stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
-                    }
-                )
+                    stats =
+                        stats?.let {
+                            stats.statsMap.values.map { stats -> SoraRTCStats(stats) }
+                        },
+                ),
             )
         }
 

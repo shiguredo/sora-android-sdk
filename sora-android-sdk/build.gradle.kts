@@ -9,25 +9,27 @@ plugins {
 
 group = "com.github.shiguredo"
 
-val gitRevision = runCatching {
-    val stdout = ByteArrayOutputStream()
-    val result = project.exec {
-        workingDir = rootProject.projectDir
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        standardOutput = stdout
-        isIgnoreExitValue = true
-    }
+val gitRevision =
+    runCatching {
+        val stdout = ByteArrayOutputStream()
+        val result =
+            project.exec {
+                workingDir = rootProject.projectDir
+                commandLine("git", "rev-parse", "--short", "HEAD")
+                standardOutput = stdout
+                isIgnoreExitValue = true
+            }
 
-    if (result.exitValue == 0) {
-        stdout.toString(Charsets.UTF_8.name()).trim()
-    } else {
-        logger.warn("Failed to resolve Git revision, exit code ${result.exitValue}")
+        if (result.exitValue == 0) {
+            stdout.toString(Charsets.UTF_8.name()).trim()
+        } else {
+            logger.warn("Failed to resolve Git revision, exit code ${result.exitValue}")
+            "unknown"
+        }
+    }.getOrElse { error ->
+        logger.warn("Failed to resolve Git revision", error)
         "unknown"
     }
-}.getOrElse { error ->
-    logger.warn("Failed to resolve Git revision", error)
-    "unknown"
-}
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -115,7 +117,7 @@ ktlint {
     // - Gradleの設計上の制限: プラグイン設定の評価タイミングが早すぎる
     // - ktlint-gradleプラグインの仕様: 動的な値の解決に対応していない
     // - Version Catalogの制約: プラグイン設定フェーズでは利用不可
-    version.set("0.45.2")
+    version.set("1.2.1")
     android.set(false)
     outputToConsole.set(true)
     reporters {

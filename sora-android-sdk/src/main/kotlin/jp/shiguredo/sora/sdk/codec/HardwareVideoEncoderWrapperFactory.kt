@@ -17,7 +17,6 @@ internal class HardwareVideoEncoderWrapper(
         private val originalWidth: Int,
         private val originalHeight: Int,
     ) {
-
         companion object {
             val TAG = CropSizeCalculator::class.simpleName
         }
@@ -41,19 +40,22 @@ internal class HardwareVideoEncoderWrapper(
                     TAG,
                     "$this init(): alignment=$alignment" +
                         "" +
-                        " size=${originalWidth}x$originalHeight => ${croppedWidth}x$croppedHeight"
+                        " size=${originalWidth}x$originalHeight => ${croppedWidth}x$croppedHeight",
                 )
             }
         }
 
-        fun hasFrameSizeChanged(nextWidth: Int, nextHeight: Int): Boolean {
+        fun hasFrameSizeChanged(
+            nextWidth: Int,
+            nextHeight: Int,
+        ): Boolean {
             return if (originalWidth == nextWidth && originalHeight == nextHeight) {
                 false
             } else {
                 SoraLogger.i(
                     TAG,
                     "frame size has changed: " +
-                        "${originalWidth}x$originalHeight => ${nextWidth}x$nextHeight"
+                        "${originalWidth}x$originalHeight => ${nextWidth}x$nextHeight",
                 )
                 true
             }
@@ -67,7 +69,11 @@ internal class HardwareVideoEncoderWrapper(
     // nullable を避けるために適当な値で初期化している
     private var calculator = CropSizeCalculator(1u, 0, 0)
 
-    private fun retryWithoutCropping(width: Int, height: Int, retryFunc: () -> VideoCodecStatus): VideoCodecStatus {
+    private fun retryWithoutCropping(
+        width: Int,
+        height: Int,
+        retryFunc: () -> VideoCodecStatus,
+    ): VideoCodecStatus {
         SoraLogger.i(TAG, "retrying without resolution adjustment")
 
         // alignment = 1u ... 解像度調整なし
@@ -76,7 +82,10 @@ internal class HardwareVideoEncoderWrapper(
         return retryFunc()
     }
 
-    override fun initEncode(originalSettings: VideoEncoder.Settings, callback: VideoEncoder.Callback?): VideoCodecStatus {
+    override fun initEncode(
+        originalSettings: VideoEncoder.Settings,
+        callback: VideoEncoder.Callback?,
+    ): VideoCodecStatus {
         calculator = CropSizeCalculator(alignment, originalSettings.width, originalSettings.height)
 
         if (!calculator.isCropRequired) {
@@ -84,16 +93,17 @@ internal class HardwareVideoEncoderWrapper(
             return internalEncoder.initEncode(originalSettings, callback)
         } else {
             // crop あり
-            val croppedSettings = VideoEncoder.Settings(
-                originalSettings.numberOfCores,
-                calculator.croppedWidth,
-                calculator.croppedHeight,
-                originalSettings.startBitrate,
-                originalSettings.maxFramerate,
-                originalSettings.numberOfSimulcastStreams,
-                originalSettings.automaticResizeOn,
-                originalSettings.capabilities,
-            )
+            val croppedSettings =
+                VideoEncoder.Settings(
+                    originalSettings.numberOfCores,
+                    calculator.croppedWidth,
+                    calculator.croppedHeight,
+                    originalSettings.startBitrate,
+                    originalSettings.maxFramerate,
+                    originalSettings.numberOfSimulcastStreams,
+                    originalSettings.automaticResizeOn,
+                    originalSettings.capabilities,
+                )
 
             // HardwareVideoEncoder が利用している MediaCodec で例外が発生した際、 try, catch がないとフォールバックが動作しなかった
             try {
@@ -102,7 +112,10 @@ internal class HardwareVideoEncoderWrapper(
                     // 解像度調整ありで VideoCodecStatus.FALLBACK_SOFTWARE が発生した場合、
                     // SW にフォールバックする前に解像度調整なしのパターンを試す
                     SoraLogger.e(TAG, "internalEncoder.initEncode() returned FALLBACK_SOFTWARE: croppedSettings $croppedSettings")
-                    retryWithoutCropping(originalSettings.width, originalSettings.height) { internalEncoder.initEncode(originalSettings, callback) }
+                    retryWithoutCropping(
+                        originalSettings.width,
+                        originalSettings.height,
+                    ) { internalEncoder.initEncode(originalSettings, callback) }
                 } else {
                     // FALLBACK_SOFTWARE 以外はそのまま返す
                     result
@@ -112,7 +125,10 @@ internal class HardwareVideoEncoderWrapper(
 
                 // 解像度調整ありで例外が発生した場合、
                 // SW にフォールバックする前に解像度調整なしのパターンを試す
-                return retryWithoutCropping(originalSettings.width, originalSettings.height) { internalEncoder.initEncode(originalSettings, callback) }
+                return retryWithoutCropping(
+                    originalSettings.width,
+                    originalSettings.height,
+                ) { internalEncoder.initEncode(originalSettings, callback) }
             }
         }
     }
@@ -121,7 +137,10 @@ internal class HardwareVideoEncoderWrapper(
         return internalEncoder.release()
     }
 
-    override fun encode(frame: VideoFrame, encodeInfo: VideoEncoder.EncodeInfo?): VideoCodecStatus {
+    override fun encode(
+        frame: VideoFrame,
+        encodeInfo: VideoEncoder.EncodeInfo?,
+    ): VideoCodecStatus {
         // 解像度が変化した場合は calculator を再度初期化する
         // HardwareVideoEncoder の encode ではフレーム・サイズの変化が考慮されていたため、この条件を実装した
         // 参照: https://source.chromium.org/chromium/chromium/src/+/master:third_party/webrtc/sdk/android/src/java/org/webrtc/HardwareVideoEncoder.java;l=353-362;drc=5a79d28eba61aea39558a492fb4c0ff4fef427ba
@@ -141,10 +160,15 @@ internal class HardwareVideoEncoderWrapper(
             // 参照: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/api/org/webrtc/JavaI420Buffer.java;l=172-185;drc=02334e07c5c04c729dd3a8a279bb1fbe24ee8b7c
             val croppedWidth = calculator.croppedWidth
             val croppedHeight = calculator.croppedHeight
-            val croppedBuffer = frame.buffer.cropAndScale(
-                calculator.cropX / 2, calculator.cropY / 2,
-                croppedWidth, croppedHeight, croppedWidth, croppedHeight
-            )
+            val croppedBuffer =
+                frame.buffer.cropAndScale(
+                    calculator.cropX / 2,
+                    calculator.cropY / 2,
+                    croppedWidth,
+                    croppedHeight,
+                    croppedWidth,
+                    croppedHeight,
+                )
 
             // SoraLogger.i(TAG, "crop: ${frame.buffer.width}x${frame.buffer.height} => ${width}x$height")
             val croppedFrame = VideoFrame(croppedBuffer, frame.rotation, frame.timestampNs)
@@ -169,7 +193,10 @@ internal class HardwareVideoEncoderWrapper(
         }
     }
 
-    override fun setRateAllocation(allocation: VideoEncoder.BitrateAllocation?, frameRate: Int): VideoCodecStatus {
+    override fun setRateAllocation(
+        allocation: VideoEncoder.BitrateAllocation?,
+        frameRate: Int,
+    ): VideoCodecStatus {
         return internalEncoder.setRateAllocation(allocation, frameRate)
     }
 

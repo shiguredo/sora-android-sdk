@@ -9,36 +9,55 @@ import android.util.Log
  * - `android.util.Log`
  */
 class SoraLogger {
-
     companion object {
         var enabled = false
-        var libjingle_enabled = false
+        var libjingleEnabled = false
 
-        fun v(tag: String?, msg: String, tr: Throwable? = null) {
+        fun v(
+            tag: String?,
+            msg: String,
+            tr: Throwable? = null,
+        ) {
             if (enabled) {
                 Log.v(tag, msg, tr)
             }
         }
 
-        fun d(tag: String?, msg: String, tr: Throwable? = null) {
+        fun d(
+            tag: String?,
+            msg: String,
+            tr: Throwable? = null,
+        ) {
             if (enabled) {
                 Log.d(tag, msg, tr)
             }
         }
 
-        fun i(tag: String?, msg: String, tr: Throwable? = null) {
+        fun i(
+            tag: String?,
+            msg: String,
+            tr: Throwable? = null,
+        ) {
             if (enabled) {
                 Log.i(tag, msg, tr)
             }
         }
 
-        fun w(tag: String?, msg: String, tr: Throwable? = null) {
+        fun w(
+            tag: String?,
+            msg: String,
+            tr: Throwable? = null,
+        ) {
             if (enabled) {
                 Log.w(tag, msg, tr)
             }
         }
 
-        fun e(tag: String?, msg: String, tr: Throwable? = null) {
+        fun e(
+            tag: String?,
+            msg: String,
+            tr: Throwable? = null,
+        ) {
             if (enabled) {
                 Log.e(tag, msg, tr)
             }

@@ -54,13 +54,14 @@ class ConnectMetadataJsonTest {
     }
 
     @Test fun mapMetadata() {
-        val message = roundtrip(
-            hashMapOf(
-                "foo" to 1,
-                "bar" to "baz",
-                "baz" to listOf("ham", "eggs", "bacon")
+        val message =
+            roundtrip(
+                hashMapOf(
+                    "foo" to 1,
+                    "bar" to "baz",
+                    "baz" to listOf("ham", "eggs", "bacon"),
+                ),
             )
-        )
         if (message.metadata !is Map<*, *>) {
             fail("metadata should be map: ${message.metadata}")
         }
@@ -83,12 +84,13 @@ class ConnectMetadataJsonTest {
     }
 
     private fun roundtrip(metadata: Any?): ConnectMessage {
-        val original = ConnectMessage(
-            role = "sendonly",
-            channelId = "sora",
-            sdp = "",
-            metadata = metadata
-        )
+        val original =
+            ConnectMessage(
+                role = "sendonly",
+                channelId = "sora",
+                sdp = "",
+                metadata = metadata,
+            )
         val serialized = gson.toJson(original)
         return gson.fromJson(serialized, ConnectMessage::class.java)
     }

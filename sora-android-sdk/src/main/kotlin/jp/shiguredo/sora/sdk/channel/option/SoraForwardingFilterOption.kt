@@ -16,7 +16,7 @@ class SoraForwardingFilterOption(
     val action: Action? = null,
     val rules: List<List<Rule>>,
     val version: String? = null,
-    val metadata: Any? = null
+    val metadata: Any? = null,
 ) {
     /**
      * 転送フィルター適用時の挙動を表します。
@@ -26,7 +26,7 @@ class SoraForwardingFilterOption(
         BLOCK,
 
         /** allow */
-        ALLOW
+        ALLOW,
     }
 
     /**
@@ -39,7 +39,7 @@ class SoraForwardingFilterOption(
     class Rule(
         val field: Field,
         val operator: Operator,
-        val values: List<String>
+        val values: List<String>,
     ) {
         /**
          * 転送フィルター対象のフィールドを表します。
@@ -52,7 +52,7 @@ class SoraForwardingFilterOption(
             CLIENT_ID,
 
             /** kind */
-            KIND
+            KIND,
         }
 
         /**
@@ -63,7 +63,7 @@ class SoraForwardingFilterOption(
             IS_IN,
 
             /** is_not_in */
-            IS_NOT_IN
+            IS_NOT_IN,
         }
     }
 
@@ -73,17 +73,18 @@ class SoraForwardingFilterOption(
                 "name" to name,
                 "priority" to priority,
                 "action" to (action?.name?.lowercase() ?: null),
-                "rules" to rules.map { outerRule ->
-                    outerRule.map { rule ->
-                        mapOf(
-                            "field" to rule.field.name.lowercase(),
-                            "operator" to rule.operator.name.lowercase(),
-                            "values" to rule.values
-                        )
-                    }
-                },
+                "rules" to
+                    rules.map { outerRule ->
+                        outerRule.map { rule ->
+                            mapOf(
+                                "field" to rule.field.name.lowercase(),
+                                "operator" to rule.operator.name.lowercase(),
+                                "values" to rule.values,
+                            )
+                        }
+                    },
                 "version" to version,
-                "metadata" to metadata
+                "metadata" to metadata,
             )
         }
 }
