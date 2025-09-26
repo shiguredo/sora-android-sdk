@@ -149,9 +149,7 @@ class SoraMediaChannel
          * @return UTF-8 の文字列
          */
         @Synchronized
-        fun dataToString(data: ByteBuffer): String {
-            return utf8Decoder.decode(data).toString()
-        }
+        fun dataToString(data: ByteBuffer): String = utf8Decoder.decode(data).toString()
 
         init {
             if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
@@ -1259,9 +1257,7 @@ class SoraMediaChannel
         fun sendDataChannelMessage(
             label: String,
             data: String,
-        ): SoraMessagingError {
-            return sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
-        }
+        ): SoraMessagingError = sendDataChannelMessage(label, ByteBuffer.wrap(data.toByteArray()))
 
         /**
          * メッセージを送信します.

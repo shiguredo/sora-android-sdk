@@ -8,18 +8,15 @@ class SDKInfo {
     companion object {
         const val VERSION = "2025.3.0-canary.0"
 
-        fun sdkInfo(): String {
-            return "Sora Android SDK $VERSION (${BuildConfig.REVISION})"
-        }
+        fun sdkInfo(): String = "Sora Android SDK $VERSION (${BuildConfig.REVISION})"
 
-        fun libwebrtcInfo(): String {
-            return "Shiguredo-build " + WebrtcBuildVersion.webrtc_branch +
+        fun libwebrtcInfo(): String =
+            "Shiguredo-build " + WebrtcBuildVersion.webrtc_branch +
                 " (" + BuildConfig.LIBWEBRTC_VERSION + " " +
                 WebrtcBuildVersion.webrtc_revision.substring(0, 7) + ")"
-        }
 
-        fun deviceInfo(): String {
-            return "Android-SDK: " + Build.VERSION.SDK_INT + ", " +
+        fun deviceInfo(): String =
+            "Android-SDK: " + Build.VERSION.SDK_INT + ", " +
                 "Release: " + Build.VERSION.RELEASE + ", " +
                 "Id: " + Build.ID + ", " +
                 "Device: " + Build.DEVICE + ", " +
@@ -28,6 +25,5 @@ class SDKInfo {
                 "Manufacturer: " + Build.MANUFACTURER + ", " +
                 "Model: " + Build.MODEL + ", " +
                 "Product: " + Build.PRODUCT
-        }
     }
 }

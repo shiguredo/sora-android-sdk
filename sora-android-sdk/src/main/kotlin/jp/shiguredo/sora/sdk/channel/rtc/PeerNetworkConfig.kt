@@ -22,7 +22,8 @@ class PeerNetworkConfig(
         conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE
         conf.keyType = PeerConnection.KeyType.ECDSA
         val cryptoOptions =
-            CryptoOptions.builder()
+            CryptoOptions
+                .builder()
                 .setEnableGcmCryptoSuites(true)
                 .createCryptoOptions()
         conf.cryptoOptions = cryptoOptions
@@ -42,7 +43,8 @@ class PeerNetworkConfig(
                 server.urls.forEach {
                     val url = it
                     iceServers.add(
-                        PeerConnection.IceServer.builder(url)
+                        PeerConnection.IceServer
+                            .builder(url)
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .createIceServer(),

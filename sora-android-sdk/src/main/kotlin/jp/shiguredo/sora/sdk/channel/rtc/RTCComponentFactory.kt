@@ -28,7 +28,8 @@ class RTCComponentFactory(
         SoraLogger.d(TAG, "createPeerConnectionFactory(): classloader=$cl")
         val factoryOptions = PeerConnectionFactory.Options()
         val factoryBuilder =
-            PeerConnectionFactory.builder()
+            PeerConnectionFactory
+                .builder()
                 .setOptions(factoryOptions)
 
         // DefaultVideoEncoderFactory, DefaultVideoDecoderFactory は
@@ -131,17 +132,14 @@ class RTCComponentFactory(
         return constraints
     }
 
-    fun createVideoManager(): RTCLocalVideoManager? {
-        return mediaOption.videoCapturer?.let {
+    fun createVideoManager(): RTCLocalVideoManager? =
+        mediaOption.videoCapturer?.let {
             val videoManager = RTCLocalVideoManager(it)
             SoraLogger.d(TAG, "videoManager created: $videoManager")
             videoManager
         }
-    }
 
-    fun createAudioManager(): RTCLocalAudioManager {
-        return RTCLocalAudioManager(mediaOption.audioUpstreamEnabled)
-    }
+    fun createAudioManager(): RTCLocalAudioManager = RTCLocalAudioManager(mediaOption.audioUpstreamEnabled)
 
     private fun createJavaAudioDevice(appContext: Context): AudioDeviceModule {
         val audioRecordErrorCallback =
@@ -186,16 +184,15 @@ class RTCComponentFactory(
                 }
             }
 
-        return JavaAudioDeviceModule.builder(appContext)
+        return JavaAudioDeviceModule
+            .builder(appContext)
             .setUseHardwareAcousticEchoCanceler(
                 JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported() &&
                     mediaOption.audioOption.useHardwareAcousticEchoCanceler,
-            )
-            .setUseHardwareNoiseSuppressor(
+            ).setUseHardwareNoiseSuppressor(
                 JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported() &&
                     mediaOption.audioOption.useHardwareNoiseSuppressor,
-            )
-            .setAudioRecordErrorCallback(audioRecordErrorCallback)
+            ).setAudioRecordErrorCallback(audioRecordErrorCallback)
             .setAudioTrackErrorCallback(audioTrackErrorCallback)
             .setAudioSource(mediaOption.audioOption.audioSource)
             .setUseStereoInput(mediaOption.audioOption.useStereoInput)

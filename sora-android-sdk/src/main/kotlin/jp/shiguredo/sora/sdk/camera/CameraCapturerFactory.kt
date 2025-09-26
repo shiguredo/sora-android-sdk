@@ -62,8 +62,7 @@ class CameraCapturerFactory {
             frontFacingFirst: Boolean,
         ): CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
-            enumerator.deviceNames.forEach {
-                    deviceName ->
+            enumerator.deviceNames.forEach { deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, frontFacingFirst)
                 }
@@ -71,8 +70,7 @@ class CameraCapturerFactory {
             if (capturer != null) {
                 return capturer
             }
-            enumerator.deviceNames.forEach {
-                    deviceName ->
+            enumerator.deviceNames.forEach { deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, !frontFacingFirst)
                 }

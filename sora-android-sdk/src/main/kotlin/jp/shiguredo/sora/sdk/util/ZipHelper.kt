@@ -7,23 +7,20 @@ import java.util.zip.InflaterInputStream
 
 class ZipHelper {
     companion object {
-        fun zip(buffer: ByteBuffer): ByteBuffer {
-            return ByteBuffer.wrap(DeflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
-        }
+        fun zip(buffer: ByteBuffer): ByteBuffer = ByteBuffer.wrap(DeflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
 
-        fun unzip(buffer: ByteBuffer): ByteBuffer {
-            return ByteBuffer.wrap(InflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
-        }
+        fun unzip(buffer: ByteBuffer): ByteBuffer = ByteBuffer.wrap(InflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
     }
 
-    private class ByteBufferBackedInputStream(private val buf: ByteBuffer) : InputStream() {
-        override fun read(): Int {
-            return if (!buf.hasRemaining()) {
+    private class ByteBufferBackedInputStream(
+        private val buf: ByteBuffer,
+    ) : InputStream() {
+        override fun read(): Int =
+            if (!buf.hasRemaining()) {
                 -1
             } else {
                 buf.get().toInt() and 0xFF
             }
-        }
 
         override fun read(
             bytes: ByteArray,

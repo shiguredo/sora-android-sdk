@@ -48,8 +48,8 @@ internal class HardwareVideoEncoderWrapper(
         fun hasFrameSizeChanged(
             nextWidth: Int,
             nextHeight: Int,
-        ): Boolean {
-            return if (originalWidth == nextWidth && originalHeight == nextHeight) {
+        ): Boolean =
+            if (originalWidth == nextWidth && originalHeight == nextHeight) {
                 false
             } else {
                 SoraLogger.i(
@@ -59,7 +59,6 @@ internal class HardwareVideoEncoderWrapper(
                 )
                 true
             }
-        }
     }
 
     companion object {
@@ -133,9 +132,7 @@ internal class HardwareVideoEncoderWrapper(
         }
     }
 
-    override fun release(): VideoCodecStatus {
-        return internalEncoder.release()
-    }
+    override fun release(): VideoCodecStatus = internalEncoder.release()
 
     override fun encode(
         frame: VideoFrame,
@@ -196,17 +193,11 @@ internal class HardwareVideoEncoderWrapper(
     override fun setRateAllocation(
         allocation: VideoEncoder.BitrateAllocation?,
         frameRate: Int,
-    ): VideoCodecStatus {
-        return internalEncoder.setRateAllocation(allocation, frameRate)
-    }
+    ): VideoCodecStatus = internalEncoder.setRateAllocation(allocation, frameRate)
 
-    override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-        return internalEncoder.scalingSettings
-    }
+    override fun getScalingSettings(): VideoEncoder.ScalingSettings = internalEncoder.scalingSettings
 
-    override fun getImplementationName(): String {
-        return internalEncoder.implementationName
-    }
+    override fun getImplementationName(): String = internalEncoder.implementationName
 }
 
 internal class HardwareVideoEncoderWrapperFactory(
@@ -233,7 +224,5 @@ internal class HardwareVideoEncoderWrapperFactory(
         }
     }
 
-    override fun getSupportedCodecs(): Array<VideoCodecInfo> {
-        return factory.supportedCodecs
-    }
+    override fun getSupportedCodecs(): Array<VideoCodecInfo> = factory.supportedCodecs
 }

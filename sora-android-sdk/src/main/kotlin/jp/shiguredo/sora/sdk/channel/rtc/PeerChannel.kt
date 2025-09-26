@@ -354,36 +354,37 @@ class PeerChannelImpl(
         }
 
     private fun setup(): Single<Boolean> =
-        Single.create(
-            SingleOnSubscribe<Boolean> {
-                try {
-                    setupInternal()
-                    it.onSuccess(true)
-                } catch (e: Exception) {
-                    SoraLogger.w(TAG, e.toString())
-                    it.onError(e)
-                }
-            },
-        ).subscribeOn(Schedulers.from(executor))
+        Single
+            .create(
+                SingleOnSubscribe<Boolean> {
+                    try {
+                        setupInternal()
+                        it.onSuccess(true)
+                    } catch (e: Exception) {
+                        SoraLogger.w(TAG, e.toString())
+                        it.onError(e)
+                    }
+                },
+            ).subscribeOn(Schedulers.from(executor))
 
     override fun handleUpdatedRemoteOffer(offer: String): Single<SessionDescription> {
         val offerSDP =
             SessionDescription(SessionDescription.Type.OFFER, offer)
 
-        return setRemoteDescription(offerSDP).flatMap {
-            // active: false が無効化されてしまう問題に対応
-            if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
-                videoSender?.let { updateSenderOfferEncodings(it) }
-            } else {
-                // setRemoteDescription により RtpSender の
-                // parameters.degradationPreference がリセットされる可能性があるため再設定する
-                videoSender?.let { configureSenderDegradationPreference(it) }
+        return setRemoteDescription(offerSDP)
+            .flatMap {
+                // active: false が無効化されてしまう問題に対応
+                if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                    videoSender?.let { updateSenderOfferEncodings(it) }
+                } else {
+                    // setRemoteDescription により RtpSender の
+                    // parameters.degradationPreference がリセットされる可能性があるため再設定する
+                    videoSender?.let { configureSenderDegradationPreference(it) }
+                }
+                return@flatMap createAnswer()
+            }.flatMap { answer ->
+                return@flatMap setLocalDescription(answer)
             }
-            return@flatMap createAnswer()
-        }.flatMap {
-                answer ->
-            return@flatMap setLocalDescription(answer)
-        }
     }
 
     private fun setTrack(
@@ -413,39 +414,39 @@ class PeerChannelImpl(
         val offerSDP = SessionDescription(SessionDescription.Type.OFFER, offer)
         offerEncodings = encodings
 
-        return setup().flatMap {
-            SoraLogger.d(TAG, "setRemoteDescription")
-            return@flatMap setRemoteDescription(offerSDP)
-        }.flatMap {
-            // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
-            // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
-            // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
+        return setup()
+            .flatMap {
+                SoraLogger.d(TAG, "setRemoteDescription")
+                return@flatMap setRemoteDescription(offerSDP)
+            }.flatMap {
+                // libwebrtc のバグにより simulcast の場合 setRD -> addTrack の順序を取る必要がある。
+                // simulcast can not reuse transceiver when setRemoteDescription is called after addTrack
+                // https://bugs.chromium.org/p/chromium/issues/detail?id=944821
 
-            // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
-            // setTrack 内も同様
-            mid?.get("audio")?.let { mid ->
-                localAudioManager.track?.let { track ->
-                    setTrack(mid, track)
+                // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
+                // setTrack 内も同様
+                mid?.get("audio")?.let { mid ->
+                    localAudioManager.track?.let { track ->
+                        setTrack(mid, track)
+                    }
+                } ?: SoraLogger.d(TAG, "mid for audio not found")
+
+                mid?.get("video")?.let { mid ->
+                    localVideoManager?.track?.let { track ->
+                        videoSender = setTrack(mid, track)
+                    }
+                } ?: SoraLogger.d(TAG, "mid for video not found")
+
+                if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
+                    videoSender?.let { updateSenderOfferEncodings(it) }
                 }
-            } ?: SoraLogger.d(TAG, "mid for audio not found")
 
-            mid?.get("video")?.let { mid ->
-                localVideoManager?.track?.let { track ->
-                    videoSender = setTrack(mid, track)
-                }
-            } ?: SoraLogger.d(TAG, "mid for video not found")
-
-            if (simulcastEnabled && mediaOption.videoUpstreamEnabled) {
-                videoSender?.let { updateSenderOfferEncodings(it) }
+                SoraLogger.d(TAG, "createAnswer")
+                return@flatMap createAnswer()
+            }.flatMap { answer ->
+                SoraLogger.d(TAG, "setLocalDescription")
+                return@flatMap setLocalDescription(answer)
             }
-
-            SoraLogger.d(TAG, "createAnswer")
-            return@flatMap createAnswer()
-        }.flatMap {
-                answer ->
-            SoraLogger.d(TAG, "setLocalDescription")
-            return@flatMap setLocalDescription(answer)
-        }
     }
 
     private fun updateSenderOfferEncodings(sender: RtpSender) {
@@ -525,41 +526,42 @@ class PeerChannelImpl(
     }
 
     private fun createClientOfferSdp(): Single<Result<SessionDescription>> =
-        Single.create(
-            SingleOnSubscribe<Result<SessionDescription>> {
-                val directionRecvOnly =
-                    RtpTransceiver.RtpTransceiverInit(
-                        RtpTransceiver.RtpTransceiverDirection.RECV_ONLY,
+        Single
+            .create(
+                SingleOnSubscribe<Result<SessionDescription>> {
+                    val directionRecvOnly =
+                        RtpTransceiver.RtpTransceiverInit(
+                            RtpTransceiver.RtpTransceiverDirection.RECV_ONLY,
+                        )
+
+                    conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
+                    conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
+
+                    conn?.createOffer(
+                        object : SdpObserver {
+                            override fun onCreateSuccess(sdp: SessionDescription?) {
+                                SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
+                                it.onSuccess(Result.success(sdp!!))
+                            }
+
+                            override fun onCreateFailure(error: String) {
+                                SoraLogger.d(TAG, "createOffer:onCreateFailure: $error")
+                                // Offer SDP は生成に失敗しても問題ないので、エラーメッセージを onSuccess で渡す
+                                it.onSuccess(Result.failure(Error(error)))
+                            }
+
+                            override fun onSetSuccess() {
+                                it.onError(Error("must not come here"))
+                            }
+
+                            override fun onSetFailure(s: String?) {
+                                it.onError(Error("must not come here"))
+                            }
+                        },
+                        sdpConstraints,
                     )
-
-                conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO, directionRecvOnly)
-                conn?.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, directionRecvOnly)
-
-                conn?.createOffer(
-                    object : SdpObserver {
-                        override fun onCreateSuccess(sdp: SessionDescription?) {
-                            SoraLogger.d(TAG, "createOffer:onCreateSuccess: ${sdp?.type}")
-                            it.onSuccess(Result.success(sdp!!))
-                        }
-
-                        override fun onCreateFailure(error: String) {
-                            SoraLogger.d(TAG, "createOffer:onCreateFailure: $error")
-                            // Offer SDP は生成に失敗しても問題ないので、エラーメッセージを onSuccess で渡す
-                            it.onSuccess(Result.failure(Error(error)))
-                        }
-
-                        override fun onSetSuccess() {
-                            it.onError(Error("must not come here"))
-                        }
-
-                        override fun onSetFailure(s: String?) {
-                            it.onError(Error("must not come here"))
-                        }
-                    },
-                    sdpConstraints,
-                )
-            },
-        ).subscribeOn(Schedulers.from(executor))
+                },
+            ).subscribeOn(Schedulers.from(executor))
 
     private fun setupInternal() {
         SoraLogger.d(TAG, "setupInternal")
@@ -683,93 +685,96 @@ class PeerChannelImpl(
     }
 
     private fun createAnswer(): Single<SessionDescription> =
-        Single.create(
-            SingleOnSubscribe<SessionDescription> {
-                conn?.createAnswer(
-                    object : SdpObserver {
-                        override fun onCreateSuccess(sdp: SessionDescription?) {
-                            SoraLogger.d(
-                                TAG,
-                                """createAnswer:onCreateSuccess: ${sdp!!.type}
+        Single
+            .create(
+                SingleOnSubscribe<SessionDescription> {
+                    conn?.createAnswer(
+                        object : SdpObserver {
+                            override fun onCreateSuccess(sdp: SessionDescription?) {
+                                SoraLogger.d(
+                                    TAG,
+                                    """createAnswer:onCreateSuccess: ${sdp!!.type}
                         |${sdp.description}
-                                """.trimMargin(),
-                            )
-                            it.onSuccess(sdp)
-                        }
+                                    """.trimMargin(),
+                                )
+                                it.onSuccess(sdp)
+                            }
 
-                        override fun onCreateFailure(s: String?) {
-                            SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=$s")
-                            it.onError(Error(s))
-                        }
+                            override fun onCreateFailure(s: String?) {
+                                SoraLogger.w(TAG, "createAnswer:onCreateFailure: reason=$s")
+                                it.onError(Error(s))
+                            }
 
-                        override fun onSetSuccess() {
-                            it.onError(Error("must not come here"))
-                        }
+                            override fun onSetSuccess() {
+                                it.onError(Error("must not come here"))
+                            }
 
-                        override fun onSetFailure(s: String?) {
-                            it.onError(Error("must not come here"))
-                        }
-                    },
-                    sdpConstraints,
-                )
-            },
-        ).subscribeOn(Schedulers.from(executor))
+                            override fun onSetFailure(s: String?) {
+                                it.onError(Error("must not come here"))
+                            }
+                        },
+                        sdpConstraints,
+                    )
+                },
+            ).subscribeOn(Schedulers.from(executor))
 
     private fun setLocalDescription(sdp: SessionDescription): Single<SessionDescription> =
-        Single.create(
-            SingleOnSubscribe<SessionDescription> {
-                conn?.setLocalDescription(
-                    object : SdpObserver {
-                        override fun onCreateSuccess(p0: SessionDescription?) {
-                            it.onError(Error("must not come here"))
-                        }
+        Single
+            .create(
+                SingleOnSubscribe<SessionDescription> {
+                    conn?.setLocalDescription(
+                        object : SdpObserver {
+                            override fun onCreateSuccess(p0: SessionDescription?) {
+                                it.onError(Error("must not come here"))
+                            }
 
-                        override fun onCreateFailure(p0: String?) {
-                            it.onError(Error("must not come here"))
-                        }
+                            override fun onCreateFailure(p0: String?) {
+                                it.onError(Error("must not come here"))
+                            }
 
-                        override fun onSetSuccess() {
-                            SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
-                            it.onSuccess(sdp)
-                        }
+                            override fun onSetSuccess() {
+                                SoraLogger.d(TAG, "setLocalDescription.onSetSuccess ${this@PeerChannelImpl}")
+                                it.onSuccess(sdp)
+                            }
 
-                        override fun onSetFailure(s: String?) {
-                            SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=$s ${this@PeerChannelImpl}")
-                            it.onError(Error(s))
-                        }
-                    },
-                    sdp,
-                )
-            },
-        ).subscribeOn(Schedulers.from(executor))
+                            override fun onSetFailure(s: String?) {
+                                SoraLogger.d(TAG, "setLocalDescription.onSetFailure reason=$s ${this@PeerChannelImpl}")
+                                it.onError(Error(s))
+                            }
+                        },
+                        sdp,
+                    )
+                },
+            ).subscribeOn(Schedulers.from(executor))
 
     private fun setRemoteDescription(sdp: SessionDescription): Single<SessionDescription> =
-        Single.create(
-            SingleOnSubscribe<SessionDescription> {
-                conn?.setRemoteDescription(
-                    object : SdpObserver {
-                        override fun onCreateSuccess(p0: SessionDescription?) {
-                            it.onError(Error("must not come here"))
-                        }
+        Single
+            .create(
+                SingleOnSubscribe<SessionDescription> {
+                    conn?.setRemoteDescription(
+                        object : SdpObserver {
+                            override fun onCreateSuccess(p0: SessionDescription?) {
+                                it.onError(Error("must not come here"))
+                            }
 
-                        override fun onCreateFailure(p0: String?) {
-                            it.onError(Error("must not come here"))
-                        }
+                            override fun onCreateFailure(p0: String?) {
+                                it.onError(Error("must not come here"))
+                            }
 
-                        override fun onSetSuccess() {
-                            SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
-                            it.onSuccess(sdp)
-                        }
+                            override fun onSetSuccess() {
+                                SoraLogger.d(TAG, "setRemoteDescription.onSetSuccess ${this@PeerChannelImpl}")
+                                it.onSuccess(sdp)
+                            }
 
-                        override fun onSetFailure(s: String?) {
-                            SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=$s ${this@PeerChannelImpl}")
-                            it.onError(Error(s))
-                        }
-                    },
-                    sdp,
-                )
-            },
-        ).subscribeOn(Schedulers.from(executor))
+                            override fun onSetFailure(s: String?) {
+                                SoraLogger.w(TAG, "setRemoteDescription.onSetFailures reason=$s ${this@PeerChannelImpl}")
+                                it.onError(Error(s))
+                            }
+                        },
+                        sdp,
+                    )
+                },
+            ).subscribeOn(Schedulers.from(executor))
 
     private fun closeInternal(disconnectReason: SoraDisconnectReason?) {
         if (closing) {
@@ -794,9 +799,7 @@ class PeerChannelImpl(
         }
     }
 
-    override fun connectionState(): PeerConnection.PeerConnectionState? {
-        return conn?.connectionState()
-    }
+    override fun connectionState(): PeerConnection.PeerConnectionState? = conn?.connectionState()
 
     override fun getStats(statsCollectorCallback: RTCStatsCollectorCallback) {
         conn?.getStats(statsCollectorCallback)

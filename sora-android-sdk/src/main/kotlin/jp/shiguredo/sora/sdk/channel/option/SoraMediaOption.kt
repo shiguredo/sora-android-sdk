@@ -291,20 +291,18 @@ class SoraMediaOption {
     /**
      * シグナリング type: connect メッセージの video に含めるデータがすべてデフォルト値かどうか.
      */
-    internal fun isDefaultVideoOption(): Boolean {
-        return videoCodec == SoraVideoOption.Codec.DEFAULT &&
+    internal fun isDefaultVideoOption(): Boolean =
+        videoCodec == SoraVideoOption.Codec.DEFAULT &&
             videoBitrate == null &&
             videoVp9Params == null &&
             videoAv1Params == null &&
             videoH264Params == null
-    }
 
     /**
      * シグナリング type: connect メッセージの audio に含めるデータがすべてデフォルト値かどうか.
      */
-    internal fun isDefaultAudioOption(): Boolean {
-        return audioCodec == SoraAudioOption.Codec.DEFAULT &&
+    internal fun isDefaultAudioOption(): Boolean =
+        audioCodec == SoraAudioOption.Codec.DEFAULT &&
             audioBitrate == null &&
             audioOption.opusParams == null
-    }
 }

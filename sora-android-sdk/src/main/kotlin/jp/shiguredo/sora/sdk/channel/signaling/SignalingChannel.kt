@@ -178,7 +178,8 @@ class SignalingChannelImpl
                                             mediaOption.proxy.username,
                                             mediaOption.proxy.password,
                                         )
-                                    response.request.newBuilder()
+                                    response.request
+                                        .newBuilder()
                                         .header("Proxy-Authorization", credential)
                                         .build()
                                 }

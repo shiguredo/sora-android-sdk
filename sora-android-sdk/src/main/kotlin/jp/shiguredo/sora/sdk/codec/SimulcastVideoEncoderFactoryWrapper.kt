@@ -32,14 +32,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             val TAG = StreamEncoderWrapper::class.simpleName
         }
 
-        private fun currentThreadIdForLog(): Long {
-            return if (android.os.Build.VERSION.SDK_INT >= 36) {
+        private fun currentThreadIdForLog(): Long =
+            if (android.os.Build.VERSION.SDK_INT >= 36) {
                 Thread.currentThread().threadId()
             } else {
                 @Suppress("DEPRECATION")
                 Thread.currentThread().id
             }
-        }
 
         // 単一スレッドで実行するための ExecutorService
         // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
@@ -156,9 +155,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             return StreamEncoderWrapper(encoder)
         }
 
-        override fun getSupportedCodecs(): Array<VideoCodecInfo> {
-            return factory.supportedCodecs
-        }
+        override fun getSupportedCodecs(): Array<VideoCodecInfo> = factory.supportedCodecs
     }
 
     private val primary: VideoEncoderFactory
@@ -188,11 +185,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         native = SimulcastVideoEncoderFactory(primary, fallback)
     }
 
-    override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? {
-        return native.createEncoder(info)
-    }
+    override fun createEncoder(info: VideoCodecInfo?): VideoEncoder? = native.createEncoder(info)
 
-    override fun getSupportedCodecs(): Array<VideoCodecInfo> {
-        return native.supportedCodecs
-    }
+    override fun getSupportedCodecs(): Array<VideoCodecInfo> = native.supportedCodecs
 }

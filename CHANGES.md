@@ -19,8 +19,8 @@
 ### misc
 
 - [UPDATE] ktlint バージョンを上げる
-  - ktlint を 1.2.1 に上げる
-  - ktlint-gradle を 12.1.1 に上げる
+  - ktlint を 1.7.1 に上げる
+  - ktlint-gradle を 13.1.0 に上げる
   - @t-miya
 - [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
   - @t-miya

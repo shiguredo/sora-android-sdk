@@ -10,7 +10,9 @@ import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
 import java.util.UUID
 
-class RTCLocalVideoManager(private val capturer: VideoCapturer) {
+class RTCLocalVideoManager(
+    private val capturer: VideoCapturer,
+) {
     companion object {
         private val TAG = RTCLocalVideoManager::class.simpleName
     }

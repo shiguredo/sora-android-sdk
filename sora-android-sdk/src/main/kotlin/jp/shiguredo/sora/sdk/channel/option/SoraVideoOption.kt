@@ -117,7 +117,9 @@ class SoraVideoOption {
         }
     }
 
-    enum class SimulcastRid(private val value: String) {
+    enum class SimulcastRid(
+        private val value: String,
+    ) {
         /**
          * r0
          */
@@ -137,7 +139,9 @@ class SoraVideoOption {
         override fun toString(): String = value
     }
 
-    enum class SpotlightRid(private val value: String) {
+    enum class SpotlightRid(
+        private val value: String,
+    ) {
         /**
          * none
          */
@@ -162,7 +166,9 @@ class SoraVideoOption {
         override fun toString(): String = value
     }
 
-    enum class ResolutionAdjustment(val value: UInt) {
+    enum class ResolutionAdjustment(
+        val value: UInt,
+    ) {
         /**
          * 解像度を調整しない
          */
@@ -195,7 +201,9 @@ class SoraVideoOption {
      * WebRTC の RtpParameters.DegradationPreference に対応します.
      * 映像エンコーダーがCPUやネットワーク帯域の制限に直面した際の振る舞いを制御します.
      */
-    enum class DegradationPreference(val nativeValue: RtpParameters.DegradationPreference) {
+    enum class DegradationPreference(
+        val nativeValue: RtpParameters.DegradationPreference,
+    ) {
         /**
          * 品質調整を無効にします.
          * 解像度とフレームレートの両方を維持しようとします.
