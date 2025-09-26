@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.versions)
-    alias(libs.plugins.grgit)
     alias(libs.plugins.dokka)
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false

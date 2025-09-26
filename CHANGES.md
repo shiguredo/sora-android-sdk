@@ -20,6 +20,9 @@
 
 - [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
   - @t-miya
+- [UPDATE] grgit が git worktree のディレクトリでは使えないことが判明したため、`BuildConfig.REVISION` を取得する方法を grgit から git コマンドに移行する
+  - Sora Android SDK ではコミットハッシュを取得するためだけに Grgit を利用しており、git コマンドの利用で十分であると判断した
+  - @zztkm
 
 ## 2025.2.0
 
