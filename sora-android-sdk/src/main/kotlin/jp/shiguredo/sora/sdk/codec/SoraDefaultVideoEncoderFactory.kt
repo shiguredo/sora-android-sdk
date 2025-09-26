@@ -23,11 +23,12 @@ internal class SoraDefaultVideoEncoderFactory(
         val defaultFactory = HardwareVideoEncoderFactory(eglContext, enableIntelVp8Encoder, enableH264HighProfile)
 
         // 解像度の調整が必要な場合、改造した VideoEncoderFactory を利用する
-        hardwareVideoEncoderFactory = if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
-            defaultFactory
-        } else {
-            HardwareVideoEncoderWrapperFactory(defaultFactory, resolutionAdjustment.value)
-        }
+        hardwareVideoEncoderFactory =
+            if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+                defaultFactory
+            } else {
+                HardwareVideoEncoderWrapperFactory(defaultFactory, resolutionAdjustment.value)
+            }
     }
 
     override fun createEncoder(info: VideoCodecInfo): VideoEncoder? {

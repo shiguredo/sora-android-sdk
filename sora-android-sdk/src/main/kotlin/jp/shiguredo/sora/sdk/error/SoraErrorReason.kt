@@ -30,5 +30,5 @@ enum class SoraErrorReason {
     // cf. JavaAudioDeviceModule.AudioRecordErrorCallback
     AUDIO_RECORD_INIT_ERROR,
     AUDIO_RECORD_START_ERROR,
-    AUDIO_RECORD_ERROR
+    AUDIO_RECORD_ERROR,
 }

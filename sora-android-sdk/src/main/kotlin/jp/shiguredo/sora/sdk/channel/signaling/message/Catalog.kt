@@ -7,17 +7,17 @@ import org.webrtc.RtpParameters
 // NOTE: 後方互換性を考慮して、項目を追加するときはオプショナルで定義するようにしてください。
 
 data class MessageCommonPart(
-    @SerializedName("type") val type: String?
+    @SerializedName("type") val type: String?,
 )
 
 data class PingMessage(
     @SerializedName("type") val type: String = "ping",
-    @SerializedName("stats") val stats: Boolean?
+    @SerializedName("stats") val stats: Boolean?,
 )
 
 data class PongMessage(
     @SerializedName("type") val type: String = "pong",
-    @SerializedName("stats") val stats: List<SoraRTCStats>? = null
+    @SerializedName("stats") val stats: List<SoraRTCStats>? = null,
 )
 
 data class ConnectMessage(
@@ -55,10 +55,10 @@ data class ConnectMessage(
     @Deprecated(
         "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
         ReplaceWith("forwardingFilters"),
-        DeprecationLevel.WARNING
+        DeprecationLevel.WARNING,
     )
     @SerializedName("forwarding_filter") val forwardingFilter: Any? = null,
-    @SerializedName("forwarding_filters") val forwardingFilters: List<Any>? = null
+    @SerializedName("forwarding_filters") val forwardingFilters: List<Any>? = null,
 )
 
 data class VideoSetting(
@@ -66,13 +66,13 @@ data class VideoSetting(
     @SerializedName("bit_rate") var bitRate: Int? = null,
     @SerializedName("vp9_params") var vp9Params: Any? = null,
     @SerializedName("av1_params") var av1Params: Any? = null,
-    @SerializedName("h264_params") var h264Params: Any? = null
+    @SerializedName("h264_params") var h264Params: Any? = null,
 )
 
 data class AudioSetting(
     @SerializedName("codec_type") var codecType: String? = null,
     @SerializedName("bit_rate") var bitRate: Int? = null,
-    @SerializedName("opus_params") var opusParams: OpusParams? = null
+    @SerializedName("opus_params") var opusParams: OpusParams? = null,
 )
 
 data class OpusParams(
@@ -83,18 +83,18 @@ data class OpusParams(
     @SerializedName("sprop_stereo") var spropStereo: Boolean? = null,
     @SerializedName("minptime") var minptime: Int? = null,
     @SerializedName("useinbandfec") var useinbandfec: Boolean? = null,
-    @SerializedName("usedtx") var usedtx: Boolean? = null
+    @SerializedName("usedtx") var usedtx: Boolean? = null,
 )
 
 data class IceServer(
     @SerializedName("urls") val urls: List<String>,
     @SerializedName("credential") val credential: String,
-    @SerializedName("username") val username: String
+    @SerializedName("username") val username: String,
 )
 
 data class OfferConfig(
     @SerializedName("iceServers") val iceServers: List<IceServer>,
-    @SerializedName("iceTransportPolicy") val iceTransportPolicy: String
+    @SerializedName("iceTransportPolicy") val iceTransportPolicy: String,
 )
 
 data class Encoding(
@@ -104,35 +104,31 @@ data class Encoding(
     @SerializedName("maxFramerate") val maxFramerate: Double?,
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
     @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: RtpParameters.ResolutionRestriction?,
-    @SerializedName("scalabilityMode") val scalabilityMode: String?
+    @SerializedName("scalabilityMode") val scalabilityMode: String?,
 )
 
 data class RedirectMessage(
     @SerializedName("type") val type: String = "redirect",
-    @SerializedName("location") val location: String
+    @SerializedName("location") val location: String,
 )
 
 data class OfferMessage(
     @SerializedName("type") val type: String = "offer",
     @SerializedName("sdp") val sdp: String,
     @SerializedName("version") val version: String? = null,
-
     @SerializedName("simulcast") val simulcast: Boolean = false,
     @SerializedName("simulcast_multicodec") val simulcastMulticodec: Boolean? = null,
     @SerializedName("spotlight") val spotlight: Boolean? = null,
-
     @SerializedName("channel_id") val channelId: String? = null,
     @SerializedName("client_id") val clientId: String,
     @SerializedName("bundle_id") val bundleId: String? = null,
     @SerializedName("connection_id") val connectionId: String,
     @SerializedName("session_id") val sessionId: String? = null,
-
     @SerializedName("metadata") val metadata: Any?,
     @SerializedName("config") val config: OfferConfig? = null,
     @SerializedName("mid") val mid: Map<String, String>? = null,
     @SerializedName("encodings") val encodings: List<Encoding>?,
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
-
     @SerializedName("audio") val audio: Boolean? = null,
     @SerializedName("audio_codec_type") val audioCodecType: String? = null,
     @SerializedName("audio_bit_rate") val audioBitRate: Int? = null,
@@ -143,7 +139,7 @@ data class OfferMessage(
 
 data class SwitchedMessage(
     @SerializedName("type") val type: String = "switched",
-    @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null
+    @SerializedName("ignore_disconnect_websocket") val ignoreDisconnectWebsocket: Boolean? = null,
 )
 
 /**
@@ -151,12 +147,12 @@ data class SwitchedMessage(
  */
 data class UpdateMessage(
     @SerializedName("type") val type: String = "update",
-    @SerializedName("sdp") val sdp: String
+    @SerializedName("sdp") val sdp: String,
 )
 
 data class ReOfferMessage(
     @SerializedName("type") val type: String = "re-offer",
-    @SerializedName("sdp") val sdp: String
+    @SerializedName("sdp") val sdp: String,
 )
 
 data class CloseMessage(
@@ -167,31 +163,31 @@ data class CloseMessage(
 
 data class ReAnswerMessage(
     @SerializedName("type") val type: String = "re-answer",
-    @SerializedName("sdp") val sdp: String
+    @SerializedName("sdp") val sdp: String,
 )
 
 data class AnswerMessage(
     @SerializedName("type") val type: String = "answer",
-    @SerializedName("sdp") val sdp: String
+    @SerializedName("sdp") val sdp: String,
 )
 
 data class CandidateMessage(
     @SerializedName("type") val type: String = "candidate",
-    @SerializedName("candidate") val candidate: String
+    @SerializedName("candidate") val candidate: String,
 )
 
 data class PushMessage(
     @SerializedName("type") val type: String = "push",
-    @SerializedName("data") var data: Any? = null
+    @SerializedName("data") var data: Any? = null,
 )
 
 data class ReqStatsMessage(
-    @SerializedName("type") val type: String = "req-stats"
+    @SerializedName("type") val type: String = "req-stats",
 )
 
 data class StatsMessage(
     @SerializedName("type") val type: String = "stats",
-    @SerializedName("reports") val reports: List<SoraRTCStats>
+    @SerializedName("reports") val reports: List<SoraRTCStats>,
 )
 
 data class NotificationMessage(
@@ -232,5 +228,5 @@ data class NotificationMessage(
 
 data class DisconnectMessage(
     @SerializedName("type") val type: String = "disconnect",
-    @SerializedName("reason") val reason: String? = null
+    @SerializedName("reason") val reason: String? = null,
 )

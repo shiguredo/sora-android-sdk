@@ -24,8 +24,6 @@ data class SoraCloseEvent(
         /**
          * クライアントからの切断用のSoraCloseEventインスタンスを生成
          */
-        fun createClientDisconnectEvent(): SoraCloseEvent {
-            return SoraCloseEvent(CLIENT_DISCONNECT_CODE, CLIENT_DISCONNECT_REASON)
-        }
+        fun createClientDisconnectEvent(): SoraCloseEvent = SoraCloseEvent(CLIENT_DISCONNECT_CODE, CLIENT_DISCONNECT_REASON)
     }
 }

@@ -1,4 +1,4 @@
-import java.io.ByteArrayOutputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.library)
@@ -9,38 +9,52 @@ plugins {
 
 group = "com.github.shiguredo"
 
-val gitRevision = runCatching {
-    val stdout = ByteArrayOutputStream()
-    val result = project.exec {
-        workingDir = rootProject.projectDir
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        standardOutput = stdout
-        isIgnoreExitValue = true
-    }
-
-    if (result.exitValue == 0) {
-        stdout.toString(Charsets.UTF_8.name()).trim()
-    } else {
-        logger.warn("Failed to resolve Git revision, exit code ${result.exitValue}")
+val gitRevision =
+    runCatching {
+        val process =
+            ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+                .directory(rootProject.projectDir)
+                .redirectErrorStream(true)
+                .start()
+        val exitCode = process.waitFor()
+        val output =
+            process
+                .inputStream
+                .bufferedReader()
+                .use { it.readText() }
+                .trim()
+        if (exitCode == 0) {
+            output
+        } else {
+            logger.warn("Failed to resolve Git revision, exit code $exitCode${if (output.isNotEmpty()) ": $output" else ""}")
+            "unknown"
+        }
+    }.getOrElse { error ->
+        logger.warn("Failed to resolve Git revision", error)
         "unknown"
     }
-}.getOrElse { error ->
-    logger.warn("Failed to resolve Git revision", error)
-    "unknown"
-}
 
 android {
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
-        minSdk = libs.versions.minSdk.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
 
         buildConfigField("String", "REVISION", "\"$gitRevision\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
     }
 
     lint {
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
     }
 
     sourceSets {
@@ -73,7 +87,10 @@ android {
     }
 
     testOptions {
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         unitTests.isIncludeAndroidResources = true
     }
 
@@ -84,8 +101,8 @@ android {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     finalizedBy("ktlintFormat")
-    kotlinOptions {
-        jvmTarget = libs.versions.jvmTarget.get()
+    compilerOptions {
+        jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
     }
 }
 
@@ -115,7 +132,7 @@ ktlint {
     // - Gradleの設計上の制限: プラグイン設定の評価タイミングが早すぎる
     // - ktlint-gradleプラグインの仕様: 動的な値の解決に対応していない
     // - Version Catalogの制約: プラグイン設定フェーズでは利用不可
-    version.set("0.45.2")
+    version.set("1.7.1")
     android.set(false)
     outputToConsole.set(true)
     reporters {
@@ -158,7 +175,11 @@ tasks.register<Jar>("sourcesJar") {
     // classifier は archiveClassifier に置き換えられた
     // https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
     archiveClassifier.set("sources")
-    from(android.sourceSets.getByName("main").java.srcDirs)
+    from(
+        android.sourceSets
+            .getByName("main")
+            .java.srcDirs,
+    )
 }
 
 tasks.whenTaskAdded {
