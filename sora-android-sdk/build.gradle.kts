@@ -1,4 +1,4 @@
-import org.ajoberstar.grgit.Grgit
+import java.io.ByteArrayOutputStream
 
 plugins {
     alias(libs.plugins.android.library)
@@ -9,7 +9,25 @@ plugins {
 
 group = "com.github.shiguredo"
 
-val grgit = Grgit.open(mapOf("currentDir" to rootProject.projectDir))
+val gitRevision = runCatching {
+    val stdout = ByteArrayOutputStream()
+    val result = project.exec {
+        workingDir = rootProject.projectDir
+        commandLine("git", "rev-parse", "--short", "HEAD")
+        standardOutput = stdout
+        isIgnoreExitValue = true
+    }
+
+    if (result.exitValue == 0) {
+        stdout.toString(Charsets.UTF_8.name()).trim()
+    } else {
+        logger.warn("Failed to resolve Git revision, exit code ${result.exitValue}")
+        "unknown"
+    }
+}.getOrElse { error ->
+    logger.warn("Failed to resolve Git revision", error)
+    "unknown"
+}
 
 android {
     compileSdk = libs.versions.compileSdk.get().toInt()
@@ -17,7 +35,7 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
 
-        buildConfigField("String", "REVISION", "\"${grgit.head().abbreviatedId}\"")
+        buildConfigField("String", "REVISION", "\"$gitRevision\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
     }
 

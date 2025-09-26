@@ -4,7 +4,6 @@ android-gradle-plugin = "8.11.1"
 kotlin = "2.0.20"
 dokka = "1.9.20"
 ktlint-gradle = "11.3.1"
-grgit = "5.3.2"
 versions-plugin = "0.46.0"
 android-maven-plugin = "2.1"
 
@@ -40,7 +39,6 @@ android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle:ktlint-gradle", version.ref = "ktlint-gradle" }
-grgit-gradle-plugin = { module = "org.ajoberstar.grgit:grgit-gradle", version.ref = "grgit" }
 ben-manes-versions-plugin = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "versions-plugin" }
 android-maven-gradle-plugin = { module = "com.github.dcendents:android-maven-gradle-plugin", version.ref = "android-maven-plugin" }
 
@@ -67,9 +65,9 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-maven = { id = "com.github.dcendents.android-maven", version.ref = "android-maven-plugin" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
-grgit = { id = "org.ajoberstar.grgit", version.ref = "grgit" }
 versions = { id = "com.github.ben-manes.versions", version.ref = "versions-plugin" }
 
 [bundles]
 reactive = ["rxjava2", "rxandroid2", "rxkotlin2"]
 testBase = ["junit", "androidx-test-core", "kotlin-test-junit"]
+
