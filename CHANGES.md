@@ -126,7 +126,6 @@
   - サイマルキャスト有効時も SW のみ構成に切り替える
   - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
   - @zztkm
-
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
   - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更
