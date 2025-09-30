@@ -10,9 +10,12 @@ on:
       - 'LICENSE'
       - 'THANKS'
       - '.github/workflows/claude.yml'
+      - '.github/copilot-instructions.md'
+      - 'sora-android-sdk/packages.md'
       - 'docs/**'
       - 'jitpack.yml'
       - 'canary.py'
+      - '.gitignore'
 
 jobs:
   build:
