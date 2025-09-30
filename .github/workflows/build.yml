@@ -6,8 +6,13 @@ on:
     paths-ignore:
       - 'README.md'
       - 'CHANGES.md'
+      - 'CLAUDE.md'
       - 'LICENSE'
       - 'THANKS'
+      - '.github/workflows/claude.yml'
+      - 'docs/**'
+      - 'jitpack.yml'
+      - 'canary.py'
 
 jobs:
   build:
