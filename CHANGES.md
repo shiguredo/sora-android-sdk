@@ -27,6 +27,16 @@
 - [UPDATE] grgit が git worktree のディレクトリでは使えないことが判明したため、`BuildConfig.REVISION` を取得する方法を grgit から git コマンドに移行する
   - Sora Android SDK ではコミットハッシュを取得するためだけに Grgit を利用しており、git コマンドの利用で十分であると判断した
   - @zztkm
+- [UPDATE] build.yml の実行除外対象を追加する
+  - paths-ignore に以下を追加
+    - 'CLAUDE.md'
+    - '.github/workflows/claude.yml'
+    - '.github/copilot-instructions.md'
+    - 'sora-android-sdk/packages.md'
+    - 'docs/**'
+    - 'jitpack.yml'
+    - 'canary.py'
+    - '.gitignore'
 
 ## 2025.2.0
 
