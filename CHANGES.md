@@ -42,7 +42,8 @@
     - @zztkm
 - [ADD] 音声をハードミュートする機能を追加する
   - 音声のハードミュートにより配信中に Android デバイス上でのマイクのインジケータを消えた状態にすることができる
-  - AudioDeviceModuleWapeer クラスを追加し、pauseRecording() を追加した
+  - AudioDeviceModuleWrapper クラスを追加した
+    - pauseRecording() で音声送出を一時停止し、resumeRecording() で再開する
   - @t-miya
 
 ## 2025.2.0

@@ -11,6 +11,8 @@ import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import jp.shiguredo.sora.sdk.util.ZipHelper
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.withContext
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.Logging
@@ -81,7 +83,7 @@ interface PeerChannel {
     ): ByteBuffer
 
     // Audio recording pause control
-    fun setAudioRecordingPaused(paused: Boolean): Boolean
+    suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean
 
     fun isAudioRecordingPaused(): Boolean
 
@@ -173,6 +175,7 @@ class PeerChannelImpl(
     private var factory: PeerConnectionFactory? = null
 
     private val executor = Executors.newSingleThreadExecutor()
+    private val executorDispatcher = executor.asCoroutineDispatcher()
 
     private val sdpConstraints = componentFactory.createSDPConstraints()
     private val localAudioManager = componentFactory.createAudioManager()
@@ -806,6 +809,9 @@ class PeerChannelImpl(
         // 内部生成の ADM を解放
         componentFactory.releaseOwnedAudioDeviceModule()
 
+        executorDispatcher.close()
+        executor.shutdown()
+
         if (useTracer) {
             PeerConnectionFactory.stopInternalTracingCapture()
             PeerConnectionFactory.shutdownInternalTracer()
@@ -826,31 +832,36 @@ class PeerChannelImpl(
         }
     }
 
-    override fun setAudioRecordingPaused(paused: Boolean): Boolean {
+    override suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean {
         if (executor.isShutdown) {
-            SoraLogger.w(TAG, "executor already shut down; ignore setAudioRecordingPaused")
+            SoraLogger.w(TAG, "executor already shut down; ignore setAudioRecordingPausedAsync")
             return false
         }
-        executor.execute {
+        return withContext(executorDispatcher) {
             if (paused) {
-                if (audioRecordingPaused) return@execute
-                pauseAudioRecording()
+                if (audioRecordingPaused) {
+                    true
+                } else {
+                    pauseAudioRecording()
+                }
             } else {
-                if (!audioRecordingPaused) return@execute
-                resumeAudioRecording()
+                if (!audioRecordingPaused) {
+                    true
+                } else {
+                    resumeAudioRecording()
+                }
             }
         }
-        return true
     }
 
-    private fun pauseAudioRecording() {
+    private suspend fun pauseAudioRecording(): Boolean {
         // ADM の録音を停止（インジケータ消灯狙い）
         SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(true)")
         val paused = componentFactory.controllableAdm()?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
             SoraLogger.w(TAG, "pauseRecording failed; keep current state")
-            return
+            return false
         }
         // 念のため送出を停止し、ローカル音声を破棄
         try {
@@ -862,9 +873,10 @@ class PeerChannelImpl(
         } catch (_: Exception) {
         }
         audioRecordingPaused = true
+        return true
     }
 
-    private fun resumeAudioRecording() {
+    private suspend fun resumeAudioRecording(): Boolean {
         // ローカル音声の再初期化と再アタッチ
         try {
             if (factory != null) {
@@ -904,9 +916,10 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
             SoraLogger.w(TAG, "resumeRecording failed; keep current state")
-            return
+            return false
         }
         audioRecordingPaused = false
+        return true
     }
 
     override fun isAudioRecordingPaused(): Boolean = audioRecordingPaused

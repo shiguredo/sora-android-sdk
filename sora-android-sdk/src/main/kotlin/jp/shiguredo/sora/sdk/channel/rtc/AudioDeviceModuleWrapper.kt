@@ -27,48 +27,22 @@ class AudioDeviceModuleWrapper(
     private val dispatcher = handler?.asCoroutineDispatcher()
     private val coroutineScope: CoroutineScope? = dispatcher?.let { CoroutineScope(SupervisorJob() + it) }
 
-    fun pauseRecording(): Boolean {
+    suspend fun pauseRecording(): Boolean {
         if (adm !is JavaAudioDeviceModule) {
             SoraLogger.w(TAG, "pauseRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val javaAdm = adm
-        val scope =
-            coroutineScope
-                ?: return runCatching { javaAdm.pauseRecording() }
-                    .onFailure {
-                        SoraLogger.w(TAG, "pauseRecording failed: ${it.message}")
-                    }.getOrDefault(false)
-
-        val deferred =
-            scope.async {
-                runCatching { javaAdm.pauseRecording() }
-                    .onFailure { SoraLogger.w(TAG, "pauseRecording failed: ${it.message}") }
-                    .getOrDefault(false)
-            }
-        return runBlockingWithTimeout(deferred)
+        val scope = coroutineScope ?: return suspendRunCatching { adm.pauseRecording() }
+        return scope.async { suspendRunCatching { adm.pauseRecording() } }.awaitWithTimeout()
     }
 
-    fun resumeRecording(): Boolean {
+    suspend fun resumeRecording(): Boolean {
         if (adm !is JavaAudioDeviceModule) {
             SoraLogger.w(TAG, "resumeRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val javaAdm = adm
-        val scope =
-            coroutineScope
-                ?: return runCatching { javaAdm.resumeRecording() }
-                    .onFailure {
-                        SoraLogger.w(TAG, "resumeRecording failed: ${it.message}")
-                    }.getOrDefault(false)
-
-        val deferred =
-            scope.async {
-                runCatching { javaAdm.resumeRecording() }
-                    .onFailure { SoraLogger.w(TAG, "resumeRecording failed: ${it.message}") }
-                    .getOrDefault(false)
-            }
-        return runBlockingWithTimeout(deferred)
+        val scope = coroutineScope ?: return suspendRunCatching { adm.resumeRecording() }
+        return scope.async { suspendRunCatching { adm.resumeRecording() } }.awaitWithTimeout()
     }
 
     fun dispose() {
@@ -76,12 +50,12 @@ class AudioDeviceModuleWrapper(
         handlerThread?.quitSafely()
     }
 
-    private fun runBlockingWithTimeout(deferred: kotlinx.coroutines.Deferred<Boolean>): Boolean =
-        runCatching {
-            kotlinx.coroutines.runBlocking {
-                withTimeoutOrNull(PAUSE_TIMEOUT_MILLIS) {
-                    deferred.await()
-                } ?: false
-            }
-        }.getOrDefault(false)
+    private suspend fun kotlinx.coroutines.Deferred<Boolean>.awaitWithTimeout(): Boolean =
+        withTimeoutOrNull(PAUSE_TIMEOUT_MILLIS) { await() } ?: false
+
+    private suspend inline fun suspendRunCatching(block: () -> Boolean): Boolean =
+        runCatching(block)
+            .onFailure {
+                SoraLogger.w(TAG, "pause/resume failed: ${it.message}")
+            }.getOrDefault(false)
 }
