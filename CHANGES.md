@@ -38,8 +38,12 @@
     - 'canary.py'
     - '.gitignore'
 - [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
- - ktlint バージョンアップにより命名規則のチェックが厳格になった
-  - @zztkm
+  - ktlint バージョンアップにより命名規則のチェックが厳格になった
+    - @zztkm
+- [ADD] 音声をハードミュートする機能を追加する
+  - 音声のハードミュートにより配信中に Android デバイス上でのマイクのインジケータを消えた状態にすることができる
+  - AudioDeviceModuleWapeer クラスを追加し、pauseRecording() を追加した
+  - @t-miya
 
 ## 2025.2.0
 

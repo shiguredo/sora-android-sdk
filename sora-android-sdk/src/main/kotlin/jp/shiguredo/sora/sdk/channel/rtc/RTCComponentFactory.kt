@@ -134,7 +134,6 @@ class RTCComponentFactory(
             .setAudioDeviceModule(audioDeviceModule)
             .setVideoEncoderFactory(encoderFactory)
             .setVideoDecoderFactory(decoderFactory)
-        // 内部生成の ADM は制御のため保持し、クローズ時に解放する
 
         return factoryBuilder.createPeerConnectionFactory()
     }
