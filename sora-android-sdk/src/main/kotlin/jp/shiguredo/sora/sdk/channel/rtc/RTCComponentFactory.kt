@@ -28,6 +28,7 @@ class RTCComponentFactory(
     fun controllableAdm(): AudioDeviceModuleWrapper? = controllableAudioDevice
 
     fun releaseOwnedAudioDeviceModule() {
+        controllableAudioDevice?.dispose()
         ownedAudioDeviceModule?.release()
         ownedAudioDeviceModule = null
         controllableAudioDevice = null
