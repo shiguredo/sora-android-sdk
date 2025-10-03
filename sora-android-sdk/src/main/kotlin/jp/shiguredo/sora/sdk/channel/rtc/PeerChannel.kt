@@ -856,9 +856,9 @@ class PeerChannelImpl(
 
     private suspend fun pauseAudioRecording(): Boolean {
         // ADM の録音を停止（インジケータ消灯狙い）
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(true)")
+        SoraLogger.d(TAG, "request setAudioRecordingPaused(true)")
         val paused = componentFactory.controllableAdm()?.pauseRecording() ?: false
-        SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
+        SoraLogger.d(TAG, "pauseRecording result=$paused")
         if (!paused) {
             SoraLogger.w(TAG, "pauseRecording failed; keep current state")
             return false
@@ -866,11 +866,13 @@ class PeerChannelImpl(
         // 念のため送出を停止し、ローカル音声を破棄
         try {
             audioSender?.setTrack(null, false)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            SoraLogger.w(TAG, "setTrack(null) failed: ${e.message}")
         }
         try {
             localAudioManager.dispose()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            SoraLogger.w(TAG, "localAudioManager dispose failed: ${e.message}")
         }
         audioRecordingPaused = true
         return true
@@ -878,9 +880,9 @@ class PeerChannelImpl(
 
     private suspend fun resumeAudioRecording(): Boolean {
         // ADM の録音再開
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(false)")
+        SoraLogger.d(TAG, "request setAudioRecordingPaused(false)")
         val resumed = componentFactory.controllableAdm()?.resumeRecording() ?: false
-        SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
+        SoraLogger.d(TAG, "resumeRecording result=$resumed")
         if (!resumed) {
             SoraLogger.w(TAG, "resumeRecording failed; keep current state")
             return false
