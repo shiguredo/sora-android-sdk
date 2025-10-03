@@ -878,10 +878,7 @@ class PeerChannelImpl(
             SoraLogger.w(TAG, "localAudioManager dispose failed: ${e.message}")
         }
         if (!cleanupSucceeded) {
-            SoraLogger.w(TAG, "pauseAudioRecording cleanup failed; rolling back")
-            val rollback = admWrapper?.resumeRecording() ?: false
-            SoraLogger.d(TAG, "[audio_recording_pause] rollback resume result=$rollback")
-            return false
+            SoraLogger.w(TAG, "pauseAudioRecording cleanup failed")
         }
         audioRecordingPaused = true
         return true
