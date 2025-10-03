@@ -28,10 +28,20 @@ class RTCComponentFactory(
     fun controllableAdm(): AudioDeviceModuleWrapper? = controllableAudioDevice
 
     fun releaseOwnedAudioDeviceModule() {
-        controllableAudioDevice?.dispose()
-        ownedAudioDeviceModule?.release()
-        ownedAudioDeviceModule = null
-        controllableAudioDevice = null
+        try {
+            controllableAudioDevice?.dispose()
+        } catch (e: Exception) {
+            SoraLogger.w(TAG, "dispose controllable ADM failed: ${e.message}")
+        } finally {
+            try {
+                ownedAudioDeviceModule?.release()
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "release ADM failed: ${e.message}")
+            } finally {
+                ownedAudioDeviceModule = null
+                controllableAudioDevice = null
+            }
+        }
     }
 
     // メインスレッド(UI スレッド)で呼ばれる必要がある。

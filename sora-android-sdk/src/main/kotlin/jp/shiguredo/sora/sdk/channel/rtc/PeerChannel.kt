@@ -877,6 +877,15 @@ class PeerChannelImpl(
     }
 
     private suspend fun resumeAudioRecording(): Boolean {
+        // ADM の録音再開
+        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(false)")
+        val resumed = componentFactory.controllableAdm()?.resumeRecording() ?: false
+        SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
+        if (!resumed) {
+            SoraLogger.w(TAG, "resumeRecording failed; keep current state")
+            return false
+        }
+
         // ローカル音声の再初期化と再アタッチ
         try {
             if (factory != null) {
@@ -895,7 +904,6 @@ class PeerChannelImpl(
                         val mid = audioMid
                         if (mid != null && localTrack != null) {
                             audioSender = setTrack(mid, localTrack)
-                            reattached = true
                             SoraLogger.d(TAG, "recreated audio sender and attached track (mid=$mid)")
                         } else {
                             SoraLogger.w(TAG, "audioMid or track is null; cannot recreate sender")
@@ -910,14 +918,6 @@ class PeerChannelImpl(
             SoraLogger.w(TAG, "failed on audio track (init/attach): ${e.message}")
         }
 
-        // ADM の録音再開（ベストエフォート）
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(false)")
-        val resumed = componentFactory.controllableAdm()?.resumeRecording() ?: false
-        SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
-        if (!resumed) {
-            SoraLogger.w(TAG, "resumeRecording failed; keep current state")
-            return false
-        }
         audioRecordingPaused = false
         return true
     }
