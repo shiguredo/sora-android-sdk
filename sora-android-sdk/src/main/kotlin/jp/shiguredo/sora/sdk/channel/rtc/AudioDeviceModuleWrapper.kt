@@ -45,8 +45,8 @@ class AudioDeviceModuleWrapper(
             SoraLogger.w(TAG, "pauseRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val scope = coroutineScope ?: return suspendRunCatching { adm.pauseRecording() }
-        return scope.async { suspendRunCatching { adm.pauseRecording() } }.awaitWithTimeout()
+        val scope = coroutineScope ?: return runCatchingWithLog { adm.pauseRecording() }
+        return scope.async { runCatchingWithLog { adm.pauseRecording() } }.awaitWithTimeout()
     }
 
     /** 録音再開が完了するまで待機します。失敗またはタイムアウトした場合は `false` を返します */
@@ -55,8 +55,8 @@ class AudioDeviceModuleWrapper(
             SoraLogger.w(TAG, "resumeRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val scope = coroutineScope ?: return suspendRunCatching { adm.resumeRecording() }
-        return scope.async { suspendRunCatching { adm.resumeRecording() } }.awaitWithTimeout()
+        val scope = coroutineScope ?: return runCatchingWithLog { adm.resumeRecording() }
+        return scope.async { runCatchingWithLog { adm.resumeRecording() } }.awaitWithTimeout()
     }
 
     /** 実行中のコルーチンをキャンセルし、専用 HandlerThread を停止します */
@@ -73,7 +73,7 @@ class AudioDeviceModuleWrapper(
     private suspend fun kotlinx.coroutines.Deferred<Boolean>.awaitWithTimeout(): Boolean =
         withTimeoutOrNull(PAUSE_TIMEOUT_MILLIS) { await() } ?: false
 
-    private suspend fun suspendRunCatching(block: () -> Boolean): Boolean =
+    private fun runCatchingWithLog(block: () -> Boolean): Boolean =
         runCatching(block)
             .onFailure {
                 SoraLogger.w(TAG, "pause/resume failed: ${it.message}")

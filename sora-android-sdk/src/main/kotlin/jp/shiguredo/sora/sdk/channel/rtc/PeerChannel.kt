@@ -857,7 +857,7 @@ class PeerChannelImpl(
     private suspend fun pauseAudioRecording(): Boolean {
         // ADM の録音を停止（インジケータ消灯狙い）
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(true)")
+        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPausedAsync(true)")
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
@@ -889,7 +889,7 @@ class PeerChannelImpl(
 
     private suspend fun resumeAudioRecording(): Boolean {
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(false)")
+        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPausedAsync(false)")
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
