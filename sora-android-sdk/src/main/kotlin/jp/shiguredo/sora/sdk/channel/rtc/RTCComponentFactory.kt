@@ -25,7 +25,7 @@ class RTCComponentFactory(
     private var controllableAudioDevice: AudioDeviceModuleWrapper? = null
     private var ownedAudioDeviceModule: AudioDeviceModule? = null
 
-    fun controllableAdm(): AudioDeviceModuleWrapper? = controllableAudioDevice
+    val controllableAdm: AudioDeviceModuleWrapper? get() = controllableAudioDevice
 
     fun releaseOwnedAudioDeviceModule() {
         try {
