@@ -27,6 +27,8 @@ class RTCComponentFactory(
 
     val controllableAdm: AudioDeviceModuleWrapper? get() = controllableAudioDevice
 
+    // AudioDeviceModule を解放する
+    // リソースリーク防止用に段階的に解放する
     fun releaseOwnedAudioDeviceModule() {
         try {
             controllableAudioDevice?.dispose()
@@ -132,8 +134,10 @@ class RTCComponentFactory(
         val audioDeviceModule: AudioDeviceModule =
             when {
                 mediaOption.audioOption.audioDeviceModule != null ->
+                    // アプリ側でカスタム ADM がセットされている場合
                     mediaOption.audioOption.audioDeviceModule!!
                 else -> {
+                    // デフォルトの JavaAudioDeviceModule を使用する場合
                     val adm = createJavaAudioDevice(appContext)
                     ownedAudioDeviceModule = adm
                     controllableAudioDevice = AudioDeviceModuleWrapper(adm)
