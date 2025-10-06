@@ -37,16 +37,15 @@
     - 'jitpack.yml'
     - 'canary.py'
     - '.gitignore'
-<<<<<<< HEAD
 - [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
   - ktlint バージョンアップにより命名規則のチェックが厳格になった
     - @zztkm
 - [ADD] 音声をハードミュートする機能を追加する
   - 音声のハードミュートにより配信中に Android デバイス上でのマイクのインジケータを消えた状態にすることができる
-=======
 - [ADD] 音声の録音一時停止機能を追加する
   - 音声のハードミュートにより配信中に Android デバイス上でのマイクのインジケータを消灯できる
->>>>>>> 2486009 (resumeAudioRecording()失敗時のロールバック、dispose()コルーチンキャンセル修正)
+- [ADD] 音声のハードウェアミュートによる録音一時停止機能を追加する
+  - 配信中に Android デバイス上でのマイクのインジケータを消灯できるようにする
   - AudioDeviceModuleWrapper クラスを追加した
     - pauseRecording() で音声録音を一時停止し、resumeRecording() で再開する
   - SoraMediaChannel に setAudioRecordingPausedAsync() / isAudioRecordingPaused() を追加した
