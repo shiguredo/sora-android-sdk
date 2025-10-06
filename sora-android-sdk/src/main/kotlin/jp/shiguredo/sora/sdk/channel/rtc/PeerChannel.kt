@@ -833,8 +833,8 @@ class PeerChannelImpl(
 
     override suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean {
         if (!mediaOption.audioUpstreamEnabled) {
-            SoraLogger.i(TAG, "[audio_recording_pause] audioUpstreamEnabled is false; ignore setAudioRecordingPausedAsync")
-            return false
+            SoraLogger.d(TAG, "[audio_recording_pause] audioUpstreamEnabled is false; nothing to do")
+            return true  // 「処理不要だが正常」として true を返す
         }
         if (executor.isShutdown) {
             SoraLogger.w(TAG, "executor already shut down; ignore setAudioRecordingPausedAsync")
@@ -860,7 +860,7 @@ class PeerChannelImpl(
     private suspend fun pauseAudioRecording(): Boolean {
         // ADM の録音を停止（インジケータ消灯狙い）
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(true)")
+        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPausedAsync(true)")
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
@@ -868,8 +868,8 @@ class PeerChannelImpl(
             return false
         }
 
-        // 念の為ローカルトラックの送出も無効化する
-        // ローカルトラックが存在している、かつ無効化に失敗する場合(dispose済み等)はロールバックする
+        // libwebrtc の実装により、ADM pause 後も RTP パケットが送信される可能性があるため、トラックも無効化する
+        // トラックが存在している、かつ無効化に失敗する場合(dispose済み等)はロールバックする
         var trackDisableFailed = false
         val localTrack = localAudioManager.track
         if (localTrack != null) {
@@ -894,7 +894,7 @@ class PeerChannelImpl(
     private suspend fun resumeAudioRecording(): Boolean {
         // ADM の録音を再開
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPaused(false)")
+        SoraLogger.d(TAG, "[audio_recording_pause] request setAudioRecordingPausedAsync(false)")
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
@@ -903,20 +903,21 @@ class PeerChannelImpl(
         }
 
         // ローカルトラックを有効化する
-        // ローカルトラックが dispose 済みの場合は再度生成したアタッチする
-        val trackResumeSucceeded =
+        // ローカルトラックが dispose 済みの場合は再度生成しアタッチする
+        val trackResumeResult =
             try {
-                when (val result = resumeWithExistingAudioTrack()) {
-                    null -> resumeWithReinitializedAudioTrack()
-                    else -> result
+                when (val existing = resumeWithExistingAudioTrack()) {
+                    AudioTrackResumeResult.SUCCESS -> existing
+                    AudioTrackResumeResult.FAILURE -> existing
+                    AudioTrackResumeResult.NEEDS_REINITIALIZATION -> resumeWithReinitializedAudioTrack()
                 }
             } catch (e: Exception) {
                 SoraLogger.w(TAG, "[audio_recording_pause] failed to resume audio track: ${e.message}")
-                false
+                AudioTrackResumeResult.FAILURE
             }
 
-        // ローカルトラックの有効化に失敗した場合は ADM の resume を取り消す
-        if (!trackResumeSucceeded) {
+        // ローカルトラックの再開に失敗した場合は ADM の resume を取り消す
+        if (trackResumeResult != AudioTrackResumeResult.SUCCESS) {
             SoraLogger.w(TAG, "[audio_recording_pause] resume failed; rolling back")
             val rollback = admWrapper?.pauseRecording() ?: false
             SoraLogger.d(TAG, "[audio_recording_pause] rollback pause result=$rollback")
@@ -927,19 +928,19 @@ class PeerChannelImpl(
         return true
     }
 
-    private fun resumeWithExistingAudioTrack(): Boolean? {
+    private fun resumeWithExistingAudioTrack(): AudioTrackResumeResult {
         // 既存のAudioトラックを再有効化する
         // 1. 既存トラックの取得
-        //     localAudioManager.track が null なら「既存トラックなし」として null を返し、呼び出し元で再初期化ルートへフォールバックする
+        //     localAudioManager.track が null なら NeedsReinitialization を返し、呼び出し元で再初期化ルートへフォールバックする
         // 2. トラック再有効化の成否判定
-        //     setLocalAudioTrackEnabled(track, true) が成功すれば処理を継続し、失敗した場合は false を返してロールバック判定へ
+        //     setLocalAudioTrackEnabled(track, true) が成功すれば処理を継続し、失敗した場合は Failure を返してロールバック判定へ
         // 3. sender への直付け
-        //     attachAudioTrackToSender() が成功したら true を返し、ここで処理終了。失敗時は次のフォールバックへ
+        //     attachAudioTrackToSender() が成功したら Success を返し、ここで処理終了。失敗時は次のフォールバックへ
         // 4. sender のトラック張り替え
-        //     updateAudioSenderTrack(track) を試し、ここでも成功すれば true、失敗なら false を返す
-        val track = localAudioManager.track ?: return null
+        //     updateAudioSenderTrack(track) を試し、ここでも成功すれば Success、失敗なら Failure を返す
+        val track = localAudioManager.track ?: return AudioTrackResumeResult.NEEDS_REINITIALIZATION
         if (!setLocalAudioTrackEnabled(track, true)) {
-            return false
+            return AudioTrackResumeResult.FAILURE
         }
         if (attachAudioTrackToSender(
                 track,
@@ -947,18 +948,22 @@ class PeerChannelImpl(
                 "[audio_recording_pause] failed to reattach existing audio track",
             )
         ) {
-            return true
+            return AudioTrackResumeResult.SUCCESS
         }
-        return updateAudioSenderTrack(track)
+        return if (updateAudioSenderTrack(track)) {
+            AudioTrackResumeResult.SUCCESS
+        } else {
+            AudioTrackResumeResult.FAILURE
+        }
     }
 
-    private fun resumeWithReinitializedAudioTrack(): Boolean {
+    private fun resumeWithReinitializedAudioTrack(): AudioTrackResumeResult {
         // Audio トラックを初期化し直した上で録音 resume する
         // 基本的に既存トラックを利用するため、フォールバックとして呼び出される
         val currentFactory = factory
         if (currentFactory == null) {
             SoraLogger.w(TAG, "[audio_recording_pause] factory is null; cannot resume audio")
-            return false
+            return AudioTrackResumeResult.FAILURE
         }
 
         SoraLogger.d(TAG, "[audio_recording_pause] local audio track missing; reinitializing")
@@ -969,23 +974,29 @@ class PeerChannelImpl(
             // AudioRecordingPausedAsync で対応済みだが、その他理由で track が生成されなかった場合用にチェックしている
             if (track == null) {
                 SoraLogger.w(TAG, "[audio_recording_pause] localTrack is null after reinit; cannot resume audio")
-                false
+                AudioTrackResumeResult.FAILURE
             } else if (attachAudioTrackToSender(
                     track,
                     "[audio_recording_pause] reattached recreated audio track to existing sender",
                     "[audio_recording_pause] failed to attach recreated audio track",
                 )
             ) {
-                true
+                AudioTrackResumeResult.SUCCESS
             } else {
-                updateAudioSenderTrack(track)
+                if (updateAudioSenderTrack(track)) {
+                    AudioTrackResumeResult.SUCCESS
+                } else {
+                    AudioTrackResumeResult.FAILURE
+                }
             }
         } catch (e: Exception) {
             SoraLogger.w(TAG, "[audio_recording_pause] failed while reinitializing local audio track: ${e.message}")
-            false
+            AudioTrackResumeResult.FAILURE
         }
     }
 
+    // Libwebrtc は AudioDeviceModule 側の pause/resume だけでは送信状態が即座に反映されないことがあるため、
+    // メディアトラックの enabled 状態も併せて制御する
     private fun setLocalAudioTrackEnabled(
         track: MediaStreamTrack,
         enabled: Boolean,
@@ -1002,6 +1013,7 @@ class PeerChannelImpl(
             false
         }
 
+    // 既存の audioSender を再利用してトラックを張り替える。 sender が dispose 済みなら false を返す
     private fun attachAudioTrackToSender(
         track: MediaStreamTrack,
         successLog: String,
@@ -1023,21 +1035,29 @@ class PeerChannelImpl(
         }
     }
 
+    // トラックを張り替える必要がある場合に mid から transceiver を再取得して sender を更新する
     private fun updateAudioSenderTrack(track: MediaStreamTrack): Boolean {
         val mid = audioMid
         if (mid == null) {
-            SoraLogger.w(TAG, "audioMid is null; cannot update sender track")
+            SoraLogger.w(TAG, "[audio_recording_pause] audioMid is null; cannot update sender track")
             return false
         }
         return try {
             audioSender = setTrack(mid, track)
-            SoraLogger.d(TAG, "updated audio sender with track (mid=$mid)")
+            SoraLogger.d(TAG, "[audio_recording_pause] updated audio sender with track (mid=$mid)")
             true
         } catch (e: Exception) {
             // トラックが dispose 済み等
-            SoraLogger.w(TAG, "failed to update audio sender track: ${e.message}")
+            SoraLogger.w(TAG, "[audio_recording_pause] failed to update audio sender track: ${e.message}")
             false
         }
+    }
+
+    // トラック Resume 時の戻り値用 Enum
+    private enum class AudioTrackResumeResult {
+        SUCCESS,
+        FAILURE,
+        NEEDS_REINITIALIZATION,
     }
 
     override fun isAudioRecordingPaused(): Boolean = audioRecordingPaused
