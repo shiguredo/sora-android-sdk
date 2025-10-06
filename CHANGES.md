@@ -37,7 +37,8 @@
     - 'jitpack.yml'
     - 'canary.py'
     - '.gitignore'
-- [UPDATE] ktlint のフォーマットによって SDKInfo.kt の `version` 変数が `VERSION` に変わったため、それに合わせて canary.py を更新する
+- [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
+ - ktlint バージョンアップにより命名規則のチェックが厳格になった
   - @zztkm
 
 ## 2025.2.0
