@@ -865,20 +865,23 @@ class PeerChannelImpl(
             return false
         }
         var cleanupSucceeded = true
-        try {
-            audioSender?.setTrack(null, false)
-        } catch (e: Exception) {
-            cleanupSucceeded = false
-            SoraLogger.w(TAG, "setTrack(null) failed: ${e.message}")
-        }
-        try {
-            localAudioManager.dispose()
-        } catch (e: Exception) {
-            cleanupSucceeded = false
-            SoraLogger.w(TAG, "localAudioManager dispose failed: ${e.message}")
+        val localTrack = localAudioManager.track
+        if (localTrack != null) {
+            try {
+                localTrack.setEnabled(false)
+                SoraLogger.d(TAG, "disabled local audio track")
+            } catch (e: Exception) {
+                cleanupSucceeded = false
+                SoraLogger.w(TAG, "failed to disable local audio track: ${e.message}")
+            }
+        } else {
+            SoraLogger.d(TAG, "local audio track is null; nothing to disable")
         }
         if (!cleanupSucceeded) {
-            SoraLogger.w(TAG, "pauseAudioRecording cleanup failed")
+            SoraLogger.w(TAG, "pauseAudioRecording cleanup failed; rolling back")
+            val rollback = admWrapper?.resumeRecording() ?: false
+            SoraLogger.d(TAG, "[audio_recording_pause] rollback resume result=$rollback")
+            return false
         }
         audioRecordingPaused = true
         return true
@@ -896,16 +899,50 @@ class PeerChannelImpl(
 
         var reattached = false
         try {
-            if (factory != null) {
+            val existingTrack = localAudioManager.track
+            if (existingTrack != null) {
+                var trackEnabled = true
+                try {
+                    existingTrack.setEnabled(true)
+                    SoraLogger.d(TAG, "re-enabled local audio track")
+                } catch (e: Exception) {
+                    trackEnabled = false
+                    SoraLogger.w(TAG, "failed to enable local audio track: ${e.message}")
+                }
+                if (trackEnabled) {
+                    try {
+                        audioSender?.setTrack(existingTrack, false)
+                        reattached = true
+                        SoraLogger.d(TAG, "reattached existing audio track to sender")
+                    } catch (e: Exception) {
+                        SoraLogger.w(TAG, "failed to reattach existing audio track: ${e.message}")
+                    }
+                    if (!reattached) {
+                        try {
+                            val mid = audioMid
+                            if (mid != null) {
+                                audioSender = setTrack(mid, existingTrack)
+                                reattached = true
+                                SoraLogger.d(TAG, "recreated audio sender and attached track (mid=$mid)")
+                            } else {
+                                SoraLogger.w(TAG, "audioMid is null; cannot recreate sender")
+                            }
+                        } catch (e2: Exception) {
+                            SoraLogger.w(TAG, "failed to recreate audio sender: ${e2.message}")
+                        }
+                    }
+                }
+            } else if (factory != null) {
+                SoraLogger.d(TAG, "local audio track missing; reinitializing")
                 localAudioManager.initTrack(factory!!, mediaOption.audioOption)
                 val localTrack = localAudioManager.track
                 if (localTrack != null) {
                     try {
                         audioSender?.setTrack(localTrack, false)
                         reattached = true
-                        SoraLogger.d(TAG, "reattached audio track to existing sender")
+                        SoraLogger.d(TAG, "reattached recreated audio track to existing sender")
                     } catch (e: Exception) {
-                        SoraLogger.w(TAG, "failed to reattach audio track: ${e.message}")
+                        SoraLogger.w(TAG, "failed to attach recreated audio track: ${e.message}")
                     }
                     if (!reattached) {
                         try {
@@ -921,15 +958,14 @@ class PeerChannelImpl(
                             SoraLogger.w(TAG, "failed to recreate audio sender: ${e2.message}")
                         }
                     }
-                    localTrack.setEnabled(true)
                 } else {
-                    SoraLogger.w(TAG, "localTrack is null; cannot resume audio")
+                    SoraLogger.w(TAG, "localTrack is null after reinit; cannot resume audio")
                 }
             } else {
                 SoraLogger.w(TAG, "factory is null; cannot resume audio")
             }
         } catch (e: Exception) {
-            SoraLogger.w(TAG, "failed on audio track (init/attach): ${e.message}")
+            SoraLogger.w(TAG, "failed on audio track (enable/attach): ${e.message}")
         }
 
         if (!reattached) {
