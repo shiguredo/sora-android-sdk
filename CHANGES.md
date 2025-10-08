@@ -16,13 +16,17 @@
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
   - @t-miya
 - [ADD] マイク録音の一時停止／再開機能を追加する
-  - 配信中に Android 実機でマイクインジケータを消灯するミュートを可能にする
+  - 配信中に AudioDeviceModule の録音を停止することで、Android 実機のマイクインジケータを消灯させることを可能にする
   - AudioDeviceModuleWrapper クラスを追加する
-    - pauseRecording() / resumeRecording() メソッドを搭載した、AudioDeviceModule(ADM)のラッパークラス
+    - JavaAudioDeviceModule を対象とした録音停止/再開のラッパークラス
+    - 専用の HandlerThread 上で suspend 関数として pauseRecording() / resumeRecording() を提供する
   - SoraMediaChannel に以下のメソッドを追加する
-    - 非同期で録音停止/再開するためのメソッドとして setAudioRecordingPausedAsync() を追加する
-      - setAudioRecordingPausedAsync() 内部で AudioDeviceModuleWrapper#pauseRecording()/resumeRecording() が実行される
-    - setAudioRecordingPausedAsync() 実行による録音状態の取得用として isAudioRecordingPaused() を追加する
+    - suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean
+      - 録音の一時停止/再開を非同期で実行する
+      - 内部では PeerChannel 経由で AudioDeviceModuleWrapper の pauseRecording()/resumeRecording() が呼ばれる
+      - AudioDeviceModule の制御に加え、ローカル AudioTrack の無効化/有効化も併せて行う
+    - fun isAudioRecordingPaused(): Boolean
+      - 現在の録音停止状態を返す
   - @t-miya
 
 ### misc
