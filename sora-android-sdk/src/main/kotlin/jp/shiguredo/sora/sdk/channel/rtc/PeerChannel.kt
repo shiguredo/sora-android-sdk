@@ -870,6 +870,7 @@ class PeerChannelImpl(
 
         // libwebrtc の実装により、ADM pause 後も RTP パケットが送信される可能性があるため、トラックも無効化する
         // トラックが存在している、かつ無効化に失敗する場合(dispose済み等)はロールバックする
+        // (通常フローでは dispose 済みにはならない。防御的なフォールバック機構)
         var trackDisableFailed = false
         val localTrack = localAudioManager.track
         if (localTrack != null) {
@@ -894,7 +895,7 @@ class PeerChannelImpl(
     private suspend fun resumeAudioRecording(): Boolean {
         // ADM の録音を再開
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] pausing audio recording")
+        SoraLogger.d(TAG, "[audio_recording_pause] resume audio recording")
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
@@ -904,6 +905,7 @@ class PeerChannelImpl(
 
         // ローカルトラックを有効化する
         // ローカルトラックが dispose 済みの場合は再度生成しアタッチする
+        // (通常フローでは dispose 済みにはならない。防御的なフォールバック機構)
         val trackResumeResult =
             try {
                 when (val existing = resumeWithExistingAudioTrack()) {
