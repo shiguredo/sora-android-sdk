@@ -831,7 +831,9 @@ class PeerChannelImpl(
         }
     }
 
+    /** 録音の一時停止/復帰を非同期で実行する */
     override suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean {
+        // 接続設定として音声送出をしていなければ処理不要のため即終了
         if (!mediaOption.audioUpstreamEnabled) {
             SoraLogger.d(TAG, "[audio_recording_pause] audioUpstreamEnabled is false; nothing to do")
             return true // 「処理不要だが正常」として true を返す
@@ -857,10 +859,11 @@ class PeerChannelImpl(
         }
     }
 
+    /** ADM の録音を停止（マイクインジケータ消灯狙い） */
     private suspend fun pauseAudioRecording(): Boolean {
-        // ADM の録音を停止（インジケータ消灯狙い）
         val admWrapper = componentFactory.controllableAdm
         SoraLogger.d(TAG, "[audio_recording_pause] pausing audio recording")
+        // 既に停止中の場合でも true が返る
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
@@ -868,7 +871,7 @@ class PeerChannelImpl(
             return false
         }
 
-        // libwebrtc の実装により、ADM pause 後も RTP パケットが送信される可能性があるため、トラックも無効化する
+        // libwebrtc の実装によっては ADM pause 後も RTP パケットが送信される可能性があるためトラックも無効化する
         // トラックが存在している、かつ無効化に失敗する場合(dispose済み等)はロールバックする
         // (通常フローでは dispose 済みにはならない。防御的なフォールバック機構)
         var trackDisableFailed = false
@@ -896,6 +899,7 @@ class PeerChannelImpl(
         // ADM の録音を再開
         val admWrapper = componentFactory.controllableAdm
         SoraLogger.d(TAG, "[audio_recording_pause] resume audio recording")
+        // 既に録音中の場合でも true が返る
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
@@ -997,8 +1001,9 @@ class PeerChannelImpl(
         }
     }
 
-    // Libwebrtc は AudioDeviceModule 側の pause/resume だけでは送信状態が即座に反映されないことがあるため、
+    // libwebrtc は AudioDeviceModule 側の pause/resume だけでは送信状態が即座に反映されないことがあるため、
     // メディアトラックの enabled 状態も併せて制御する
+    // pauseAudioRecording()/resumeAudioRecording() 内の処理で使用される
     private fun setLocalAudioTrackEnabled(
         track: MediaStreamTrack,
         enabled: Boolean,
@@ -1016,6 +1021,7 @@ class PeerChannelImpl(
         }
 
     // 既存の audioSender を再利用してトラックを張り替える。 sender が dispose 済みなら false を返す
+    // pauseAudioRecording()/resumeAudioRecording() 内の処理で使用される
     private fun attachAudioTrackToSender(
         track: MediaStreamTrack,
         successLog: String,
@@ -1038,6 +1044,7 @@ class PeerChannelImpl(
     }
 
     // トラックを張り替える必要がある場合に mid から transceiver を再取得して sender を更新する
+    // pauseAudioRecording()/resumeAudioRecording() 内の処理で使用される
     private fun updateAudioSenderTrack(track: MediaStreamTrack): Boolean {
         val mid = audioMid
         if (mid == null) {

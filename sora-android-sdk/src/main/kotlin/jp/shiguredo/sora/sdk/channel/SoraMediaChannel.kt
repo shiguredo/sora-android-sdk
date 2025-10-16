@@ -441,12 +441,11 @@ class SoraMediaChannel
         /**
          * JavaAudioDeviceModule の録音処理を一時停止または再開する
          * 内部で生成した AudioDeviceModule のみ制御可能であり、外部から差し込んだ AudioDeviceModule は対象外
-         * 成功可否を Boolean で返す suspend 関数
          */
         suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean = peer?.setAudioRecordingPausedAsync(paused) ?: false
 
         /**
-         * setAudioRecordingPaused(true) が適用されているかを返す
+         * 録音停止中かどうかを返す
          */
         fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
 

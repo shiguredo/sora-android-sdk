@@ -17,9 +17,13 @@ import org.webrtc.audio.JavaAudioDeviceModule
 /**
  * [AudioDeviceModule] の録音停止／再開をコルーチン経由で制御するラッパーです。
  *
- * 対象が [JavaAudioDeviceModule] の場合、libwebrtc 側は専用ローパー上で JNI 呼び出しが行われることを想定しています。
- * 本クラスは専用の HandlerThread を用意し、そこで pause/resume を実行した上で最大 [PAUSE_TIMEOUT_MILLIS] ミリ秒
- * 待機して結果を返します
+ * RTCComponentFactory#createPeerConnectionFactory() では外部からカスタム ADM が設定されていない場合に
+ * JavaAudioDeviceModule を内部 ADM として生成します。
+ *
+ * 本クラスは専用の HandlerThread を用意し、そこで pauseRecording()/resumeRecording() を実行した上で
+ * タイムアウト [PAUSE_TIMEOUT_MILLIS] ミリ秒で待機して結果を返します。
+ * これは libwebrtc 側で録音スレッド停止の際にタイムアウト 2,000 ミリ秒の join 待ちが発生するためです。
+ * また、ADM として JavaAudioDeviceModule 利用想定のため、他 ADM での動作はサポートしていません。
  */
 class AudioDeviceModuleWrapper(
     private val adm: AudioDeviceModule,
@@ -28,9 +32,9 @@ class AudioDeviceModuleWrapper(
         private val TAG = AudioDeviceModuleWrapper::class.simpleName
 
         /**
-         * JavaAudioDeviceModule の stop/join が最大数秒かかるため、余裕を持って 5 秒のタイムアウトを設定
+         * libwebrtc 側の録音スレッド停止の join タイムアウトが 2,000 ミリ秒のため、3,000 ミリ秒のタイムアウトを設定
          */
-        private const val PAUSE_TIMEOUT_MILLIS = 5_000L
+        private const val PAUSE_TIMEOUT_MILLIS = 3_000L
     }
 
     private val handlerThread: HandlerThread? =
