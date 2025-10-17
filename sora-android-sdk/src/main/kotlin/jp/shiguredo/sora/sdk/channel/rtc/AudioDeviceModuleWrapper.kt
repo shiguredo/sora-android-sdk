@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -50,7 +51,7 @@ class AudioDeviceModuleWrapper(
             SoraLogger.w(TAG, "pauseRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val scope = coroutineScope ?: return runCatchingWithLog { adm.pauseRecording() }
+        val scope = coroutineScope ?: error("coroutineScope is null; handlerThread was not initialised")
         return scope.async { runCatchingWithLog { adm.pauseRecording() } }.awaitWithTimeout()
     }
 
@@ -64,8 +65,14 @@ class AudioDeviceModuleWrapper(
         return scope.async { runCatchingWithLog { adm.resumeRecording() } }.awaitWithTimeout()
     }
 
-    /** 実行中のコルーチンをキャンセルし、専用 HandlerThread を停止します */
+    /**
+     * 実行中のコルーチンをキャンセルし、専用 HandlerThread を停止します
+     * UI スレッドをブロックしないようにワーカースレッドで実行するようにしてください
+     */
     fun dispose() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw IllegalStateException("AudioDeviceModuleWrapper#dispose must not be called on the main thread!")
+        }
         coroutineScope?.let { scope ->
             scope.cancel()
             runBlocking {

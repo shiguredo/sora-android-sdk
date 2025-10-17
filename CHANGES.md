@@ -20,6 +20,7 @@
   - AudioDeviceModuleWrapper クラスを追加する
     - AudioDeviceModule を対象とした録音停止/再開のラッパークラス
     - 専用の HandlerThread 上で suspend 関数として pauseRecording() / resumeRecording() を提供する
+    - アプリ側でカスタム ADM を差し込む場合は AudioDeviceModuleWrapper は利用されない
   - SoraMediaChannel に以下のメソッドを追加する
     - suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean
       - 録音の一時停止/再開を非同期で実行する

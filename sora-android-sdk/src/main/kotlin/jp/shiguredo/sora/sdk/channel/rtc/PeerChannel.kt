@@ -839,7 +839,7 @@ class PeerChannelImpl(
             return true // 「処理不要だが正常」として true を返す
         }
         if (executor.isShutdown) {
-            SoraLogger.w(TAG, "executor already shut down; ignore setAudioRecordingPausedAsync")
+            SoraLogger.w(TAG, "[audio_recording_pause] executor already shut down; ignore setAudioRecordingPausedAsync")
             return false
         }
         return withContext(executorDispatcher) {
@@ -860,7 +860,7 @@ class PeerChannelImpl(
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
-            SoraLogger.w(TAG, "pauseRecording failed; keep current state")
+            SoraLogger.w(TAG, "[audio_recording_pause] pauseRecording failed; keep current state")
             return false
         }
 
@@ -897,7 +897,7 @@ class PeerChannelImpl(
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
-            SoraLogger.w(TAG, "resumeRecording failed; keep current state")
+            SoraLogger.w(TAG, "[audio_recording_pause] resumeRecording failed; keep current state")
             return false
         }
 
