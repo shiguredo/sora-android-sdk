@@ -60,7 +60,7 @@ class AudioDeviceModuleWrapper(
             SoraLogger.w(TAG, "resumeRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
             return false
         }
-        val scope = coroutineScope ?: return runCatchingWithLog { adm.resumeRecording() }
+        val scope = coroutineScope ?: error("coroutineScope is null; handlerThread was not initialised")
         return scope.async { runCatchingWithLog { adm.resumeRecording() } }.awaitWithTimeout()
     }
 
