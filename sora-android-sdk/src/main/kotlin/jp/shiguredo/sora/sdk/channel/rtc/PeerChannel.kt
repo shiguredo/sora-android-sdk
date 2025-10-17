@@ -843,18 +843,11 @@ class PeerChannelImpl(
             return false
         }
         return withContext(executorDispatcher) {
-            if (paused) {
-                if (audioRecordingPaused) {
-                    true
-                } else {
-                    pauseAudioRecording()
-                }
-            } else {
-                if (!audioRecordingPaused) {
-                    true
-                } else {
-                    resumeAudioRecording()
-                }
+            when {
+                paused && audioRecordingPaused -> true
+                !paused && !audioRecordingPaused -> true
+                paused -> pauseAudioRecording()
+                else -> resumeAudioRecording()
             }
         }
     }
@@ -862,7 +855,7 @@ class PeerChannelImpl(
     /** ADM の録音を停止（マイクインジケータ消灯狙い） */
     private suspend fun pauseAudioRecording(): Boolean {
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] pausing audio recording")
+        SoraLogger.d(TAG, "[audio_recording_pause] pausing ADM audio recording")
         // 既に停止中の場合でも true が返る
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
@@ -898,7 +891,7 @@ class PeerChannelImpl(
     private suspend fun resumeAudioRecording(): Boolean {
         // ADM の録音を再開
         val admWrapper = componentFactory.controllableAdm
-        SoraLogger.d(TAG, "[audio_recording_pause] resume audio recording")
+        SoraLogger.d(TAG, "[audio_recording_pause] resume ADM audio recording")
         // 既に録音中の場合でも true が返る
         val resumed = admWrapper?.resumeRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")

@@ -23,7 +23,8 @@ import org.webrtc.audio.JavaAudioDeviceModule
  * 本クラスは専用の HandlerThread を用意し、そこで pauseRecording()/resumeRecording() を実行した上で
  * タイムアウト [PAUSE_TIMEOUT_MILLIS] ミリ秒で待機して結果を返します。
  * これは libwebrtc 側で録音スレッド停止の際にタイムアウト 2,000 ミリ秒の join 待ちが発生するためです。
- * また、ADM として JavaAudioDeviceModule 利用想定のため、他 ADM での動作はサポートしていません。
+ *
+ * また、アプリ側でカスタム ADM を差し込む場合は本クラスは利用されず、録音停止／再開はサポートされません。
  */
 class AudioDeviceModuleWrapper(
     private val adm: AudioDeviceModule,
@@ -80,6 +81,6 @@ class AudioDeviceModuleWrapper(
     private fun runCatchingWithLog(block: () -> Boolean): Boolean =
         runCatching(block)
             .onFailure {
-                SoraLogger.w(TAG, "pause/resume failed: ${it.message}")
+                SoraLogger.w(TAG, "pause/resume failed: ${it.message ?: it.javaClass.simpleName}", it)
             }.getOrDefault(false)
 }
