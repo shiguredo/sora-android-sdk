@@ -82,7 +82,7 @@ interface PeerChannel {
         buffer: ByteBuffer,
     ): ByteBuffer
 
-    suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean
+    suspend fun setAudioRecordingPaused(paused: Boolean): Boolean
 
     fun isAudioRecordingPaused(): Boolean
 
@@ -832,14 +832,14 @@ class PeerChannelImpl(
     }
 
     /** 録音の一時停止/復帰を非同期で実行する */
-    override suspend fun setAudioRecordingPausedAsync(paused: Boolean): Boolean {
+    override suspend fun setAudioRecordingPaused(paused: Boolean): Boolean {
         // 接続設定として音声送出をしていなければ処理不要のため即終了
         if (!mediaOption.audioUpstreamEnabled) {
             SoraLogger.d(TAG, "[audio_recording_pause] audioUpstreamEnabled is false; nothing to do")
             return true // 「処理不要だが正常」として true を返す
         }
         if (executor.isShutdown) {
-            SoraLogger.w(TAG, "[audio_recording_pause] executor already shut down; ignore setAudioRecordingPausedAsync")
+            SoraLogger.w(TAG, "[audio_recording_pause] executor already shut down; ignore setAudioRecordingPaused")
             return false
         }
         return withContext(executorDispatcher) {

@@ -5,7 +5,7 @@
 ## 関係クラス
 
 - `PeerChannelImpl`
-  - `setAudioRecordingPausedAsync`
+  - `setAudioRecordingPaused`
   - `pauseAudioRecording`
   - `resumeAudioRecording`
   - `resumeWithExistingAudioTrack`
