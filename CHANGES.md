@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 140.7339.2.2 に上げる
+- [UPDATE] libwebrtc を 141.7390.2.0 に上げる
   - @zztkm
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
   - @t-miya
@@ -26,6 +26,19 @@
   - @t-miya
 - [UPDATE] grgit が git worktree のディレクトリでは使えないことが判明したため、`BuildConfig.REVISION` を取得する方法を grgit から git コマンドに移行する
   - Sora Android SDK ではコミットハッシュを取得するためだけに Grgit を利用しており、git コマンドの利用で十分であると判断した
+  - @zztkm
+- [UPDATE] build.yml の実行除外対象を追加する
+  - paths-ignore に以下を追加
+    - 'CLAUDE.md'
+    - '.github/workflows/claude.yml'
+    - '.github/copilot-instructions.md'
+    - 'sora-android-sdk/packages.md'
+    - 'docs/**'
+    - 'jitpack.yml'
+    - 'canary.py'
+    - '.gitignore'
+- [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
+ - ktlint バージョンアップにより命名規則のチェックが厳格になった
   - @zztkm
 
 ## 2025.2.0
