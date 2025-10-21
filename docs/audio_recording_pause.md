@@ -14,12 +14,13 @@
   - `pauseRecording`
   - `resumeRecording`
 
-`AudioDeviceModuleWrapper` は `JavaAudioDeviceModule` を想定したラッパーで、専用の `HandlerThread` 上で pause/resume を実行し、最大 3,000 ミリ秒まで結果を待機します。アプリがカスタム ADM を差し込む場合はラッパーが生成されないため、録音停止／再開は利用できません。(RTCComponentFactory.kt 内の `AudioDeviceModule` セット処理参照)
+`AudioDeviceModuleWrapper` は `JavaAudioDeviceModule` を想定したラッパーで、専用の `HandlerThread` 上で pause/resume を実行し、最大 3,000 ミリ秒まで結果を待機します。アプリがカスタム ADM を差し込む場合はラッパーが生成されないため、録音停止／再開は利用できません。(RTCComponentFactory.kt 内の `AudioDeviceModule` セット処理参照)。
+また、アクセサを internal としており、外部からは直接 pause/resume を実行できないようにしています。
 
 ## 一時停止 (`pauseAudioRecording`)
 
-1. `componentFactory.controllableAdm` から `AudioDeviceModuleWrapper` を取得する。存在しなければ `false` を返す。
-2. `pauseRecording()` を呼び出す。失敗またはタイムアウトで `false` が返った場合はロールバック不要のまま終了。
+1. `componentFactory.hasControllableAdm()` で `AudioDeviceModuleWrapper` が生成済みか確認し、未生成なら `false` を返す。
+2. `componentFactory.pauseControllableAdm()` を呼び出す。失敗またはタイムアウトで `false` が返った場合はロールバック不要のまま終了。
 3. ローカル音声トラック (`localAudioManager.track`) が存在すれば `setLocalAudioTrackEnabled(track, false)` で無効化する。
    - 失敗時（例外など）は ADM の `resumeRecording()` を呼び出してロールバックし、結果をログに残して `false` を返す。
 4. すべて成功した場合は `audioRecordingPaused = true` とし、`true` を返す。
@@ -31,14 +32,14 @@
 
 ## 再開 (`resumeAudioRecording`)
 
-1. `componentFactory.controllableAdm` から `AudioDeviceModuleWrapper` を取得する。存在しなければ `false`。
-2. `resumeRecording()` を呼び出す。失敗またはタイムアウト時は即終了。
+1. `componentFactory.hasControllableAdm()` が `false` の場合は録音再開を行わず `false` を返す。
+2. `componentFactory.resumeControllableAdm()` を呼び出す。失敗またはタイムアウト時は即終了。
 3. ローカル音声トラックの再開処理を `resumeWithExistingAudioTrack()` で試みる。
    - トラックが存在し、`setEnabled(true)` と `audioSender.setTrack` / `updateAudioSenderTrack` が成功すれば `SUCCESS`。
    - 失敗した場合は `FAILURE`、トラックが存在しなければ `NEEDS_REINITIALIZATION` を返す。
 4. `NEEDS_REINITIALIZATION` の場合は `resumeWithReinitializedAudioTrack()` でトラックを再生成し、再度 sender へアタッチする。
    - ここでも失敗した場合は `FAILURE`。
-5. 再開処理の結果が `SUCCESS` 以外だった場合は ADM を `pauseRecording()` でロールバックし、`false` を返す。
+5. 再開処理の結果が `SUCCESS` 以外だった場合は `componentFactory.pauseControllableAdm()` で ADM をロールバックし、`false` を返す。
 6. 成功時は `audioRecordingPaused = false` として `true` を返す。
 
 ### 例外安全性

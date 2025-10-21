@@ -25,7 +25,7 @@ import org.webrtc.audio.JavaAudioDeviceModule
  * タイムアウト [PAUSE_TIMEOUT_MILLIS] ミリ秒で待機して結果を返します。
  * これは libwebrtc 側で録音スレッド停止の際にタイムアウト 2,000 ミリ秒の join 待ちが発生するためです。
  */
-class AudioDeviceModuleWrapper(
+internal class AudioDeviceModuleWrapper(
     private val adm: JavaAudioDeviceModule,
 ) {
     companion object {

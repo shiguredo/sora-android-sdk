@@ -854,13 +854,12 @@ class PeerChannelImpl(
 
     /** ADM の録音を停止（マイクインジケータ消灯狙い） */
     private suspend fun pauseAudioRecording(): Boolean {
-        val admWrapper = componentFactory.controllableAdm
         SoraLogger.d(TAG, "[audio_recording_pause] pausing ADM audio recording")
-        if (admWrapper == null) {
+        if (!componentFactory.hasControllableAdm()) {
             SoraLogger.w(TAG, "[audio_recording_pause] controllableAdm is NULL (Are you using a custom ADM?)")
         }
         // 既に停止中の場合でも true が返る
-        val paused = admWrapper?.pauseRecording() ?: false
+        val paused = componentFactory.pauseControllableAdm()
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")
         if (!paused) {
             SoraLogger.w(TAG, "[audio_recording_pause] pauseRecording failed; keep current state")
@@ -883,7 +882,7 @@ class PeerChannelImpl(
         // ローカルトラックの無効化に失敗した場合は ADM の pause を取り消す
         if (trackDisableFailed) {
             SoraLogger.w(TAG, "[audio_recording_pause] track disable failed; rolling back")
-            val rollback = admWrapper?.resumeRecording() ?: false
+            val rollback = componentFactory.resumeControllableAdm()
             SoraLogger.d(TAG, "[audio_recording_pause] rollback resume result=$rollback")
             return false
         }
@@ -894,10 +893,9 @@ class PeerChannelImpl(
 
     private suspend fun resumeAudioRecording(): Boolean {
         // ADM の録音を再開
-        val admWrapper = componentFactory.controllableAdm
         SoraLogger.d(TAG, "[audio_recording_pause] resume ADM audio recording")
         // 既に録音中の場合でも true が返る
-        val resumed = admWrapper?.resumeRecording() ?: false
+        val resumed = componentFactory.resumeControllableAdm()
         SoraLogger.d(TAG, "[audio_recording_pause] resumeRecording result=$resumed")
         if (!resumed) {
             SoraLogger.w(TAG, "[audio_recording_pause] resumeRecording failed; keep current state")
@@ -918,7 +916,7 @@ class PeerChannelImpl(
         // ローカルトラックの再開に失敗した場合は ADM の resume を取り消す
         if (trackResumeResult != AudioTrackResumeResult.SUCCESS) {
             SoraLogger.w(TAG, "[audio_recording_pause] resume failed; rolling back")
-            val rollback = admWrapper?.pauseRecording() ?: false
+            val rollback = componentFactory.pauseControllableAdm()
             SoraLogger.d(TAG, "[audio_recording_pause] rollback pause result=$rollback")
             return false
         }

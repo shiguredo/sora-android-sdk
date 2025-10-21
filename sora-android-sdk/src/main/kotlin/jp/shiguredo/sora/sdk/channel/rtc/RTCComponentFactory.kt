@@ -25,8 +25,6 @@ class RTCComponentFactory(
     private var controllableAudioDevice: AudioDeviceModuleWrapper? = null
     private var ownedAudioDeviceModule: AudioDeviceModule? = null
 
-    val controllableAdm: AudioDeviceModuleWrapper? get() = controllableAudioDevice
-
     // AudioDeviceModule を解放する
     // リソースリーク防止用に段階的に解放する
     fun releaseOwnedAudioDeviceModule() {
@@ -45,6 +43,16 @@ class RTCComponentFactory(
             }
         }
     }
+
+    // controllableAudioDevice インスタンスが生成されているか
+    // カスタム ADM が設定されていない場合に生成される
+    internal fun hasControllableAdm(): Boolean = controllableAudioDevice != null
+
+    // ADM の録音一時停止を行う
+    internal suspend fun pauseControllableAdm(): Boolean = controllableAudioDevice?.pauseRecording() ?: false
+
+    // ADM の録音を再開する
+    internal suspend fun resumeControllableAdm(): Boolean = controllableAudioDevice?.resumeRecording() ?: false
 
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
