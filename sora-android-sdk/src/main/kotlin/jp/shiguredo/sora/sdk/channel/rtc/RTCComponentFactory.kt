@@ -21,6 +21,39 @@ class RTCComponentFactory(
         private val TAG = RTCComponentFactory::class.simpleName
     }
 
+    // Controllable ADM（内部生成時のみ設定）
+    private var controllableAudioDevice: AudioDeviceModuleWrapper? = null
+    private var ownedAudioDeviceModule: AudioDeviceModule? = null
+
+    // AudioDeviceModule を解放する
+    // リソースリーク防止用に段階的に解放する
+    fun releaseOwnedAudioDeviceModule() {
+        try {
+            controllableAudioDevice?.dispose()
+        } catch (e: Exception) {
+            SoraLogger.w(TAG, "dispose controllable ADM failed: ${e.message}")
+        } finally {
+            try {
+                ownedAudioDeviceModule?.release()
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "release ADM failed: ${e.message}")
+            } finally {
+                ownedAudioDeviceModule = null
+                controllableAudioDevice = null
+            }
+        }
+    }
+
+    // controllableAudioDevice インスタンスが生成されているか
+    // カスタム ADM が設定されていない場合に生成される
+    internal fun hasControllableAdm(): Boolean = controllableAudioDevice != null
+
+    // ADM の録音一時停止を行う
+    internal suspend fun pauseControllableAdm(): Boolean = controllableAudioDevice?.pauseRecording() ?: false
+
+    // ADM の録音を再開する
+    internal suspend fun resumeControllableAdm(): Boolean = controllableAudioDevice?.resumeRecording() ?: false
+
     // メインスレッド(UI スレッド)で呼ばれる必要がある。
     // そうでないと Effect の ClassLoader.loadClass で NPE が発生する。
     fun createPeerConnectionFactory(appContext: Context): PeerConnectionFactory {
@@ -106,22 +139,23 @@ class RTCComponentFactory(
         encoderFactory.supportedCodecs.forEach {
             SoraLogger.d(TAG, "encoderFactory supported codec: ${it.name} ${it.params}")
         }
-        val audioDeviceModule =
+        val audioDeviceModule: AudioDeviceModule =
             when {
                 mediaOption.audioOption.audioDeviceModule != null ->
+                    // アプリ側でカスタム ADM がセットされている場合
                     mediaOption.audioOption.audioDeviceModule!!
-                else ->
-                    createJavaAudioDevice(appContext)
+                else -> {
+                    // デフォルトの JavaAudioDeviceModule を使用する場合
+                    val adm = createJavaAudioDevice(appContext)
+                    ownedAudioDeviceModule = adm
+                    controllableAudioDevice = AudioDeviceModuleWrapper(adm)
+                    adm
+                }
             }
         factoryBuilder
             .setAudioDeviceModule(audioDeviceModule)
             .setVideoEncoderFactory(encoderFactory)
             .setVideoDecoderFactory(decoderFactory)
-        // option で渡ってきた場合の所有権はアプリケーションにある。
-        // ここで生成した場合だけ解放する。
-        if (mediaOption.audioOption.audioDeviceModule == null) {
-            audioDeviceModule.release()
-        }
 
         return factoryBuilder.createPeerConnectionFactory()
     }
@@ -141,7 +175,7 @@ class RTCComponentFactory(
 
     fun createAudioManager(): RTCLocalAudioManager = RTCLocalAudioManager(mediaOption.audioUpstreamEnabled)
 
-    private fun createJavaAudioDevice(appContext: Context): AudioDeviceModule {
+    private fun createJavaAudioDevice(appContext: Context): JavaAudioDeviceModule {
         val audioRecordErrorCallback =
             object : JavaAudioDeviceModule.AudioRecordErrorCallback {
                 override fun onWebRtcAudioRecordInitError(errorMessage: String) {

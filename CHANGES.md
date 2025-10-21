@@ -15,6 +15,20 @@
   - @t-miya
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
   - @t-miya
+- [ADD] マイク録音の一時停止／再開機能を追加する
+  - 配信中に AudioDeviceModule の録音を停止することで、Android 実機のマイクインジケータを消灯させることを可能にする
+  - AudioDeviceModuleWrapper クラスを追加する
+    - JavaAudioDeviceModule を対象とした録音停止/再開のラッパークラス
+    - 専用の HandlerThread 上で suspend 関数として pauseRecording() / resumeRecording() を提供する
+    - アプリ側でカスタム ADM を差し込む場合は AudioDeviceModuleWrapper は利用されない
+  - SoraMediaChannel に以下のメソッドを追加する
+    - suspend fun setAudioRecordingPaused(paused: Boolean): Boolean
+      - 録音の一時停止/再開を非同期で実行する
+      - 内部では PeerChannel 経由で AudioDeviceModuleWrapper の pauseRecording()/resumeRecording() が呼ばれる
+      - AudioDeviceModule の制御に加え、ローカル AudioTrack の無効化/有効化も併せて行う
+    - fun isAudioRecordingPaused(): Boolean
+      - 現在の録音停止状態を返す
+  - @t-miya
 
 ### misc
 
@@ -38,8 +52,8 @@
     - 'canary.py'
     - '.gitignore'
 - [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
- - ktlint バージョンアップにより命名規則のチェックが厳格になった
-  - @zztkm
+  - ktlint バージョンアップにより命名規則のチェックが厳格になった
+    - @zztkm
 
 ## 2025.2.0
 

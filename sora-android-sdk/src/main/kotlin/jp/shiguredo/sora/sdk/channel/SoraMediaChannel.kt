@@ -439,6 +439,17 @@ class SoraMediaChannel
         private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
         /**
+         * JavaAudioDeviceModule の録音処理を一時停止または再開する
+         * 内部で生成した AudioDeviceModule のみ制御可能であり、外部から差し込んだ AudioDeviceModule は対象外
+         */
+        suspend fun setAudioRecordingPaused(paused: Boolean): Boolean = peer?.setAudioRecordingPaused(paused) ?: false
+
+        /**
+         * 録音停止中かどうかを返す
+         */
+        fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
+
+        /**
          * コネクション ID.
          */
         var connectionId: String? = null
