@@ -18,7 +18,7 @@
 - [ADD] マイク録音の一時停止／再開機能を追加する
   - 配信中に AudioDeviceModule の録音を停止することで、Android 実機のマイクインジケータを消灯させることを可能にする
   - AudioDeviceModuleWrapper クラスを追加する
-    - AudioDeviceModule を対象とした録音停止/再開のラッパークラス
+    - JavaAudioDeviceModule を対象とした録音停止/再開のラッパークラス
     - 専用の HandlerThread 上で suspend 関数として pauseRecording() / resumeRecording() を提供する
     - アプリ側でカスタム ADM を差し込む場合は AudioDeviceModuleWrapper は利用されない
   - SoraMediaChannel に以下のメソッドを追加する

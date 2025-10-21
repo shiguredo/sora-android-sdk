@@ -167,7 +167,7 @@ class RTCComponentFactory(
 
     fun createAudioManager(): RTCLocalAudioManager = RTCLocalAudioManager(mediaOption.audioUpstreamEnabled)
 
-    private fun createJavaAudioDevice(appContext: Context): AudioDeviceModule {
+    private fun createJavaAudioDevice(appContext: Context): JavaAudioDeviceModule {
         val audioRecordErrorCallback =
             object : JavaAudioDeviceModule.AudioRecordErrorCallback {
                 override fun onWebRtcAudioRecordInitError(errorMessage: String) {

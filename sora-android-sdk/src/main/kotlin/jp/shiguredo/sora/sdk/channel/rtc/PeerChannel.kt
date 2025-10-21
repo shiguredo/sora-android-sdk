@@ -856,6 +856,9 @@ class PeerChannelImpl(
     private suspend fun pauseAudioRecording(): Boolean {
         val admWrapper = componentFactory.controllableAdm
         SoraLogger.d(TAG, "[audio_recording_pause] pausing ADM audio recording")
+        if (admWrapper == null) {
+            SoraLogger.w(TAG, "[audio_recording_pause] controllableAdm is NULL (Are you using a custom ADM?)")
+        }
         // 既に停止中の場合でも true が返る
         val paused = admWrapper?.pauseRecording() ?: false
         SoraLogger.d(TAG, "[audio_recording_pause] pauseRecording result=$paused")

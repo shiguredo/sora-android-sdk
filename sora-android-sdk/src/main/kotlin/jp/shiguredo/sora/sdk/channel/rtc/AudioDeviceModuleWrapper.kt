@@ -12,23 +12,21 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 
 /**
  * [AudioDeviceModule] の録音停止／再開をコルーチン経由で制御するラッパーです。
+ * libwebrtc 側で JavaAudioDeviceModule に拡張された pauseRecording()/resumeRecording() を実行します。
  *
- * RTCComponentFactory#createPeerConnectionFactory() では外部からカスタム ADM が設定されていない場合に
+ * 本クラスのインスタンスは RTCComponentFactory#createPeerConnectionFactory() において外部からカスタム ADM が設定されていない場合に
  * JavaAudioDeviceModule を内部 ADM として生成します。
  *
  * 本クラスは専用の HandlerThread を用意し、そこで pauseRecording()/resumeRecording() を実行した上で
  * タイムアウト [PAUSE_TIMEOUT_MILLIS] ミリ秒で待機して結果を返します。
  * これは libwebrtc 側で録音スレッド停止の際にタイムアウト 2,000 ミリ秒の join 待ちが発生するためです。
- *
- * また、アプリ側でカスタム ADM を差し込む場合は本クラスは利用されず、録音停止／再開はサポートされません。
  */
 class AudioDeviceModuleWrapper(
-    private val adm: AudioDeviceModule,
+    private val adm: JavaAudioDeviceModule,
 ) {
     companion object {
         private val TAG = AudioDeviceModuleWrapper::class.simpleName
@@ -39,31 +37,16 @@ class AudioDeviceModuleWrapper(
         private const val PAUSE_TIMEOUT_MILLIS = 3_000L
     }
 
-    private val handlerThread: HandlerThread? =
-        if (adm is JavaAudioDeviceModule) HandlerThread("SoraAdmControl").apply { start() } else null
-    private val handler: Handler? = handlerThread?.let { Handler(it.looper) }
-    private val dispatcher = handler?.asCoroutineDispatcher()
-    private val coroutineScope: CoroutineScope? = dispatcher?.let { CoroutineScope(Job() + it) }
+    private val handlerThread = HandlerThread("SoraAdmControl").apply { start() }
+    private val handler = Handler(handlerThread.looper)
+    private val dispatcher = handler.asCoroutineDispatcher()
+    private val coroutineScope: CoroutineScope = CoroutineScope(Job() + dispatcher)
 
     /** 録音停止が完了するまで待機します。失敗またはタイムアウトした場合は `false` を返します */
-    suspend fun pauseRecording(): Boolean {
-        if (adm !is JavaAudioDeviceModule) {
-            SoraLogger.w(TAG, "pauseRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
-            return false
-        }
-        val scope = coroutineScope ?: error("coroutineScope is null; handlerThread was not initialised")
-        return scope.async { runCatchingWithLog { adm.pauseRecording() } }.awaitWithTimeout()
-    }
+    suspend fun pauseRecording(): Boolean = coroutineScope.async { runCatchingWithLog { adm.pauseRecording() } }.awaitWithTimeout()
 
     /** 録音再開が完了するまで待機します。失敗またはタイムアウトした場合は `false` を返します */
-    suspend fun resumeRecording(): Boolean {
-        if (adm !is JavaAudioDeviceModule) {
-            SoraLogger.w(TAG, "resumeRecording: Unsupported AudioDeviceModule ${adm.javaClass.name}")
-            return false
-        }
-        val scope = coroutineScope ?: error("coroutineScope is null; handlerThread was not initialised")
-        return scope.async { runCatchingWithLog { adm.resumeRecording() } }.awaitWithTimeout()
-    }
+    suspend fun resumeRecording(): Boolean = coroutineScope.async { runCatchingWithLog { adm.resumeRecording() } }.awaitWithTimeout()
 
     /**
      * 実行中のコルーチンをキャンセルし、専用 HandlerThread を停止します
@@ -73,13 +56,11 @@ class AudioDeviceModuleWrapper(
         if (Looper.myLooper() == Looper.getMainLooper()) {
             throw IllegalStateException("AudioDeviceModuleWrapper#dispose must not be called on the main thread!")
         }
-        coroutineScope?.let { scope ->
-            scope.cancel()
-            runBlocking {
-                scope.coroutineContext[Job]?.cancelAndJoin()
-            }
+        coroutineScope.cancel()
+        runBlocking {
+            coroutineScope.coroutineContext[Job]?.cancelAndJoin()
         }
-        handlerThread?.quitSafely()
+        handlerThread.quitSafely()
     }
 
     private suspend fun kotlinx.coroutines.Deferred<Boolean>.awaitWithTimeout(): Boolean =
