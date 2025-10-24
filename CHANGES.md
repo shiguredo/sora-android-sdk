@@ -11,8 +11,8 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 141.7390.3.1 に上げる
-  - @t-miya
+- [UPDATE] libwebrtc を 141.7390.3.2 に上げる
+  - @t-miya @zztkm
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
   - @t-miya
 - [ADD] マイク録音の一時停止／再開機能を追加する
