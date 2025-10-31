@@ -216,7 +216,7 @@ class SoraMediaChannel
              * - `org.webrtc.MediaStream.label()`
              *
              * @param mediaChannel イベントが発生したチャネル
-             * @param label メディアストリームのラベル (`ms.label()`)
+             * @param label メディアストリームのラベル (`ms.id`)
              */
             fun onRemoveRemoteStream(
                 mediaChannel: SoraMediaChannel,
