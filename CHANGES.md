@@ -29,6 +29,15 @@
     - fun isAudioRecordingPaused(): Boolean
       - 現在の録音停止状態を返す
   - @t-miya
+- [ADD] AudioTrack から音声データを受け取るためのコールバックインターフェースである AudioTrackSink を追加する
+  - この機能を利用すると AudioTrack ごとにコールバックから音声データを取得できる
+  - @zztkm
+- [ADD] AudioTrack に AudioTrackSink と関連付けるためのメソッドを追加する
+  - addSink
+    - AudioTrack と AudioTrackSink を関連付けるためのメソッド
+  - removeSink
+    - AudioTrack と AudioTrackSink を関連付けを解除するためのメソッド
+  - @zztkm
 
 ### misc
 
