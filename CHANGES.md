@@ -36,7 +36,7 @@
   - addSink
     - AudioTrack と AudioTrackSink を関連付けるためのメソッド
   - removeSink
-    - AudioTrack と AudioTrackSink を関連付けを解除するためのメソッド
+    - AudioTrack と AudioTrackSink の関連付けを解除するためのメソッド
   - @zztkm
 
 ### misc
