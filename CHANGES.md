@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 142.7444.2.0 に上げる
+- [UPDATE] libwebrtc を 142.7444.2.1 に上げる
   - @t-miya @zztkm
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
   - @t-miya
