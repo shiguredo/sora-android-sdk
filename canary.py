@@ -25,10 +25,10 @@ def update_sdkinfo_version(packageinfo_content):
 
     for line in packageinfo_content:
         line = line.rstrip()  # 末尾の改行のみを削除
-        if "const val version" in line:
+        if "const val VERSION" in line:
             # バージョン行のパターンマッチング
             version_match = re.match(
-                r'\s*const\s+val\s+version\s*=\s*[\'"](\d+\.\d+\.\d+)(-canary\.(\d+))?[\'"]',
+                r'\s*const\s+val\s+VERSION\s*=\s*[\'"](\d+\.\d+\.\d+)(-canary\.(\d+))?[\'"]',
                 line,
             )
             if version_match:
@@ -43,7 +43,7 @@ def update_sdkinfo_version(packageinfo_content):
                     new_version = f"{major_minor_patch}-canary.{canary_number + 1}"
 
                 # SDKInfoのバージョン行を更新
-                updated_content.append(f'        const val version = "{new_version}"')
+                updated_content.append(f'        const val VERSION = "{new_version}"')
                 sdk_version_updated = True
             else:
                 updated_content.append(line)

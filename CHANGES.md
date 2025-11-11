@@ -11,6 +11,66 @@
 
 ## develop
 
+## 2025.3.0
+
+**リリース日**: 2025-11-11
+
+- [UPDATE] libwebrtc を 142.7444.2.1 に上げる
+  - @t-miya @zztkm
+- [UPDATE] Kotlin バージョンを 2.0.20 に上げる
+  - @t-miya
+- [ADD] マイク録音の一時停止／再開機能を追加する
+  - 配信中に AudioDeviceModule の録音を停止することで、Android 実機のマイクインジケータを消灯させることを可能にする
+  - AudioDeviceModuleWrapper クラスを追加する
+    - JavaAudioDeviceModule を対象とした録音停止/再開のラッパークラス
+    - 専用の HandlerThread 上で suspend 関数として pauseRecording() / resumeRecording() を提供する
+    - アプリ側でカスタム ADM を差し込む場合は AudioDeviceModuleWrapper は利用されない
+  - SoraMediaChannel に以下のメソッドを追加する
+    - suspend fun setAudioRecordingPaused(paused: Boolean): Boolean
+      - 録音の一時停止/再開を非同期で実行する
+      - 内部では PeerChannel 経由で AudioDeviceModuleWrapper の pauseRecording()/resumeRecording() が呼ばれる
+      - AudioDeviceModule の制御に加え、ローカル AudioTrack の無効化/有効化も併せて行う
+    - fun isAudioRecordingPaused(): Boolean
+      - 現在の録音停止状態を返す
+  - @t-miya
+- [ADD] AudioTrack から音声データを受け取るためのコールバックインターフェースである AudioTrackSink を追加する
+  - この機能を利用すると AudioTrack ごとにコールバックから音声データを取得できる
+  - @zztkm
+- [ADD] AudioTrack に AudioTrackSink と関連付けるためのメソッドを追加する
+  - addSink
+    - AudioTrack と AudioTrackSink を関連付けるためのメソッド
+  - removeSink
+    - AudioTrack と AudioTrackSink の関連付けを解除するためのメソッド
+  - @zztkm
+
+### misc
+
+- [UPDATE] ktlint バージョンを上げる
+  - ktlint を 1.7.1 に上げる
+  - ktlint-gradle を 13.1.0 に上げる
+  - @t-miya
+- [UPDATE] Android Gradle Plugin バージョンを 8.11.1 に上げる
+  - @t-miya
+- [UPDATE] grgit が git worktree のディレクトリでは使えないことが判明したため、`BuildConfig.REVISION` を取得する方法を grgit から git コマンドに移行する
+  - Sora Android SDK ではコミットハッシュを取得するためだけに Grgit を利用しており、git コマンドの利用で十分であると判断した
+  - @zztkm
+- [UPDATE] build.yml の実行除外対象を追加する
+  - paths-ignore に以下を追加
+    - 'CLAUDE.md'
+    - '.github/workflows/claude.yml'
+    - '.github/copilot-instructions.md'
+    - 'sora-android-sdk/packages.md'
+    - 'docs/**'
+    - 'jitpack.yml'
+    - 'canary.py'
+    - '.gitignore'
+- [UPDATE] canary.py の SDKInfo.kt の `version` 変数名を `VERSION` に変更する
+  - ktlint バージョンアップにより命名規則のチェックが厳格になった
+  - @zztkm
+- [UPDATE] システム条件を更新する
+  - Android Studio 2025.2.1 以降
+  - @zztkm
+
 ## 2025.2.0
 
 **リリース日**: 2025-09-17
@@ -99,7 +159,7 @@
   - @zztkm
 - [ADD] `SoraMediaOption` に `DegradationPreference` を追加
   - クライアント側の状況により設定した解像度やフレームレートを維持できなくなった場合にどのように質を下げるか制御できるパラメータとして `SoraMediaOption.degradationPreference` を追加した
-  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `BALANCED` が適用される
+  - `degradationPreference` の設定は必須ではなく、未指定の場合は libwebrtc デフォルトの挙動として `MAINTAIN_FRAMERATE` が適用される
   - @t-miya
 - [ADD] サイマルキャストの映像のエンコーディングパラメーター `scaleResolutionDownTo` を追加する
   - @zztkm
@@ -109,7 +169,6 @@
   - サイマルキャスト有効時も SW のみ構成に切り替える
   - `videoEncoderFactory` を明示設定している場合は本オプションは無視される
   - @zztkm
-
 - [FIX] `SoraMediaChannel.internalDisconnect` での `SoraMediaChannel.Listener.onClose` の呼び出しタイミングを切断処理がすべて完了したあとに修正する
   - 切断処理が終了する前に `onClose` を呼び出していたため、切断処理が完了してから呼び出すように修正
   - `contactSignalingEndpoint` と `connectedSignalingEndpoint` は onClose で参照される可能性があるため、onClose 実行よりあとに null になるように onClose に合わせて処理順を変更
@@ -117,6 +176,12 @@
 
 ### misc
 
+- [CHANGE] Gradle を Kotlin DSL 移行する
+  - build.gradle、settings.gradle、sora-android-sdk/build.gradle それぞれを Kotlin DSL(.kts) に移行
+  - @t-miya
+- [CHANGE] 依存ライブラリバージョンの管理をバージョンカタログに移行する
+  - gradle/libs.versions.toml を追加
+  - @t-miya
 - [UPDATE] actions/checkout@v4 を actions/checkout@v5 に上げる
   - @torikizi
 

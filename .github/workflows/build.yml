@@ -6,8 +6,16 @@ on:
     paths-ignore:
       - 'README.md'
       - 'CHANGES.md'
+      - 'CLAUDE.md'
       - 'LICENSE'
       - 'THANKS'
+      - '.github/workflows/claude.yml'
+      - '.github/copilot-instructions.md'
+      - 'sora-android-sdk/packages.md'
+      - 'docs/**'
+      - 'jitpack.yml'
+      - 'canary.py'
+      - '.gitignore'
 
 jobs:
   build:
@@ -17,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           # java-version を 17 にしている理由は以下です

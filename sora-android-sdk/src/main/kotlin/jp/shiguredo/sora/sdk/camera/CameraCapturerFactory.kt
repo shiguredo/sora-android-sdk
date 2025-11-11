@@ -17,7 +17,6 @@ import org.webrtc.CameraVideoCapturer
  * - `org.webrtc.CameraVideoCapturer`
  */
 class CameraCapturerFactory {
-
     companion object {
         val TAG = CameraCapturerFactory::class.simpleName
 
@@ -34,7 +33,7 @@ class CameraCapturerFactory {
         @JvmOverloads
         fun create(
             context: Context,
-            frontFacingFirst: Boolean = true
+            frontFacingFirst: Boolean = true,
         ): CameraVideoCapturer? {
             SoraLogger.d(TAG, "create camera capturer")
             var videoCapturer: CameraVideoCapturer? = null
@@ -58,10 +57,12 @@ class CameraCapturerFactory {
             return videoCapturer
         }
 
-        private fun createCapturer(enumerator: CameraEnumerator, frontFacingFirst: Boolean): CameraVideoCapturer? {
+        private fun createCapturer(
+            enumerator: CameraEnumerator,
+            frontFacingFirst: Boolean,
+        ): CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
-            enumerator.deviceNames.forEach {
-                    deviceName ->
+            enumerator.deviceNames.forEach { deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, frontFacingFirst)
                 }
@@ -69,8 +70,7 @@ class CameraCapturerFactory {
             if (capturer != null) {
                 return capturer
             }
-            enumerator.deviceNames.forEach {
-                    deviceName ->
+            enumerator.deviceNames.forEach { deviceName ->
                 if (capturer == null) {
                     capturer = findDeviceCamera(enumerator, deviceName, !frontFacingFirst)
                 }
@@ -81,7 +81,7 @@ class CameraCapturerFactory {
         private fun findDeviceCamera(
             enumerator: CameraEnumerator,
             deviceName: String,
-            frontFacing: Boolean
+            frontFacing: Boolean,
         ): CameraVideoCapturer? {
             var capturer: CameraVideoCapturer? = null
             if (enumerator.isFrontFacing(deviceName) == frontFacing) {

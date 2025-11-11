@@ -9,7 +9,6 @@ import org.webrtc.audio.AudioDeviceModule
  * 音声に関するオプションをまとめるクラスです.
  */
 class SoraAudioOption {
-
     companion object {
         const val ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation"
         const val AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl"
@@ -18,12 +17,14 @@ class SoraAudioOption {
     }
 
     // TODO(zztkm): 破壊的変更にはなるが、DEFAULT を先頭に持ってくる
+
     /**
      * 利用できる音声コーデックを示します.
      */
     enum class Codec {
         /** Opus */
         OPUS,
+
         /** Sora のデフォルト値を利用 */
         DEFAULT,
     }

@@ -9,9 +9,8 @@ import org.webrtc.PeerConnectionFactory
 import java.util.UUID
 
 class RTCLocalAudioManager(
-    private val send: Boolean
+    private val send: Boolean,
 ) {
-
     companion object {
         private val TAG = RTCLocalAudioManager::class.simpleName
     }
@@ -19,7 +18,10 @@ class RTCLocalAudioManager(
     private var source: AudioSource? = null
     var track: AudioTrack? = null
 
-    fun initTrack(factory: PeerConnectionFactory, audioOption: SoraAudioOption) {
+    fun initTrack(
+        factory: PeerConnectionFactory,
+        audioOption: SoraAudioOption,
+    ) {
         SoraLogger.d(TAG, "initTrack: send=$send")
         if (send) {
             val constraints = createSourceConstraints(audioOption)
@@ -36,22 +38,22 @@ class RTCLocalAudioManager(
         val constraints = MediaConstraints()
         if (!audioOption.audioProcessingEchoCancellation) {
             constraints.mandatory.add(
-                MediaConstraints.KeyValuePair(SoraAudioOption.ECHO_CANCELLATION_CONSTRAINT, "false")
+                MediaConstraints.KeyValuePair(SoraAudioOption.ECHO_CANCELLATION_CONSTRAINT, "false"),
             )
         }
         if (!audioOption.audioProcessingAutoGainControl) {
             constraints.mandatory.add(
-                MediaConstraints.KeyValuePair(SoraAudioOption.AUTO_GAIN_CONTROL_CONSTRAINT, "false")
+                MediaConstraints.KeyValuePair(SoraAudioOption.AUTO_GAIN_CONTROL_CONSTRAINT, "false"),
             )
         }
         if (!audioOption.audioProcessingHighpassFilter) {
             constraints.mandatory.add(
-                MediaConstraints.KeyValuePair(SoraAudioOption.HIGH_PASS_FILTER_CONSTRAINT, "false")
+                MediaConstraints.KeyValuePair(SoraAudioOption.HIGH_PASS_FILTER_CONSTRAINT, "false"),
             )
         }
         if (!audioOption.audioProcessingNoiseSuppression) {
             constraints.mandatory.add(
-                MediaConstraints.KeyValuePair(SoraAudioOption.NOISE_SUPPRESSION_CONSTRAINT, "false")
+                MediaConstraints.KeyValuePair(SoraAudioOption.NOISE_SUPPRESSION_CONSTRAINT, "false"),
             )
         }
         return constraints

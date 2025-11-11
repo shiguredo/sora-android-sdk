@@ -7,7 +7,6 @@ import org.webrtc.ProxyType
  * プロキシに関するオプションをまとめるクラスです.
  */
 class SoraProxyOption {
-
     /** 種類 */
     var type = ProxyType.NONE
 
@@ -26,7 +25,6 @@ class SoraProxyOption {
     /** パスワード */
     var password: String = ""
 
-    override fun toString(): String {
-        return "type=$type, hostname=$hostname, port=$port, username=$username, password=${"*".repeat(password.length)}, agent=$agent"
-    }
+    override fun toString(): String =
+        "type=$type, hostname=$hostname, port=$port, username=$username, password=${"*".repeat(password.length)}, agent=$agent"
 }
