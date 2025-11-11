@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.3.0
+
+**リリース日**: 2025-11-11
+
 - [UPDATE] libwebrtc を 142.7444.2.1 に上げる
   - @t-miya @zztkm
 - [UPDATE] Kotlin バージョンを 2.0.20 に上げる
