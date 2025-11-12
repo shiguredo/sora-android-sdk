@@ -11,6 +11,10 @@
 
 ## develop
 
+- [ADD] SoraMediaChannel にgetStats メソッドを追加する
+  - クライアントの WebRTC 統計情報を取得できる
+  - @zztkm
+
 ## 2025.3.0
 
 **リリース日**: 2025-11-11
