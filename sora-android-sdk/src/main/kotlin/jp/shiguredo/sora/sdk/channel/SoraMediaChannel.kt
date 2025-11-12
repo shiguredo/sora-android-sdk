@@ -457,7 +457,7 @@ class SoraMediaChannel
          * cf.
          * - https://www.w3.org/TR/webrtc-stats/
          */
-        suspend fun getStats(): String? =
+        suspend fun getStats(): RTCStatsReport? =
             // コルーチンを中断可能にしながら getStats の結果を待機
             suspendCancellableCoroutine { continuation ->
                 // 現在の PeerChannel インスタンスを取得
@@ -486,10 +486,7 @@ class SoraMediaChannel
                         return@getStats
                     }
 
-                    // RTCStatsReport を Stats JSON 文字列へ変換
-                    val json = MessageConverter.buildStatsMessage(report)
-                    // JSON 文字列を返却
-                    continuation.resume(json)
+                    continuation.resume(report)
                 }
             }
 
