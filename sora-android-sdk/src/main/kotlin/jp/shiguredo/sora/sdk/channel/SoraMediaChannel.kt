@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -46,6 +47,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
+import kotlin.coroutines.resume
 
 /**
  * Sora への接続を行うクラスです.
@@ -448,6 +450,48 @@ class SoraMediaChannel
          * 録音停止中かどうかを返す
          */
         fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
+
+        /**
+         * W3C 準拠の WebRTC 統計情報を取得します.
+         *
+         * cf.
+         * - https://www.w3.org/TR/webrtc-stats/
+         */
+        suspend fun getStats(): String? =
+            // コルーチンを中断可能にしながら getStats の結果を待機
+            suspendCancellableCoroutine { continuation ->
+                // 現在の PeerChannel インスタンスを取得
+                val currentPeer = peer
+                // PeerChannel がまだ存在しない場合のガード
+                if (currentPeer == null) {
+                    // 結果なしを即時返却
+                    continuation.resume(null)
+                    // 処理終了
+                    return@suspendCancellableCoroutine
+                }
+
+                // libwebrtc へ非同期で統計情報を要求
+                currentPeer.getStats { report ->
+                    // コルーチンがキャンセル済みの場合は結果を無視
+                    if (!continuation.isActive) {
+                        // 早期リターン
+                        return@getStats
+                    }
+
+                    // 統計情報が取得できなかった場合
+                    if (report == null) {
+                        // null を返却
+                        continuation.resume(null)
+                        // 処理終了
+                        return@getStats
+                    }
+
+                    // RTCStatsReport を Stats JSON 文字列へ変換
+                    val json = MessageConverter.buildStatsMessage(report)
+                    // JSON 文字列を返却
+                    continuation.resume(json)
+                }
+            }
 
         /**
          * コネクション ID.
