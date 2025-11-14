@@ -477,10 +477,12 @@ class SoraMediaChannel
                     return@suspendCancellableCoroutine
                 }
 
-                // libwebrtc へ非同期で統計情報を要求
                 currentPeer.getStats { report ->
-
-                    continuation.resume(report)
+                    // コルーチンがまだアクティブな場合に結果を返却
+                    // そうでない場合は何もしない
+                    if (continuation.isActive) {
+                        continuation.resume(report)
+                    }
                 }
             }
 
