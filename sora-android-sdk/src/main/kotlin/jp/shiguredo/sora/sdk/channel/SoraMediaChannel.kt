@@ -467,7 +467,7 @@ class SoraMediaChannel
             suspendCancellableCoroutine { continuation ->
                 // 現在の PeerChannel インスタンスを取得
                 val currentPeer = peer
-                // PeerChannel がまだ存在しない場合のガード
+                // PeerChannel 存在しない場合のガード
                 if (currentPeer == null) {
                     // 結果なしを即時返却
                     continuation.resume(null)
