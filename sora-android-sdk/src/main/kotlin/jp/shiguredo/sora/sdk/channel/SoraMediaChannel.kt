@@ -469,7 +469,7 @@ class SoraMediaChannel
                 val currentPeer = peer
                 // PeerChannel 存在しない場合のガード
                 if (currentPeer == null) {
-                    // 結果なしを即時返却
+                    // 取得できないので null を返す
                     continuation.resume(null)
                     // 処理終了
                     return@suspendCancellableCoroutine
