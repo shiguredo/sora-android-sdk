@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -46,6 +47,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
 import kotlin.concurrent.schedule
+import kotlin.coroutines.resume
 
 /**
  * Sora への接続を行うクラスです.
@@ -448,6 +450,39 @@ class SoraMediaChannel
          * 録音停止中かどうかを返す
          */
         fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
+
+        /**
+         * W3C 準拠の WebRTC 統計情報を取得する
+         *
+         * 接続中の PeerConnection の統計情報を非同期で取得する。
+         * 接続していない場合や統計情報の取得に失敗した場合は null が返される。
+         *
+         * cf.
+         * - https://www.w3.org/TR/webrtc-stats/
+         *
+         * @return RTCStatsReport のインスタンス、取得失敗や Sora との WebRTC 接続が確率していない場合は null を返す。
+         */
+        suspend fun getStats(): RTCStatsReport? =
+            // コルーチンを中断可能にしながら getStats の結果を待機
+            suspendCancellableCoroutine { continuation ->
+                // 現在の PeerChannel インスタンスを取得
+                val currentPeer = peer
+                // PeerChannel 存在しない場合のガード
+                if (currentPeer == null) {
+                    // 取得できないので null を返す
+                    continuation.resume(null)
+                    // 処理終了
+                    return@suspendCancellableCoroutine
+                }
+
+                currentPeer.getStats { report ->
+                    // コルーチンがまだアクティブな場合に結果を返却
+                    // そうでない場合は何もしない
+                    if (continuation.isActive) {
+                        continuation.resume(report)
+                    }
+                }
+            }
 
         /**
          * コネクション ID.

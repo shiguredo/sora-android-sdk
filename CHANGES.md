@@ -11,6 +11,11 @@
 
 ## develop
 
+- [ADD] SoraMediaChannel に `getStats ` メソッドを追加する
+  - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
+  - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
+  - @zztkm
+
 ## 2025.3.0
 
 **リリース日**: 2025-11-11
