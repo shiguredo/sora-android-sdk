@@ -461,8 +461,6 @@ class SoraMediaChannel
          * - https://www.w3.org/TR/webrtc-stats/
          *
          * @return RTCStatsReport のインスタンス、取得失敗や Sora との WebRTC 接続が確率していない場合は null を返す。
-         *
-         * @throws kotlinx.coroutines.CancellationException コルーチンがキャンセルされた場合
          */
         suspend fun getStats(): RTCStatsReport? =
             // コルーチンを中断可能にしながら getStats の結果を待機
