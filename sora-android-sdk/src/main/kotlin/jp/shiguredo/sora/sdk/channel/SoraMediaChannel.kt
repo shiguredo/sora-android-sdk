@@ -460,7 +460,7 @@ class SoraMediaChannel
          * cf.
          * - https://www.w3.org/TR/webrtc-stats/
          *
-         * @return RTCStatsReport のインスタンス、取得できなかったり Sora への接続がされておらず PeerChannel が初期化されていない場合は null を返す。
+         * @return RTCStatsReport のインスタンス、取得失敗や Sora との WebRTC 接続が確率していない場合は null を返す。
          *
          * @throws kotlinx.coroutines.CancellationException コルーチンがキャンセルされた場合
          */
