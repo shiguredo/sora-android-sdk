@@ -454,10 +454,15 @@ class SoraMediaChannel
         /**
          * W3C 準拠の WebRTC 統計情報を取得する
          *
+         * 接続中の PeerConnection の統計情報を非同期で取得する。
+         * 接続していない場合や統計情報の取得に失敗した場合は null が返される。
+         *
          * cf.
          * - https://www.w3.org/TR/webrtc-stats/
          *
-         * @return RTCStatsReport のインスタンス、取得できなかった場合は null
+         * @return RTCStatsReport のインスタンス、取得できなかったり Sora への接続がされておらず PeerChannel が初期化されていない場合は null を返す。
+         *
+         * @throws kotlinx.coroutines.CancellationException コルーチンがキャンセルされた場合
          */
         suspend fun getStats(): RTCStatsReport? =
             // コルーチンを中断可能にしながら getStats の結果を待機
@@ -474,19 +479,6 @@ class SoraMediaChannel
 
                 // libwebrtc へ非同期で統計情報を要求
                 currentPeer.getStats { report ->
-                    // コルーチンがキャンセル済みの場合は結果を無視
-                    if (!continuation.isActive) {
-                        // 早期リターン
-                        return@getStats
-                    }
-
-                    // 統計情報が取得できなかった場合
-                    if (report == null) {
-                        // null を返却
-                        continuation.resume(null)
-                        // 処理終了
-                        return@getStats
-                    }
 
                     continuation.resume(report)
                 }
