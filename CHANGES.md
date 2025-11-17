@@ -16,6 +16,12 @@
   - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
   - @zztkm
 
+### misc
+
+- [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
+  - @zztkm
+
+
 ## 2025.3.0
 
 **リリース日**: 2025-11-11
