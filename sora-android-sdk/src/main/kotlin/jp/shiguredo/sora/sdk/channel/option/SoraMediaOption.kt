@@ -185,8 +185,11 @@ class SoraMediaOption {
     /**
      * 接続時に音声をミュートするかどうかのフラグ.
      *
-     * true に設定すると、接続時に音声送信トラックを null に設定し、
-     * マイクからの入力を初期状態でミュートします.
+     * true に設定すると、接続時に音声送信トラックを初期化せず、
+     * sender に null を設定してマイクからの入力を初期状態でミュートします.
+     *
+     * ミュートを解除するには、setAudioRecordingPaused(false) を呼び出してください.
+     * その際、音声トラックが新規作成されます.
      */
     var initialAudioMute: Boolean = false
 

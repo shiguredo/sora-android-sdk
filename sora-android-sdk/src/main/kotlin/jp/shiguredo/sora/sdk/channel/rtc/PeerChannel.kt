@@ -82,8 +82,24 @@ interface PeerChannel {
         buffer: ByteBuffer,
     ): ByteBuffer
 
+    /**
+     * 録音の一時停止/復帰を実行します.
+     *
+     * @param paused true: 録音を一時停止, false: 録音を再開
+     * @return 成功した場合は true、失敗した場合は false
+     *
+     * 注意:
+     * - initialAudioMute が有効な場合、接続直後は音声トラックが存在しません.
+     * - paused=false で呼び出すと、音声トラックが新規作成されます.
+     * - つまり、このメソッドは初期ミュート状態からの復帰にも使用できます.
+     */
     suspend fun setAudioRecordingPaused(paused: Boolean): Boolean
 
+    /**
+     * 録音が一時停止中かどうかを取得します.
+     *
+     * @return 録音が一時停止中の場合は true、そうでない場合は false
+     */
     fun isAudioRecordingPaused(): Boolean
 
     interface Listener {
@@ -621,9 +637,14 @@ class PeerChannelImpl(
         val localStream = factory!!.createLocalMediaStream(localStreamId)
 
         SoraLogger.d(TAG, "local managers' initTrack: audio")
-        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
-        localAudioManager.track?.let {
-            localStream.addTrack(it)
+        // 初期ミュート設定が有効な場合はトラックを初期化しない
+        if (!mediaOption.initialAudioMute) {
+            localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+            localAudioManager.track?.let {
+                localStream.addTrack(it)
+            }
+        } else {
+            SoraLogger.d(TAG, "skip audio track initialization due to initialAudioMute")
         }
 
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
@@ -847,7 +868,14 @@ class PeerChannelImpl(
         }
     }
 
-    /** 録音の一時停止/復帰を非同期で実行する */
+    /**
+     * 録音の一時停止/復帰を非同期で実行する
+     *
+     * 注意:
+     * - initialAudioMute が有効な場合、接続直後は track が null の状態です。
+     * - この状態で paused=false を呼ぶと、resumeAudioRecording() で track が新規作成されます。
+     * - つまり、このメソッドは初期ミュート状態からの復帰にも使用できます。
+     */
     override suspend fun setAudioRecordingPaused(paused: Boolean): Boolean {
         // 接続設定として音声送出をしていなければ処理不要のため即終了
         if (!mediaOption.audioUpstreamEnabled) {
@@ -868,7 +896,13 @@ class PeerChannelImpl(
         }
     }
 
-    /** ADM の録音を停止（マイクインジケータ消灯狙い） */
+    /**
+     * ADM の録音を停止（マイクインジケータ消灯狙い）
+     *
+     * 注意:
+     * - initialAudioMute が有効な場合、track が null の可能性があります。
+     * - その場合はトラック無効化をスキップし、ADM の pause のみ実行します。
+     */
     private suspend fun pauseAudioRecording(): Boolean {
         SoraLogger.d(TAG, "[audio_recording_pause] pausing ADM audio recording")
         if (!componentFactory.hasControllableAdm()) {
@@ -890,7 +924,8 @@ class PeerChannelImpl(
         if (localTrack != null) {
             trackDisableFailed = !setLocalAudioTrackEnabled(localTrack, false)
         } else {
-            // ローカルトラックが存在しないが resumeAudioRecording() 時に再生成されるため何もしない
+            // ローカルトラックが存在しない場合（initialAudioMute 有効時など）
+            // resumeAudioRecording() 時に再生成されるため何もしない
             // -> resumeWithReinitializedAudioTrack() にて再生成される
             SoraLogger.d(TAG, "[audio_recording_pause] local audio track is null; skip disabling")
         }
@@ -977,14 +1012,8 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "[audio_recording_pause] local audio track missing; reinitializing")
         return try {
-            // 初期ミュート設定が有効な場合は recreateTrack() で新しいトラックを生成、
-            // そうでない場合は initTrack() で通常通り初期化する
-            if (mediaOption.initialAudioMute) {
-                SoraLogger.d(TAG, "[audio_recording_pause] recreating audio track (initialAudioMute enabled)")
-                localAudioManager.recreateTrack()
-            } else {
-                localAudioManager.initTrack(currentFactory, mediaOption.audioOption)
-            }
+            // トラックが存在しない場合は initTrack() で新規作成する
+            localAudioManager.initTrack(currentFactory, mediaOption.audioOption)
             val track = localAudioManager.track
             // audioUpstreamEnabled が false の場合 track は生成されない
             // AudioRecordingPausedAsync で対応済みだが、その他理由で track が生成されなかった場合用にチェックしている
