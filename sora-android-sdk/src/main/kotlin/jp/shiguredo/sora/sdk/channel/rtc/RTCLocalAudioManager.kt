@@ -17,12 +17,16 @@ class RTCLocalAudioManager(
 
     private var source: AudioSource? = null
     var track: AudioTrack? = null
+    private var factory: PeerConnectionFactory? = null
+    private var audioOption: SoraAudioOption? = null
 
     fun initTrack(
         factory: PeerConnectionFactory,
         audioOption: SoraAudioOption,
     ) {
         SoraLogger.d(TAG, "initTrack: send=$send")
+        this.factory = factory
+        this.audioOption = audioOption
         if (send) {
             val constraints = createSourceConstraints(audioOption)
             source = factory.createAudioSource(constraints)
@@ -57,6 +61,28 @@ class RTCLocalAudioManager(
             )
         }
         return constraints
+    }
+
+    /**
+     * ハードミュート OFF 時にオーディオトラックを再生成します.
+     * 初期ミュート設定が有効かつ、送信が有効な場合のみ実行されます.
+     */
+    fun recreateTrack(): AudioTrack? {
+        if (!send || factory == null || audioOption == null) {
+            SoraLogger.d(TAG, "recreateTrack: cannot recreate (send=$send, factory=${factory != null}, audioOption=${audioOption != null})")
+            return null
+        }
+
+        SoraLogger.d(TAG, "recreateTrack: recreating audio track")
+        val constraints = createSourceConstraints(audioOption!!)
+        source?.dispose()
+        source = factory!!.createAudioSource(constraints)
+        SoraLogger.d(TAG, "audio source recreated: $source")
+        val trackId = UUID.randomUUID().toString()
+        track = factory!!.createAudioTrack(trackId, source)
+        track?.setEnabled(true)
+        SoraLogger.d(TAG, "audio track recreated: $track")
+        return track
     }
 
     fun dispose() {

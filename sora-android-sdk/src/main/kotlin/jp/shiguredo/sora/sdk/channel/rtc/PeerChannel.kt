@@ -438,9 +438,24 @@ class PeerChannelImpl(
                 // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
                 // setTrack 内も同様
                 mid?.get("audio")?.let { mid ->
-                    localAudioManager.track?.let { track ->
-                        audioMid = mid
+                    audioMid = mid
+                    // 初期ミュート設定が有効な場合は null を設定、そうでない場合は track を設定
+                    val audioTrackToSet = if (mediaOption.initialAudioMute) {
+                        null
+                    } else {
+                        localAudioManager.track
+                    }
+                    audioTrackToSet?.let { track ->
                         audioSender = setTrack(mid, track)
+                    } ?: run {
+                        // audioTrackToSet が null の場合（初期ミュート）、sender に null を設定
+                        val transceiver = this.conn?.transceivers?.find { it.mid == mid }
+                        val sender = transceiver!!.sender
+                        transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+                        sender!!.streams = listOf(localStreamId)
+                        sender!!.setTrack(null, false)
+                        audioSender = sender
+                        SoraLogger.d(TAG, "set audio sender to null (initial mute enabled): mid=$mid")
                     }
                 } ?: SoraLogger.d(TAG, "mid for audio not found")
 
@@ -961,7 +976,14 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "[audio_recording_pause] local audio track missing; reinitializing")
         return try {
-            localAudioManager.initTrack(currentFactory, mediaOption.audioOption)
+            // 初期ミュート設定が有効な場合は recreateTrack() で新しいトラックを生成、
+            // そうでない場合は initTrack() で通常通り初期化する
+            if (mediaOption.initialAudioMute) {
+                SoraLogger.d(TAG, "[audio_recording_pause] recreating audio track (initialAudioMute enabled)")
+                localAudioManager.recreateTrack()
+            } else {
+                localAudioManager.initTrack(currentFactory, mediaOption.audioOption)
+            }
             val track = localAudioManager.track
             // audioUpstreamEnabled が false の場合 track は生成されない
             // AudioRecordingPausedAsync で対応済みだが、その他理由で track が生成されなかった場合用にチェックしている

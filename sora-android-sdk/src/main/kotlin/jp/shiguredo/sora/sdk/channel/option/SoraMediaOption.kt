@@ -36,6 +36,8 @@ class SoraMediaOption {
      */
     var videoDecoderFactory: VideoDecoderFactory? = null
 
+    var tsetFalg: Boolean = false
+
     /**
      * 映像エンコードにソフトウェアエンコーダーのみを使用します.
      *
@@ -179,6 +181,14 @@ class SoraMediaOption {
      * 音声ビットレート.
      */
     var audioBitrate: Int? = null
+
+    /**
+     * 接続時に音声をミュートするかどうかのフラグ.
+     *
+     * true に設定すると、接続時に音声送信トラックを null に設定し、
+     * マイクからの入力を初期状態でミュートします.
+     */
+    var initialAudioMute: Boolean = false
 
     /**
      * マルチストリームを有効にします.
