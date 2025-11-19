@@ -440,11 +440,12 @@ class PeerChannelImpl(
                 mid?.get("audio")?.let { mid ->
                     audioMid = mid
                     // 初期ミュート設定が有効な場合は null を設定、そうでない場合は track を設定
-                    val audioTrackToSet = if (mediaOption.initialAudioMute) {
-                        null
-                    } else {
-                        localAudioManager.track
-                    }
+                    val audioTrackToSet =
+                        if (mediaOption.initialAudioMute) {
+                            null
+                        } else {
+                            localAudioManager.track
+                        }
                     audioTrackToSet?.let { track ->
                         audioSender = setTrack(mid, track)
                     } ?: run {
