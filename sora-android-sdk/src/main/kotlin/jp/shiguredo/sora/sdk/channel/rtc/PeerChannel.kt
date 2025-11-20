@@ -417,7 +417,7 @@ class PeerChannelImpl(
 
     private fun setTrack(
         mid: String,
-        track: MediaStreamTrack,
+        track: MediaStreamTrack?,
     ): RtpSender {
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
         val sender = transceiver!!.sender
@@ -426,11 +426,11 @@ class PeerChannelImpl(
         sender!!.setTrack(track, false)
 
         // degradationPreference を設定（video の場合のみ）
-        if (track.kind() == "video") {
+        if (track?.kind() == "video") {
             configureSenderDegradationPreference(sender)
         }
 
-        SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
+        SoraLogger.d(TAG, "set ${track?.kind()} sender: mid=$mid, transceiver=$transceiver")
         return sender
     }
 
@@ -454,25 +454,15 @@ class PeerChannelImpl(
                 // 問題が発生したら reactivex の onError で捕まえられるので、 force unwrap している
                 // setTrack 内も同様
                 mid?.get("audio")?.let { mid ->
-                    audioMid = mid
-                    // 初期ミュート設定が有効な場合は null を設定、そうでない場合は track を設定
-                    val audioTrackToSet =
-                        if (mediaOption.initialAudioMute) {
-                            null
-                        } else {
-                            localAudioManager.track
-                        }
-                    audioTrackToSet?.let { track ->
-                        audioSender = setTrack(mid, track)
-                    } ?: run {
-                        // audioTrackToSet が null の場合（初期ミュート）、sender に null を設定
-                        val transceiver = this.conn?.transceivers?.find { it.mid == mid }
-                        val sender = transceiver!!.sender
-                        transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-                        sender!!.streams = listOf(localStreamId)
-                        sender!!.setTrack(null, false)
-                        audioSender = sender
-                        SoraLogger.d(TAG, "set audio sender to null (initial mute enabled): mid=$mid")
+                    localAudioManager.track?.let { track ->
+                        audioMid = mid
+                        audioSender =
+                            if (mediaOption.initialAudioMute) {
+                                SoraLogger.d("kensaku", "initialAudioMute is enabled, so set audio track to null")
+                                setTrack(mid, null)
+                            } else {
+                                setTrack(mid, track)
+                            }
                     }
                 } ?: SoraLogger.d(TAG, "mid for audio not found")
 
@@ -637,14 +627,9 @@ class PeerChannelImpl(
         val localStream = factory!!.createLocalMediaStream(localStreamId)
 
         SoraLogger.d(TAG, "local managers' initTrack: audio")
-        // 初期ミュート設定が有効な場合はトラックを初期化しない
-        if (!mediaOption.initialAudioMute) {
-            localAudioManager.initTrack(factory!!, mediaOption.audioOption)
-            localAudioManager.track?.let {
-                localStream.addTrack(it)
-            }
-        } else {
-            SoraLogger.d(TAG, "skip audio track initialization due to initialAudioMute")
+        localAudioManager.initTrack(factory!!, mediaOption.audioOption)
+        localAudioManager.track?.let {
+            localStream.addTrack(it)
         }
 
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
