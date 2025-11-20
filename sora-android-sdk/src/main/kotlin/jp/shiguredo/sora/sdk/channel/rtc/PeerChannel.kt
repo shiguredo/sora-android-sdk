@@ -421,16 +421,26 @@ class PeerChannelImpl(
     ): RtpSender {
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
         val sender = transceiver!!.sender
-        transceiver!!.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
-        sender!!.streams = listOf(localStreamId)
-        sender!!.setTrack(track, false)
+
+        if (track == null) {
+            // 送信ストリームを持たない状態にする
+            transceiver.direction = RtpTransceiver.RtpTransceiverDirection.RECV_ONLY
+            sender.setTrack(null, false)
+            // 必要に応じて sender.stop() or pc.removeTrack(sender) で完全に切り離す
+            SoraLogger.d(TAG, "unset sender: mid=$mid")
+            return sender
+        }
+
+        transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
+        sender.streams = listOf(localStreamId)
+        sender.setTrack(track, false)
 
         // degradationPreference を設定（video の場合のみ）
-        if (track?.kind() == "video") {
+        if (track.kind() == "video") {
             configureSenderDegradationPreference(sender)
         }
 
-        SoraLogger.d(TAG, "set ${track?.kind()} sender: mid=$mid, transceiver=$transceiver")
+        SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
         return sender
     }
 
