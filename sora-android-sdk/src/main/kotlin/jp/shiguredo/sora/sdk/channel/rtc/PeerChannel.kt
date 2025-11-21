@@ -218,6 +218,11 @@ class PeerChannelImpl(
     // そのため re-offer, update 時に再度 encodings をセットする
     private var offerEncodings: List<Encoding>? = null
 
+    // 初期ミュートが解除
+    // true = 初期ミュートが解除された状態
+    // false = 初期ミュートがまだ解除されていない状態
+    private var isInitialMuteRemoved: Boolean = !mediaOption.audioOption.initialAudioMute
+
     init {
         val compressedDataChannels =
             (dataChannelConfigs ?: emptyList())
@@ -422,25 +427,15 @@ class PeerChannelImpl(
         val transceiver = this.conn?.transceivers?.find { it.mid == mid }
         val sender = transceiver!!.sender
 
-        if (track == null) {
-            // 送信ストリームを持たない状態にする
-            transceiver.direction = RtpTransceiver.RtpTransceiverDirection.RECV_ONLY
-            sender.setTrack(null, false)
-            // 必要に応じて sender.stop() or pc.removeTrack(sender) で完全に切り離す
-            SoraLogger.d(TAG, "unset sender: mid=$mid")
-            return sender
-        }
-
         transceiver.direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY
         sender.streams = listOf(localStreamId)
         sender.setTrack(track, false)
 
         // degradationPreference を設定（video の場合のみ）
-        if (track.kind() == "video") {
+        if (track?.kind() == "video") {
             configureSenderDegradationPreference(sender)
         }
 
-        SoraLogger.d(TAG, "set ${track.kind()} sender: mid=$mid, transceiver=$transceiver")
         return sender
     }
 
@@ -466,13 +461,7 @@ class PeerChannelImpl(
                 mid?.get("audio")?.let { mid ->
                     localAudioManager.track?.let { track ->
                         audioMid = mid
-                        audioSender =
-                            if (mediaOption.initialAudioMute) {
-                                SoraLogger.d("kensaku", "initialAudioMute is enabled, so set audio track to null")
-                                setTrack(mid, null)
-                            } else {
-                                setTrack(mid, track)
-                            }
+                        audioSender = setTrack(mid, track)
                     }
                 } ?: SoraLogger.d(TAG, "mid for audio not found")
 
@@ -633,6 +622,13 @@ class PeerChannelImpl(
                 networkConfig.createConfiguration(),
                 dependencies,
             )
+
+        if (mediaOption.audioOption.initialAudioMute) {
+            // 接続時ミュート設定が ON の場合、録音一時停止状態として扱う
+            audioRecordingPaused = true
+            // setAudioRecordingPaused(false) を設定しておくと、録音が開始されない
+            conn?.setAudioRecording(false)
+        }
 
         val localStream = factory!!.createLocalMediaStream(localStreamId)
 
@@ -872,6 +868,11 @@ class PeerChannelImpl(
      * - つまり、このメソッドは初期ミュート状態からの復帰にも使用できます。
      */
     override suspend fun setAudioRecordingPaused(paused: Boolean): Boolean {
+        // 初期ミュートが解除されていない場合かつ、 paused=false の場合は録音開始処理を行う
+        if (!isInitialMuteRemoved && audioRecordingPaused && !paused) {
+            isInitialMuteRemoved = true
+            conn?.setAudioRecording(true)
+        }
         // 接続設定として音声送出をしていなければ処理不要のため即終了
         if (!mediaOption.audioUpstreamEnabled) {
             SoraLogger.d(TAG, "[audio_recording_pause] audioUpstreamEnabled is false; nothing to do")

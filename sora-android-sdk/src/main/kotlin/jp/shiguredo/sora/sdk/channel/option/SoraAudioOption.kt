@@ -121,4 +121,9 @@ class SoraAudioOption {
      * opus_params.
      */
     var opusParams: OpusParams? = null
+
+    /**
+     * 接続時点で音声ミュートを有効にするかどうかのフラグ.
+     */
+    var initialAudioMute: Boolean = false
 }
