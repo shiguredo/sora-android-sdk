@@ -202,6 +202,11 @@ class PeerChannelImpl(
     // そのため re-offer, update 時に再度 encodings をセットする
     private var offerEncodings: List<Encoding>? = null
 
+    // Sora 接続時の音声ハードミュート状態を保持しておく
+    // この変数が true の場合は Sora 接続時の音声ハードミュートが有効であることを示す、
+    // ハードミュートが解除されたら false に更新する
+    private var initialAudioHardMuteEnabled: Boolean = mediaOption.audioOption.initialAudioHardMute
+
     init {
         val compressedDataChannels =
             (dataChannelConfigs ?: emptyList())
@@ -602,6 +607,13 @@ class PeerChannelImpl(
                 dependencies,
             )
 
+        if (mediaOption.audioOption.initialAudioHardMute) {
+            // Sora 接続時に音声のハードミュートを有効化するフラグが立っている場合、ミュート状態にする
+            audioRecordingPaused = true
+            // この設定で録音が開始されない
+            conn?.setAudioRecording(false)
+        }
+
         val localStream = factory!!.createLocalMediaStream(localStreamId)
 
         SoraLogger.d(TAG, "local managers' initTrack: audio")
@@ -841,6 +853,13 @@ class PeerChannelImpl(
         if (executor.isShutdown) {
             SoraLogger.w(TAG, "[audio_recording_pause] executor already shut down; ignore setAudioRecordingPaused")
             return false
+        }
+        // Sora 接続時の音声ハードミュートが有効かつ、paused が false の場合は録音開始する
+        if (initialAudioHardMuteEnabled && !paused) {
+            // false に更新する、この変数はこれ以降利用されない
+            initialAudioHardMuteEnabled = false
+            // 録音を開始する
+            conn?.setAudioRecording(true)
         }
         return withContext(executorDispatcher) {
             when {
