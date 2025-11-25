@@ -17,6 +17,7 @@
   - @zztkm
 - [ADD] SoraAudioOption に `initialAudioHardMute` プロパティを追加する
   - このプロパティに true を設定することで、Sora 接続時に音声のハードミュートを有効化できる
+  - `setAudioRecordingPaused(false)` を呼ぶことで音声のハードミュートを解除することができる
   - @zztkm
 
 ### misc
