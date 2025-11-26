@@ -478,8 +478,13 @@ class SoraMediaChannel
                     SoraLogger.w(TAG, "Cannot call setAudioSoftMute because the Local MediaStream has no AudioTrack")
                     return false
                 }
-            audioTrack.setEnabled(!muted)
-            return true
+            return try {
+                audioTrack.setEnabled(!muted)
+                true
+            } catch (e: Exception) {
+                SoraLogger.e(TAG, "Failed to setAudioSoftMute: ${e.message}")
+                false
+            }
         }
 
         /**
