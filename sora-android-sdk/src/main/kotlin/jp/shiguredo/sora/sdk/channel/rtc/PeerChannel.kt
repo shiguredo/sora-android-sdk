@@ -539,6 +539,10 @@ class PeerChannelImpl(
     }
 
     override fun requestClientOfferSdp(): Single<Result<SessionDescription>> {
+        // NOTE: setup() は 2 箇所 (requestClientOfferSdp(), handleInitialRemoteOffer()) から呼ばれるため、
+        // onAddLocalStream() が二重に呼ばれる可能性があるように見えるが、実際には
+        // SoraMediaChannel では requestClientOfferSdp を呼ぶ場合に listener を持たない PeerChannelImpl を
+        // 使っているため、 このメソッド呼び出し経由で setupInternal() が呼ばれても listener.onAddLocalStream() は呼ばれない。
         return setup().flatMap {
             SoraLogger.d(TAG, "requestClientOfferSdp")
             return@flatMap createClientOfferSdp()
@@ -616,7 +620,7 @@ class PeerChannelImpl(
         localAudioManager.track?.let {
             localStream.addTrack(it)
         }
-        if (mediaOption.audioOption.initialAudioHardMute) {
+        if (mediaOption.audioOption.initialAudioHardMute && mediaOption.audioOption.audioDeviceModule == null) {
             // Sora 接続時に音声のハードミュートを有効化するフラグが立っている場合、ミュート状態にする
             audioRecordingPaused = true
             // 録音を開始しないために setAudioRecording(false) を呼ぶ

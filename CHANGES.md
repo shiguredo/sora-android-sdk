@@ -11,13 +11,21 @@
 
 ## develop
 
+- [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
+  - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
+  - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
   - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
   - @zztkm
 - [ADD] SoraAudioOption に `initialAudioHardMute` プロパティを追加する
   - このプロパティに true を設定することで、Sora 接続時に音声のハードミュートを有効化できる
-  - `setAudioRecordingPaused(false)` を呼ぶことで音声のハードミュートを解除することができる
+  - `setAudioHardMute(false)` を呼ぶことで音声のハードミュートを無効化することができる
+  - @zztkm
+- [ADD] SoraMediaChannel に `setAudioHardMute` と `setAudioSoftMute` メソッドを追加する
+  - `setAudioHardMute` は PeerChannel.setAudioRecordingPaused のラッパーとして実装
+  - `setAudioSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている AudioTrack の setEnabled を呼び出すように実装
+  - この 2 つのメソッド追加によって、音声のハードミュート / ソフトミュートを実装する方法が統一されたことでアプリケーションがミュートを実装しやすくなった
   - @zztkm
 
 ### misc
