@@ -125,9 +125,9 @@ class SoraAudioOption {
     /**
      * Sora 接続時に音声のハードミュートを有効化するフラグ.
      *
-     * デフォルトは false で、この場合は Sora 接続時にマイクのハードミュートは有効化されません.
-     * また、audioDeviceModule が null ではない場合、音声のハードミュート機能が使えない制約があるため、
-     * このフラグを true に設定してもハードミュートは有効化されません.
+     * デフォルト値は false です.
+     * true にした場合、Sora 接続時に音声のハードミュートが有効化されます。
+     * audioDeviceModule が null ではない場合、この値は無視され音声のハードミュートは有効化されません.
      */
     var initialAudioHardMute: Boolean = false
 }
