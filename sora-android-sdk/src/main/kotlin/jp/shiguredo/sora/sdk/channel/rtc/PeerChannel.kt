@@ -616,7 +616,7 @@ class PeerChannelImpl(
         localAudioManager.track?.let {
             localStream.addTrack(it)
         }
-        if (mediaOption.audioOption.initialAudioHardMute) {
+        if (mediaOption.audioOption.initialAudioHardMute && mediaOption.audioOption.audioDeviceModule == null) {
             // Sora 接続時に音声のハードミュートを有効化するフラグが立っている場合、ミュート状態にする
             audioRecordingPaused = true
             // 録音を開始しないために setAudioRecording(false) を呼ぶ
