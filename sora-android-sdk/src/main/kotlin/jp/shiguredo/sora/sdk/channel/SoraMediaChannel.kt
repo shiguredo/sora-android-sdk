@@ -451,6 +451,11 @@ class SoraMediaChannel
          * JavaAudioDeviceModule の録音処理を一時停止または再開する
          * 内部で生成した AudioDeviceModule のみ制御可能であり、外部から差し込んだ AudioDeviceModule は対象外
          */
+        @Deprecated(
+            "setAudioHardMute が同じ機能を提供します。こちらのメソッドは将来のリリースで削除される予定です。",
+            ReplaceWith("setAudioHardMute"),
+            DeprecationLevel.WARNING,
+        )
         suspend fun setAudioRecordingPaused(paused: Boolean): Boolean = peer?.setAudioRecordingPaused(paused) ?: false
 
         /**
