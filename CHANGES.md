@@ -12,7 +12,7 @@
 ## develop
 
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
-  - 今後は setAudioHardMute を使ってもらう
+  - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
