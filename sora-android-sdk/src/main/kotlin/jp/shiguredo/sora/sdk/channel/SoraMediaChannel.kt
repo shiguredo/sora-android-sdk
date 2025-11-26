@@ -459,17 +459,17 @@ class SoraMediaChannel
         suspend fun setAudioRecordingPaused(paused: Boolean): Boolean = peer?.setAudioRecordingPaused(paused) ?: false
 
         /**
-         * 音声のハードミュート / ミュート解除を行う
+         * 音声のハードミュートの有効化 / 無効化を行う
          *
-         * @param muted ハードミュートする場合は true、ハードミュートを解除する場合は false を指定する
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
          * @return 成功した場合は true、失敗した場合は false
          */
         suspend fun setAudioHardMute(muted: Boolean): Boolean = peer?.setAudioRecordingPaused(muted) ?: false
 
         /**
-         * 音声のソフトミュート / ミュート解除を行う
+         * 音声のソフトミュートの有効化 / 無効化を行う
          *
-         * @param muted ミュートする場合は true、ミュート解除する場合は false
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
          * @return 成功した場合は true、失敗した場合は false
          */
         fun setAudioSoftMute(muted: Boolean): Boolean {
