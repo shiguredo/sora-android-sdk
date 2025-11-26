@@ -20,7 +20,7 @@
   - @zztkm
 - [ADD] SoraAudioOption に `initialAudioHardMute` プロパティを追加する
   - このプロパティに true を設定することで、Sora 接続時に音声のハードミュートを有効化できる
-  - `setAudioHardMute(false)` を呼ぶことで音声のハードミュートを解除することができる
+  - `setAudioHardMute(false)` を呼ぶことで音声のハードミュートを無効化することができる
   - @zztkm
 - [ADD] SoraMediaChannel に `setAudioHardMute` と `setAudioSoftMute` メソッドを追加する
   - `setAudioHardMute` は PeerChannel.setAudioRecordingPaused のラッパーとして実装
