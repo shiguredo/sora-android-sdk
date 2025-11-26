@@ -487,7 +487,7 @@ class SoraMediaChannel
                 audioTrack.setEnabled(!muted)
                 true
             } catch (e: Exception) {
-                SoraLogger.e(TAG, "Failed to setAudioSoftMute: ${e.message}")
+                SoraLogger.w(TAG, "Failed to setAudioSoftMute: ${e.message}")
                 false
             }
         }
