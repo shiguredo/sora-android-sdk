@@ -475,12 +475,12 @@ class SoraMediaChannel
         fun setAudioSoftMute(muted: Boolean): Boolean {
             val localStream =
                 localStream ?: run {
-                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute because the Local MediaStream has not been initialized yet")
+                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute: Local MediaStream not initialized")
                     return false
                 }
             val audioTrack =
                 localStream.audioTracks.firstOrNull() ?: run {
-                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute because the Local MediaStream has no AudioTrack")
+                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute: Local MediaStream has no AudioTrack")
                     return false
                 }
             return try {
