@@ -441,10 +441,46 @@ class SoraMediaChannel
         private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
         /**
+         * ローカルストリームを保持する変数。
+         *
+         * onAddLocalStream コールバックで必ずセットされる。
+         */
+        private var localStream: MediaStream? = null
+
+        /**
          * JavaAudioDeviceModule の録音処理を一時停止または再開する
          * 内部で生成した AudioDeviceModule のみ制御可能であり、外部から差し込んだ AudioDeviceModule は対象外
          */
         suspend fun setAudioRecordingPaused(paused: Boolean): Boolean = peer?.setAudioRecordingPaused(paused) ?: false
+
+        /**
+         * 音声のハードミュート / ミュート解除を行う
+         *
+         * @param muted ハードミュートする場合は true、ハードミュートを解除する場合は false を指定する
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        suspend fun setAudioHardMute(muted: Boolean): Boolean = peer?.setAudioRecordingPaused(muted) ?: false
+
+        /**
+         * 音声のソフトミュート / ミュート解除を行う
+         *
+         * @param muted ミュートする場合は true、ミュート解除する場合は false
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        fun setAudioSoftMute(muted: Boolean): Boolean {
+            val localStream =
+                localStream ?: run {
+                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute because the Local MediaStream has not been initialized yet")
+                    return false
+                }
+            val audioTrack =
+                localStream.audioTracks.firstOrNull() ?: run {
+                    SoraLogger.w(TAG, "Cannot call setAudioSoftMute because the Local MediaStream has no AudioTrack")
+                    return false
+                }
+            audioTrack.setEnabled(!muted)
+            return true
+        }
 
         /**
          * 録音停止中かどうかを返す
@@ -639,6 +675,7 @@ class SoraMediaChannel
 
                 override fun onAddLocalStream(ms: MediaStream) {
                     SoraLogger.d(TAG, "[channel:$role] @peer:onAddLocalStream")
+                    localStream = ms
                     listener?.onAddLocalStream(this@SoraMediaChannel, ms)
                 }
 
