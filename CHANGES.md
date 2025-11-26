@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] setAudioRecordingPaused を非推奨にする
+- [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 今後は setAudioHardMute を使ってもらう
   - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
