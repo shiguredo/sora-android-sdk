@@ -14,6 +14,9 @@
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
+- [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `capturerStartParams: VideoCapturerStartParams? = null` を追加する
+  - setVideoHardMute 内で CameraVideoCapturer.startCapture を呼び出すときの引数として利用する data class
+  - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
   - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
