@@ -118,7 +118,7 @@ class SoraMediaOption {
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
-     * @param VideoCapturerStartParams capturer の startCapture に渡すパラメーター
+     * @param capturerStartParams capturer の startCapture に渡すパラメーター
      */
     @JvmOverloads
     fun enableVideoUpstream(
@@ -131,8 +131,6 @@ class SoraMediaOption {
         videoUpstreamContext = eglContext
         videoCapturerStartParams = capturerStartParams
     }
-
-    internal fun canControlVideoCapturer(): Boolean = videoCapturerControllable
 
     /**
      * サイマルキャスト機能を有効にします.
