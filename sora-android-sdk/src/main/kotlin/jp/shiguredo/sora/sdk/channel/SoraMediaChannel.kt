@@ -33,6 +33,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -496,6 +497,78 @@ class SoraMediaChannel
          * 録音停止中かどうかを返す
          */
         fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
+
+        /**
+         * 映像のハードミュートの有効化 / 無効化を行う
+         *
+         * このメソッドは映像のソフトミュートを併用し、ハードミュートを有効化する前に
+         * の前に黒塗りのフレームを送信する状態にしてからハードミュートを有効化します。
+         *
+         * 逆に、ハードミュートを無効化する際には、まずハードミュートを無効化し、
+         * その後ソフトミュートを無効化します。
+         *
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        fun setVideoHardMute(muted: Boolean): Boolean {
+            if (!mediaOption.canVideoCapturerControllable) {
+                SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturer is not controllable")
+                return false
+            }
+            val capturer =
+                mediaOption.videoCapturer ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: CameraVideoCapturer is not set")
+                    return false
+                }
+            val startParams =
+                mediaOption.videoCapturerStartParams ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturerStartParams is not set")
+                    return false
+                }
+
+            if (!setVideoSoftMute(muted)) {
+                SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
+                return false
+            }
+
+            return try {
+                if (muted) {
+                    capturer.stopCapture()
+                } else {
+                    capturer.startCapture(startParams.width, startParams.height, startParams.fps)
+                }
+                true
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "Failed to setVideoHardMute: ${e.message}")
+                false
+            }
+        }
+
+        /**
+         * 音声のソフトミュートの有効化 / 無効化を行う
+         *
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        fun setVideoSoftMute(muted: Boolean): Boolean {
+            val localStream =
+                localStream ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream not initialized")
+                    return false
+                }
+            val videoTrack =
+                localStream.videoTracks.firstOrNull() ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream has no VideoTrack")
+                    return false
+                }
+            return try {
+                videoTrack.setEnabled(!muted)
+                true
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "Failed to setVideoSoftMute: ${e.message}")
+                false
+            }
+        }
 
         /**
          * W3C 準拠の WebRTC 統計情報を取得する

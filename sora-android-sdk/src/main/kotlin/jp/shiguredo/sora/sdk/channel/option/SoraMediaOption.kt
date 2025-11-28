@@ -14,6 +14,15 @@ class SoraMediaOption {
         val TAG = SoraMediaOption::class.simpleName
     }
 
+    /**
+     * VideoCapturer を startCapture する際に必要となるパラメーター.
+     */
+    data class VideoCapturerStartParams(
+        val width: Int,
+        val height: Int,
+        val fps: Int,
+    )
+
     internal var audioDownstreamEnabled = false
     internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
@@ -25,6 +34,11 @@ class SoraMediaOption {
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
+
+    internal var videoCapturerStartParams: VideoCapturerStartParams? = null
+
+    internal val canVideoCapturerControllable: Boolean
+        get() = videoCapturerStartParams != null
 
     /**
      * 利用する VideoEncoderFactory を指定します.
@@ -104,15 +118,21 @@ class SoraMediaOption {
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
+     * @param VideoCapturerStartParams capturer の startCapture に渡すパラメーター
      */
+    @JvmOverloads
     fun enableVideoUpstream(
         capturer: VideoCapturer,
         eglContext: EglBase.Context?,
+        capturerStartParams: VideoCapturerStartParams? = null,
     ) {
         videoUpstreamEnabled = true
         videoCapturer = capturer
         videoUpstreamContext = eglContext
+        videoCapturerStartParams = capturerStartParams
     }
+
+    internal fun canControlVideoCapturer(): Boolean = videoCapturerControllable
 
     /**
      * サイマルキャスト機能を有効にします.
