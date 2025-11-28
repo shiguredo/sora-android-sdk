@@ -33,7 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -535,7 +534,7 @@ class SoraMediaChannel
                 if (muted) {
                     capturer.stopCapture()
                 } else {
-                    capturer.startCapture(startParams.width, startParams.height, startParams.fps)
+                    capturer.startCapture(startParams.width, startParams.height, startParams.framerate)
                 }
                 true
             } catch (e: Exception) {

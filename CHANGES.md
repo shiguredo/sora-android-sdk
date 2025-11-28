@@ -31,6 +31,9 @@
   - `setVideoHardMute` は CameraVideoCapturer の `startCapture` と `stopCapture` のラッパーであり、ソフトミュートも併用するように実装
   - `setVideoSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている VideoTrack の setEnabled を呼び出すように実装
   - @zztkm
+- [ADD] SoraMediaOption に `VideoCapturerStartParams` data class を追加する
+  - setVideoHardMute 内で CameraVideoCapturer.startCapture を呼び出すときの引数として利用する
+  - @zztkm
 
 ### misc
 

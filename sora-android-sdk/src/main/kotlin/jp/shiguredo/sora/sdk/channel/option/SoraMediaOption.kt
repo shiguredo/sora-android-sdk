@@ -20,7 +20,7 @@ class SoraMediaOption {
     data class VideoCapturerStartParams(
         val width: Int,
         val height: Int,
-        val fps: Int,
+        val framerate: Int,
     )
 
     internal var audioDownstreamEnabled = false
