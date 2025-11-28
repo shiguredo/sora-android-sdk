@@ -500,11 +500,11 @@ class SoraMediaChannel
         /**
          * 映像のハードミュートの有効化 / 無効化を行う
          *
-         * このメソッドは映像のソフトミュートを併用し、ハードミュートを有効化する前に
-         * の前に黒塗りのフレームを送信する状態にしてからハードミュートを有効化します。
+         * このメソッドは映像のソフトミュートを併用します。
+         * ハードミュートを有効化する際は、先にソフトミュートで VideoTrack を無効化してから
+         * カメラキャプチャーを停止します。
          *
-         * 逆に、ハードミュートを無効化する際には、まずハードミュートを無効化し、
-         * その後ソフトミュートを無効化します。
+         * ハードミュートを無効化する際は、カメラキャプチャーを開始してから VideoTrack を有効化します。
          *
          * @param muted 有効化する場合は true、無効化する場合は false を指定する
          * @return 成功した場合は true、失敗した場合は false
@@ -525,9 +525,12 @@ class SoraMediaChannel
                     return false
                 }
 
-            if (!setVideoSoftMute(muted)) {
-                SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
-                return false
+            if (muted) {
+                // ハードミュートを有効化する場合は先にソフトミュートを行う
+                if (!setVideoSoftMute(true)) {
+                    SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
+                    return false
+                }
             }
 
             return try {
@@ -535,6 +538,13 @@ class SoraMediaChannel
                     capturer.stopCapture()
                 } else {
                     capturer.startCapture(startParams.width, startParams.height, startParams.framerate)
+                }
+                if (!muted) {
+                    // ハードミュートを無効化する場合はハードミュート無効化後にソフトミュートを無効化する
+                    if (!setVideoSoftMute(false)) {
+                        SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
+                        return false
+                    }
                 }
                 true
             } catch (e: Exception) {
