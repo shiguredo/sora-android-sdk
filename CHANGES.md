@@ -15,7 +15,7 @@
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `capturerStartParams: VideoCapturerStartParams? = null` を追加する
-  - setVideoHardMute 内で CameraVideoCapturer.startCapture を呼び出すときの引数として利用する data class
+  - この引数が指定された場合に setVideoHardMute が利用可能になる
   - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
