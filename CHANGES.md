@@ -27,6 +27,10 @@
   - `setAudioSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている AudioTrack の setEnabled を呼び出すように実装
   - この 2 つのメソッド追加によって、音声のハードミュート / ソフトミュートを実装する方法が統一されたことでアプリケーションがミュートを実装しやすくなった
   - @zztkm
+- [ADD] SoraMediaChannel に `setVideoHardMute` と `setVideoSoftMute` メソッドを追加する
+  - `setVideoHardMute` は CameraVideoCapturer の `startCapture` と `stopCapture` のラッパーであり、ソフトミュートも併用するように実装
+  - `setVideoSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている VideoTrack の setEnabled を呼び出すように実装
+  - @zztkm
 
 ### misc
 
