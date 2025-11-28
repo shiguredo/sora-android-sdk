@@ -498,6 +498,90 @@ class SoraMediaChannel
         fun isAudioRecordingPaused(): Boolean = peer?.isAudioRecordingPaused() ?: false
 
         /**
+         * 映像のハードミュートの有効化 / 無効化を行う
+         *
+         * このメソッドは映像のソフトミュートを併用します。
+         * ハードミュートを有効化する際は、先にソフトミュートで VideoTrack を無効化してから
+         * カメラキャプチャーを停止します。
+         *
+         * ハードミュートを無効化する際は、カメラキャプチャーを開始してから VideoTrack を有効化します。
+         *
+         * IMPORTANT: このメソッドを利用するには SoraMediaOption.enableVideoUpstream で capturerStartParams 引数を指定している必要があります。
+         *
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        fun setVideoHardMute(muted: Boolean): Boolean {
+            if (!mediaOption.canVideoCapturerControllable) {
+                SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturer is not controllable")
+                return false
+            }
+            val capturer =
+                mediaOption.videoCapturer ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: CameraVideoCapturer is not set")
+                    return false
+                }
+            val startParams =
+                mediaOption.videoCapturerStartParams ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturerStartParams is not set")
+                    return false
+                }
+
+            if (muted) {
+                // ハードミュートを有効化する場合は先にソフトミュートを行う
+                if (!setVideoSoftMute(true)) {
+                    SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
+                    return false
+                }
+            }
+
+            return try {
+                if (muted) {
+                    capturer.stopCapture()
+                } else {
+                    capturer.startCapture(startParams.width, startParams.height, startParams.framerate)
+                }
+                if (!muted) {
+                    // ハードミュートを無効化する場合はハードミュート無効化後にソフトミュートを無効化する
+                    if (!setVideoSoftMute(false)) {
+                        SoraLogger.w(TAG, "Failed to setVideoHardMute: setVideoSoftMute failed")
+                        return false
+                    }
+                }
+                true
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "Failed to setVideoHardMute: ${e.message}")
+                false
+            }
+        }
+
+        /**
+         * 映像のソフトミュートの有効化 / 無効化を行う
+         *
+         * @param muted 有効化する場合は true、無効化する場合は false を指定する
+         * @return 成功した場合は true、失敗した場合は false
+         */
+        fun setVideoSoftMute(muted: Boolean): Boolean {
+            val localStream =
+                localStream ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream not initialized")
+                    return false
+                }
+            val videoTrack =
+                localStream.videoTracks.firstOrNull() ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream has no VideoTrack")
+                    return false
+                }
+            return try {
+                videoTrack.setEnabled(!muted)
+                true
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "Failed to setVideoSoftMute: ${e.message}")
+                false
+            }
+        }
+
+        /**
          * W3C 準拠の WebRTC 統計情報を取得する
          *
          * 接続中の PeerConnection の統計情報を非同期で取得する。

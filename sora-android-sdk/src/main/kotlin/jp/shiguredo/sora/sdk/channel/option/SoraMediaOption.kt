@@ -14,6 +14,16 @@ class SoraMediaOption {
         val TAG = SoraMediaOption::class.simpleName
     }
 
+    /**
+     * SoraMediaChannel.setVideoHardMute で CameraVideoCapturer.startCapture
+     * を呼び出す際に必要な引数をまとめるための data class です.
+     */
+    data class VideoCapturerStartParams(
+        val width: Int,
+        val height: Int,
+        val framerate: Int,
+    )
+
     internal var audioDownstreamEnabled = false
     internal var audioUpstreamEnabled = false
     internal var videoDownstreamEnabled = false
@@ -25,6 +35,11 @@ class SoraMediaOption {
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
+
+    internal var videoCapturerStartParams: VideoCapturerStartParams? = null
+
+    internal val canVideoCapturerControllable: Boolean
+        get() = videoCapturerStartParams != null
 
     /**
      * 利用する VideoEncoderFactory を指定します.
@@ -104,14 +119,18 @@ class SoraMediaOption {
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
+     * @param capturerStartParams capturer の startCapture に渡すパラメーター
      */
+    @JvmOverloads
     fun enableVideoUpstream(
         capturer: VideoCapturer,
         eglContext: EglBase.Context?,
+        capturerStartParams: VideoCapturerStartParams? = null,
     ) {
         videoUpstreamEnabled = true
         videoCapturer = capturer
         videoUpstreamContext = eglContext
+        videoCapturerStartParams = capturerStartParams
     }
 
     /**

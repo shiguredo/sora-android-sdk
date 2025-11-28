@@ -14,6 +14,9 @@
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
+- [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `capturerStartParams: VideoCapturerStartParams? = null` を追加する
+  - この引数が指定された場合に setVideoHardMute が利用可能になる
+  - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
   - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
@@ -26,6 +29,13 @@
   - `setAudioHardMute` は PeerChannel.setAudioRecordingPaused のラッパーとして実装
   - `setAudioSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている AudioTrack の setEnabled を呼び出すように実装
   - この 2 つのメソッド追加によって、音声のハードミュート / ソフトミュートを実装する方法が統一されたことでアプリケーションがミュートを実装しやすくなった
+  - @zztkm
+- [ADD] SoraMediaChannel に `setVideoHardMute` と `setVideoSoftMute` メソッドを追加する
+  - `setVideoHardMute` は CameraVideoCapturer の `startCapture` と `stopCapture` のラッパーであり、ソフトミュートも併用するように実装
+  - `setVideoSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている VideoTrack の setEnabled を呼び出すように実装
+  - @zztkm
+- [ADD] SoraMediaOption に `VideoCapturerStartParams` data class を追加する
+  - setVideoHardMute 内で CameraVideoCapturer.startCapture を呼び出すときの引数として利用する
   - @zztkm
 
 ### misc
