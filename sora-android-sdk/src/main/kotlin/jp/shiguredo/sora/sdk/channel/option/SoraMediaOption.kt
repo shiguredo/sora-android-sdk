@@ -15,8 +15,8 @@ class SoraMediaOption {
     }
 
     /**
-     * VideoCapturer を startCapture する際に必要となるパラメーター.
-     * この data class は enableVideoUpstream の引数型に利用します.
+     * SoraMediaChannel.setVideoHardMute で CameraVideoCapturer.startCapture
+     * を呼び出す際に必要な引数をまとめるための data class です.
      */
     data class VideoCapturerStartParams(
         val width: Int,
