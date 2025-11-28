@@ -16,6 +16,7 @@ class SoraMediaOption {
 
     /**
      * VideoCapturer を startCapture する際に必要となるパラメーター.
+     * この data class は enableVideoUpstream の引数型に利用します.
      */
     data class VideoCapturerStartParams(
         val width: Int,
