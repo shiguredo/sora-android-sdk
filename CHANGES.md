@@ -14,8 +14,8 @@
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
-- [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `capturerStartParams: VideoCapturerStartParams? = null` を追加する
-  - この引数が指定された場合に setVideoHardMute が利用可能になる
+- [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
+  - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
   - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
@@ -34,8 +34,14 @@
   - `setVideoHardMute` は CameraVideoCapturer の `startCapture` と `stopCapture` のラッパーであり、ソフトミュートも併用するように実装
   - `setVideoSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている VideoTrack の setEnabled を呼び出すように実装
   - @zztkm
-- [ADD] SoraMediaOption に `VideoCapturerStartParams` data class を追加する
-  - setVideoHardMute 内で CameraVideoCapturer.startCapture を呼び出すときの引数として利用する
+- [ADD] SoraMediaChannel に `switchCamera` と `changeCaptureFormat` メソッドを追加する
+  - `switchCamera` は SDK 内部に保持する VideoCapturer が CameraVideoCapturer である場合に、フロントカメラとリアカメラを切り替える
+  - `changeCaptureFormat` は VideoCapturer のキャプチャーフォーマットを変更する
+  - @zztkm
+- [ADD] SoraMediaOption に `SoraCameraConfig` data class を追加する
+  - SDK 内部で VideoCapturer.startCapture の引数として利用される
+  - @zztkm
+- [ADD] SoraVideoOption に `CaptureType` enum を追加する
   - @zztkm
 
 ### misc
