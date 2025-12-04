@@ -185,6 +185,7 @@ class RTCComponentFactory(
             }
 
             val videoManager = RTCLocalVideoManager(capturer, config)
+            videoManager.markAsOwnedCapturer()
             SoraLogger.d(TAG, "videoManager created: $videoManager")
             return videoManager
         }
