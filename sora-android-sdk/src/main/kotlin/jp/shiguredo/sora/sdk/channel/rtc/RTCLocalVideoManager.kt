@@ -71,6 +71,7 @@ class RTCLocalVideoManager(
         // 内部生成した VideoCapturer の場合のみ開始する
         // 外部から渡された VideoCapturer の場合、キャプチャの開始は SDK 利用者の責任とする
         if (!isOwnedCapturer) {
+            SoraLogger.d(TAG, "startOwnedCapture: capturer is not owned, skip startCapture")
             return
         }
 
