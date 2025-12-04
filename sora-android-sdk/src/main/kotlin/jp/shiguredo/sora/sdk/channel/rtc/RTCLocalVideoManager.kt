@@ -12,9 +12,17 @@ import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
 import java.util.UUID
 
+/**
+ * ローカルの映像を管理するクラス.
+ *
+ * @param capturer 映像キャプチャ
+ * @param cameraConfig カメラ設定
+ * @param isOwnedCapturer capturer が SDK 内で生成・管理されている場合は true を指定する
+ */
 class RTCLocalVideoManager(
     private val capturer: VideoCapturer,
     private val cameraConfig: SoraCameraConfig?,
+    private val isOwnedCapturer: Boolean = false,
 ) {
     companion object {
         private val TAG = RTCLocalVideoManager::class.simpleName
@@ -23,7 +31,6 @@ class RTCLocalVideoManager(
     var source: VideoSource? = null
     var track: VideoTrack? = null
     var surfaceTextureHelper: SurfaceTextureHelper? = null
-    private var isOwnedCapturer: Boolean = true
 
     fun initTrack(
         factory: PeerConnectionFactory,
@@ -119,12 +126,5 @@ class RTCLocalVideoManager(
             config.height = height
             config.frameRate = frameRate
         }
-    }
-
-    /**
-     * 内部生成されたキャプチャーであることをマークします。
-     */
-    internal fun markAsOwnedCapturer() {
-        isOwnedCapturer = true
     }
 }
