@@ -43,6 +43,9 @@
   - @zztkm
 - [ADD] SoraVideoOption に `CaptureType` enum を追加する
   - @zztkm
+- [ADD] PeerChannel に `localVideoManager: RTCLocalVideoManager?` プロパティを追加する
+  - SoraMediaChannel から RTCLocalVideoManager に PeerChannel 経由でアクセスするためのプロパティ
+  - @zztkm
 
 ### misc
 
