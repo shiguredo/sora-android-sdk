@@ -180,7 +180,7 @@ class RTCComponentFactory(
         mediaOption.soraCameraConfig?.let { config ->
             val capturer = CameraCapturerFactory.create(context, config.frontFacingFirst)
             if (capturer == null) {
-                SoraLogger.e(TAG, "cannot create camera capturer")
+                SoraLogger.e(TAG, "create RTCLocalVideoManager failed")
                 return null
             }
 
