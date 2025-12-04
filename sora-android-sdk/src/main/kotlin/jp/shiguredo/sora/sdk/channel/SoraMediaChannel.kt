@@ -33,6 +33,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
@@ -516,17 +517,6 @@ class SoraMediaChannel
                 SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturer is not controllable")
                 return false
             }
-            val capturer =
-                mediaOption.videoCapturer ?: run {
-                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: CameraVideoCapturer is not set")
-                    return false
-                }
-            val startParams =
-                mediaOption.videoCapturerStartParams ?: run {
-                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturerStartParams is not set")
-                    return false
-                }
-
             if (muted) {
                 // ハードミュートを有効化する場合は先にソフトミュートを行う
                 if (!setVideoSoftMute(true)) {
@@ -534,12 +524,11 @@ class SoraMediaChannel
                     return false
                 }
             }
-
             return try {
                 if (muted) {
-                    capturer.stopCapture()
+                    peer?.localVideoManager?.stopVideoCapture()
                 } else {
-                    capturer.startCapture(startParams.width, startParams.height, startParams.framerate)
+                    peer?.localVideoManager?.startVideoCapture()
                 }
                 if (!muted) {
                     // ハードミュートを無効化する場合はハードミュート無効化後にソフトミュートを無効化する
@@ -561,24 +550,35 @@ class SoraMediaChannel
          * @param muted 有効化する場合は true、無効化する場合は false を指定する
          * @return 成功した場合は true、失敗した場合は false
          */
-        fun setVideoSoftMute(muted: Boolean): Boolean {
-            val localStream =
-                localStream ?: run {
-                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream not initialized")
-                    return false
-                }
-            val videoTrack =
-                localStream.videoTracks.firstOrNull() ?: run {
-                    SoraLogger.w(TAG, "Cannot call setVideoSoftMute: Local MediaStream has no VideoTrack")
-                    return false
-                }
-            return try {
-                videoTrack.setEnabled(!muted)
+        fun setVideoSoftMute(muted: Boolean): Boolean =
+            try {
+                peer?.localVideoManager?.setTrackEnabled(!muted)
                 true
             } catch (e: Exception) {
                 SoraLogger.w(TAG, "Failed to setVideoSoftMute: ${e.message}")
                 false
             }
+
+        /**
+         * デバイスのカメラを利用している場合にフロントカメラとリアカメラを切り替える
+         */
+        fun switchCamera(handler: CameraVideoCapturer.CameraSwitchHandler?) {
+            peer?.localVideoManager?.switchCamera(handler)
+        }
+
+        /**
+         * キャプチャフォーマットを変更する
+         */
+        fun changeCaptureFormat(
+            width: Int,
+            height: Int,
+            frameRate: Int,
+        ) {
+            peer?.localVideoManager?.changeCaptureFormat(
+                width,
+                height,
+                frameRate,
+            )
         }
 
         /**
@@ -923,7 +923,7 @@ class SoraMediaChannel
             |videoVp9Params             = ${mediaOption.videoVp9Params}
             |videoAv1Params             = ${mediaOption.videoAv1Params}
             |videoH264Params            = ${mediaOption.videoH264Params}
-            |videoCapturer              = ${mediaOption.videoCapturer}
+            |videoCapturer              = ${mediaOption.userSettingVideoCapturer()}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
             |spotlightEnabled           = ${mediaOption.spotlightEnabled}
