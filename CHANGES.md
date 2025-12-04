@@ -17,6 +17,9 @@
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
   - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
   - @zztkm
+- [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
+  - SDK 内部で CameraVideoCapturer を生成する場合にはこちらの enableVideoUpstream を使う
+  - @zztkm
 - [ADD] SoraMediaChannel に `getStats` メソッドを追加する
   - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
   - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
