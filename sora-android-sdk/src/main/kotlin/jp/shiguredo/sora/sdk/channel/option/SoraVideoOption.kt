@@ -10,6 +10,14 @@ class SoraVideoOption {
     // TODO(zztkm): 破壊的変更にはなるが、Codec の並び順を Sora のドキュメントに合わせて変更する
 
     /**
+     * 映像の取得元を示します.
+     */
+    enum class CaptureType {
+        /** 端末内蔵のカメラ */
+        DEVICE_CAMERA,
+    }
+
+    /**
      * 利用できる映像コーデックを示します.
      */
     enum class Codec {

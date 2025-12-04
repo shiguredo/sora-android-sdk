@@ -15,13 +15,22 @@ class SoraMediaOption {
     }
 
     /**
-     * SoraMediaChannel.setVideoHardMute で CameraVideoCapturer.startCapture
-     * を呼び出す際に必要な引数をまとめるための data class です.
+     * SDK 内部で CameraVideoCapturer を生成・管理するためのオプションです.
+     *
+     * @param captureType 映像の取得元
+     * @param width 映像の幅
+     * @param height 映像の高さ
+     * @param frameRate 映像のフレームレート
+     * @param frontFacingFirst 複数のカメラがある場合にフロントカメラを優先するかどうか
+     * @param initialVideoHardMute Sora 接続開始時に映像をハードミュートするかどうか
      */
-    data class VideoCapturerStartParams(
-        val width: Int,
-        val height: Int,
-        val framerate: Int,
+    data class SoraCameraConfig(
+        val captureType: SoraVideoOption.CaptureType = SoraVideoOption.CaptureType.DEVICE_CAMERA,
+        var width: Int = 640,
+        var height: Int = 480,
+        var frameRate: Int = 30,
+        val frontFacingFirst: Boolean = true,
+        val initialVideoHardMute: Boolean = false,
     )
 
     internal var audioDownstreamEnabled = false
@@ -36,10 +45,8 @@ class SoraMediaOption {
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
 
-    internal var videoCapturerStartParams: VideoCapturerStartParams? = null
-
     internal val canVideoCapturerControllable: Boolean
-        get() = videoCapturerStartParams != null
+        get() = soraCameraConfig != null
 
     /**
      * 利用する VideoEncoderFactory を指定します.
@@ -60,7 +67,8 @@ class SoraMediaOption {
      */
     var softwareVideoEncoderOnly: Boolean = false
 
-    internal var videoCapturer: VideoCapturer? = null
+    private var videoCapturer: VideoCapturer? = null
+    internal var soraCameraConfig: SoraCameraConfig? = null
 
     internal var videoDownstreamContext: EglBase.Context? = null
     internal var videoUpstreamContext: EglBase.Context? = null
@@ -119,18 +127,33 @@ class SoraMediaOption {
      *
      * @param capturer `VideoCapturer` インスタンス
      * @param eglContext Egl コンテキスト
-     * @param capturerStartParams capturer の startCapture に渡すパラメーター
+     * @param cameraConfig カメラ設定
      */
     @JvmOverloads
     fun enableVideoUpstream(
         capturer: VideoCapturer,
         eglContext: EglBase.Context?,
-        capturerStartParams: VideoCapturerStartParams? = null,
+        cameraConfig: SoraCameraConfig? = null,
     ) {
         videoUpstreamEnabled = true
         videoCapturer = capturer
         videoUpstreamContext = eglContext
-        videoCapturerStartParams = capturerStartParams
+        soraCameraConfig = cameraConfig
+    }
+
+    /**
+     * 映像の配信を有効にします (カメラキャプチャを SDK 内部で生成します).
+     *
+     * @param eglContext Egl コンテキスト
+     * @param cameraConfig カメラ設定オプション
+     */
+    fun enableVideoUpstream(
+        eglContext: EglBase.Context?,
+        cameraConfig: SoraCameraConfig,
+    ) {
+        videoUpstreamEnabled = true
+        videoUpstreamContext = eglContext
+        soraCameraConfig = cameraConfig
     }
 
     /**
@@ -324,4 +347,9 @@ class SoraMediaOption {
         audioCodec == SoraAudioOption.Codec.DEFAULT &&
             audioBitrate == null &&
             audioOption.opusParams == null
+
+    /**
+     * ユーザー設定の VideoCapturer を取得します.
+     */
+    internal fun userSettingVideoCapturer(): VideoCapturer? = videoCapturer
 }

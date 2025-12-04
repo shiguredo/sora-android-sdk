@@ -37,6 +37,9 @@ import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
 
 interface PeerChannel {
+    // SoraMediaChannel からアクセスするためのプロパティ
+    val localVideoManager: RTCLocalVideoManager?
+
     fun handleInitialRemoteOffer(
         offer: String,
         mid: Map<String, String>?,
@@ -178,7 +181,7 @@ class PeerChannelImpl(
 
     private val sdpConstraints = componentFactory.createSDPConstraints()
     private val localAudioManager = componentFactory.createAudioManager()
-    private val localVideoManager = componentFactory.createVideoManager()
+    override val localVideoManager = componentFactory.createVideoManager(appContext)
 
     private var videoSender: RtpSender? = null
     private var audioSender: RtpSender? = null
@@ -632,6 +635,8 @@ class PeerChannelImpl(
         localVideoManager?.track?.let {
             localStream.addTrack(it)
         }
+        // CameraVideoCapturer を SDK 内で生成している場合はここでキャプチャを開始する
+        localVideoManager?.startOwnedCapture()
 
         SoraLogger.d(TAG, "localStream.audioTracks.size = ${localStream.audioTracks.size}")
         SoraLogger.d(TAG, "localStream.videoTracks.size = ${localStream.videoTracks.size}")
