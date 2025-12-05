@@ -52,21 +52,23 @@ class RTCLocalVideoManager(
     fun dispose() {
         SoraLogger.d(TAG, "dispose")
         if (isOwnedCapturer) {
-            SoraLogger.d(TAG, "stop owned capturer")
+            SoraLogger.d(TAG, "dispose owned VideoCapturer")
             /*
-                CameraCapturer.stopCapture() は SurfaceTextureHelper.dispose() より先に呼ぶ理由。
+              CameraCapturer.dispose() を SurfaceTextureHelper.dispose() より先に呼ぶ理由。
 
-                CameraCapturer は initialize() で SurfaceTextureHelper から Handler を受け取り、
-                cameraThreadHandler にセットしている。
-                SurfaceTextureHelper.dispose() を呼ぶと handler.getLooper().quit() が呼ばれ、
-                Handler に関連付いた Looper が終了する。
+              CameraCapturer は initialize() で SurfaceTextureHelper から
+              android.os.Handler を受け取り、cameraThreadHandler にセットしている。
 
-                CameraCapturer.stopCapture() は内部で cameraThreadHandler.post() を呼ぶが、
-                もし SurfaceTextureHelper.dispose() を先に呼んでしまうと、
-                stopCapture() 時点で Looper が終了済みのため、cameraThreadHandler.post() の
-                メッセージ送信に失敗し、MessageQueue の warning ログが出力されてしまう。
+              SurfaceTextureHelper.dispose() を呼ぶと handler.getLooper().quit() が呼ばれ、
+              Handler に関連付いた Looper が終了する。
+
+              CameraCapturer.dispose() (stopCapture() を呼ぶだけ) は内部で cameraThreadHandler.post() を呼ぶが、
+              事前に SurfaceTextureHelper.dispose() を呼んでいた場合、
+              stopCapture() 時点で cameraThreadHandler に関連付く Looper が終了済みのため、cameraThreadHandler.post() の
+              メッセージ送信に失敗し、warning ログが出力されてしまう。
+              これを防ぐために、。CameraCapturer.dispose() を先に呼ぶ。
              */
-            capturer.stopCapture()
+            capturer.dispose()
         }
 
         SoraLogger.d(TAG, "dispose surfaceTextureHelper")
