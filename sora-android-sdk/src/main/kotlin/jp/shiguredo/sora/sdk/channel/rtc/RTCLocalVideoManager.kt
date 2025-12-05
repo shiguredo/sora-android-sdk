@@ -66,7 +66,7 @@ class RTCLocalVideoManager(
               事前に SurfaceTextureHelper.dispose() を呼んでいた場合、
               stopCapture() 時点で cameraThreadHandler に関連付く Looper が終了済みのため、cameraThreadHandler.post() の
               メッセージ送信に失敗し、warning ログが出力されてしまう。
-              これを防ぐために、。CameraCapturer.dispose() を先に呼ぶ。
+              これを防ぐために、CameraCapturer.dispose() を先に呼ぶ。
              */
             capturer.dispose()
         }
