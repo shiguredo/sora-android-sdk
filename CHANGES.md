@@ -57,6 +57,8 @@
   - SimulcastRequestRid は NONE 、 R0 、 R1 、 R2 を指定できる
   - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
+- [ADD] SoraVideoOption に `SimulcastRequestRid` enum を追加する
+  - @zztkm
 
 ### misc
 
