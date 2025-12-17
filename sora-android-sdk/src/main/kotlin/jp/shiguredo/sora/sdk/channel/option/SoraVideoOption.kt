@@ -125,6 +125,7 @@ class SoraVideoOption {
         }
     }
 
+    // シグナリング接続時に指定する simulcast_rid に該当する enum。
     enum class SimulcastRid(
         private val value: String,
     ) {
@@ -147,6 +148,7 @@ class SoraVideoOption {
         override fun toString(): String = value
     }
 
+    // シグナリング接続時指定する simulcast_request_rid に該当する enum。
     enum class SimulcastRequestRid(
         private val value: String,
     ) {
