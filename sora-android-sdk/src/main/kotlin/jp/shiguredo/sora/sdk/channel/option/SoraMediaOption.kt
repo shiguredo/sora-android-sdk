@@ -41,6 +41,7 @@ class SoraMediaOption {
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
+    internal var simulcastRequestRid: SoraVideoOption.SimulcastRequestRid? = null
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
@@ -161,10 +162,24 @@ class SoraMediaOption {
      *
      * @param rid デフォルトで受信する映像の種類
      */
-    @JvmOverloads
-    fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
+    @Deprecated(
+        message = "シグナリング接続時の simulcast_rid 指定は 2027 年 12 月リリース予定の Sora にて廃止予定です。",
+        replaceWith = ReplaceWith("enableSimulcast(requestRid = null)"),
+    )
+    fun enableSimulcast(rid: SoraVideoOption.SimulcastRid?) {
         simulcastEnabled = true
         simulcastRid = rid
+    }
+
+    /**
+     * サイマルキャスト機能を有効にします.
+     *
+     * @param requestRid デフォルトで受信する映像の種類
+     */
+    @JvmOverloads
+    fun enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null) {
+        simulcastEnabled = true
+        simulcastRequestRid = requestRid
     }
 
     /**

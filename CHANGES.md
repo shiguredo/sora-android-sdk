@@ -17,6 +17,13 @@
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
   - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
   - @zztkm
+- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除する
+  - デフォルト値を用いた `enableSimulcast()` での呼び出しは `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を呼び出しているとコンパイラに認識されるようになる
+  - `enableSimulcast()` 呼び出し時の挙動に変更はない
+  - @zztkm
+- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨にする
+  - 移行先は `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)`
+  - @zztkm
 - [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
   - SDK 内部で CameraVideoCapturer を生成する場合に使用する
   - @zztkm
@@ -48,6 +55,11 @@
   - @zztkm
 - [ADD] PeerChannel に `localVideoManager: RTCLocalVideoManager?` プロパティを追加する
   - SoraMediaChannel から RTCLocalVideoManager に PeerChannel 経由でアクセスするためのプロパティ
+  - @zztkm
+- [ADD] `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を追加する
+  - シグナリング接続時にサイマルキャストを有効化し、視聴 rid を指定することができる
+  - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
+  - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
 
 ### misc

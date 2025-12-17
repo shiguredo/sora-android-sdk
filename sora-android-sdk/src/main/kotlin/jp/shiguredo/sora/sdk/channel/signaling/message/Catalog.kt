@@ -38,6 +38,8 @@ data class ConnectMessage(
     @SerializedName("simulcast") var simulcast: Boolean? = false,
     @SerializedName("simulcast_rid")
     var simulcastRid: String? = null,
+    @SerializedName("simulcast_request_rid")
+    var simulcastRequestRid: String? = null,
     @SerializedName("video") var video: Any? = null,
     @SerializedName("audio") var audio: Any? = null,
     @SerializedName("sora_client") val soraClient: String = SDKInfo.sdkInfo(),
