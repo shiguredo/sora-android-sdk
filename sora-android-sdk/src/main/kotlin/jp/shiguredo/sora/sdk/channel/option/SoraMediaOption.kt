@@ -163,7 +163,7 @@ class SoraMediaOption {
      * @param rid デフォルトで受信する映像の種類
      */
     @Deprecated(
-        message = "シグナリング接続時の simulcast_rid 指定は2027 年 12 月リリース予定の Sora にて廃止予定です。",
+        message = "シグナリング接続時の simulcast_rid 指定は 2027 年 12 月リリース予定の Sora にて廃止予定です。",
         replaceWith = ReplaceWith("enableSimulcast(requestRid = null)"),
     )
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid?) {
