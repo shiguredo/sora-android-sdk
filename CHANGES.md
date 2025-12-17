@@ -59,7 +59,6 @@
 - [ADD] `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を追加する
   - シグナリング接続時にサイマルキャストを有効化し、視聴 rid を指定することができる
   - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
-  - `SimulcastRequestRid` は NONE 、 R0 、 R1 、 R2 を指定できる
   - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
 
