@@ -199,7 +199,7 @@ class SoraMediaOption {
     ) {
         spotlightOption = option
         if (enableSimulcast) {
-            enableSimulcast(requestRid = null)
+            enableSimulcast()
         }
     }
 
