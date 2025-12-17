@@ -17,7 +17,11 @@
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
   - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
   - @zztkm
-- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` を非推奨にする
+- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除する
+  - デフォルト値を用いた `enableSimulcast()` での呼び出しは `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を呼び出しているとコンパイラに認識されるようになる
+  - `enableSimulcast()` 呼び出し時の挙動に変更はない
+  - @zztkm
+- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨にする
   - 移行先は `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)`
   - @zztkm
 - [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
