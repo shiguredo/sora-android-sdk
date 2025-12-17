@@ -41,6 +41,7 @@ class SoraMediaOption {
     internal var spotlightOption: SoraSpotlightOption? = null
     internal var simulcastEnabled = false
     internal var simulcastRid: SoraVideoOption.SimulcastRid? = null
+    internal var simulcastRequestRid: SoraVideoOption.SimulcastRequestRid? = null
 
     internal val spotlightEnabled: Boolean
         get() = spotlightOption != null
@@ -162,9 +163,31 @@ class SoraMediaOption {
      * @param rid デフォルトで受信する映像の種類
      */
     @JvmOverloads
+    @Deprecated(
+        message = "シグナリング接続時の simulcast_rid 指定は2027 年 12 月リリース予定の Sora にて廃止予定です。",
+        replaceWith = ReplaceWith("enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)"),
+    )
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
+        enableSimulcastInternal(simulcastRid = rid, simulcastRequestRid = null)
+    }
+
+    /**
+     * サイマルキャスト機能を有効にします.
+     *
+     * @param requestRid デフォルトで受信する映像の種類
+     */
+    fun enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null) {
+        enableSimulcastInternal(simulcastRid = null, simulcastRequestRid = requestRid)
+    }
+
+    // サイマルキャストを有効化し、指定された RID を設定する内部関数。
+    private fun enableSimulcastInternal(
+        simulcastRid: SoraVideoOption.SimulcastRid?,
+        simulcastRequestRid: SoraVideoOption.SimulcastRequestRid?,
+    ) {
         simulcastEnabled = true
-        simulcastRid = rid
+        simulcastRid?.let { this.simulcastRid = it }
+        simulcastRequestRid?.let { this.simulcastRequestRid = it }
     }
 
     /**
@@ -184,7 +207,7 @@ class SoraMediaOption {
     ) {
         spotlightOption = option
         if (enableSimulcast) {
-            enableSimulcast()
+            enableSimulcastInternal(simulcastRid = null, simulcastRequestRid = null)
         }
     }
 

@@ -139,6 +139,9 @@ class MessageConverter {
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = mediaOption.simulcastEnabled
                 msg.simulcastRid = mediaOption.simulcastRid?.toString()
+                if (role == SoraChannelRole.SENDRECV || role == SoraChannelRole.RECVONLY) {
+                    msg.simulcastRequestRid = mediaOption.simulcastRequestRid?.toString()
+                }
             }
 
             if (mediaOption.spotlightOption != null) {

@@ -926,6 +926,7 @@ class SoraMediaChannel
             |videoCapturer              = ${mediaOption.userSettingVideoCapturer()}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
+            |simulcastRequestRid        = ${mediaOption.simulcastRequestRid}
             |spotlightEnabled           = ${mediaOption.spotlightEnabled}
             |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}
             |audioStreamingLanguageCode = ${mediaOption.audioStreamingLanguageCode}
