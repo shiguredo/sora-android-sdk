@@ -168,7 +168,8 @@ class SoraMediaOption {
         replaceWith = ReplaceWith("enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)"),
     )
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null) {
-        enableSimulcastInternal(simulcastRid = rid, simulcastRequestRid = null)
+        simulcastEnabled = true
+        simulcastRid = rid
     }
 
     /**
@@ -177,17 +178,8 @@ class SoraMediaOption {
      * @param requestRid デフォルトで受信する映像の種類
      */
     fun enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null) {
-        enableSimulcastInternal(simulcastRid = null, simulcastRequestRid = requestRid)
-    }
-
-    // サイマルキャストを有効化し、指定された RID を設定する内部関数。
-    private fun enableSimulcastInternal(
-        simulcastRid: SoraVideoOption.SimulcastRid?,
-        simulcastRequestRid: SoraVideoOption.SimulcastRequestRid?,
-    ) {
         simulcastEnabled = true
-        simulcastRid?.let { this.simulcastRid = it }
-        simulcastRequestRid?.let { this.simulcastRequestRid = it }
+        simulcastRequestRid = requestRid
     }
 
     /**
@@ -207,7 +199,7 @@ class SoraMediaOption {
     ) {
         spotlightOption = option
         if (enableSimulcast) {
-            enableSimulcastInternal(simulcastRid = null, simulcastRequestRid = null)
+            enableSimulcast(requestRid = null)
         }
     }
 
