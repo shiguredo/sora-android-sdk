@@ -150,7 +150,6 @@ class SoraMediaChannel
         // rpc() メソッド内で DataChannel の状態をチェックしている
         private var rpcEnabled: Boolean = false
         private val rpcPendingResponses: MutableMap<String, RpcPendingRequest> = mutableMapOf()
-        private val rpcParser = SoraRpcParser()
 
         // DataChannel 経由のシグナリングが有効なら true
         // Sora から渡された値 (= offer メッセージ) を参照して更新している
@@ -1333,9 +1332,9 @@ class SoraMediaChannel
                 SoraLogger.w(TAG, "[channel:$role] RPC 無効のため受信メッセージを破棄します")
                 return
             }
-            val parsed = rpcParser.parse(message)
+            val parsed = SoraRpcParser.parse(message)
             if (parsed == null) {
-                SoraLogger.w(TAG, "[channel:$role] RPC メッセージの解析に失敗しました")
+                SoraLogger.w(TAG, "[channel:$role] RPC メッセージの解析に失敗しました message=$message")
                 return
             }
 

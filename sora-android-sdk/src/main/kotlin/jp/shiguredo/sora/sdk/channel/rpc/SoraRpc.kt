@@ -3,7 +3,6 @@ package jp.shiguredo.sora.sdk.channel.rpc
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import jp.shiguredo.sora.sdk.util.SoraLogger
 
 /**
  * JSON-RPC の id を表す型.
@@ -91,22 +90,16 @@ class SoraRpcException(
 /**
  * JSON-RPC メッセージパーサー.
  */
-class SoraRpcParser {
-    companion object {
-        private val TAG = SoraRpcParser::class.simpleName
-    }
-
+object SoraRpcParser {
     fun parse(text: String): SoraRpcMessage? {
         val jsonElement =
             try {
                 JsonParser.parseString(text)
             } catch (e: Exception) {
-                SoraLogger.w(TAG, "RPC メッセージの JSON 解析に失敗しました: ${e.message}")
                 return null
             }
 
         if (!jsonElement.isJsonObject) {
-            SoraLogger.w(TAG, "RPC メッセージの JSON が object ではありません")
             return null
         }
 
@@ -118,11 +111,14 @@ class SoraRpcParser {
             !jsonrpc.asJsonPrimitive.isString ||
             jsonrpc.asString != "2.0"
         ) {
-            SoraLogger.w(TAG, "RPC メッセージの jsonrpc が不正です: $jsonrpc")
             return null
         }
 
-        return parseResponse(json) ?: parseError(json) ?: parseNotification(json)
+        // JSON-RPC 2.0 の Response Object 種別は result/error のいずれかのキーを持つことで識別できるため、
+        // result (success) -> error の順で判定し、最初に一致したものをパース結果として返す。
+        // どちらにも該当しない場合は null を返す
+        val parsed = parseResponse(json) ?: parseError(json)
+        return parsed
     }
 
     private fun parseResponse(json: JsonObject): SoraRpcMessage.Response? {
@@ -170,33 +166,6 @@ class SoraRpcParser {
             }
         val id = parseId(json.get("id"))
         return SoraRpcMessage.Error(id, SoraRpcError(code = code, message = message, data = data))
-    }
-
-    private fun parseNotification(json: JsonObject): SoraRpcMessage.Notification? {
-        if (!json.has("method")) {
-            return null
-        }
-        val methodElement = json.get("method")
-        if (
-            methodElement == null ||
-            !methodElement.isJsonPrimitive ||
-            !methodElement.asJsonPrimitive.isString
-        ) {
-            return null
-        }
-        val id = json.get("id")
-        if (id != null && !id.isJsonNull) {
-            return null
-        }
-        val params =
-            json.get("params")?.let { element ->
-                if (element.isJsonNull) {
-                    null
-                } else {
-                    element
-                }
-            }
-        return SoraRpcMessage.Notification(methodElement.asString, params)
     }
 
     private fun parseId(element: JsonElement?): SoraRpcId? {
