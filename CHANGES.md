@@ -61,6 +61,11 @@
   - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
   - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
+- [ADD] RPC 機能を追加する
+  - この機能は Sora 2025.2.0 で実験的機能としてリリースされているため正式版では仕様が変更される可能性がある
+  - `SoraMediaChannel.rpc` で JSON-RPC 2.0 over DataChannel で一部の HTTP API を Sora Android SDK から直接呼び出す
+  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、`SoraMediaChannel.rpc` は null を返す
+  - @zztkm
 
 ### misc
 
