@@ -126,6 +126,7 @@ class SoraMediaChannel
             private val TAG = SoraMediaChannel::class.simpleName
 
             const val DEFAULT_TIMEOUT_SECONDS = 10L
+
             // RPC のデフォルトタイムアウトは 5 秒
             const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
@@ -1400,23 +1401,11 @@ class SoraMediaChannel
                     error =
                         SoraRpcError(
                             code = -1,
-                            message = rpcLocalErrorMessage(reason),
+                            message = reason.message,
                         ),
                 )
             pending.forEach { it.deferred.complete(error) }
         }
-
-        // TODO: 国際化対応が必要な場合は、エラーメッセージをリソース化する
-        private fun rpcLocalErrorMessage(reason: SoraRpcErrorReason): String =
-            when (reason) {
-                SoraRpcErrorReason.NOT_AVAILABLE -> "RPC が有効ではありません"
-                SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE -> "RPC 用 DataChannel が存在しません"
-                SoraRpcErrorReason.DATA_CHANNEL_CLOSED -> "RPC 用 DataChannel が開いていません"
-                SoraRpcErrorReason.PEER_UNAVAILABLE -> "PeerChannel が存在しません"
-                SoraRpcErrorReason.SEND_FAILED -> "RPC メッセージの送信に失敗しました"
-                SoraRpcErrorReason.TIMEOUT -> "RPC レスポンスがタイムアウトしました"
-                SoraRpcErrorReason.PARSE_ERROR -> "RPC メッセージの解析に失敗しました"
-            }
 
         private fun handleNotificationMessage(notification: NotificationMessage) {
             when (notification.eventType) {
@@ -1572,23 +1561,23 @@ class SoraMediaChannel
             timeoutMillis: Long = DEFAULT_RPC_TIMEOUT_MILLIS,
         ): SoraRpcResult? {
             if (!rpcEnabled) {
-                throw SoraRpcException(SoraRpcErrorReason.NOT_AVAILABLE, rpcLocalErrorMessage(SoraRpcErrorReason.NOT_AVAILABLE))
+                throw SoraRpcException(SoraRpcErrorReason.NOT_AVAILABLE, SoraRpcErrorReason.NOT_AVAILABLE.message)
             }
             val peerChannel =
                 peer
                     ?: throw SoraRpcException(
                         SoraRpcErrorReason.PEER_UNAVAILABLE,
-                        rpcLocalErrorMessage(SoraRpcErrorReason.PEER_UNAVAILABLE),
+                        SoraRpcErrorReason.PEER_UNAVAILABLE.message,
                     )
             val dataChannel =
                 findRpcDataChannel()
                     ?: throw SoraRpcException(
                         SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE,
-                        rpcLocalErrorMessage(SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE),
+                        SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE.message,
                     )
 
             if (dataChannel.state() != DataChannel.State.OPEN) {
-                throw SoraRpcException(SoraRpcErrorReason.DATA_CHANNEL_CLOSED, rpcLocalErrorMessage(SoraRpcErrorReason.DATA_CHANNEL_CLOSED))
+                throw SoraRpcException(SoraRpcErrorReason.DATA_CHANNEL_CLOSED, SoraRpcErrorReason.DATA_CHANNEL_CLOSED.message)
             }
 
             val id =
@@ -1604,7 +1593,7 @@ class SoraMediaChannel
                     try {
                         JsonParser.parseString(paramsJson)
                     } catch (e: Exception) {
-                        throw SoraRpcException(SoraRpcErrorReason.PARSE_ERROR, rpcLocalErrorMessage(SoraRpcErrorReason.PARSE_ERROR), e)
+                        throw SoraRpcException(SoraRpcErrorReason.PARSE_ERROR, SoraRpcErrorReason.PARSE_ERROR.message, e)
                     }
                 }
             val requestJson =
@@ -1631,7 +1620,13 @@ class SoraMediaChannel
 
             val succeeded = dataChannel.send(DataChannel.Buffer(buffer, true))
             if (!succeeded) {
-                val exception = SoraRpcException(SoraRpcErrorReason.SEND_FAILED, rpcLocalErrorMessage(SoraRpcErrorReason.SEND_FAILED))
+                val reason =
+                    if (dataChannel.state() != DataChannel.State.OPEN) {
+                        SoraRpcErrorReason.DATA_CHANNEL_CLOSED
+                    } else {
+                        SoraRpcErrorReason.SEND_FAILED
+                    }
+                val exception = SoraRpcException(reason, reason.message)
                 pendingKey?.let {
                     synchronized(rpcPendingResponses) {
                         rpcPendingResponses.remove(it)
@@ -1665,7 +1660,7 @@ class SoraMediaChannel
                         rpcPendingResponses.remove(key)
                     }
                 }
-                throw SoraRpcException(SoraRpcErrorReason.TIMEOUT, rpcLocalErrorMessage(SoraRpcErrorReason.TIMEOUT), e)
+                throw SoraRpcException(SoraRpcErrorReason.TIMEOUT, SoraRpcErrorReason.TIMEOUT.message, e)
             } catch (e: CancellationException) {
                 // 呼び出し元のキャンセル時は pending を解放してリークを防ぐ
                 pendingKey?.let { key ->

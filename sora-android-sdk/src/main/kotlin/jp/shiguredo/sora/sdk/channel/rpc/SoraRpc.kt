@@ -3,6 +3,7 @@ package jp.shiguredo.sora.sdk.channel.rpc
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import jp.shiguredo.sora.sdk.util.SoraLogger
 
 /**
  * JSON-RPC の id を表す型.
@@ -66,14 +67,16 @@ sealed class SoraRpcResult {
 /**
  * RPC 呼び出し時のローカルエラー要因.
  */
-enum class SoraRpcErrorReason {
-    NOT_AVAILABLE,
-    DATA_CHANNEL_UNAVAILABLE,
-    DATA_CHANNEL_CLOSED,
-    PEER_UNAVAILABLE,
-    SEND_FAILED,
-    TIMEOUT,
-    PARSE_ERROR,
+enum class SoraRpcErrorReason(
+    val message: String,
+) {
+    NOT_AVAILABLE("RPC is not available"),
+    DATA_CHANNEL_UNAVAILABLE("RPC DataChannel is not available"),
+    DATA_CHANNEL_CLOSED("RPC DataChannel is not open"),
+    PEER_UNAVAILABLE("PeerChannel is not available"),
+    SEND_FAILED("Failed to send RPC message"),
+    TIMEOUT("RPC response timed out"),
+    PARSE_ERROR("Failed to parse RPC message"),
 }
 
 /**
@@ -83,22 +86,43 @@ class SoraRpcException(
     val reason: SoraRpcErrorReason,
     message: String? = null,
     cause: Throwable? = null,
-) : Exception(message ?: reason.name, cause)
+) : Exception(message ?: reason.message, cause)
 
 /**
  * JSON-RPC メッセージパーサー.
  */
 class SoraRpcParser {
+    companion object {
+        private val TAG = SoraRpcParser::class.simpleName
+    }
+
     fun parse(text: String): SoraRpcMessage? {
-        return try {
-            val json = JsonParser.parseString(text).asJsonObject
-            if (json.get("jsonrpc")?.asString != "2.0") {
+        val jsonElement =
+            try {
+                JsonParser.parseString(text)
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "RPC メッセージの JSON 解析に失敗しました: ${e.message}")
                 return null
             }
-            parseResponse(json) ?: parseError(json)
-        } catch (e: Exception) {
-            null
+
+        if (!jsonElement.isJsonObject) {
+            SoraLogger.w(TAG, "RPC メッセージの JSON が object ではありません")
+            return null
         }
+
+        val json = jsonElement.asJsonObject
+        val jsonrpc = json.get("jsonrpc")
+        if (
+            jsonrpc == null ||
+            !jsonrpc.isJsonPrimitive ||
+            !jsonrpc.asJsonPrimitive.isString ||
+            jsonrpc.asString != "2.0"
+        ) {
+            SoraLogger.w(TAG, "RPC メッセージの jsonrpc が不正です: $jsonrpc")
+            return null
+        }
+
+        return parseResponse(json) ?: parseError(json) ?: parseNotification(json)
     }
 
     private fun parseResponse(json: JsonObject): SoraRpcMessage.Response? {
@@ -113,9 +137,29 @@ class SoraRpcParser {
         if (!json.has("error")) {
             return null
         }
-        val errorObject = json.getAsJsonObject("error")
-        val code = errorObject.get("code")?.asInt ?: return null
-        val message = errorObject.get("message")?.asString ?: return null
+        val errorElement = json.get("error")
+        if (errorElement == null || !errorElement.isJsonObject) {
+            return null
+        }
+        val errorObject = errorElement.asJsonObject
+        val codeElement = errorObject.get("code")
+        val messageElement = errorObject.get("message")
+        if (
+            codeElement == null ||
+            !codeElement.isJsonPrimitive ||
+            !codeElement.asJsonPrimitive.isNumber
+        ) {
+            return null
+        }
+        if (
+            messageElement == null ||
+            !messageElement.isJsonPrimitive ||
+            !messageElement.asJsonPrimitive.isString
+        ) {
+            return null
+        }
+        val code = codeElement.asInt
+        val message = messageElement.asString
         val data =
             errorObject.get("data")?.let { element ->
                 if (element.isJsonNull) {
@@ -126,6 +170,33 @@ class SoraRpcParser {
             }
         val id = parseId(json.get("id"))
         return SoraRpcMessage.Error(id, SoraRpcError(code = code, message = message, data = data))
+    }
+
+    private fun parseNotification(json: JsonObject): SoraRpcMessage.Notification? {
+        if (!json.has("method")) {
+            return null
+        }
+        val methodElement = json.get("method")
+        if (
+            methodElement == null ||
+            !methodElement.isJsonPrimitive ||
+            !methodElement.asJsonPrimitive.isString
+        ) {
+            return null
+        }
+        val id = json.get("id")
+        if (id != null && !id.isJsonNull) {
+            return null
+        }
+        val params =
+            json.get("params")?.let { element ->
+                if (element.isJsonNull) {
+                    null
+                } else {
+                    element
+                }
+            }
+        return SoraRpcMessage.Notification(methodElement.asString, params)
     }
 
     private fun parseId(element: JsonElement?): SoraRpcId? {
