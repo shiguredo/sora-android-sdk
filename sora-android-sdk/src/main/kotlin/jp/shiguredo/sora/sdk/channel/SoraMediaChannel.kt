@@ -126,7 +126,8 @@ class SoraMediaChannel
             private val TAG = SoraMediaChannel::class.simpleName
 
             const val DEFAULT_TIMEOUT_SECONDS = 10L
-            const val DEFAULT_RPC_TIMEOUT_MILLIS = 10_000L
+            // RPC のデフォルトタイムアウトは 5 秒
+            const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
         }
 
