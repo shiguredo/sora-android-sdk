@@ -16,7 +16,6 @@ import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcError
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcErrorReason
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcException
-import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcId
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcMessage
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcParser
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcResult
@@ -62,7 +61,7 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Timer
 import java.util.TimerTask
-import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
 
@@ -149,7 +148,8 @@ class SoraMediaChannel
         // true の場合でも、実際に RPC を呼び出せるかは DataChannel の状態に依存する
         // rpc() メソッド内で DataChannel の状態をチェックしている
         private var rpcEnabled: Boolean = false
-        private val rpcPendingResponses: MutableMap<String, RpcPendingRequest> = mutableMapOf()
+        private val rpcPendingResponses: MutableMap<Long, RpcPendingRequest> = mutableMapOf()
+        private val rpcRequestIdCounter = AtomicLong(0L)
 
         // DataChannel 経由のシグナリングが有効なら true
         // Sora から渡された値 (= offer メッセージ) を参照して更新している
@@ -1340,14 +1340,14 @@ class SoraMediaChannel
 
             when (parsed) {
                 is SoraRpcMessage.Response -> {
-                    val pending = parsed.id.key()?.let { completeRpcPending(it, parsed) }
+                    val pending = completeRpcPending(parsed.id, parsed)
                     if (pending == null) {
                         SoraLogger.w(TAG, "[channel:$role] RPC 応答の待機中エントリが存在しません id=${parsed.id}")
                     }
                 }
 
                 is SoraRpcMessage.Error -> {
-                    val pending = parsed.id.key()?.let { completeRpcPending(it, parsed) }
+                    val pending = parsed.id?.let { completeRpcPending(it, parsed) }
                     if (pending == null) {
                         SoraLogger.w(TAG, "[channel:$role] RPC エラーの待機中エントリが存在しません id=${parsed.id}")
                     }
@@ -1373,7 +1373,7 @@ class SoraMediaChannel
         }
 
         private fun completeRpcPending(
-            key: String,
+            key: Long,
             message: SoraRpcMessage,
         ): RpcPendingRequest? {
             val pending =
@@ -1581,9 +1581,9 @@ class SoraMediaChannel
 
             val id =
                 if (isNotificationRequest) {
-                    SoraRpcId.None
+                    null
                 } else {
-                    SoraRpcId.StringId(UUID.randomUUID().toString())
+                    rpcRequestIdCounter.incrementAndGet()
                 }
             val paramsElement: JsonElement? =
                 if (paramsJson == null) {
@@ -1600,18 +1600,13 @@ class SoraMediaChannel
                     addProperty("jsonrpc", "2.0")
                     addProperty("method", method)
                     paramsElement?.let { add("params", it) }
-                    when (id) {
-                        is SoraRpcId.StringId -> addProperty("id", id.value)
-                        is SoraRpcId.NumberId -> addProperty("id", id.value)
-                        SoraRpcId.None -> Unit
-                    }
+                    id?.let { addProperty("id", it) }
                 }
             val json = MessageConverter.gson.toJson(requestJson)
             val buffer = peerChannel.zipBufferIfNeeded("rpc", StandardCharsets.UTF_8.encode(json))
 
-            val pendingKey = id.key()
-            val deferred = pendingKey?.let { CompletableDeferred<SoraRpcMessage>() }
-            pendingKey?.let {
+            val deferred = id?.let { CompletableDeferred<SoraRpcMessage>() }
+            id?.let {
                 synchronized(rpcPendingResponses) {
                     rpcPendingResponses[it] = RpcPendingRequest(deferred = deferred!!)
                 }
@@ -1626,7 +1621,7 @@ class SoraMediaChannel
                         SoraRpcErrorReason.SEND_FAILED
                     }
                 val exception = SoraRpcException(reason, reason.message)
-                pendingKey?.let {
+                id?.let {
                     synchronized(rpcPendingResponses) {
                         rpcPendingResponses.remove(it)
                     }
@@ -1635,7 +1630,7 @@ class SoraMediaChannel
                 throw exception
             }
 
-            if (id is SoraRpcId.None) {
+            if (id == null) {
                 return null
             }
 
@@ -1648,7 +1643,7 @@ class SoraMediaChannel
             } catch (e: TimeoutCancellationException) {
                 // タイムアウト時は pending リクエストを削除する
                 // (正常にレスポンスが届いた場合は completeRpcPending で既に削除されている)
-                pendingKey?.let { key ->
+                id?.let { key ->
                     // deferred が既に完了している場合は、レスポンスが届いているため
                     // タイムアウト例外を投げずに結果を返す
                     if (deferred!!.isCompleted) {
@@ -1662,7 +1657,7 @@ class SoraMediaChannel
                 throw SoraRpcException(SoraRpcErrorReason.TIMEOUT, SoraRpcErrorReason.TIMEOUT.message, e)
             } catch (e: CancellationException) {
                 // 呼び出し元のキャンセル時は pending を解放してリークを防ぐ
-                pendingKey?.let { key ->
+                id?.let { key ->
                     synchronized(rpcPendingResponses) {
                         rpcPendingResponses.remove(key)
                     }

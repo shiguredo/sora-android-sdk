@@ -5,21 +5,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 
 /**
- * JSON-RPC の id を表す型.
- */
-sealed class SoraRpcId {
-    data object None : SoraRpcId()
-
-    data class StringId(
-        val value: String,
-    ) : SoraRpcId()
-
-    data class NumberId(
-        val value: Long,
-    ) : SoraRpcId()
-}
-
-/**
  * JSON-RPC エラー.
  */
 data class SoraRpcError(
@@ -33,12 +18,12 @@ data class SoraRpcError(
  */
 sealed class SoraRpcMessage {
     data class Response(
-        val id: SoraRpcId,
+        val id: Long,
         val result: JsonElement?,
     ) : SoraRpcMessage()
 
     data class Error(
-        val id: SoraRpcId?,
+        val id: Long?,
         val error: SoraRpcError,
     ) : SoraRpcMessage()
 
@@ -53,12 +38,12 @@ sealed class SoraRpcMessage {
  */
 sealed class SoraRpcResult {
     data class Success(
-        val id: SoraRpcId,
+        val id: Long,
         val result: String?,
     ) : SoraRpcResult()
 
     data class Error(
-        val id: SoraRpcId?,
+        val id: Long?,
         val error: SoraRpcError,
     ) : SoraRpcResult()
 }
@@ -168,17 +153,15 @@ object SoraRpcParser {
         return SoraRpcMessage.Error(id, SoraRpcError(code = code, message = message, data = data))
     }
 
-    private fun parseId(element: JsonElement?): SoraRpcId? {
+    private fun parseId(element: JsonElement?): Long? {
         if (element == null || element.isJsonNull) {
             return null
         }
 
         return try {
             when {
-                element.isJsonPrimitive && element.asJsonPrimitive.isString ->
-                    SoraRpcId.StringId(element.asString)
                 element.isJsonPrimitive && element.asJsonPrimitive.isNumber ->
-                    SoraRpcId.NumberId(element.asLong)
+                    element.asLong
                 else -> null
             }
         } catch (e: Exception) {
@@ -186,10 +169,3 @@ object SoraRpcParser {
         }
     }
 }
-
-internal fun SoraRpcId?.key(): String? =
-    when (this) {
-        is SoraRpcId.NumberId -> value.toString()
-        is SoraRpcId.StringId -> value
-        else -> null
-    }
