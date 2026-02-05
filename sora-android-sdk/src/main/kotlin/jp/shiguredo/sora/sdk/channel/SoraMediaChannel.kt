@@ -1619,6 +1619,7 @@ class SoraMediaChannel
             }
 
             if (id == null) {
+                // この場合、リクエストは Notification なので null (返り値なし) を返す
                 return null
             }
 
