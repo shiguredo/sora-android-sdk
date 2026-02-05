@@ -71,17 +71,17 @@ class SoraRpcException(
  * JSON-RPC メッセージパーサー.
  */
 object SoraRpcParser {
-    fun parse(text: String): SoraRpcMessage? {
-        // Sora から送られてきたデータが壊れていなければ null を返すことはない想定
+    fun parse(text: String): SoraRpcMessage {
+        // Sora から送られてきたデータが壊れていなければ例外は発生しない想定
         val jsonElement =
             try {
                 JsonParser.parseString(text)
             } catch (e: Exception) {
-                return null
+                throw createParseException(text, e)
             }
 
         if (!jsonElement.isJsonObject) {
-            return null
+            throw createParseException(text, IllegalArgumentException("RPC message must be a JSON object"))
         }
 
         val json = jsonElement.asJsonObject
@@ -92,14 +92,17 @@ object SoraRpcParser {
             !jsonrpc.asJsonPrimitive.isString ||
             jsonrpc.asString != "2.0"
         ) {
-            return null
+            throw createParseException(text, IllegalArgumentException("jsonrpc must be \"2.0\""))
         }
 
         // JSON-RPC 2.0 の Response Object 種別は result/error のいずれかのキーを持つことで識別できるため、
         // result (success) -> error の順で判定し、最初に一致したものをパース結果として返す。
-        // どちらにも該当しない場合は null を返す (Sora から受信したデータなので該当なしのケースは基本的にない想定
+        // どちらにも該当しない場合は例外を返す (Sora から受信したデータなので該当なしのケースは基本的にない想定)
         val parsed = parseResponse(json) ?: parseError(json)
-        return parsed
+        return parsed ?: throw createParseException(
+            text,
+            IllegalArgumentException("RPC message must contain result or error"),
+        )
     }
 
     private fun parseResponse(json: JsonObject): SoraRpcMessage.Response? {
@@ -164,4 +167,14 @@ object SoraRpcParser {
             null
         }
     }
+
+    private fun createParseException(
+        text: String,
+        cause: Throwable? = null,
+    ): SoraRpcException =
+        SoraRpcException(
+            SoraRpcErrorReason.PARSE_ERROR,
+            "Failed to parse RPC message: message=$text",
+            cause,
+        )
 }

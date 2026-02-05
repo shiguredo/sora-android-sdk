@@ -1331,11 +1331,16 @@ class SoraMediaChannel
                 SoraLogger.w(TAG, "[channel:$role] RPC 無効のため受信メッセージを破棄します")
                 return
             }
-            val parsed = SoraRpcParser.parse(message)
-            if (parsed == null) {
-                SoraLogger.w(TAG, "[channel:$role] RPC メッセージの解析に失敗しました message=$message")
-                return
-            }
+            val parsed =
+                try {
+                    SoraRpcParser.parse(message)
+                } catch (e: SoraRpcException) {
+                    SoraLogger.w(
+                        TAG,
+                        "[channel:$role] RPC メッセージの解析に失敗しました message=$message error=${e.message}",
+                    )
+                    return
+                }
 
             when (parsed) {
                 is SoraRpcMessage.Response -> {
