@@ -125,8 +125,9 @@ class SoraMediaChannel
 
             const val DEFAULT_TIMEOUT_SECONDS = 10L
 
-            // RPC のデフォルトタイムアウトは 5 秒
-            const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
+            // RPC のデフォルトタイムアウト (5 秒)
+            // この定数を使用する withTimeout がミリ秒指定のためミリ秒表現になっている
+            private const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
         }
 
@@ -1562,7 +1563,7 @@ class SoraMediaChannel
                         SoraRpcErrorReason.PEER_UNAVAILABLE.message,
                     )
             val dataChannel =
-                findRpcDataChannel()
+                dataChannels["rpc"]
                     ?: throw SoraRpcException(
                         SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE,
                         SoraRpcErrorReason.DATA_CHANNEL_UNAVAILABLE.message,
@@ -1661,8 +1662,6 @@ class SoraMediaChannel
                 throw e
             }
         }
-
-        private fun findRpcDataChannel(): DataChannel? = dataChannels["rpc"]
 
         private fun processRpcResponse(response: SoraRpcMessage): SoraRpcResult =
             when (response) {
