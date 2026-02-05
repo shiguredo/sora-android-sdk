@@ -72,6 +72,7 @@ class SoraRpcException(
  */
 object SoraRpcParser {
     fun parse(text: String): SoraRpcMessage? {
+        // Sora から送られてきたデータが壊れていなければ null を返すことはない想定
         val jsonElement =
             try {
                 JsonParser.parseString(text)
@@ -96,7 +97,7 @@ object SoraRpcParser {
 
         // JSON-RPC 2.0 の Response Object 種別は result/error のいずれかのキーを持つことで識別できるため、
         // result (success) -> error の順で判定し、最初に一致したものをパース結果として返す。
-        // どちらにも該当しない場合は null を返す
+        // どちらにも該当しない場合は null を返す (Sora から受信したデータなので該当なしのケースは基本的にない想定
         val parsed = parseResponse(json) ?: parseError(json)
         return parsed
     }
