@@ -64,10 +64,9 @@
 - [ADD] RPC 機能を追加する
   - この機能は Sora 2025.2.0 で実験的機能としてリリースされているため正式版では仕様が変更される可能性がある
   - `SoraMediaChannel.rpc` で JSON-RPC 2.0 over DataChannel により一部の HTTP API を Sora Android SDK から直接呼び出す
-  - offer の `rpc_methods` を受信して RPC の有効可否を判定する
-  - 失敗時は `SoraRpcException` を送出し、`SoraRpcErrorReason` で原因を識別する
+    - 呼び出し失敗時は `SoraRpcException` を送出し、`SoraRpcErrorReason` で原因を識別する
   - デフォルトのタイムアウトは 5 秒で、`timeoutMillis` により変更できる
-  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、`SoraMediaChannel.rpc` は null を返す
+  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、レスポンス不要として `SoraMediaChannel.rpc` は null を返す
   - @zztkm
 
 ### misc
