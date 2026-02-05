@@ -16,7 +16,7 @@ data class SoraRpcError(
 /**
  * RPC 受信メッセージ.
  */
-sealed class SoraRpcMessage {
+internal sealed class SoraRpcMessage {
     data class Response(
         val id: Long,
         val result: JsonElement?,
@@ -70,7 +70,7 @@ class SoraRpcException(
 /**
  * JSON-RPC メッセージパーサー.
  */
-object SoraRpcParser {
+internal object SoraRpcParser {
     fun parse(text: String): SoraRpcMessage {
         // Sora から送られてきたデータが壊れていなければ例外は発生しない想定
         val jsonElement =
