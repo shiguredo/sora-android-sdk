@@ -1388,16 +1388,10 @@ class SoraMediaChannel
                     rpcPendingResponses.clear()
                     values
                 }
-            val error =
-                SoraRpcMessage.Error(
-                    id = null,
-                    error =
-                        SoraRpcError(
-                            code = -1,
-                            message = reason.message,
-                        ),
-                )
-            pending.forEach { it.deferred.complete(error) }
+            pending.forEach { pendingRequest ->
+                val exception = SoraRpcException(reason, reason.message)
+                pendingRequest.deferred.completeExceptionally(exception)
+            }
         }
 
         private fun handleNotificationMessage(notification: NotificationMessage) {
