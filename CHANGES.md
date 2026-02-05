@@ -66,6 +66,12 @@
 
 - [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
   - @zztkm
+- [ADD] pre-commit を導入する
+  - .pre-commit-config.yaml ファイルを追加する
+  - コミット時に `./gradlew ktlintFormat` と `./gradlew ktlintCheck` を実行するように設定する
+  - ツールは prek を利用することを前提とする
+    - https://github.com/j178/prek
+  - @zztkm
 
 
 ## 2025.3.0
