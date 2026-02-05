@@ -26,11 +26,6 @@ sealed class SoraRpcMessage {
         val id: Long?,
         val error: SoraRpcError,
     ) : SoraRpcMessage()
-
-    data class Notification(
-        val method: String,
-        val params: JsonElement?,
-    ) : SoraRpcMessage()
 }
 
 /**

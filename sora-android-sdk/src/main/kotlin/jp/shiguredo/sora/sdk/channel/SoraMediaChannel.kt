@@ -1351,11 +1351,6 @@ class SoraMediaChannel
                         SoraLogger.w(TAG, "[channel:$role] RPC エラーの待機中エントリが存在しません id=${parsed.id}")
                     }
                 }
-
-                is SoraRpcMessage.Notification -> {
-                    // SDK は Notification を受信しない想定のため、何もしない
-                    SoraLogger.w(TAG, "[channel:$role] 想定外の Notification を受信しました method=${parsed.method}")
-                }
             }
         }
 
@@ -1689,11 +1684,6 @@ class SoraMediaChannel
                     SoraRpcResult.Error(
                         id = response.id,
                         error = response.error,
-                    )
-                is SoraRpcMessage.Notification ->
-                    throw SoraRpcException(
-                        SoraRpcErrorReason.PARSE_ERROR,
-                        "RPC レスポンスとして Notification を受信しました",
                     )
             }
 
