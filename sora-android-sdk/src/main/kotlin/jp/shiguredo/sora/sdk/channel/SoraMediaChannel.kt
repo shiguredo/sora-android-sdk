@@ -19,7 +19,6 @@ import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcException
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcMessage
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcParser
 import jp.shiguredo.sora.sdk.channel.rpc.SoraRpcResult
-import jp.shiguredo.sora.sdk.channel.rpc.key
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannel
 import jp.shiguredo.sora.sdk.channel.rtc.PeerChannelImpl
 import jp.shiguredo.sora.sdk.channel.rtc.PeerNetworkConfig
