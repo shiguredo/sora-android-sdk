@@ -1573,9 +1573,8 @@ class SoraMediaChannel
                 throw SoraRpcException(SoraRpcErrorReason.DATA_CHANNEL_CLOSED, SoraRpcErrorReason.DATA_CHANNEL_CLOSED.message)
             }
 
-            // 誤って並列で実行される別々のリクエストに同じ id を指定
-            // してしまうミスを防ぐために id は SDK 内部で自動採番する。
-            // SDK 利用者側からは指定できない。
+            // ID は一意性が必須で、重複すると rpcPendingResponses の待機が上書きされ、誤った対応付けや待機破綻が起きる。
+            // そのため SDK 利用者側からは指定させない。
             val id =
                 if (isNotificationRequest) {
                     null
