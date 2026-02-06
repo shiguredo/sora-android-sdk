@@ -11,6 +11,10 @@
 
 ## develop
 
+- [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
+  - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
+  - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingMessageType` を追加する
+  - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm

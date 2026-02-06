@@ -1,5 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
+import jp.shiguredo.sora.sdk.channel.SoraSignalingDirection
+import jp.shiguredo.sora.sdk.channel.SoraSignalingMessageType
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -71,6 +73,12 @@ interface SignalingChannel {
 
         fun onRedirect(location: String)
 
+        fun onSignalingMessage(
+            direction: SoraSignalingDirection,
+            type: SoraSignalingMessageType,
+            rawMessage: String,
+        ) {}
+
         fun getStats(handler: (RTCStatsReport?) -> Unit)
     }
 }
@@ -102,6 +110,20 @@ class SignalingChannelImpl
     ) : SignalingChannel {
         companion object {
             private val TAG = SignalingChannelImpl::class.simpleName
+
+            private val SIGNALING_TYPES_FOR_CALLBACK =
+                setOf(
+                    "offer",
+                    "switched",
+                    "update",
+                    "re-offer",
+                    "redirect",
+                    "connect",
+                    "answer",
+                    "candidate",
+                    "disconnect",
+                    "re-answer",
+                )
         }
 
         private val client: OkHttpClient
@@ -232,6 +254,49 @@ class SignalingChannelImpl
             return client.newWebSocket(request, webSocketListener)
         }
 
+        private fun shouldNotifySignalingMessage(signalingType: String): Boolean = SIGNALING_TYPES_FOR_CALLBACK.contains(signalingType)
+
+        private fun notifyReceivedSignalingMessageIfNeeded(
+            signalingType: String,
+            rawMessage: String,
+        ) {
+            if (!shouldNotifySignalingMessage(signalingType)) {
+                return
+            }
+            listener?.onSignalingMessage(
+                SoraSignalingDirection.RECEIVED,
+                SoraSignalingMessageType.WEBSOCKET,
+                rawMessage,
+            )
+        }
+
+        private fun notifySentSignalingMessageIfNeeded(rawMessage: String) {
+            val signalingType =
+                try {
+                    MessageConverter.parseType(rawMessage)
+                } catch (_: Exception) {
+                    null
+                } ?: return
+
+            if (!shouldNotifySignalingMessage(signalingType)) {
+                return
+            }
+            listener?.onSignalingMessage(
+                SoraSignalingDirection.SENT,
+                SoraSignalingMessageType.WEBSOCKET,
+                rawMessage,
+            )
+        }
+
+        private fun sendMessageOverWebSocket(rawMessage: String) {
+            ws?.let {
+                val sent = it.send(rawMessage)
+                if (sent) {
+                    notifySentSignalingMessageIfNeeded(rawMessage)
+                }
+            }
+        }
+
         override fun sendAnswer(sdp: String) {
             SoraLogger.d(TAG, "[signaling:$role] -> answer")
 
@@ -240,10 +305,8 @@ class SignalingChannelImpl
                 return
             }
 
-            ws?.let {
-                val msg = MessageConverter.buildAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg)
         }
 
         override fun sendUpdateAnswer(sdp: String) {
@@ -256,10 +319,8 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg)
         }
 
         override fun sendReAnswer(sdp: String) {
@@ -272,10 +333,8 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildReAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildReAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg)
         }
 
         override fun sendCandidate(sdp: String) {
@@ -288,19 +347,15 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildCandidateMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildCandidateMessage(sdp)
+            sendMessageOverWebSocket(msg)
         }
 
         override fun sendDisconnect(disconnectReason: SoraDisconnectReason) {
             SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
-            ws?.let {
-                val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
-                SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
-                it.send(disconnectMessage)
-            }
+            val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
+            SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
+            sendMessageOverWebSocket(disconnectMessage)
         }
 
         override fun disconnect(disconnectReason: SoraDisconnectReason?) {
@@ -344,7 +399,7 @@ class SignalingChannelImpl
                         forwardingFilterOption = forwardingFilterOption,
                         forwardingFiltersOption = forwardingFiltersOption,
                     )
-                it.send(message)
+                sendMessageOverWebSocket(message)
             }
         }
 
@@ -525,8 +580,9 @@ class SignalingChannelImpl
 
                         text.let {
                             val json = it
-                            MessageConverter.parseType(json)?.let {
-                                when (it) {
+                            MessageConverter.parseType(json)?.let { signalingType ->
+                                notifyReceivedSignalingMessageIfNeeded(signalingType, json)
+                                when (signalingType) {
                                     "offer" -> onOfferMessage(json)
                                     "switched" -> onSwitchedMessage(json)
                                     "ping" -> onPingMessage(json)
