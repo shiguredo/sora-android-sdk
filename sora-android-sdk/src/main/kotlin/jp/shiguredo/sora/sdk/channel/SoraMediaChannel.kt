@@ -148,6 +148,8 @@ class SoraMediaChannel
         // true の場合でも、実際に RPC を呼び出せるかは DataChannel の状態に依存する
         // rpc() メソッド内で DataChannel の状態をチェックしている
         private var rpcEnabled: Boolean = false
+
+        // JSON-RPC 2.0 のリクエストとレスポンスを紐付けるためのマップ
         private val rpcPendingResponses: MutableMap<Long, RpcPendingRequest> = mutableMapOf()
         private val rpcRequestIdCounter = AtomicLong(0L)
 
@@ -1573,8 +1575,9 @@ class SoraMediaChannel
                 throw SoraRpcException(SoraRpcErrorReason.DATA_CHANNEL_CLOSED, SoraRpcErrorReason.DATA_CHANNEL_CLOSED.message)
             }
 
-            // ID は一意性が必須で、重複すると rpcPendingResponses の待機が上書きされ、誤った対応付けや待機破綻が起きる。
-            // そのため SDK 利用者側からは指定させない。
+            // サーバに送信するリクエストオブジェクトと受信するレスポンスオブジェクトの対応付けを ID で管理しているため、
+            // ID の一意性を保つために SoraMediaChannel 内で採番する。
+            // そのため SDK 利用者側からは ID を指定させない。
             val id =
                 if (isNotificationRequest) {
                     null
