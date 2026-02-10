@@ -63,10 +63,22 @@
   - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
   - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
+- [ADD] RPC 機能を追加する
+  - この機能は Sora 2025.2.0 で実験的機能としてリリースされているため正式版では仕様が変更される可能性がある
+  - `SoraMediaChannel.rpc` で JSON-RPC 2.0 over DataChannel により一部の HTTP API を Sora Android SDK から直接呼び出す
+    - 呼び出し失敗時は `SoraRpcException` を送出し、`SoraRpcErrorReason` で原因を識別する
+  - デフォルトのタイムアウトは 5 秒で、`timeoutMillis` により変更できる
+  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、レスポンス不要として `SoraMediaChannel.rpc` は null を返す
+  - @zztkm
 
 ### misc
 
 - [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
+  - @zztkm
+- [UPDATE] .gitignore に Android Studio 関連の除外設定を追加する
+  - `.idea/AndroidProjectSystem.xml`
+  - `.idea/runConfigurations.xml`
+  - `.idea/copilot.data.migration*.xml`
   - @zztkm
 - [ADD] pre-commit を導入する
   - .pre-commit-config.yaml ファイルを追加する
