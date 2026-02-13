@@ -24,12 +24,9 @@ Please read https://github.com/shiguredo/oss before use.
 - [WebRTC 統計情報](https://www.w3.org/TR/webrtc-stats/) の取得に対応
 - 回線が不安定になった際、解像度とフレームレートどちらを維持するかの設定をする [DegradationPreference](https://w3c.github.io/mst-content-hint/#degradation-preference-when-encoding) に対応
   - `MAINTAIN_FRAMERATE` / `MAINTAIN_RESOLUTION` / `BALANCED` が指定できる
-- WebSocket と DataChannel の両方のシグナリングに対応
-- シグナリングのメタデータ付与、プロキシ指定に対応
-- DataChannel を利用したリアルタイムメッセージングに対応
-- DataChannel を利用した JSON-RPC 2.0 呼び出しで Sora API 実行できる
-- 映像コーデック `H.264` / `H.265` / `VP8` / `VP9` / `AV1` に対応
-- サイマルキャストに対応
+- 映像コーデック `VP8` / `VP9` / `AV1` / `H.264` / `H.265` に対応
+  - `H.264` と `H.265` はハードウェアデコーダー/エンコーダーに対応
+  - `VP9` と `AV1` は対応端末であればハードウェアデコーダー/エンコーダーを利用可能
 - 音声・映像のプライバシーインジケーターを消灯するミュートを利用できる
 - フロント / リアカメラ切り替えとキャプチャフォーマット変更に対応
 - 受信した音声データを PCM 形式で取得できる
