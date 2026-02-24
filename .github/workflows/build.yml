@@ -23,7 +23,7 @@ permissions:
 jobs:
   build:
 
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v6
@@ -42,8 +42,13 @@ jobs:
         run: ./gradlew build
       - name: Lint Check
         run: ./gradlew ktlintCheck
+
+  slack_notify:
+    needs: [build]
+    runs-on: ubuntu-slim
+    if: always()
+    steps:
       - name: Slack Notification
-        if: always()
         uses: shiguredo/github-actions/.github/actions/slack-notify@main
         with:
           status: ${{ job.status }}

@@ -11,12 +11,6 @@
 
 ## develop
 
-### misc
-
-- [CHANGES] Slack 通知を rtCamp/action-slack-notify から shiguredo/github-actions の slack-notify に変更する
-  - @voluntas
-- [CHANGES] GitHub Actions の runs-on を ubuntu-slim に変更する
-  - @voluntas
 - [UPDATE] libwebrtc を 144.7559.2.2 に上げる
   - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
@@ -79,6 +73,9 @@
 
 ### misc
 
+- [CHANGES] Slack 通知を rtCamp/action-slack-notify から shiguredo/github-actions の slack-notify に変更する
+  - slack-notify は build から別の job に移す
+  - @voluntas
 - [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
   - @zztkm
 - [UPDATE] .gitignore に Android Studio 関連の除外設定を追加する
