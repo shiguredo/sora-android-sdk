@@ -51,7 +51,7 @@ jobs:
       - name: Slack Notification
         uses: shiguredo/github-actions/.github/actions/slack-notify@main
         with:
-          status: ${{ needs.build.result }}
+          status: ${{ job.status }}
           slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
           slack_channel: sora-android-sdk
         env:
