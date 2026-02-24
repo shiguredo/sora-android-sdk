@@ -534,7 +534,7 @@ class SoraMediaChannel
          *
          * ハードミュートを無効化する際は、カメラキャプチャーを開始してから VideoTrack を有効化します。
          *
-         * IMPORTANT: このメソッドを利用するには SoraMediaOption.enableVideoUpstream で capturerStartParams 引数を指定している必要があります。
+         * IMPORTANT: このメソッドを利用するには SoraMediaOption.enableVideoUpstream で cameraConfig 引数を指定している必要があります。
          *
          * @param muted 有効化する場合は true、無効化する場合は false を指定する
          * @return 成功した場合は true、失敗した場合は false
