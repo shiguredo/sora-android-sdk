@@ -11,6 +11,12 @@
 
 ## develop
 
+### misc
+
+- [CHANGES] Slack 通知を rtCamp/action-slack-notify から shiguredo/github-actions の slack-notify に変更する
+  - @voluntas
+- [CHANGES] GitHub Actions の runs-on を ubuntu-slim に変更する
+  - @voluntas
 - [UPDATE] libwebrtc を 144.7559.2.2 に上げる
   - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
