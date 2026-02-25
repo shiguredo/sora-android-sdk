@@ -11,6 +11,10 @@
 
 ## develop
 
+- [CHANGE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除して `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` に変更する
+  - 同時に `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨化する
+  - 移行先は `enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)`
+  - @zztkm
 - [UPDATE] libwebrtc を 144.7559.2.2 に上げる
   - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
@@ -18,13 +22,6 @@
   - @zztkm
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
   - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
-  - @zztkm
-- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除する
-  - デフォルト値を用いた `enableSimulcast()` での呼び出しは `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を呼び出しているとコンパイラに認識されるようになる
-  - `enableSimulcast()` 呼び出し時の挙動に変更はない
-  - @zztkm
-- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨にする
-  - 移行先は `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)`
   - @zztkm
 - [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
   - SDK 内部で CameraVideoCapturer を生成する場合に使用する
