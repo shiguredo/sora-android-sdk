@@ -153,6 +153,8 @@ class SoraMediaOption {
         cameraConfig: SoraCameraConfig,
     ) {
         videoUpstreamEnabled = true
+        // SDK 内部生成モードに切り替えるため、過去のユーザー設定 capturer を明示的に解除する
+        videoCapturer = null
         videoUpstreamContext = eglContext
         soraCameraConfig = cameraConfig
     }
