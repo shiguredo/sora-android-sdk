@@ -544,6 +544,11 @@ class SoraMediaChannel
                 SoraLogger.w(TAG, "Cannot call setVideoHardMute: videoCapturer is not controllable")
                 return false
             }
+            val localVideoManager =
+                peer?.localVideoManager ?: run {
+                    SoraLogger.w(TAG, "Cannot call setVideoHardMute: localVideoManager is not initialized")
+                    return false
+                }
             if (muted) {
                 // ハードミュートを有効化する場合は先にソフトミュートを行う
                 if (!setVideoSoftMute(true)) {
@@ -553,9 +558,9 @@ class SoraMediaChannel
             }
             return try {
                 if (muted) {
-                    peer?.localVideoManager?.stopVideoCapture()
+                    localVideoManager.stopVideoCapture()
                 } else {
-                    peer?.localVideoManager?.startVideoCapture()
+                    localVideoManager.startVideoCapture()
                 }
                 if (!muted) {
                     // ハードミュートを無効化する場合はハードミュート無効化後にソフトミュートを無効化する
@@ -578,11 +583,16 @@ class SoraMediaChannel
          * @return 成功した場合は true、失敗した場合は false
          */
         fun setVideoSoftMute(muted: Boolean): Boolean =
-            try {
-                peer?.localVideoManager?.setTrackEnabled(!muted)
-                true
-            } catch (e: Exception) {
-                SoraLogger.w(TAG, "Failed to setVideoSoftMute: ${e.message}")
+            peer?.localVideoManager?.let { localVideoManager ->
+                try {
+                    localVideoManager.setTrackEnabled(!muted)
+                    true
+                } catch (e: Exception) {
+                    SoraLogger.w(TAG, "Failed to setVideoSoftMute: ${e.message}")
+                    false
+                }
+            } ?: run {
+                SoraLogger.w(TAG, "Cannot call setVideoSoftMute: localVideoManager is not initialized")
                 false
             }
 
