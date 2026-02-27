@@ -171,6 +171,7 @@ class SoraMediaOption {
     fun enableSimulcast(rid: SoraVideoOption.SimulcastRid?) {
         simulcastEnabled = true
         simulcastRid = rid
+        simulcastRequestRid = null
     }
 
     /**
@@ -181,6 +182,7 @@ class SoraMediaOption {
     @JvmOverloads
     fun enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null) {
         simulcastEnabled = true
+        simulcastRid = null
         simulcastRequestRid = requestRid
     }
 
