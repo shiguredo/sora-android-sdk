@@ -38,6 +38,8 @@ data class ConnectMessage(
     @SerializedName("simulcast") var simulcast: Boolean? = false,
     @SerializedName("simulcast_rid")
     var simulcastRid: String? = null,
+    @SerializedName("simulcast_request_rid")
+    var simulcastRequestRid: String? = null,
     @SerializedName("video") var video: Any? = null,
     @SerializedName("audio") var audio: Any? = null,
     @SerializedName("sora_client") val soraClient: String = SDKInfo.sdkInfo(),
@@ -129,6 +131,7 @@ data class OfferMessage(
     @SerializedName("mid") val mid: Map<String, String>? = null,
     @SerializedName("encodings") val encodings: List<Encoding>?,
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
+    @SerializedName("rpc_methods") val rpcMethods: List<String>? = null,
     @SerializedName("audio") val audio: Boolean? = null,
     @SerializedName("audio_codec_type") val audioCodecType: String? = null,
     @SerializedName("audio_bit_rate") val audioBitRate: Int? = null,

@@ -93,6 +93,9 @@ obj/
 .idea/kotlinc.xml
 .idea/migrations.xml
 .idea/caches/deviceStreaming.xml
+.idea/AndroidProjectSystem.xml
+.idea/runConfigurations.xml
+.idea/copilot.data.migration*.xml
 
 # OS-specific files
 .DS_Store

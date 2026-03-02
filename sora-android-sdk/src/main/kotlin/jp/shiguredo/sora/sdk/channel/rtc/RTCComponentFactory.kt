@@ -1,6 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
+import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import jp.shiguredo.sora.sdk.codec.SoraDefaultVideoEncoderFactory
@@ -166,12 +167,31 @@ class RTCComponentFactory(
         return constraints
     }
 
-    fun createVideoManager(): RTCLocalVideoManager? =
-        mediaOption.videoCapturer?.let {
-            val videoManager = RTCLocalVideoManager(it)
+    fun createVideoManager(context: Context): RTCLocalVideoManager? {
+        // ユーザー設定の VideoCapturer がある場合はそれを使う
+        mediaOption.userSettingVideoCapturer()?.let {
+            val videoManager = RTCLocalVideoManager(it, mediaOption.soraCameraConfig)
             SoraLogger.d(TAG, "videoManager created: $videoManager")
-            videoManager
+            return videoManager
         }
+
+        // VideoCapturer が未設定かつ、soraCameraConfig が設定されている場合は
+        // SDK 内部で VideoCapturer を生成する
+        mediaOption.soraCameraConfig?.let { config ->
+            val capturer = CameraCapturerFactory.create(context, config.frontFacingFirst)
+            if (capturer == null) {
+                SoraLogger.e(TAG, "create RTCLocalVideoManager failed")
+                return null
+            }
+
+            // VideoCapturer を SDK 内部で生成しているため isOwnedCapturer=true を指定する
+            val videoManager = RTCLocalVideoManager(capturer, config, true)
+            SoraLogger.d(TAG, "videoManager created: $videoManager")
+            return videoManager
+        }
+
+        return null
+    }
 
     fun createAudioManager(): RTCLocalAudioManager = RTCLocalAudioManager(mediaOption.audioUpstreamEnabled)
 

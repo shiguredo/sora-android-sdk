@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-142.7444-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/7444)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-144.7559-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/7559)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -18,11 +18,28 @@ Please read https://github.com/shiguredo/oss before use.
 
 利用前に https://github.com/shiguredo/oss をお読みください。
 
+## 特徴
+
+- [libwebrtc](https://webrtc.googlesource.com/src/) を利用した Sora 向け Android SDK
+- [WebRTC 統計情報](https://www.w3.org/TR/webrtc-stats/) の取得に対応
+- 回線が不安定になった際、解像度とフレームレートどちらを維持するかの設定をする [DegradationPreference](https://w3c.github.io/mst-content-hint/#degradation-preference-when-encoding) に対応
+  - `MAINTAIN_FRAMERATE` / `MAINTAIN_RESOLUTION` / `BALANCED` が指定できる
+- 映像コーデック `VP8` / `VP9` / `AV1` / `H.264` / `H.265` に対応
+  - `H.264` と `H.265` はハードウェアデコーダー/エンコーダーに対応
+  - `VP9` と `AV1` は対応端末であればハードウェアデコーダー/エンコーダーを利用可能
+- 音声トラックを無効にし、デジタルサイレンスパケットを送出するミュート(ソフトミュート)を利用できる
+- 映像トラックを無効にし、黒塗りの映像パケットを送出するミュート(ソフトミュート)を利用できる
+- 音声・映像のプライバシーインジケーターを消灯するミュート(ハードミュート)を利用できる
+- フロント / リアカメラ切り替えとキャプチャフォーマット変更に対応
+- 各種カメラ設定を利用できる
+  - 解像度・フレームレート・フロントカメラ優先・初期ハードミュート
+- 受信した音声データを PCM 形式で取得できる
+
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2025.2.1 以降
-- WebRTC SFU Sora 2025.1.0 以降
+- Android Studio 2025.3.1 以降
+- WebRTC SFU Sora 2025.2.0 以降
 
 ## サンプル
 

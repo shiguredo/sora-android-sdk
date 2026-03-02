@@ -121,4 +121,13 @@ class SoraAudioOption {
      * opus_params.
      */
     var opusParams: OpusParams? = null
+
+    /**
+     * Sora 接続時に音声のハードミュートを有効化するフラグ.
+     *
+     * デフォルト値は false です.
+     * true にした場合、Sora 接続時に音声のハードミュートが有効化されます。
+     * audioDeviceModule が null ではない場合、この値は無視され音声のハードミュートは有効化されません.
+     */
+    var initialAudioHardMute: Boolean = false
 }

@@ -136,9 +136,17 @@ class MessageConverter {
                 }
             }
 
+            // サイマルキャストが有効な場合の設定
             if (mediaOption.simulcastEnabled) {
                 msg.simulcast = mediaOption.simulcastEnabled
+
+                // NOTE(zztkm): simulcastRid も本来は simulcastRequestRid 同様に
+                // 受信するロールになっているかチェックすべきだが、ここの挙動を
+                // 変えるのはユーザーに影響が出るため、そのままにしておく
                 msg.simulcastRid = mediaOption.simulcastRid?.toString()
+                if (role == SoraChannelRole.SENDRECV || role == SoraChannelRole.RECVONLY) {
+                    msg.simulcastRequestRid = mediaOption.simulcastRequestRid?.toString()
+                }
             }
 
             if (mediaOption.spotlightOption != null) {

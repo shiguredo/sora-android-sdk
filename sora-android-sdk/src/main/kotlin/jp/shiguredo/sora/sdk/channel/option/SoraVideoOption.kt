@@ -10,6 +10,14 @@ class SoraVideoOption {
     // TODO(zztkm): 破壊的変更にはなるが、Codec の並び順を Sora のドキュメントに合わせて変更する
 
     /**
+     * 映像の取得元を示します.
+     */
+    enum class CaptureType {
+        /** 端末内蔵のカメラ */
+        DEVICE_CAMERA,
+    }
+
+    /**
      * 利用できる映像コーデックを示します.
      */
     enum class Codec {
@@ -117,9 +125,38 @@ class SoraVideoOption {
         }
     }
 
+    // シグナリング接続時に指定する simulcast_rid に該当する enum。
     enum class SimulcastRid(
         private val value: String,
     ) {
+        /**
+         * r0
+         */
+        R0("r0"),
+
+        /**
+         * r1
+         */
+        R1("r1"),
+
+        /**
+         * r2
+         */
+        R2("r2"),
+        ;
+
+        override fun toString(): String = value
+    }
+
+    // シグナリング接続時指定する simulcast_request_rid に該当する enum。
+    enum class SimulcastRequestRid(
+        private val value: String,
+    ) {
+        /**
+         * none
+         */
+        NONE("none"),
+
         /**
          * r0
          */

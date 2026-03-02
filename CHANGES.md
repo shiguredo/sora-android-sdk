@@ -11,6 +11,87 @@
 
 ## develop
 
+## 2026.1.0
+
+**リリース日**: 2026-03-02
+
+- [CHANGE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除して `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` に変更する
+  - 同時に `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨化する
+  - 移行先は `enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)`
+  - @zztkm
+- [UPDATE] libwebrtc を 144.7559.2.2 に上げる
+  - @zztkm
+- [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
+  - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
+  - @zztkm
+- [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
+  - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
+  - @zztkm
+- [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
+  - SDK 内部で CameraVideoCapturer を生成する場合に使用する
+  - @zztkm
+- [ADD] SoraMediaChannel に `getStats` メソッドを追加する
+  - このメソッドを使うことでクライアントの WebRTC 統計情報を取得できる
+  - 非同期コールバックである PeerChannel.getStats をラップして Kotlin コルーチンから扱いやすい suspend 関数として実装した
+  - @zztkm
+- [ADD] SoraAudioOption に `initialAudioHardMute` プロパティを追加する
+  - このプロパティに true を設定することで、Sora 接続時に音声のハードミュートを有効化できる
+  - `setAudioHardMute(false)` を呼ぶことで音声のハードミュートを無効化することができる
+  - @zztkm
+- [ADD] SoraMediaChannel に `setAudioHardMute` と `setAudioSoftMute` メソッドを追加する
+  - `setAudioHardMute` は PeerChannel.setAudioRecordingPaused のラッパーとして実装
+  - `setAudioSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている AudioTrack の setEnabled を呼び出すように実装
+  - この 2 つのメソッド追加によって、音声のハードミュート / ソフトミュートを実装する方法が統一されたことでアプリケーションがミュートを実装しやすくなった
+  - @zztkm
+- [ADD] SoraMediaChannel に `setVideoHardMute` と `setVideoSoftMute` メソッドを追加する
+  - `setVideoHardMute` は CameraVideoCapturer の `startCapture` と `stopCapture` のラッパーであり、ソフトミュートも併用するように実装
+  - `setVideoSoftMute` は SoraMediaChannel 内部で LocalStream を保持し関連付いている VideoTrack の setEnabled を呼び出すように実装
+  - @zztkm
+- [ADD] SoraMediaChannel に `switchCamera` と `changeCaptureFormat` メソッドを追加する
+  - `switchCamera` は SDK 内部に保持する VideoCapturer が CameraVideoCapturer である場合に、フロントカメラとリアカメラを切り替える
+  - `changeCaptureFormat` は VideoCapturer のキャプチャーフォーマットを変更する
+  - @zztkm
+- [ADD] SoraMediaOption に `SoraCameraConfig` data class を追加する
+  - SDK 内部で VideoCapturer.startCapture の引数として利用される
+  - @zztkm
+- [ADD] SoraVideoOption に `CaptureType` enum を追加する
+  - @zztkm
+- [ADD] PeerChannel に `localVideoManager: RTCLocalVideoManager?` プロパティを追加する
+  - SoraMediaChannel から RTCLocalVideoManager に PeerChannel 経由でアクセスするためのプロパティ
+  - @zztkm
+- [ADD] `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を追加する
+  - シグナリング接続時にサイマルキャストを有効化し、視聴 rid を指定することができる
+  - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
+  - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
+  - @zztkm
+- [ADD] RPC 機能を追加する
+  - この機能は Sora 2025.2.0 で実験的機能としてリリースされているため正式版では仕様が変更される可能性がある
+  - `SoraMediaChannel.rpc` で JSON-RPC 2.0 over DataChannel により一部の HTTP API を Sora Android SDK から直接呼び出す
+    - 呼び出し失敗時は `SoraRpcException` を送出し、`SoraRpcErrorReason` で原因を識別する
+  - デフォルトのタイムアウトは 5 秒で、`timeoutMillis` により変更できる
+  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、レスポンス不要として `SoraMediaChannel.rpc` は null を返す
+  - @zztkm
+
+### misc
+
+- [CHANGES] Slack 通知を rtCamp/action-slack-notify から shiguredo/github-actions の slack-notify に変更する
+  - slack-notify は build から別の job に移す
+  - @voluntas
+- [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
+  - @zztkm
+- [UPDATE] .gitignore に Android Studio 関連の除外設定を追加する
+  - `.idea/AndroidProjectSystem.xml`
+  - `.idea/runConfigurations.xml`
+  - `.idea/copilot.data.migration*.xml`
+  - @zztkm
+- [ADD] pre-commit を導入する
+  - .pre-commit-config.yaml ファイルを追加する
+  - コミット時に `./gradlew ktlintFormat` と `./gradlew ktlintCheck` を実行するように設定する
+  - ツールは prek を利用することを前提とする
+    - https://github.com/j178/prek
+  - @zztkm
+
+
 ## 2025.3.0
 
 **リリース日**: 2025-11-11
