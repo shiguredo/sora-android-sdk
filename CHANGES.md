@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2026.1.0
+
+**リリース日**: 2026-03-02
+
 - [CHANGE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除して `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` に変更する
   - 同時に `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨化する
   - 移行先は `enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)`
