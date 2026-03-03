@@ -671,6 +671,8 @@ class PeerChannelImpl(
                 reAnswerMessage,
                 "re-answer",
             )
+        } else {
+            SoraLogger.w(TAG, "peer: sendReAnswer failed, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         }
     }
 
@@ -697,6 +699,8 @@ class PeerChannelImpl(
                 disconnectMessage,
                 "disconnect",
             )
+        } else {
+            SoraLogger.w(TAG, "peer: sendDisconnect failed, label=${dataChannel.label()}, message_size=${statsMessage.length}")
         }
     }
 
