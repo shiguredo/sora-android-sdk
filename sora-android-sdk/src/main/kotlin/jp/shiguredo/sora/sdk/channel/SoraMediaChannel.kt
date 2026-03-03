@@ -129,6 +129,13 @@ class SoraMediaChannel
             // この定数を使用する withTimeout がミリ秒指定のためミリ秒表現になっている
             private const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
+
+            private val WEBSOCKET_RECEIVED_NOTIFY_TYPES =
+                setOf("offer", "update", "re-offer", "switched", "redirect")
+            private val WEBSOCKET_SENT_NOTIFY_TYPES =
+                setOf("connect", "answer", "candidate", "update", "re-answer", "disconnect")
+            private val DATA_CHANNEL_RECEIVED_NOTIFY_TYPES = setOf("re-offer", "close")
+            private val DATA_CHANNEL_SENT_NOTIFY_TYPES = setOf("re-answer", "disconnect")
         }
 
         // connect メッセージに含める `data_channel_signaling`
@@ -371,9 +378,33 @@ class SoraMediaChannel
              *
              * @param mediaChannel イベントが発生したチャネル
              * @param direction 送受信方向
+             * @param transport シグナリング経路種別
+             * @param rawMessage シグナリングメッセージの JSON 文字列
+             */
+            @Suppress("DEPRECATION")
+            fun onSignalingMessage(
+                mediaChannel: SoraMediaChannel,
+                direction: SoraSignalingDirection,
+                transport: SoraSignalingTransport,
+                rawMessage: String,
+            ) {
+                onSignalingMessage(mediaChannel, direction, transport.toMessageType(), rawMessage)
+            }
+
+            /**
+             * シグナリングメッセージを送受信したときに呼び出されるコールバック.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param direction 送受信方向
              * @param type シグナリング経路種別
              * @param rawMessage シグナリングメッセージの JSON 文字列
              */
+            @Deprecated(
+                "名称が誤解を招きやすいため type ではなく transport を受け取る onSignalingMessage を利用してください.",
+                ReplaceWith("onSignalingMessage(mediaChannel, direction, type.toTransport(), rawMessage)"),
+                DeprecationLevel.WARNING,
+            )
+            @Suppress("DEPRECATION")
             fun onSignalingMessage(
                 mediaChannel: SoraMediaChannel,
                 direction: SoraSignalingDirection,
@@ -685,29 +716,29 @@ class SoraMediaChannel
          */
         private fun shouldNotifySignalingMessage(
             direction: SoraSignalingDirection,
-            type: SoraSignalingMessageType,
+            type: SoraSignalingTransport,
             signalingType: String,
         ): Boolean =
             when (type) {
-                SoraSignalingMessageType.WEBSOCKET ->
+                SoraSignalingTransport.WEBSOCKET ->
                     when (direction) {
                         SoraSignalingDirection.RECEIVED ->
-                            setOf("offer", "update", "re-offer", "switched", "redirect").contains(signalingType)
+                            signalingType in WEBSOCKET_RECEIVED_NOTIFY_TYPES
                         SoraSignalingDirection.SENT ->
-                            setOf("connect", "answer", "candidate", "update", "re-answer", "disconnect").contains(signalingType)
+                            signalingType in WEBSOCKET_SENT_NOTIFY_TYPES
                     }
-                SoraSignalingMessageType.DATA_CHANNEL ->
+                SoraSignalingTransport.DATA_CHANNEL ->
                     when (direction) {
                         SoraSignalingDirection.RECEIVED ->
-                            setOf("re-offer", "close").contains(signalingType)
+                            signalingType in DATA_CHANNEL_RECEIVED_NOTIFY_TYPES
                         SoraSignalingDirection.SENT ->
-                            setOf("re-answer", "disconnect").contains(signalingType)
+                            signalingType in DATA_CHANNEL_SENT_NOTIFY_TYPES
                     }
             }
 
         private fun notifySignalingMessageIfNeeded(
             direction: SoraSignalingDirection,
-            type: SoraSignalingMessageType,
+            type: SoraSignalingTransport,
             rawMessage: String,
             signalingType: String,
         ) {
@@ -719,7 +750,7 @@ class SoraMediaChannel
 
         private fun notifySignalingMessageIfNeeded(
             direction: SoraSignalingDirection,
-            type: SoraSignalingMessageType,
+            type: SoraSignalingTransport,
             rawMessage: String,
         ) {
             val signalingType =
@@ -842,7 +873,7 @@ class SoraMediaChannel
 
                 override fun onSignalingMessage(
                     direction: SoraSignalingDirection,
-                    type: SoraSignalingMessageType,
+                    type: SoraSignalingTransport,
                     rawMessage: String,
                 ) {
                     notifySignalingMessageIfNeeded(direction, type, rawMessage)
@@ -919,7 +950,7 @@ class SoraMediaChannel
                                 if (label == "signaling") {
                                     notifySignalingMessageIfNeeded(
                                         direction = SoraSignalingDirection.RECEIVED,
-                                        type = SoraSignalingMessageType.DATA_CHANNEL,
+                                        type = SoraSignalingTransport.DATA_CHANNEL,
                                         rawMessage = message,
                                         signalingType = type,
                                     )
@@ -1007,7 +1038,7 @@ class SoraMediaChannel
                     }
                     notifySignalingMessageIfNeeded(
                         direction = SoraSignalingDirection.SENT,
-                        type = SoraSignalingMessageType.DATA_CHANNEL,
+                        type = SoraSignalingTransport.DATA_CHANNEL,
                         rawMessage = rawMessage,
                     )
                 }
