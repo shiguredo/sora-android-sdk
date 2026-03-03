@@ -725,7 +725,12 @@ class SoraMediaChannel
             val signalingType =
                 try {
                     MessageConverter.parseType(rawMessage)
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    SoraLogger.w(
+                        TAG,
+                        "[channel:$role] failed to parse signaling type: direction=$direction, transport=$type",
+                        e,
+                    )
                     null
                 } ?: return
             notifySignalingMessageIfNeeded(direction, type, rawMessage, signalingType)
