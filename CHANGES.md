@@ -13,6 +13,11 @@
 
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
   - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
+  - 現在通知されるシグナリング項目
+    - WebSocket で受信: 受信したテキストメッセージ全体 (`offer`, `switched`, `ping`, `update`, `re-offer`, `notify`, `push`, `redirect` および未知の type を含む)
+    - WebSocket で送信: `connect`, `answer`, `update`, `re-answer`, `candidate`, `disconnect` (`pong` は除く)
+    - DataChannel (`label = signaling`) で受信: 受信したメッセージ全体 (`re-offer`, `close` および未知の type を含む)
+    - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingMessageType` を追加する
   - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
