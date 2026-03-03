@@ -20,7 +20,6 @@
     - DataChannel (`label = signaling`) で受信: `re-offer`, `close`
     - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransport` を追加する
-  - `SoraSignalingMessageType` を削除して `SoraSignalingTransport` に置き換える
 
 ## 2026.1.0
 
