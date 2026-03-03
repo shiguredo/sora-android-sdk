@@ -724,25 +724,6 @@ class SoraMediaChannel
             listener?.onSignalingMessage(this@SoraMediaChannel, direction, type, rawMessage)
         }
 
-        private fun notifySignalingMessageIfNeeded(
-            direction: SoraSignalingDirection,
-            type: SoraSignalingTransport,
-            rawMessage: String,
-        ) {
-            val signalingType =
-                try {
-                    MessageConverter.parseType(rawMessage)
-                } catch (e: Exception) {
-                    SoraLogger.w(
-                        TAG,
-                        "[channel:$role] failed to parse signaling type: direction=$direction, transport=$type",
-                        e,
-                    )
-                    null
-                } ?: return
-            notifySignalingMessageIfNeeded(direction, type, rawMessage, signalingType)
-        }
-
         private val signalingListener =
             object : SignalingChannel.Listener {
                 override fun onDisconnect(
@@ -851,11 +832,9 @@ class SoraMediaChannel
                     direction: SoraSignalingDirection,
                     type: SoraSignalingTransport,
                     rawMessage: String,
-                    signalingType: String?,
+                    signalingType: String,
                 ) {
-                    signalingType?.let {
-                        notifySignalingMessageIfNeeded(direction, type, rawMessage, it)
-                    } ?: notifySignalingMessageIfNeeded(direction, type, rawMessage)
+                    notifySignalingMessageIfNeeded(direction, type, rawMessage, signalingType)
                 }
             }
 
@@ -1015,10 +994,22 @@ class SoraMediaChannel
                     if (label != "signaling") {
                         return
                     }
+                    val signalingType =
+                        try {
+                            MessageConverter.parseType(rawMessage)
+                        } catch (e: Exception) {
+                            SoraLogger.w(
+                                TAG,
+                                "[channel:$role] failed to parse signaling type: direction=${SoraSignalingDirection.SENT}, transport=${SoraSignalingTransport.DATA_CHANNEL}",
+                                e,
+                            )
+                            null
+                        } ?: return
                     notifySignalingMessageIfNeeded(
                         direction = SoraSignalingDirection.SENT,
                         type = SoraSignalingTransport.DATA_CHANNEL,
                         rawMessage = rawMessage,
+                        signalingType = signalingType,
                     )
                 }
             }

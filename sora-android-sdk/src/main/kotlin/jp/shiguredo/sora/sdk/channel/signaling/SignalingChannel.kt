@@ -77,7 +77,7 @@ interface SignalingChannel {
             direction: SoraSignalingDirection,
             type: SoraSignalingTransport,
             rawMessage: String,
-            signalingType: String? = null,
+            signalingType: String,
         ) {}
 
         fun getStats(handler: (RTCStatsReport?) -> Unit)
