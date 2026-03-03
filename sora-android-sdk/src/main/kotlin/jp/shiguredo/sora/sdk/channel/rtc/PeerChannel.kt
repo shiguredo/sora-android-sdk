@@ -121,6 +121,7 @@ interface PeerChannel {
         fun onDataChannelSignalingMessageSent(
             label: String,
             rawMessage: String,
+            signalingType: String,
         ) {}
 
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
@@ -665,7 +666,11 @@ class PeerChannelImpl(
         val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
         val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
         if (sent) {
-            listener?.onDataChannelSignalingMessageSent(dataChannel.label(), reAnswerMessage)
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                reAnswerMessage,
+                "re-answer",
+            )
         }
     }
 
@@ -687,7 +692,11 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
         val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
         if (sent) {
-            listener?.onDataChannelSignalingMessageSent(dataChannel.label(), disconnectMessage)
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                disconnectMessage,
+                "disconnect",
+            )
         }
     }
 

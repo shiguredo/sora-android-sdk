@@ -990,21 +990,11 @@ class SoraMediaChannel
                 override fun onDataChannelSignalingMessageSent(
                     label: String,
                     rawMessage: String,
+                    signalingType: String,
                 ) {
                     if (label != "signaling") {
                         return
                     }
-                    val signalingType =
-                        try {
-                            MessageConverter.parseType(rawMessage)
-                        } catch (e: Exception) {
-                            SoraLogger.w(
-                                TAG,
-                                "[channel:$role] failed to parse signaling type: direction=${SoraSignalingDirection.SENT}, transport=${SoraSignalingTransportType.DATA_CHANNEL}",
-                                e,
-                            )
-                            null
-                        } ?: return
                     notifySignalingMessageIfNeeded(
                         direction = SoraSignalingDirection.SENT,
                         transportType = SoraSignalingTransportType.DATA_CHANNEL,
