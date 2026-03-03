@@ -110,20 +110,6 @@ class SignalingChannelImpl
     ) : SignalingChannel {
         companion object {
             private val TAG = SignalingChannelImpl::class.simpleName
-
-            private val SIGNALING_TYPES_FOR_CALLBACK =
-                setOf(
-                    "offer",
-                    "switched",
-                    "update",
-                    "re-offer",
-                    "redirect",
-                    "connect",
-                    "answer",
-                    "candidate",
-                    "disconnect",
-                    "re-answer",
-                )
         }
 
         private val client: OkHttpClient
@@ -254,15 +240,7 @@ class SignalingChannelImpl
             return client.newWebSocket(request, webSocketListener)
         }
 
-        private fun shouldNotifySignalingMessage(signalingType: String): Boolean = SIGNALING_TYPES_FOR_CALLBACK.contains(signalingType)
-
-        private fun notifyReceivedSignalingMessageIfNeeded(
-            signalingType: String,
-            rawMessage: String,
-        ) {
-            if (!shouldNotifySignalingMessage(signalingType)) {
-                return
-            }
+        private fun notifyReceivedSignalingMessage(rawMessage: String) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.RECEIVED,
                 SoraSignalingMessageType.WEBSOCKET,
@@ -270,17 +248,7 @@ class SignalingChannelImpl
             )
         }
 
-        private fun notifySentSignalingMessageIfNeeded(rawMessage: String) {
-            val signalingType =
-                try {
-                    MessageConverter.parseType(rawMessage)
-                } catch (_: Exception) {
-                    null
-                } ?: return
-
-            if (!shouldNotifySignalingMessage(signalingType)) {
-                return
-            }
+        private fun notifySentSignalingMessage(rawMessage: String) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.SENT,
                 SoraSignalingMessageType.WEBSOCKET,
@@ -292,7 +260,7 @@ class SignalingChannelImpl
             ws?.let {
                 val sent = it.send(rawMessage)
                 if (sent) {
-                    notifySentSignalingMessageIfNeeded(rawMessage)
+                    notifySentSignalingMessage(rawMessage)
                 }
             }
         }
@@ -580,8 +548,8 @@ class SignalingChannelImpl
 
                         text.let {
                             val json = it
+                            notifyReceivedSignalingMessage(json)
                             MessageConverter.parseType(json)?.let { signalingType ->
-                                notifyReceivedSignalingMessageIfNeeded(signalingType, json)
                                 when (signalingType) {
                                     "offer" -> onOfferMessage(json)
                                     "switched" -> onSwitchedMessage(json)
