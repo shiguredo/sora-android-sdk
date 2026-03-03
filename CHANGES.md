@@ -19,7 +19,7 @@
     - WebSocket で送信: `connect`, `answer`, `candidate`, `update`, `re-answer`, `disconnect`
     - DataChannel (`label = signaling`) で受信: `re-offer`, `close`
     - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
-  - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransport` を追加する
+  - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
 
 ## 2026.1.0
 

@@ -1,7 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
 import jp.shiguredo.sora.sdk.channel.SoraSignalingDirection
-import jp.shiguredo.sora.sdk.channel.SoraSignalingTransport
+import jp.shiguredo.sora.sdk.channel.SoraSignalingTransportType
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -75,7 +75,7 @@ interface SignalingChannel {
 
         fun onSignalingMessage(
             direction: SoraSignalingDirection,
-            type: SoraSignalingTransport,
+            transportType: SoraSignalingTransportType,
             rawMessage: String,
             signalingType: String,
         ) {}
@@ -247,7 +247,7 @@ class SignalingChannelImpl
         ) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.RECEIVED,
-                SoraSignalingTransport.WEBSOCKET,
+                SoraSignalingTransportType.WEBSOCKET,
                 rawMessage,
                 signalingType,
             )
@@ -259,7 +259,7 @@ class SignalingChannelImpl
         ) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.SENT,
-                SoraSignalingTransport.WEBSOCKET,
+                SoraSignalingTransportType.WEBSOCKET,
                 rawMessage,
                 signalingType,
             )
