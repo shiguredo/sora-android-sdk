@@ -679,12 +679,56 @@ class SoraMediaChannel
 
         private val compositeDisposable = ReusableCompositeDisposable()
 
-        private fun notifySignalingMessage(
+        /*
+         * onSignalingMessage の通知対象は sora-js-sdk と合わせる。
+         * 参照: sora-js-sdk 2025.2.0 (commit: 9b76c0757cb213cc76a2e7387b24f4cd5eb73764)
+         */
+        private fun shouldNotifySignalingMessage(
+            direction: SoraSignalingDirection,
+            type: SoraSignalingMessageType,
+            signalingType: String,
+        ): Boolean =
+            when (type) {
+                SoraSignalingMessageType.WEBSOCKET ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            setOf("offer", "update", "re-offer", "switched", "redirect").contains(signalingType)
+                        SoraSignalingDirection.SENT ->
+                            setOf("connect", "answer", "candidate", "update", "re-answer", "disconnect").contains(signalingType)
+                    }
+                SoraSignalingMessageType.DATA_CHANNEL ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            setOf("re-offer", "close").contains(signalingType)
+                        SoraSignalingDirection.SENT ->
+                            setOf("re-answer", "disconnect").contains(signalingType)
+                    }
+            }
+
+        private fun notifySignalingMessageIfNeeded(
+            direction: SoraSignalingDirection,
+            type: SoraSignalingMessageType,
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            if (!shouldNotifySignalingMessage(direction, type, signalingType)) {
+                return
+            }
+            listener?.onSignalingMessage(this@SoraMediaChannel, direction, type, rawMessage)
+        }
+
+        private fun notifySignalingMessageIfNeeded(
             direction: SoraSignalingDirection,
             type: SoraSignalingMessageType,
             rawMessage: String,
         ) {
-            listener?.onSignalingMessage(this@SoraMediaChannel, direction, type, rawMessage)
+            val signalingType =
+                try {
+                    MessageConverter.parseType(rawMessage)
+                } catch (_: Exception) {
+                    null
+                } ?: return
+            notifySignalingMessageIfNeeded(direction, type, rawMessage, signalingType)
         }
 
         private val signalingListener =
@@ -796,7 +840,7 @@ class SoraMediaChannel
                     type: SoraSignalingMessageType,
                     rawMessage: String,
                 ) {
-                    notifySignalingMessage(direction, type, rawMessage)
+                    notifySignalingMessageIfNeeded(direction, type, rawMessage)
                 }
             }
 
@@ -862,18 +906,19 @@ class SoraMediaChannel
                         try {
                             val message = dataToString(buffer)
 
-                            if (label == "signaling") {
-                                notifySignalingMessage(
-                                    direction = SoraSignalingDirection.RECEIVED,
-                                    type = SoraSignalingMessageType.DATA_CHANNEL,
-                                    rawMessage = message,
-                                )
-                            }
                             if (label == "rpc") {
                                 handleRpcViaDataChannel(message)
                                 return
                             }
                             MessageConverter.parseType(message)?.let { type ->
+                                if (label == "signaling") {
+                                    notifySignalingMessageIfNeeded(
+                                        direction = SoraSignalingDirection.RECEIVED,
+                                        type = SoraSignalingMessageType.DATA_CHANNEL,
+                                        rawMessage = message,
+                                        signalingType = type,
+                                    )
+                                }
                                 when (label) {
                                     "signaling" -> handleSignalingViaDataChannel(dataChannel, type, message)
                                     "notify" -> handleNotifyViaDataChannel(type, message)
@@ -955,7 +1000,7 @@ class SoraMediaChannel
                     if (label != "signaling") {
                         return
                     }
-                    notifySignalingMessage(
+                    notifySignalingMessageIfNeeded(
                         direction = SoraSignalingDirection.SENT,
                         type = SoraSignalingMessageType.DATA_CHANNEL,
                         rawMessage = rawMessage,
