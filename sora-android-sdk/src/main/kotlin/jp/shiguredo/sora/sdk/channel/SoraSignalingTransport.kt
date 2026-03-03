@@ -6,13 +6,4 @@ package jp.shiguredo.sora.sdk.channel
 enum class SoraSignalingTransport {
     WEBSOCKET,
     DATA_CHANNEL,
-
-    ;
-
-    @Suppress("DEPRECATION")
-    fun toMessageType(): SoraSignalingMessageType =
-        when (this) {
-            WEBSOCKET -> SoraSignalingMessageType.WEBSOCKET
-            DATA_CHANNEL -> SoraSignalingMessageType.DATA_CHANNEL
-        }
 }

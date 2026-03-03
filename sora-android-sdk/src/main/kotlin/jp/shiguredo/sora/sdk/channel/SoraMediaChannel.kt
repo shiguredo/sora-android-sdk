@@ -381,34 +381,10 @@ class SoraMediaChannel
              * @param transport シグナリング経路種別
              * @param rawMessage シグナリングメッセージの JSON 文字列
              */
-            @Suppress("DEPRECATION")
             fun onSignalingMessage(
                 mediaChannel: SoraMediaChannel,
                 direction: SoraSignalingDirection,
                 transport: SoraSignalingTransport,
-                rawMessage: String,
-            ) {
-                onSignalingMessage(mediaChannel, direction, transport.toMessageType(), rawMessage)
-            }
-
-            /**
-             * シグナリングメッセージを送受信したときに呼び出されるコールバック.
-             *
-             * @param mediaChannel イベントが発生したチャネル
-             * @param direction 送受信方向
-             * @param type シグナリング経路種別
-             * @param rawMessage シグナリングメッセージの JSON 文字列
-             */
-            @Deprecated(
-                "名称が誤解を招きやすいため type ではなく transport を受け取る onSignalingMessage を利用してください.",
-                ReplaceWith("onSignalingMessage(mediaChannel, direction, type.toTransport(), rawMessage)"),
-                DeprecationLevel.WARNING,
-            )
-            @Suppress("DEPRECATION")
-            fun onSignalingMessage(
-                mediaChannel: SoraMediaChannel,
-                direction: SoraSignalingDirection,
-                type: SoraSignalingMessageType,
                 rawMessage: String,
             ) {}
 
@@ -875,8 +851,11 @@ class SoraMediaChannel
                     direction: SoraSignalingDirection,
                     type: SoraSignalingTransport,
                     rawMessage: String,
+                    signalingType: String?,
                 ) {
-                    notifySignalingMessageIfNeeded(direction, type, rawMessage)
+                    signalingType?.let {
+                        notifySignalingMessageIfNeeded(direction, type, rawMessage, it)
+                    } ?: notifySignalingMessageIfNeeded(direction, type, rawMessage)
                 }
             }
 

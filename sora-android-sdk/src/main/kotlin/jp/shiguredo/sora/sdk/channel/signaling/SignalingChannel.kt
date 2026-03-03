@@ -77,6 +77,7 @@ interface SignalingChannel {
             direction: SoraSignalingDirection,
             type: SoraSignalingTransport,
             rawMessage: String,
+            signalingType: String? = null,
         ) {}
 
         fun getStats(handler: (RTCStatsReport?) -> Unit)
@@ -240,27 +241,38 @@ class SignalingChannelImpl
             return client.newWebSocket(request, webSocketListener)
         }
 
-        private fun notifyReceivedSignalingMessage(rawMessage: String) {
+        private fun notifyReceivedSignalingMessage(
+            rawMessage: String,
+            signalingType: String,
+        ) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.RECEIVED,
                 SoraSignalingTransport.WEBSOCKET,
                 rawMessage,
+                signalingType,
             )
         }
 
-        private fun notifySentSignalingMessage(rawMessage: String) {
+        private fun notifySentSignalingMessage(
+            rawMessage: String,
+            signalingType: String,
+        ) {
             listener?.onSignalingMessage(
                 SoraSignalingDirection.SENT,
                 SoraSignalingTransport.WEBSOCKET,
                 rawMessage,
+                signalingType,
             )
         }
 
-        private fun sendMessageOverWebSocket(rawMessage: String) {
+        private fun sendMessageOverWebSocket(
+            rawMessage: String,
+            signalingType: String,
+        ) {
             ws?.let {
                 val sent = it.send(rawMessage)
                 if (sent) {
-                    notifySentSignalingMessage(rawMessage)
+                    notifySentSignalingMessage(rawMessage, signalingType)
                 }
             }
         }
@@ -274,7 +286,7 @@ class SignalingChannelImpl
             }
 
             val msg = MessageConverter.buildAnswerMessage(sdp)
-            sendMessageOverWebSocket(msg)
+            sendMessageOverWebSocket(msg, "answer")
         }
 
         override fun sendUpdateAnswer(sdp: String) {
@@ -288,7 +300,7 @@ class SignalingChannelImpl
             SoraLogger.d(TAG, sdp)
 
             val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
-            sendMessageOverWebSocket(msg)
+            sendMessageOverWebSocket(msg, "update")
         }
 
         override fun sendReAnswer(sdp: String) {
@@ -302,7 +314,7 @@ class SignalingChannelImpl
             SoraLogger.d(TAG, sdp)
 
             val msg = MessageConverter.buildReAnswerMessage(sdp)
-            sendMessageOverWebSocket(msg)
+            sendMessageOverWebSocket(msg, "re-answer")
         }
 
         override fun sendCandidate(sdp: String) {
@@ -316,14 +328,14 @@ class SignalingChannelImpl
             SoraLogger.d(TAG, sdp)
 
             val msg = MessageConverter.buildCandidateMessage(sdp)
-            sendMessageOverWebSocket(msg)
+            sendMessageOverWebSocket(msg, "candidate")
         }
 
         override fun sendDisconnect(disconnectReason: SoraDisconnectReason) {
             SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
             val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
             SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
-            sendMessageOverWebSocket(disconnectMessage)
+            sendMessageOverWebSocket(disconnectMessage, "disconnect")
         }
 
         override fun disconnect(disconnectReason: SoraDisconnectReason?) {
@@ -367,7 +379,7 @@ class SignalingChannelImpl
                         forwardingFilterOption = forwardingFilterOption,
                         forwardingFiltersOption = forwardingFiltersOption,
                     )
-                sendMessageOverWebSocket(message)
+                sendMessageOverWebSocket(message, "connect")
             }
         }
 
@@ -548,8 +560,8 @@ class SignalingChannelImpl
 
                         text.let {
                             val json = it
-                            notifyReceivedSignalingMessage(json)
                             MessageConverter.parseType(json)?.let { signalingType ->
+                                notifyReceivedSignalingMessage(json, signalingType)
                                 when (signalingType) {
                                     "offer" -> onOfferMessage(json)
                                     "switched" -> onSwitchedMessage(json)
