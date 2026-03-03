@@ -131,6 +131,7 @@ data class OfferMessage(
     @SerializedName("mid") val mid: Map<String, String>? = null,
     @SerializedName("encodings") val encodings: List<Encoding>?,
     @SerializedName("data_channels") val dataChannels: List<Map<String, Any>>? = null,
+    @SerializedName("rpc_methods") val rpcMethods: List<String>? = null,
     @SerializedName("audio") val audio: Boolean? = null,
     @SerializedName("audio_codec_type") val audioCodecType: String? = null,
     @SerializedName("audio_bit_rate") val audioBitRate: Int? = null,

@@ -19,19 +19,22 @@
     - DataChannel (`label = signaling`) で受信: 受信したメッセージ全体 (`re-offer`, `close` および未知の type を含む)
     - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingMessageType` を追加する
+
+## 2026.1.0
+
+**リリース日**: 2026-03-02
+
+- [CHANGE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除して `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` に変更する
+  - 同時に `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨化する
+  - 移行先は `enableSimulcast(requestRid: SoraVideoOption.SimulcastRequestRid? = null)`
+  - @zztkm
+- [UPDATE] libwebrtc を 144.7559.2.2 に上げる
   - @zztkm
 - [UPDATE] SoraMediaChannel.setAudioRecordingPaused を非推奨にする
   - 代替として `SoraMediaChannel. setAudioHardMute` を利用できる
   - @zztkm
 - [UPDATE] SoraMediaOption の `enableVideoUpstream` の引数に `cameraConfig: SoraCameraConfig? = null` を追加する
   - SoraMediaChannel.setVideoHardMute などの VideoCapturer を操作する API を利用する場合は cameraConfig を設定する必要がある
-  - @zztkm
-- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid? = null)` のデフォルト値を削除する
-  - デフォルト値を用いた `enableSimulcast()` での呼び出しは `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)` を呼び出しているとコンパイラに認識されるようになる
-  - `enableSimulcast()` 呼び出し時の挙動に変更はない
-  - @zztkm
-- [UPDATE] `SoraMediaOption.enableSimulcast(rid: SoraVideoOption.SimulcastRid?)` を非推奨にする
-  - 移行先は `SoraMediaOption.enableSimulcast(requestRid: SimulcastRequestRid? = null)`
   - @zztkm
 - [ADD] SoraMediaOption に `enableVideoUpstream(eglContext, cameraConfig)` を追加する
   - SDK 内部で CameraVideoCapturer を生成する場合に使用する
@@ -70,10 +73,25 @@
   - rid に指定できる値の列挙型として `SimulcastRequestRid` enum を追加する
   - role が sendrecv または recvonly の場合、かつ simulcast が true の場合にのみ有効
   - @zztkm
+- [ADD] RPC 機能を追加する
+  - この機能は Sora 2025.2.0 で実験的機能としてリリースされているため正式版では仕様が変更される可能性がある
+  - `SoraMediaChannel.rpc` で JSON-RPC 2.0 over DataChannel により一部の HTTP API を Sora Android SDK から直接呼び出す
+    - 呼び出し失敗時は `SoraRpcException` を送出し、`SoraRpcErrorReason` で原因を識別する
+  - デフォルトのタイムアウトは 5 秒で、`timeoutMillis` により変更できる
+  - `SoraMediaChannel.rpc` の引数で isNotificationRequest = true を指定した場合、レスポンス不要として `SoraMediaChannel.rpc` は null を返す
+  - @zztkm
 
 ### misc
 
+- [CHANGES] Slack 通知を rtCamp/action-slack-notify から shiguredo/github-actions の slack-notify に変更する
+  - slack-notify は build から別の job に移す
+  - @voluntas
 - [UPDATE] `Claude Assistant` の `claude-response` を `ubuntu-slim` に移行する
+  - @zztkm
+- [UPDATE] .gitignore に Android Studio 関連の除外設定を追加する
+  - `.idea/AndroidProjectSystem.xml`
+  - `.idea/runConfigurations.xml`
+  - `.idea/copilot.data.migration*.xml`
   - @zztkm
 - [ADD] pre-commit を導入する
   - .pre-commit-config.yaml ファイルを追加する
