@@ -1,5 +1,7 @@
 package jp.shiguredo.sora.sdk.channel.signaling
 
+import jp.shiguredo.sora.sdk.channel.SoraSignalingDirection
+import jp.shiguredo.sora.sdk.channel.SoraSignalingTransportType
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -70,6 +72,13 @@ interface SignalingChannel {
         fun onPushMessage(push: PushMessage)
 
         fun onRedirect(location: String)
+
+        fun onSignalingMessage(
+            direction: SoraSignalingDirection,
+            transportType: SoraSignalingTransportType,
+            rawMessage: String,
+            signalingType: String,
+        ) {}
 
         fun getStats(handler: (RTCStatsReport?) -> Unit)
     }
@@ -232,6 +241,42 @@ class SignalingChannelImpl
             return client.newWebSocket(request, webSocketListener)
         }
 
+        private fun notifyReceivedSignalingMessage(
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            listener?.onSignalingMessage(
+                SoraSignalingDirection.RECEIVED,
+                SoraSignalingTransportType.WEBSOCKET,
+                rawMessage,
+                signalingType,
+            )
+        }
+
+        private fun notifySentSignalingMessage(
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            listener?.onSignalingMessage(
+                SoraSignalingDirection.SENT,
+                SoraSignalingTransportType.WEBSOCKET,
+                rawMessage,
+                signalingType,
+            )
+        }
+
+        private fun sendMessageOverWebSocket(
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            ws?.let {
+                val sent = it.send(rawMessage)
+                if (sent) {
+                    notifySentSignalingMessage(rawMessage, signalingType)
+                }
+            }
+        }
+
         override fun sendAnswer(sdp: String) {
             SoraLogger.d(TAG, "[signaling:$role] -> answer")
 
@@ -240,10 +285,8 @@ class SignalingChannelImpl
                 return
             }
 
-            ws?.let {
-                val msg = MessageConverter.buildAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg, "answer")
         }
 
         override fun sendUpdateAnswer(sdp: String) {
@@ -256,10 +299,8 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildUpdateAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg, "update")
         }
 
         override fun sendReAnswer(sdp: String) {
@@ -272,10 +313,8 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildReAnswerMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildReAnswerMessage(sdp)
+            sendMessageOverWebSocket(msg, "re-answer")
         }
 
         override fun sendCandidate(sdp: String) {
@@ -288,19 +327,15 @@ class SignalingChannelImpl
 
             SoraLogger.d(TAG, sdp)
 
-            ws?.let {
-                val msg = MessageConverter.buildCandidateMessage(sdp)
-                it.send(msg)
-            }
+            val msg = MessageConverter.buildCandidateMessage(sdp)
+            sendMessageOverWebSocket(msg, "candidate")
         }
 
         override fun sendDisconnect(disconnectReason: SoraDisconnectReason) {
             SoraLogger.d(TAG, "[signaling:$role] -> type:disconnect, webSocket=$ws")
-            ws?.let {
-                val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
-                SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
-                it.send(disconnectMessage)
-            }
+            val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
+            SoraLogger.d(TAG, "[signaling:$role] disconnectMessage=$disconnectMessage")
+            sendMessageOverWebSocket(disconnectMessage, "disconnect")
         }
 
         override fun disconnect(disconnectReason: SoraDisconnectReason?) {
@@ -344,7 +379,7 @@ class SignalingChannelImpl
                         forwardingFilterOption = forwardingFilterOption,
                         forwardingFiltersOption = forwardingFiltersOption,
                     )
-                it.send(message)
+                sendMessageOverWebSocket(message, "connect")
             }
         }
 
@@ -525,8 +560,9 @@ class SignalingChannelImpl
 
                         text.let {
                             val json = it
-                            MessageConverter.parseType(json)?.let {
-                                when (it) {
+                            MessageConverter.parseType(json)?.let { signalingType ->
+                                notifyReceivedSignalingMessage(json, signalingType)
+                                when (signalingType) {
                                     "offer" -> onOfferMessage(json)
                                     "switched" -> onSwitchedMessage(json)
                                     "ping" -> onPingMessage(json)

@@ -118,6 +118,12 @@ interface PeerChannel {
             dataChannel: DataChannel,
         )
 
+        fun onDataChannelSignalingMessageSent(
+            label: String,
+            rawMessage: String,
+            signalingType: String,
+        ) {}
+
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
 
         fun onError(reason: SoraErrorReason)
@@ -658,7 +664,16 @@ class PeerChannelImpl(
         description: String,
     ) {
         val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
-        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
+        val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
+        if (sent) {
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                reAnswerMessage,
+                "re-answer",
+            )
+        } else {
+            SoraLogger.w(TAG, "peer: sendReAnswer failed, label=${dataChannel.label()}, message_size=${reAnswerMessage.length}")
+        }
     }
 
     override fun sendStats(
@@ -677,7 +692,16 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
         val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
         SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
-        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+        val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+        if (sent) {
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                disconnectMessage,
+                "disconnect",
+            )
+        } else {
+            SoraLogger.w(TAG, "peer: sendDisconnect failed, label=${dataChannel.label()}, message_size=${disconnectMessage.length}")
+        }
     }
 
     override fun zipBufferIfNeeded(

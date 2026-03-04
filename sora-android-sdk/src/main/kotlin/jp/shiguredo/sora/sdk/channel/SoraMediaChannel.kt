@@ -129,6 +129,13 @@ class SoraMediaChannel
             // この定数を使用する withTimeout がミリ秒指定のためミリ秒表現になっている
             private const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
+
+            private val WEBSOCKET_RECEIVED_NOTIFY_TYPES =
+                setOf("offer", "update", "re-offer", "switched", "redirect")
+            private val WEBSOCKET_SENT_NOTIFY_TYPES =
+                setOf("connect", "answer", "candidate", "update", "re-answer", "disconnect")
+            private val DATA_CHANNEL_RECEIVED_NOTIFY_TYPES = setOf("re-offer", "close")
+            private val DATA_CHANNEL_SENT_NOTIFY_TYPES = setOf("re-answer", "disconnect")
         }
 
         // connect メッセージに含める `data_channel_signaling`
@@ -364,6 +371,21 @@ class SoraMediaChannel
             fun onOfferMessage(
                 mediaChannel: SoraMediaChannel,
                 offer: OfferMessage,
+            ) {}
+
+            /**
+             * シグナリングメッセージを送受信したときに呼び出されるコールバック.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param direction 送受信方向
+             * @param transportType シグナリング経路種別
+             * @param rawMessage シグナリングメッセージの JSON 文字列
+             */
+            fun onSignalingMessage(
+                mediaChannel: SoraMediaChannel,
+                direction: SoraSignalingDirection,
+                transportType: SoraSignalingTransportType,
+                rawMessage: String,
             ) {}
 
             /**
@@ -664,6 +686,44 @@ class SoraMediaChannel
 
         private val compositeDisposable = ReusableCompositeDisposable()
 
+        /*
+         * onSignalingMessage の通知対象は sora-js-sdk と合わせる。
+         * 参照: sora-js-sdk 2025.2.0 (commit: 9b76c0757cb213cc76a2e7387b24f4cd5eb73764)
+         */
+        private fun shouldNotifySignalingMessage(
+            direction: SoraSignalingDirection,
+            transportType: SoraSignalingTransportType,
+            signalingType: String,
+        ): Boolean =
+            when (transportType) {
+                SoraSignalingTransportType.WEBSOCKET ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            signalingType in WEBSOCKET_RECEIVED_NOTIFY_TYPES
+                        SoraSignalingDirection.SENT ->
+                            signalingType in WEBSOCKET_SENT_NOTIFY_TYPES
+                    }
+                SoraSignalingTransportType.DATA_CHANNEL ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            signalingType in DATA_CHANNEL_RECEIVED_NOTIFY_TYPES
+                        SoraSignalingDirection.SENT ->
+                            signalingType in DATA_CHANNEL_SENT_NOTIFY_TYPES
+                    }
+            }
+
+        private fun notifySignalingMessageIfNeeded(
+            direction: SoraSignalingDirection,
+            transportType: SoraSignalingTransportType,
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            if (!shouldNotifySignalingMessage(direction, transportType, signalingType)) {
+                return
+            }
+            listener?.onSignalingMessage(this@SoraMediaChannel, direction, transportType, rawMessage)
+        }
+
         private val signalingListener =
             object : SignalingChannel.Listener {
                 override fun onDisconnect(
@@ -767,6 +827,15 @@ class SoraMediaChannel
                         connectSignalingChannel(clientOffer, location)
                     }
                 }
+
+                override fun onSignalingMessage(
+                    direction: SoraSignalingDirection,
+                    transportType: SoraSignalingTransportType,
+                    rawMessage: String,
+                    signalingType: String,
+                ) {
+                    notifySignalingMessageIfNeeded(direction, transportType, rawMessage, signalingType)
+                }
             }
 
         private val peerListener =
@@ -830,11 +899,20 @@ class SoraMediaChannel
                     } else {
                         try {
                             val message = dataToString(buffer)
+
                             if (label == "rpc") {
                                 handleRpcViaDataChannel(message)
                                 return
                             }
                             MessageConverter.parseType(message)?.let { type ->
+                                if (label == "signaling") {
+                                    notifySignalingMessageIfNeeded(
+                                        direction = SoraSignalingDirection.RECEIVED,
+                                        transportType = SoraSignalingTransportType.DATA_CHANNEL,
+                                        rawMessage = message,
+                                        signalingType = type,
+                                    )
+                                }
                                 when (label) {
                                     "signaling" -> handleSignalingViaDataChannel(dataChannel, type, message)
                                     "notify" -> handleNotifyViaDataChannel(type, message)
@@ -907,6 +985,22 @@ class SoraMediaChannel
                     SoraLogger.d(TAG, "[channel:$role] @peer:onDisconnect:$disconnectReason")
 
                     internalDisconnect(disconnectReason)
+                }
+
+                override fun onDataChannelSignalingMessageSent(
+                    label: String,
+                    rawMessage: String,
+                    signalingType: String,
+                ) {
+                    if (label != "signaling") {
+                        return
+                    }
+                    notifySignalingMessageIfNeeded(
+                        direction = SoraSignalingDirection.SENT,
+                        transportType = SoraSignalingTransportType.DATA_CHANNEL,
+                        rawMessage = rawMessage,
+                        signalingType = signalingType,
+                    )
                 }
             }
 
