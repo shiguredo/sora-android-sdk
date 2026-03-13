@@ -11,6 +11,10 @@
 
 ## develop
 
+- [ADD] SoraAudioOption に `useUnprocessedAudioSource` プロパティを追加する
+  - true の場合、SDK 内部で生成する AudioDeviceModule の音声入力ソースに `MediaRecorder.AudioSource.UNPROCESSED` を利用する
+  - API 24 未満では `UNPROCESSED` を利用できないため、SDK 側で `MediaRecorder.AudioSource.VOICE_COMMUNICATION` にフォールバックする
+
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
   - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
   - Sora JavaScript SDK に合わせるため、通知対象を `sora-js-sdk 2025.2.0` (commit: `9b76c0757cb213cc76a2e7387b24f4cd5eb73764`) の signaling callback と同じシグナリング項目にする

@@ -102,6 +102,18 @@ class SoraAudioOption {
     var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
 
     /**
+     * 音声入力に `android.media.MediaRecorder.AudioSource.UNPROCESSED` を使うかどうかのフラグ.
+     * `UNPROCESSED` 時は Android による音質調整が行われない未加工の音声による配信となります。
+     *
+     * true の場合、AudioDeviceModule 生成時に [audioSource] より優先して `UNPROCESSED` を利用します.
+     * ただし、API 24 未満では `UNPROCESSED` を利用できないため、SDK 側で
+     * `VOICE_COMMUNICATION` にフォールバックします.
+     *
+     * デフォルト値は false です.
+     */
+    var useUnprocessedAudioSource: Boolean = false
+
+    /**
      * 入力をステレオにするかどうかのフラグ.
      *
      * AudioDeviceModule 生成時に利用されます.

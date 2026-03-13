@@ -1,7 +1,10 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
 import android.content.Context
+import android.media.MediaRecorder
+import android.os.Build
 import jp.shiguredo.sora.sdk.camera.CameraCapturerFactory
+import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.codec.SimulcastVideoEncoderFactoryWrapper
 import jp.shiguredo.sora.sdk.codec.SoraDefaultVideoEncoderFactory
@@ -248,7 +251,7 @@ class RTCComponentFactory(
                     mediaOption.audioOption.useHardwareNoiseSuppressor,
             ).setAudioRecordErrorCallback(audioRecordErrorCallback)
             .setAudioTrackErrorCallback(audioTrackErrorCallback)
-            .setAudioSource(mediaOption.audioOption.audioSource)
+            .setAudioSource(resolveAudioSource(mediaOption.audioOption))
             .setUseStereoInput(mediaOption.audioOption.useStereoInput)
             .setUseStereoOutput(mediaOption.audioOption.useStereoOutput)
             .createAudioDeviceModule()
@@ -259,5 +262,20 @@ class RTCComponentFactory(
         errorMessage: String,
     ) {
         listener?.onError(errorReason, errorMessage)
+    }
+
+    // AudioSource の設定時、API レベルによっては使用できないためフォールバックするリゾルバー
+    internal fun resolveAudioSource(
+        audioOption: SoraAudioOption,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+    ): Int {
+        if (!audioOption.useUnprocessedAudioSource) {
+            return audioOption.audioSource
+        }
+        if (sdkInt >= Build.VERSION_CODES.N) {
+            return MediaRecorder.AudioSource.UNPROCESSED
+        }
+        SoraLogger.w(TAG, "UNPROCESSED audio source is not supported on API $sdkInt, fallback to VOICE_COMMUNICATION")
+        return MediaRecorder.AudioSource.VOICE_COMMUNICATION
     }
 }
