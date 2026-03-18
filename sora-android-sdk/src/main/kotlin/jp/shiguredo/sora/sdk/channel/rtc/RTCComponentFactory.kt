@@ -161,6 +161,8 @@ class RTCComponentFactory(
         return factoryBuilder.createPeerConnectionFactory()
     }
 
+    internal fun createSSLCertificateVerifier() = AndroidSystemCaSslCertificateVerifier()
+
     fun createSDPConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
         SoraLogger.d(TAG, "createSDPConstraints: $constraints")
