@@ -22,9 +22,7 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
 
     private val trustManager: X509TrustManager = createTrustManager()
 
-    override fun verify(certificate: ByteArray): Boolean {
-        error("verify() は利用しません。verifyChain() のみを使用してください。")
-    }
+    override fun verify(certificate: ByteArray): Boolean = verifyChain(arrayOf(certificate))
 
     override fun verifyChain(certificateChain: Array<ByteArray>): Boolean {
         if (certificateChain.isEmpty()) {
