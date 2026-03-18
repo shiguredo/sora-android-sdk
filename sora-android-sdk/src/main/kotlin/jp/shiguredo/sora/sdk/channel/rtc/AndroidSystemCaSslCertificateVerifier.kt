@@ -36,17 +36,18 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
                     .map { certificate ->
                         certificateFactory.generateCertificate(ByteArrayInputStream(certificate)) as X509Certificate
                     }.toTypedArray()
-            x509Certificates.forEach { certificate ->
-                certificate.checkValidity()
-            }
-            val authType = x509Certificates.first().publicKey.algorithm
+            val authType = resolveAuthType(x509Certificates.first())
             trustManager.checkServerTrusted(x509Certificates, authType)
             true
         }.getOrElse { error ->
-            SoraLogger.w(TAG, "証明書チェーンの検証に失敗しました: ${error.message}", error)
+            SoraLogger.e(TAG, "証明書チェーンの検証に失敗しました: ${error.message}", error)
             false
         }
     }
+
+    private fun resolveAuthType(certificate: X509Certificate): String =
+        certificate.sigAlgName
+            .substringAfter("with", certificate.sigAlgName)
 
     private fun createTrustManager(): X509TrustManager {
         val trustManagerFactory =
