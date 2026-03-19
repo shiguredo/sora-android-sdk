@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream
 import java.security.KeyStore
 import java.security.cert.CertPathValidator
 import java.security.cert.CertificateFactory
+import java.security.cert.CertificateParsingException
 import java.security.cert.PKIXParameters
 import java.security.cert.TrustAnchor
 import java.security.cert.X509Certificate
@@ -18,6 +19,8 @@ import javax.net.ssl.X509TrustManager
 internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
     companion object {
         private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
+        private const val OID_SERVER_AUTH = "1.3.6.1.5.5.7.3.1"
+        private const val OID_ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0"
     }
 
     private val trustManager: X509TrustManager = createTrustManager()
@@ -62,12 +65,27 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
                     isRevocationEnabled = false
                 }
             CertPathValidator.getInstance("PKIX").validate(certPath, pkixParameters)
+            if (!verifyExtendedKeyUsage(certificates)) {
+                throw IllegalStateException("TLS サーバー証明書の EKU 検証に失敗しました")
+            }
             true
         }.getOrElse { error ->
             SoraLogger.e(TAG, "証明書チェーンの検証に失敗しました: ${error.message}", error)
             false
         }
     }
+
+    private fun verifyExtendedKeyUsage(certificates: List<X509Certificate>): Boolean =
+        try {
+            certificates.all { certificate ->
+                val extendedKeyUsage = certificate.extendedKeyUsage ?: return@all true
+                extendedKeyUsage.contains(OID_SERVER_AUTH) ||
+                    extendedKeyUsage.contains(OID_ANY_EXTENDED_KEY_USAGE)
+            }
+        } catch (error: CertificateParsingException) {
+            SoraLogger.w(TAG, "EKU の解析に失敗しました: ${error.message}")
+            false
+        }
 
     private fun createTrustManager(): X509TrustManager {
         val trustManagerFactory =
