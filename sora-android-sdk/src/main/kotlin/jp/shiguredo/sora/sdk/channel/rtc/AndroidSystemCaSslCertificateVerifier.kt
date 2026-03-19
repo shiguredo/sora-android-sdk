@@ -20,11 +20,10 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
         private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
     }
 
-    private val certificateFactory: CertificateFactory =
-        CertificateFactory.getInstance("X.509")
-
     private val trustManager: X509TrustManager = createTrustManager()
 
+    // verifyChain を実装している場合は verifyChain が呼び出されるため
+    // verify は基本的に利用しない想定になっています。
     override fun verify(certificate: ByteArray): Boolean = verifyChain(arrayOf(certificate))
 
     override fun verifyChain(certificateChain: Array<ByteArray>): Boolean {
@@ -34,6 +33,8 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
         }
 
         return runCatching {
+            val certificateFactory =
+                CertificateFactory.getInstance("X.509")
             val certificates =
                 certificateChain
                     .map { certificate ->
