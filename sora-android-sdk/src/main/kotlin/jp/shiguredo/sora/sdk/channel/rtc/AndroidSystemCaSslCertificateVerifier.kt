@@ -4,7 +4,10 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.SSLCertificateVerifier
 import java.io.ByteArrayInputStream
 import java.security.KeyStore
+import java.security.cert.CertPathValidator
 import java.security.cert.CertificateFactory
+import java.security.cert.PKIXParameters
+import java.security.cert.TrustAnchor
 import java.security.cert.X509Certificate
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
@@ -31,23 +34,30 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
         }
 
         return runCatching {
-            val x509Certificates =
+            val certificates =
                 certificateChain
                     .map { certificate ->
                         certificateFactory.generateCertificate(ByteArrayInputStream(certificate)) as X509Certificate
-                    }.toTypedArray()
-            val authType = resolveAuthType(x509Certificates.first())
-            trustManager.checkServerTrusted(x509Certificates, authType)
+                    }
+            val certPath = certificateFactory.generateCertPath(certificates)
+            val trustAnchors =
+                trustManager.acceptedIssuers
+                    .map { certificate -> TrustAnchor(certificate, null) }
+                    .toSet()
+            if (trustAnchors.isEmpty()) {
+                throw IllegalStateException("TrustAnchor を構築できませんでした")
+            }
+            val pkixParameters =
+                PKIXParameters(trustAnchors).apply {
+                    isRevocationEnabled = false
+                }
+            CertPathValidator.getInstance("PKIX").validate(certPath, pkixParameters)
             true
         }.getOrElse { error ->
             SoraLogger.e(TAG, "証明書チェーンの検証に失敗しました: ${error.message}", error)
             false
         }
     }
-
-    private fun resolveAuthType(certificate: X509Certificate): String =
-        certificate.sigAlgName
-            .substringAfter("with", certificate.sigAlgName)
 
     private fun createTrustManager(): X509TrustManager {
         val trustManagerFactory =
