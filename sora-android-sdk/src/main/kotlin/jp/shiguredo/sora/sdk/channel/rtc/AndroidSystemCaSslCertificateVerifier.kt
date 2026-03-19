@@ -48,6 +48,15 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
             if (trustAnchors.isEmpty()) {
                 throw IllegalStateException("TrustAnchor を構築できませんでした")
             }
+
+            // libwebrtc の既定挙動に合わせるため、失効確認は行わない。
+            // libwebrtc 側の公開 API では `api/peer_connection_interface.h` の
+            // `TlsCertPolicy::kTlsCertPolicySecure` により TLS-TURN の証明書検証を有効化するが、
+            // 失効確認までは規定していない。
+            // また、下位の BoringSSL 側でも
+            // https://boringssl.googlesource.com/boringssl/+/master/pki/verify_certificate_chain.h
+            // に `No revocation checking is performed.` とあり、
+            // CRL / OCSP の失効確認は既定では行われない。
             val pkixParameters =
                 PKIXParameters(trustAnchors).apply {
                     isRevocationEnabled = false
