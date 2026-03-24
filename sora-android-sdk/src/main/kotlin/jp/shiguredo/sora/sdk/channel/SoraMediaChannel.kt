@@ -87,6 +87,7 @@ import kotlin.coroutines.resume
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param insecure WebSocket Signaling と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
@@ -107,6 +108,7 @@ class SoraMediaChannel
         private var listener: Listener?,
         private val clientId: String? = null,
         private val signalingNotifyMetadata: Any? = null,
+        private val insecure: Boolean = false,
         private val peerConnectionOption: PeerConnectionOption = PeerConnectionOption(),
         dataChannelSignaling: Boolean? = null,
         ignoreDisconnectWebSocket: Boolean? = null,
@@ -1121,6 +1123,7 @@ class SoraMediaChannel
                                     iceTransportPolicy = "",
                                 ),
                             mediaOption = mediaOption,
+                            insecure = insecure,
                         ),
                     mediaOption = mediaOption,
                     listener = null,
@@ -1180,6 +1183,7 @@ class SoraMediaChannel
                     clientId = clientId,
                     bundleId = bundleId,
                     signalingNotifyMetadata = signalingNotifyMetadata,
+                    insecure = insecure,
                     connectDataChannels = connectDataChannels,
                     redirect = redirectLocation != null,
                     forwardingFilterOption = forwardingFilterOption,
@@ -1199,6 +1203,7 @@ class SoraMediaChannel
                         PeerNetworkConfig(
                             serverConfig = offerMessage.config,
                             mediaOption = mediaOption,
+                            insecure = insecure,
                         ),
                     mediaOption = mediaOption,
                     simulcastEnabled = offerMessage.simulcast,

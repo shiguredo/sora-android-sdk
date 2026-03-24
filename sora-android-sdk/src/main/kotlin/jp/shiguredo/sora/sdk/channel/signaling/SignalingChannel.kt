@@ -27,9 +27,52 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
+
+internal data class InsecureTlsConfig(
+    val trustManager: X509TrustManager,
+    val sslSocketFactory: SSLSocketFactory,
+    val hostnameVerifier: HostnameVerifier,
+)
+
+internal fun createInsecureTlsConfig(enabled: Boolean): InsecureTlsConfig? {
+    if (!enabled) {
+        return null
+    }
+
+    val trustAllCertificatesManager =
+        object : X509TrustManager {
+            override fun checkClientTrusted(
+                chain: Array<X509Certificate>,
+                authType: String,
+            ) {
+            }
+
+            override fun checkServerTrusted(
+                chain: Array<X509Certificate>,
+                authType: String,
+            ) {
+            }
+
+            override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+        }
+    val sslContext = SSLContext.getInstance("TLS")
+    sslContext.init(null, arrayOf(trustAllCertificatesManager), SecureRandom())
+
+    return InsecureTlsConfig(
+        trustManager = trustAllCertificatesManager,
+        sslSocketFactory = sslContext.socketFactory,
+        hostnameVerifier = HostnameVerifier { _, _ -> true },
+    )
+}
 
 interface SignalingChannel {
     fun connect()
@@ -99,6 +142,7 @@ class SignalingChannelImpl
         private val clientId: String? = null,
         private val bundleId: String? = null,
         private val signalingNotifyMetadata: Any? = null,
+        private val insecure: Boolean = false,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -145,6 +189,16 @@ class SignalingChannelImpl
             client =
                 runBlocking(Dispatchers.IO) {
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
+
+                    createInsecureTlsConfig(insecure)?.let { insecureTlsConfig ->
+                        SoraLogger.w(TAG, "[signaling:$role] insecure is enabled")
+                        builder =
+                            builder
+                                .sslSocketFactory(
+                                    insecureTlsConfig.sslSocketFactory,
+                                    insecureTlsConfig.trustManager,
+                                ).hostnameVerifier(insecureTlsConfig.hostnameVerifier)
+                    }
 
                     if (mediaOption.proxy.type != ProxyType.NONE) {
                         SoraLogger.i(TAG, "proxy: ${mediaOption.proxy}")

@@ -8,6 +8,7 @@ import org.webrtc.PeerConnection
 class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
     private val mediaOption: SoraMediaOption,
+    private val insecure: Boolean = false,
 ) {
     fun createConfiguration(): PeerConnection.RTCConfiguration {
         val iceServers = gatherIceServerSetting(serverConfig)
@@ -47,7 +48,11 @@ class PeerNetworkConfig(
                             .builder(url)
                             .setUsername(server.username)
                             .setPassword(server.credential)
-                            .createIceServer(),
+                            .apply {
+                                if (insecure) {
+                                    setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+                                }
+                            }.createIceServer(),
                     )
                 }
             }
