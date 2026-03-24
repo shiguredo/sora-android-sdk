@@ -27,7 +27,6 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
-import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -65,7 +64,7 @@ private fun createInsecureTlsConfig(enabled: Boolean): InsecureTlsConfig? {
             override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
         }
     val sslContext = SSLContext.getInstance("TLS")
-    sslContext.init(null, arrayOf(trustAllCertificatesManager), SecureRandom())
+    sslContext.init(null, arrayOf(trustAllCertificatesManager), null)
 
     return InsecureTlsConfig(
         trustManager = trustAllCertificatesManager,
