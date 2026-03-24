@@ -17,7 +17,7 @@ import javax.net.ssl.X509TrustManager
  * Android OS の CA 証明書を使って TLS サーバー証明書チェーンを検証します。
  */
 internal class AndroidSystemCaSslCertificateVerifier(
-    private val insecure: Boolean = false,
+    private val insecure: Boolean,
 ) : SSLCertificateVerifier {
     companion object {
         private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
