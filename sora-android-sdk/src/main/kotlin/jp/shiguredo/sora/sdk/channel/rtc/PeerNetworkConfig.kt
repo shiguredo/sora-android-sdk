@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.rtc
 
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
+import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.CryptoOptions
 import org.webrtc.PeerConnection
 
@@ -10,6 +11,10 @@ class PeerNetworkConfig(
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
 ) {
+    companion object {
+        private val TAG = PeerNetworkConfig::class.simpleName
+    }
+
     fun createConfiguration(): PeerConnection.RTCConfiguration {
         val iceServers = gatherIceServerSetting(serverConfig)
 
@@ -49,7 +54,8 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
-                                if (insecure) {
+                                if (insecure && url.startsWith("turns:")) {
+                                    SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
                                     setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
                                 }
                             }.createIceServer(),
