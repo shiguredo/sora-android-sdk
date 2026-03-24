@@ -44,10 +44,8 @@ class PeerNetworkConfig(
     private fun gatherIceServerSetting(serverConfig: OfferConfig?): List<PeerConnection.IceServer> {
         val iceServers = mutableListOf<PeerConnection.IceServer>()
         serverConfig?.let {
-            it.iceServers.forEach {
-                val server = it
-                server.urls.forEach {
-                    val url = it
+            it.iceServers.forEach { server ->
+                server.urls.forEach { url ->
                     iceServers.add(
                         PeerConnection.IceServer
                             .builder(url)
