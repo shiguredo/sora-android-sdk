@@ -1126,6 +1126,7 @@ class SoraMediaChannel
                             insecure = insecure,
                         ),
                     mediaOption = mediaOption,
+                    insecure = insecure,
                     listener = null,
                 )
             clientOfferPeer.run {
@@ -1206,6 +1207,7 @@ class SoraMediaChannel
                             insecure = insecure,
                         ),
                     mediaOption = mediaOption,
+                    insecure = insecure,
                     simulcastEnabled = offerMessage.simulcast,
                     dataChannelConfigs = offerMessage.dataChannels,
                     listener = peerListener,

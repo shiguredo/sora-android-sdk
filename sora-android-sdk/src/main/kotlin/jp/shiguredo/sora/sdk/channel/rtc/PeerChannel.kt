@@ -146,6 +146,7 @@ class PeerChannelImpl(
     private val appContext: Context,
     private val networkConfig: PeerNetworkConfig,
     private val mediaOption: SoraMediaOption,
+    private val insecure: Boolean = false,
     private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
@@ -176,7 +177,7 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption, simulcastEnabled, listener)
+    private val componentFactory = RTCComponentFactory(mediaOption, simulcastEnabled, insecure, listener)
 
     private var conn: PeerConnection? = null
 

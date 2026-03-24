@@ -16,6 +16,7 @@ import org.webrtc.audio.JavaAudioDeviceModule
 class RTCComponentFactory(
     private val mediaOption: SoraMediaOption,
     private val simulcastEnabled: Boolean,
+    private val insecure: Boolean,
     private val listener: PeerChannel.Listener?,
 ) {
     companion object {
@@ -161,7 +162,7 @@ class RTCComponentFactory(
         return factoryBuilder.createPeerConnectionFactory()
     }
 
-    internal fun createSSLCertificateVerifier() = AndroidSystemCaSslCertificateVerifier()
+    internal fun createSSLCertificateVerifier() = AndroidSystemCaSslCertificateVerifier(insecure = insecure)
 
     fun createSDPConstraints(): MediaConstraints {
         val constraints = MediaConstraints()
