@@ -37,13 +37,13 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.X509TrustManager
 
-internal data class InsecureTlsConfig(
+private class InsecureTlsConfig(
     val trustManager: X509TrustManager,
     val sslSocketFactory: SSLSocketFactory,
     val hostnameVerifier: HostnameVerifier,
 )
 
-internal fun createInsecureTlsConfig(enabled: Boolean): InsecureTlsConfig? {
+private fun createInsecureTlsConfig(enabled: Boolean): InsecureTlsConfig? {
     if (!enabled) {
         return null
     }

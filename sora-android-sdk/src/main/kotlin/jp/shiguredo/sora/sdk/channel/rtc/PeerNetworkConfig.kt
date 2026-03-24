@@ -54,7 +54,7 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
-                                if (insecure && url.startsWith("turns:")) {
+                                if (insecure) {
                                     SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
                                     setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
                                 }
