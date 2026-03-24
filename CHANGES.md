@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
+- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
   - @zztkm
 - [UPDATE] libwebrtc を 146.7680.3.1 に上げる
   - @zztkm
