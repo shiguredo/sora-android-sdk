@@ -55,7 +55,7 @@ class PeerNetworkConfig(
                             .setPassword(server.credential)
                             .apply {
                                 if (insecure) {
-                                    SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
+                                    SoraLogger.w(TAG, "[rtc] insecure is enabled for ICE server: $url")
                                     setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
                                 }
                             }.createIceServer(),
