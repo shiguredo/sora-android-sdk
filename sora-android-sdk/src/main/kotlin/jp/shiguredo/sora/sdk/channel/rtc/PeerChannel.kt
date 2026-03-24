@@ -604,6 +604,7 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
+        dependenciesBuilder.setSSLCertificateVerifier(componentFactory.createSSLCertificateVerifier())
 
         if (mediaOption.proxy.type != ProxyType.NONE) {
             dependenciesBuilder.setProxy(
