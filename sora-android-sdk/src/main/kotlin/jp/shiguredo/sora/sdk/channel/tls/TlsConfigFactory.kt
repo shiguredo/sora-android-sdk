@@ -61,13 +61,10 @@ internal object TlsConfigFactory {
             TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
         trustManagerFactory.init(keyStore)
 
-        val trustManager =
-            trustManagerFactory.trustManagers
-                .filterIsInstance<X509TrustManager>()
-                .firstOrNull()
-                ?: throw IllegalStateException("failed to obtain X509TrustManager")
-
-        return trustManager
+        return trustManagerFactory.trustManagers
+            .filterIsInstance<X509TrustManager>()
+            .firstOrNull()
+            ?: throw IllegalStateException("failed to obtain X509TrustManager")
     }
 
     /**
