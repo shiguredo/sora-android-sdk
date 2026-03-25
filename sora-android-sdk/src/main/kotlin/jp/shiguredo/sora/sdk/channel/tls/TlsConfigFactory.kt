@@ -24,6 +24,9 @@ internal object TlsConfigFactory {
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
         keyStore.load(null, null)
 
+        // acceptedIssuers はこの時点のシステム CA のスナップショットです。
+        // そのため、この KeyStore を使う経路では、インスタンスを再作成し、
+        // TrustManager を再生成するまでシステム CA の更新は反映されません。
         defaultTrustManager.acceptedIssuers.forEachIndexed { index, certificate ->
             keyStore.setCertificateEntry("system-ca-$index", certificate)
         }

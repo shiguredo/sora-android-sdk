@@ -95,7 +95,9 @@ import kotlin.coroutines.resume
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
- * @param caCertificate WSS と TURN-TLS のサーバー証明書検証で Android OS の CA 証明書に追加して利用する CA 証明書
+ * @param caCertificate WSS と TURN-TLS のサーバー証明書検証で Android OS の CA 証明書に追加して利用する CA 証明書。
+ *   指定した場合、利用開始時点のシステム CA のスナップショットと組み合わせて検証し、
+ *   インスタンスを再作成して TrustManager を再生成するまでシステム CA の更新は反映されません。
  */
 class SoraMediaChannel
     @JvmOverloads
