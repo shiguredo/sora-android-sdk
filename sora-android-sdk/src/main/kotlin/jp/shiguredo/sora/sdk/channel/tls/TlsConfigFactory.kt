@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.tls
 
 import java.security.KeyStore
 import java.security.cert.X509Certificate
+import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManagerFactory
@@ -10,9 +11,10 @@ import javax.net.ssl.X509TrustManager
 internal data class TlsSocketConfig(
     val trustManager: X509TrustManager,
     val sslSocketFactory: SSLSocketFactory,
+    val hostnameVerifier: HostnameVerifier? = null,
 )
 
-internal object CustomCaTls {
+internal object TlsConfigFactory {
     fun createTrustManager(caCertificate: X509Certificate?): X509TrustManager {
         val defaultTrustManager = createDefaultTrustManager()
         if (caCertificate == null) {
@@ -37,15 +39,44 @@ internal object CustomCaTls {
             ?: throw IllegalStateException("X509TrustManager を取得できませんでした")
     }
 
-    fun createTlsSocketConfig(caCertificate: X509Certificate?): TlsSocketConfig {
+    fun createTlsSocketConfig(caCertificate: X509Certificate): TlsSocketConfig {
         val trustManager = createTrustManager(caCertificate)
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, arrayOf(trustManager), null)
 
         return TlsSocketConfig(
             trustManager = trustManager,
-            sslSocketFactory = sslContext.socketFactory,
+            sslSocketFactory = createSslSocketFactory(trustManager),
         )
+    }
+
+    fun createInsecureTlsSocketConfig(): TlsSocketConfig {
+        val trustManager =
+            object : X509TrustManager {
+                override fun checkClientTrusted(
+                    chain: Array<X509Certificate>,
+                    authType: String,
+                ) {
+                }
+
+                override fun checkServerTrusted(
+                    chain: Array<X509Certificate>,
+                    authType: String,
+                ) {
+                }
+
+                override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
+            }
+
+        return TlsSocketConfig(
+            trustManager = trustManager,
+            sslSocketFactory = createSslSocketFactory(trustManager),
+            hostnameVerifier = HostnameVerifier { _, _ -> true },
+        )
+    }
+
+    private fun createSslSocketFactory(trustManager: X509TrustManager): SSLSocketFactory {
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf(trustManager), null)
+        return sslContext.socketFactory
     }
 
     private fun createDefaultTrustManager(): X509TrustManager {
