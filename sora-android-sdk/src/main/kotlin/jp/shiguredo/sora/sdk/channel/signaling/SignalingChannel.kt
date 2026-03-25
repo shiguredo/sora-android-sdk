@@ -42,11 +42,12 @@ private class InsecureTlsConfig(
     val hostnameVerifier: HostnameVerifier,
 )
 
-private fun createInsecureTlsConfig(enabled: Boolean): InsecureTlsConfig? {
-    if (!enabled) {
-        return null
-    }
-
+/**
+ * WebSocket Signaling の TLS 証明書検証をスキップするための設定を生成します。
+ *
+ * @return insecure 用の TLS 設定
+ */
+private fun createInsecureTlsConfig(): InsecureTlsConfig {
     val trustAllCertificatesManager =
         object : X509TrustManager {
             override fun checkClientTrusted(
@@ -189,8 +190,9 @@ class SignalingChannelImpl
                 runBlocking(Dispatchers.IO) {
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
-                    createInsecureTlsConfig(insecure)?.let { insecureTlsConfig ->
-                        SoraLogger.w(TAG, "[signaling:$role] insecure is enabled")
+                    if (insecure) {
+                        val insecureTlsConfig = createInsecureTlsConfig()
+                        SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
                         builder =
                             builder
                                 .sslSocketFactory(

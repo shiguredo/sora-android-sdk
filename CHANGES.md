@@ -26,8 +26,7 @@
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
   - @zztkm
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
-  - `SoraMediaChannel` の `insecure` に true を指定すると、WebSocket Signaling のサーバー証明書検証とホスト名検証をスキップする
-  - `SoraMediaChannel` の `insecure` に true を指定すると、TURN-TLS のサーバー証明書検証をスキップする
+  - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
 
 ## 2026.1.0
