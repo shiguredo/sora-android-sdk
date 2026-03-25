@@ -163,7 +163,7 @@ class SignalingChannelImpl
                             builder = builder.hostnameVerifier(hostnameVerifier)
                         }
                     } else if (caCertificate != null) {
-                        val tlsSocketConfig = TlsConfigFactory.createTlsSocketConfig(caCertificate)
+                        val tlsSocketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
                         builder =
                             builder.sslSocketFactory(
                                 tlsSocketConfig.sslSocketFactory,

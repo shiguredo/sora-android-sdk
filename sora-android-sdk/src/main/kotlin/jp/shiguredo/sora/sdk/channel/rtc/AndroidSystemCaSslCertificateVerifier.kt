@@ -25,7 +25,12 @@ internal class AndroidSystemCaSslCertificateVerifier(
         private const val OID_ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0"
     }
 
-    private val trustManager: X509TrustManager = TlsConfigFactory.createTrustManager(caCertificate)
+    private val trustManager: X509TrustManager =
+        if (caCertificate == null) {
+            TlsConfigFactory.createSystemTrustManager()
+        } else {
+            TlsConfigFactory.createCustomCaTrustManager(caCertificate)
+        }
 
     // verifyChain を実装している場合は verifyChain が呼び出されるため
     // verify は基本的に利用しない想定になっています。
