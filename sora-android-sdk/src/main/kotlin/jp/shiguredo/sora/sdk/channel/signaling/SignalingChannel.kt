@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.channel.tls.CustomCaTls
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -143,6 +144,7 @@ class SignalingChannelImpl
         private val bundleId: String? = null,
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
+        private val caCertificate: X509Certificate? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -199,6 +201,13 @@ class SignalingChannelImpl
                                     insecureTlsConfig.sslSocketFactory,
                                     insecureTlsConfig.trustManager,
                                 ).hostnameVerifier(insecureTlsConfig.hostnameVerifier)
+                    } else if (caCertificate != null) {
+                        val tlsSocketConfig = CustomCaTls.createTlsSocketConfig(caCertificate)
+                        builder =
+                            builder.sslSocketFactory(
+                                tlsSocketConfig.sslSocketFactory,
+                                tlsSocketConfig.trustManager,
+                            )
                     }
 
                     if (mediaOption.proxy.type != ProxyType.NONE) {

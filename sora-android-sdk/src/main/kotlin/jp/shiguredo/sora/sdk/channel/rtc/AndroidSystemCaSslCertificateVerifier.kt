@@ -1,16 +1,15 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
+import jp.shiguredo.sora.sdk.channel.tls.CustomCaTls
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.SSLCertificateVerifier
 import java.io.ByteArrayInputStream
-import java.security.KeyStore
 import java.security.cert.CertPathValidator
 import java.security.cert.CertificateFactory
 import java.security.cert.CertificateParsingException
 import java.security.cert.PKIXParameters
 import java.security.cert.TrustAnchor
 import java.security.cert.X509Certificate
-import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 /**
@@ -18,6 +17,7 @@ import javax.net.ssl.X509TrustManager
  */
 internal class AndroidSystemCaSslCertificateVerifier(
     private val insecure: Boolean,
+    private val caCertificate: X509Certificate? = null,
 ) : SSLCertificateVerifier {
     companion object {
         private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
@@ -25,7 +25,7 @@ internal class AndroidSystemCaSslCertificateVerifier(
         private const val OID_ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0"
     }
 
-    private val trustManager: X509TrustManager = createTrustManager()
+    private val trustManager: X509TrustManager = CustomCaTls.createTrustManager(caCertificate)
 
     // verifyChain を実装している場合は verifyChain が呼び出されるため
     // verify は基本的に利用しない想定になっています。
@@ -94,15 +94,4 @@ internal class AndroidSystemCaSslCertificateVerifier(
             SoraLogger.w(TAG, "EKU の解析に失敗しました: ${error.message}")
             false
         }
-
-    private fun createTrustManager(): X509TrustManager {
-        val trustManagerFactory =
-            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        trustManagerFactory.init(null as KeyStore?)
-
-        return trustManagerFactory.trustManagers
-            .filterIsInstance<X509TrustManager>()
-            .firstOrNull()
-            ?: throw IllegalStateException("X509TrustManager を取得できませんでした")
-    }
 }

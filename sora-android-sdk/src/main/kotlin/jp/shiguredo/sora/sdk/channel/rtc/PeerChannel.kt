@@ -32,6 +32,7 @@ import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
@@ -147,6 +148,7 @@ class PeerChannelImpl(
     private val networkConfig: PeerNetworkConfig,
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
+    private val caCertificate: X509Certificate? = null,
     private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
@@ -177,7 +179,14 @@ class PeerChannelImpl(
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption, simulcastEnabled, insecure, listener)
+    private val componentFactory =
+        RTCComponentFactory(
+            mediaOption = mediaOption,
+            simulcastEnabled = simulcastEnabled,
+            insecure = insecure,
+            caCertificate = caCertificate,
+            listener = listener,
+        )
 
     private var conn: PeerConnection? = null
 

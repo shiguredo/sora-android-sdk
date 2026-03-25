@@ -58,6 +58,7 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
+import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicLong
@@ -94,6 +95,7 @@ import kotlin.coroutines.resume
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
+ * @param caCertificate WSS と TURN-TLS のサーバー証明書検証で Android OS の CA 証明書に追加して利用する CA 証明書
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -121,6 +123,7 @@ class SoraMediaChannel
         private val forwardingFilterOption: SoraForwardingFilterOption? = null,
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         private val insecure: Boolean = false,
+        private val caCertificate: X509Certificate? = null,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName
@@ -1127,6 +1130,7 @@ class SoraMediaChannel
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
+                    caCertificate = caCertificate,
                     listener = null,
                 )
             clientOfferPeer.run {
@@ -1189,6 +1193,7 @@ class SoraMediaChannel
                     redirect = redirectLocation != null,
                     forwardingFilterOption = forwardingFilterOption,
                     forwardingFiltersOption = forwardingFiltersOption,
+                    caCertificate = caCertificate,
                 )
             signaling!!.connect()
         }
@@ -1208,6 +1213,7 @@ class SoraMediaChannel
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
+                    caCertificate = caCertificate,
                     simulcastEnabled = offerMessage.simulcast,
                     dataChannelConfigs = offerMessage.dataChannels,
                     listener = peerListener,
