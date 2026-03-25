@@ -1,4 +1,5 @@
 package jp.shiguredo.sora.sdk.channel.tls
+
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.HostnameVerifier
@@ -28,13 +29,22 @@ internal object TlsConfigFactory {
     /**
      * Android OS の既定の CA 証明書を利用する `X509TrustManager` を生成します。
      */
-    fun createSystemTrustManager(): X509TrustManager = createDefaultTrustManager()
+    fun createSystemTrustManager(): X509TrustManager {
+        val trustManagerFactory =
+            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        trustManagerFactory.init(null as KeyStore?)
+
+        return trustManagerFactory.trustManagers
+            .filterIsInstance<X509TrustManager>()
+            .firstOrNull()
+            ?: throw IllegalStateException("failed to obtain X509TrustManager")
+    }
 
     /**
      * Android OS の既定の CA 証明書と追加の CA 証明書を併用する `X509TrustManager` を生成します。
      */
     fun createCustomCaTrustManager(caCertificate: X509Certificate): X509TrustManager {
-        val defaultTrustManager = createDefaultTrustManager()
+        val defaultTrustManager = createSystemTrustManager()
 
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
         keyStore.load(null, null)
@@ -107,19 +117,5 @@ internal object TlsConfigFactory {
         val sslContext = SSLContext.getInstance("TLS")
         sslContext.init(null, arrayOf(trustManager), null)
         return sslContext.socketFactory
-    }
-
-    /**
-     * Android OS の既定の CA 証明書を利用する `X509TrustManager` を内部的に生成します。
-     */
-    private fun createDefaultTrustManager(): X509TrustManager {
-        val trustManagerFactory =
-            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        trustManagerFactory.init(null as KeyStore?)
-
-        return trustManagerFactory.trustManagers
-            .filterIsInstance<X509TrustManager>()
-            .firstOrNull()
-            ?: throw IllegalStateException("failed to obtain X509TrustManager")
     }
 }
