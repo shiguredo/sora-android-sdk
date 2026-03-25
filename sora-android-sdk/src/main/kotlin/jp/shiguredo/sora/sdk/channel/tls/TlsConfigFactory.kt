@@ -23,7 +23,7 @@ internal data class TlsSocketConfig(
  * Sora Android SDK で利用する TLS 関連設定を生成します。
  *
  * Android OS の既定の CA 証明書を利用する経路と、
- * 追加の CA 証明書を組み合わせる経路、証明書検証を無効化する経路をまとめて扱います。
+ * 指定した CA 証明書のみを利用する経路、証明書検証を無効化する経路をまとめて扱います。
  */
 internal object TlsConfigFactory {
     /**
@@ -41,20 +41,11 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * Android OS の既定の CA 証明書と追加の CA 証明書を併用する `X509TrustManager` を生成します。
+     * 指定した CA 証明書のみを利用する `X509TrustManager` を生成します。
      */
     fun createCustomCaTrustManager(caCertificate: X509Certificate): X509TrustManager {
-        val defaultTrustManager = createSystemTrustManager()
-
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
         keyStore.load(null, null)
-
-        // acceptedIssuers はこの時点のシステム CA のスナップショットです。
-        // そのため、この KeyStore を使う経路では、インスタンスを再作成し、
-        // TrustManager を再生成するまでシステム CA の更新は反映されません。
-        defaultTrustManager.acceptedIssuers.forEachIndexed { index, certificate ->
-            keyStore.setCertificateEntry("system-ca-$index", certificate)
-        }
         keyStore.setCertificateEntry("custom-ca", caCertificate)
 
         val trustManagerFactory =

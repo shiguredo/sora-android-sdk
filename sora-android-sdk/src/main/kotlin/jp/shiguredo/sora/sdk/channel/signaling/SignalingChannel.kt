@@ -164,7 +164,7 @@ class SignalingChannelImpl
                         }
                     } else if (caCertificate != null) {
                         val tlsSocketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
-                        SoraLogger.i(TAG, "[signaling:$role] custom CA certificate has been added for webSocket signaling")
+                        SoraLogger.i(TAG, "[signaling:$role] use only the specified CA certificate for webSocket signaling without the system trust store")
                         builder =
                             builder.sslSocketFactory(
                                 tlsSocketConfig.sslSocketFactory,

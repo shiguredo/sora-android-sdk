@@ -16,7 +16,7 @@ import javax.net.ssl.X509TrustManager
  * libwebrtc の `SSLCertificateVerifier` として TURN-TLS のサーバー証明書チェーンを検証します。
  *
  * 検証には Android OS の CA 証明書を利用し、`caCertificate` が指定された場合は
- * 追加の CA 証明書もあわせて利用します。
+ * その CA 証明書のみを利用します。
  */
 internal class TurnTlsCertificateVerifier(
     private val insecure: Boolean,
@@ -33,7 +33,7 @@ internal class TurnTlsCertificateVerifier(
             TlsConfigFactory.createSystemTrustManager()
         } else {
             TlsConfigFactory.createCustomCaTrustManager(caCertificate).also {
-                SoraLogger.i(TAG, "custom CA certificate has been added for TURN-TLS")
+                SoraLogger.i(TAG, "use only the specified CA certificate for TURN-TLS without the system trust store")
             }
         }
 
