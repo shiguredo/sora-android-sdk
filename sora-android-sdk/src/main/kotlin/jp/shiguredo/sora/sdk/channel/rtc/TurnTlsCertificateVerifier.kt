@@ -32,7 +32,9 @@ internal class TurnTlsCertificateVerifier(
         if (caCertificate == null) {
             TlsConfigFactory.createSystemTrustManager()
         } else {
-            TlsConfigFactory.createCustomCaTrustManager(caCertificate)
+            TlsConfigFactory.createCustomCaTrustManager(caCertificate).also {
+                SoraLogger.i(TAG, "custom CA certificate has been added for TURN-TLS")
+            }
         }
 
     // verifyChain を実装している場合は verifyChain が呼び出されるため

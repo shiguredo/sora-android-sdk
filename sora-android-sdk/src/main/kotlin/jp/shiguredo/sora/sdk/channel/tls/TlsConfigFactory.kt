@@ -1,5 +1,4 @@
 package jp.shiguredo.sora.sdk.channel.tls
-
 import java.security.KeyStore
 import java.security.cert.X509Certificate
 import javax.net.ssl.HostnameVerifier
@@ -52,10 +51,13 @@ internal object TlsConfigFactory {
             TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
         trustManagerFactory.init(keyStore)
 
-        return trustManagerFactory.trustManagers
-            .filterIsInstance<X509TrustManager>()
-            .firstOrNull()
-            ?: throw IllegalStateException("X509TrustManager を取得できませんでした")
+        val trustManager =
+            trustManagerFactory.trustManagers
+                .filterIsInstance<X509TrustManager>()
+                .firstOrNull()
+                ?: throw IllegalStateException("failed to obtain X509TrustManager")
+
+        return trustManager
     }
 
     /**
@@ -118,6 +120,6 @@ internal object TlsConfigFactory {
         return trustManagerFactory.trustManagers
             .filterIsInstance<X509TrustManager>()
             .firstOrNull()
-            ?: throw IllegalStateException("X509TrustManager を取得できませんでした")
+            ?: throw IllegalStateException("failed to obtain X509TrustManager")
     }
 }
