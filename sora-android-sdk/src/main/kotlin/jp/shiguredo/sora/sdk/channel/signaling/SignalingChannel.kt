@@ -43,7 +43,7 @@ private class InsecureTlsConfig(
 )
 
 /**
- * WebSocket Signaling の TLS 証明書検証をスキップするための設定を生成します。
+ * WebSocket の TLS 証明書検証をスキップするための設定を生成します。
  *
  * @return insecure 用の TLS 設定
  */

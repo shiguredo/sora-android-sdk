@@ -87,13 +87,13 @@ import kotlin.coroutines.resume
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
  * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
- * @param insecure WebSocket Signaling と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
+ * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -108,7 +108,6 @@ class SoraMediaChannel
         private var listener: Listener?,
         private val clientId: String? = null,
         private val signalingNotifyMetadata: Any? = null,
-        private val insecure: Boolean = false,
         private val peerConnectionOption: PeerConnectionOption = PeerConnectionOption(),
         dataChannelSignaling: Boolean? = null,
         ignoreDisconnectWebSocket: Boolean? = null,
@@ -121,6 +120,7 @@ class SoraMediaChannel
         )
         private val forwardingFilterOption: SoraForwardingFilterOption? = null,
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
+        private val insecure: Boolean = false,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName
