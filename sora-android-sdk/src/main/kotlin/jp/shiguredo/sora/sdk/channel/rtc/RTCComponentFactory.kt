@@ -165,7 +165,7 @@ class RTCComponentFactory(
     }
 
     internal fun createSSLCertificateVerifier() =
-        AndroidSystemCaSslCertificateVerifier(
+        TurnTlsCertificateVerifier(
             insecure = insecure,
             caCertificate = caCertificate,
         )

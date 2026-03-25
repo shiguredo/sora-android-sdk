@@ -13,14 +13,17 @@ import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 
 /**
- * Android OS の CA 証明書を使って TLS サーバー証明書チェーンを検証します。
+ * libwebrtc の `SSLCertificateVerifier` として TURN-TLS のサーバー証明書チェーンを検証します。
+ *
+ * 検証には Android OS の CA 証明書を利用し、`caCertificate` が指定された場合は
+ * 追加の CA 証明書もあわせて利用します。
  */
-internal class AndroidSystemCaSslCertificateVerifier(
+internal class TurnTlsCertificateVerifier(
     private val insecure: Boolean,
     private val caCertificate: X509Certificate? = null,
 ) : SSLCertificateVerifier {
     companion object {
-        private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
+        private val TAG = TurnTlsCertificateVerifier::class.simpleName
         private const val OID_SERVER_AUTH = "1.3.6.1.5.5.7.3.1"
         private const val OID_ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0"
     }
