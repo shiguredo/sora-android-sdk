@@ -16,7 +16,9 @@ import javax.net.ssl.X509TrustManager
 /**
  * Android OS の CA 証明書を使って TLS サーバー証明書チェーンを検証します。
  */
-internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
+internal class AndroidSystemCaSslCertificateVerifier(
+    private val insecure: Boolean,
+) : SSLCertificateVerifier {
     companion object {
         private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
         private const val OID_SERVER_AUTH = "1.3.6.1.5.5.7.3.1"
@@ -30,6 +32,12 @@ internal class AndroidSystemCaSslCertificateVerifier : SSLCertificateVerifier {
     override fun verify(certificate: ByteArray): Boolean = verifyChain(arrayOf(certificate))
 
     override fun verifyChain(certificateChain: Array<ByteArray>): Boolean {
+        // PeerConnection.IceServer に TLS_CERT_POLICY_INSECURE_NO_CHECK が設定されていたとしても
+        // この verifier が呼び出されるため、余計な検証処理とログ出力を抑制するためにここでスキップする。
+        if (insecure) {
+            return true
+        }
+
         if (certificateChain.isEmpty()) {
             SoraLogger.w(TAG, "verifyChain() に空の証明書チェーンが渡されました")
             return false

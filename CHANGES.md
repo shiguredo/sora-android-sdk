@@ -24,6 +24,10 @@
     - DataChannel (`label = signaling`) で受信: `re-offer`, `close`
     - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
+  - @zztkm
+- [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
+  - insecure = true の場合はサーバー証明書の検証をスキップする
+  - @zztkm
 
 ## 2026.1.0
 
