@@ -95,7 +95,7 @@ import kotlin.coroutines.resume
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
- * @param caCertificate WebSocket と TURN-TLS で接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
+ * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
  */
 class SoraMediaChannel
     @JvmOverloads
