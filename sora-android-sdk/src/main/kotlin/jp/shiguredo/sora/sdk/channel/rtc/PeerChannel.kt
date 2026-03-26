@@ -9,6 +9,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.Encoding
 import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
+import jp.shiguredo.sora.sdk.track.TrackStreamIdRegistry
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import jp.shiguredo.sora.sdk.util.ZipHelper
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -248,7 +249,10 @@ class PeerChannelImpl(
 
             override fun onAddStream(ms: MediaStream?) {
                 SoraLogger.d(TAG, "[rtc] @onAddStream msid=${ms?.id}")
-                ms?.let { listener?.onAddRemoteStream(ms) }
+                ms?.let {
+                    TrackStreamIdRegistry.register(ms)
+                    listener?.onAddRemoteStream(ms)
+                }
             }
 
             override fun onAddTrack(
@@ -629,6 +633,7 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "local managers' initTrack: audio")
         localAudioManager.initTrack(factory!!, mediaOption.audioOption)
         localAudioManager.track?.let {
+            TrackStreamIdRegistry.register(it, localStream.id)
             localStream.addTrack(it)
         }
         if (mediaOption.audioOption.initialAudioHardMute && mediaOption.audioOption.audioDeviceModule == null) {
@@ -641,6 +646,7 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "local managers' initTrack: video => ${mediaOption.videoUpstreamContext}")
         localVideoManager?.initTrack(factory!!, mediaOption.videoUpstreamContext, appContext)
         localVideoManager?.track?.let {
+            TrackStreamIdRegistry.register(it, localStream.id)
             localStream.addTrack(it)
         }
         // CameraVideoCapturer を SDK 内で生成している場合はここでキャプチャを開始する
@@ -1023,10 +1029,13 @@ class PeerChannelImpl(
             if (track == null) {
                 SoraLogger.w(TAG, "[audio_recording_pause] localTrack is null after reinit; cannot resume audio")
                 AudioTrackResumeResult.FAILURE
-            } else if (attachOrUpdateAudioTrack(track, "[audio_recording_pause] recreated")) {
-                AudioTrackResumeResult.SUCCESS
             } else {
-                AudioTrackResumeResult.FAILURE
+                TrackStreamIdRegistry.register(track, localStreamId)
+                if (attachOrUpdateAudioTrack(track, "[audio_recording_pause] recreated")) {
+                    AudioTrackResumeResult.SUCCESS
+                } else {
+                    AudioTrackResumeResult.FAILURE
+                }
             }
         } catch (e: Exception) {
             SoraLogger.w(TAG, "[audio_recording_pause] failed while reinitializing local audio track: ${e.message}")
