@@ -119,7 +119,10 @@ internal object TlsConfigFactory {
     /**
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      */
-    fun createInsecureTlsSocketConfig(): TlsSocketConfig {
+    fun createInsecureTlsSocketConfig(
+        clientCertificate: X509Certificate? = null,
+        clientPrivateKey: PrivateKey? = null,
+    ): TlsSocketConfig {
         val trustManager =
             object : X509TrustManager {
                 override fun checkClientTrusted(
@@ -139,7 +142,16 @@ internal object TlsConfigFactory {
 
         return TlsSocketConfig(
             trustManager = trustManager,
-            sslSocketFactory = createSslSocketFactory(trustManager = trustManager),
+            sslSocketFactory =
+                createSslSocketFactory(
+                    trustManager = trustManager,
+                    keyManagers =
+                        if (clientCertificate != null && clientPrivateKey != null) {
+                            createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey)
+                        } else {
+                            null
+                        },
+                ),
             hostnameVerifier = HostnameVerifier { _, _ -> true },
         )
     }

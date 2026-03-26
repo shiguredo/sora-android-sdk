@@ -158,8 +158,19 @@ class SignalingChannelImpl
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
                     if (insecure) {
-                        val insecureTlsConfig = TlsConfigFactory.createInsecureTlsSocketConfig()
-                        SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
+                        val insecureTlsConfig =
+                            TlsConfigFactory.createInsecureTlsSocketConfig(
+                                clientCertificate = clientCertificate,
+                                clientPrivateKey = clientPrivateKey,
+                            )
+                        SoraLogger.w(
+                            TAG,
+                            if (clientCertificate != null && clientPrivateKey != null) {
+                                "[signaling:$role] skip TLS certificate and hostname verification and use the specified client certificate for webSocket signaling"
+                            } else {
+                                "[signaling:$role] skip TLS certificate and hostname verification"
+                            },
+                        )
                         builder =
                             builder
                                 .sslSocketFactory(
