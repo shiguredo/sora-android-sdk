@@ -28,6 +28,7 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.PrivateKey
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -103,6 +104,8 @@ class SignalingChannelImpl
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
+        private val clientCertificate: X509Certificate? = null,
+        private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -142,6 +145,10 @@ class SignalingChannelImpl
         }
 
         init {
+            require((clientCertificate == null) == (clientPrivateKey == null)) {
+                "clientCertificate and clientPrivateKey must be specified together"
+            }
+
             // OkHttpClient は main スレッドで初期化しない
             // プロキシの設定としてホスト名が指定された場合、名前解決のネットワーク通信が発生し、
             // android.os.NetworkOnMainThreadException が起きてしまう
@@ -162,17 +169,52 @@ class SignalingChannelImpl
                         insecureTlsConfig.hostnameVerifier?.let { hostnameVerifier ->
                             builder = builder.hostnameVerifier(hostnameVerifier)
                         }
-                    } else if (caCertificate != null) {
-                        val tlsSocketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
-                        SoraLogger.i(
-                            TAG,
-                            "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
-                        )
-                        builder =
-                            builder.sslSocketFactory(
-                                tlsSocketConfig.sslSocketFactory,
-                                tlsSocketConfig.trustManager,
-                            )
+                    } else {
+                        val tlsSocketConfig =
+                            when {
+                                caCertificate != null &&
+                                    clientCertificate != null &&
+                                    clientPrivateKey != null -> {
+                                    SoraLogger.i(
+                                        TAG,
+                                        "[signaling:$role] using the specified CA certificate and client certificate for webSocket signaling",
+                                    )
+                                    TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
+                                        caCertificate = caCertificate,
+                                        clientCertificate = clientCertificate,
+                                        clientPrivateKey = clientPrivateKey,
+                                    )
+                                }
+
+                                caCertificate != null -> {
+                                    SoraLogger.i(
+                                        TAG,
+                                        "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
+                                    )
+                                    TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
+                                }
+
+                                clientCertificate != null && clientPrivateKey != null -> {
+                                    SoraLogger.i(
+                                        TAG,
+                                        "[signaling:$role] using the specified client certificate for webSocket signaling",
+                                    )
+                                    TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
+                                        clientCertificate = clientCertificate,
+                                        clientPrivateKey = clientPrivateKey,
+                                    )
+                                }
+
+                                else -> null
+                            }
+
+                        if (tlsSocketConfig != null) {
+                            builder =
+                                builder.sslSocketFactory(
+                                    tlsSocketConfig.sslSocketFactory,
+                                    tlsSocketConfig.trustManager,
+                                )
+                        }
                     }
 
                     if (mediaOption.proxy.type != ProxyType.NONE) {

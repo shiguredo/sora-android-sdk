@@ -58,6 +58,7 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
+import java.security.PrivateKey
 import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
@@ -96,6 +97,8 @@ import kotlin.coroutines.resume
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
+ * @param clientCertificate mTLS で使用するクライアント証明書を指定。現時点では WebSocket にのみ適用され、TURN-TLS には適用されません。
+ * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。現時点では WebSocket にのみ適用され、TURN-TLS には適用されません。
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -124,6 +127,8 @@ class SoraMediaChannel
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
+        private val clientCertificate: X509Certificate? = null,
+        private val clientPrivateKey: PrivateKey? = null,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName
@@ -198,6 +203,10 @@ class SoraMediaChannel
                 (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())
             ) {
                 throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
+            }
+
+            require((clientCertificate == null) == (clientPrivateKey == null)) {
+                "clientCertificate and clientPrivateKey must be specified together"
             }
 
             // コンストラクタ以外で dataChannelSignaling, ignoreDisconnectWebSocket を参照すべきではない
@@ -1194,6 +1203,8 @@ class SoraMediaChannel
                     forwardingFilterOption = forwardingFilterOption,
                     forwardingFiltersOption = forwardingFiltersOption,
                     caCertificate = caCertificate,
+                    clientCertificate = clientCertificate,
+                    clientPrivateKey = clientPrivateKey,
                 )
             signaling!!.connect()
         }

@@ -11,6 +11,10 @@
 
 ## develop
 
+- [ADD] WSS の接続に利用するクライアント証明書を指定できるようにする
+  - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を追加する
+  - `insecure = true` の場合はクライアント証明書を指定していても適用しない
+  - @zztkm
 - [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
   - `SoraMediaChannel` に `caCertificate` 引数を追加する
   - システムの信頼ストアを使用せず、指定された CA 証明書のみを使用する
