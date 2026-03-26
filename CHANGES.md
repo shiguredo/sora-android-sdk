@@ -13,7 +13,7 @@
 
 - [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
   - `SoraMediaChannel` に `caCertificate` 引数を追加する
-  - 指定した CA 証明書は Android OS の既定 CA 証明書に追加して利用する
+  - システムの信頼ストアを使用せず、指定されたCA証明書のみを使用する
   - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
   - @zztkm
 - [CHANGE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
