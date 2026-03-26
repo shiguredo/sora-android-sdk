@@ -33,7 +33,7 @@ internal class TurnTlsCertificateVerifier(
             TlsConfigFactory.createSystemTrustManager()
         } else {
             TlsConfigFactory.createCustomCaTrustManager(caCertificate).also {
-                SoraLogger.i(TAG, "use only the specified CA certificate for TURN-TLS without the system trust store")
+                SoraLogger.i(TAG, "using only the specified CA certificate for TURN-TLS without the system trust store")
             }
         }
 
