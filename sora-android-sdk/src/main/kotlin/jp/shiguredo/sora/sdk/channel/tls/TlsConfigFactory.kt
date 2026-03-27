@@ -118,6 +118,9 @@ internal object TlsConfigFactory {
 
     /**
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
+     *
+     * `clientCertificate` と `clientPrivateKey` を指定した場合は、
+     * サーバー証明書検証を無効化したままクライアント証明書認証を有効にします。
      */
     fun createInsecureTlsSocketConfig(
         clientCertificate: X509Certificate? = null,
