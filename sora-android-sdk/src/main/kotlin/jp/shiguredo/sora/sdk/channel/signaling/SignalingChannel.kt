@@ -150,6 +150,11 @@ class SignalingChannelImpl
             closing.set(true)
         }
 
+        /**
+         * WebSocket シグナリングで利用する TLS モードを決定します。
+         *
+         * `insecure` が最優先で、それ以外ではカスタム CA の有無で切り替えます。
+         */
         private fun resolveTlsMode(): SignalingTlsMode =
             when {
                 insecure -> SignalingTlsMode.INSECURE
@@ -157,8 +162,25 @@ class SignalingChannelImpl
                 else -> SignalingTlsMode.SYSTEM_DEFAULT
             }
 
+        /**
+         * クライアント証明書認証を有効にするための情報がそろっているかを返します。
+         */
         private fun hasClientAuthentication(): Boolean = clientCertificate != null && clientPrivateKey != null
 
+        /**
+         * OkHttpClient にカスタム TLS 設定を適用する必要があるかを返します。
+         *
+         * システム既定のサーバー証明書検証のみを使い、クライアント証明書も指定されていない場合は
+         * `false` になります。
+         */
+        private fun needsCustomTlsConfiguration(): Boolean =
+            resolveTlsMode() != SignalingTlsMode.SYSTEM_DEFAULT || hasClientAuthentication()
+
+        /**
+         * 現在の設定に対応する TLS ソケット設定を生成します。
+         *
+         * この関数は [needsCustomTlsConfiguration] が `true` の場合にのみ呼び出される前提です。
+         */
         private fun createTlsSocketConfig() =
             when (resolveTlsMode()) {
                 SignalingTlsMode.INSECURE ->
@@ -179,16 +201,17 @@ class SignalingChannelImpl
                     }
 
                 SignalingTlsMode.SYSTEM_DEFAULT ->
-                    if (hasClientAuthentication()) {
-                        TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
-                            clientCertificate = clientCertificate!!,
-                            clientPrivateKey = clientPrivateKey!!,
-                        )
-                    } else {
-                        null
-                    }
+                    TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
+                        clientCertificate = clientCertificate!!,
+                        clientPrivateKey = clientPrivateKey!!,
+                    )
             }
 
+        /**
+         * 実際に適用する TLS 構成をログへ出力します。
+         *
+         * この関数は [needsCustomTlsConfiguration] が `true` の場合にのみ呼び出される前提です。
+         */
         private fun logTlsConfiguration() {
             when (resolveTlsMode()) {
                 SignalingTlsMode.INSECURE -> {
@@ -240,8 +263,8 @@ class SignalingChannelImpl
                 runBlocking(Dispatchers.IO) {
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
-                    val tlsSocketConfig = createTlsSocketConfig()
-                    if (tlsSocketConfig != null) {
+                    if (needsCustomTlsConfiguration()) {
+                        val tlsSocketConfig = createTlsSocketConfig()
                         logTlsConfiguration()
                         builder =
                             builder.sslSocketFactory(

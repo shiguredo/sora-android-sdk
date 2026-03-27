@@ -97,7 +97,7 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * 追加の CA 証明書とクライアント証明書を併用する TLS ソケット設定を生成します。
+     * 指定した CA 証明書とクライアント証明書を併用する TLS ソケット設定を生成します。
      */
     fun createCustomCaWithClientAuthenticationTlsSocketConfig(
         caCertificate: X509Certificate,
