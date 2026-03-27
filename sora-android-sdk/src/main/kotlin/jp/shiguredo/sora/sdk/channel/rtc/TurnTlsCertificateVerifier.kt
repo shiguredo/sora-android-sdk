@@ -1,31 +1,41 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
+import jp.shiguredo.sora.sdk.channel.tls.TlsConfigFactory
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.SSLCertificateVerifier
 import java.io.ByteArrayInputStream
-import java.security.KeyStore
 import java.security.cert.CertPathValidator
 import java.security.cert.CertificateFactory
 import java.security.cert.CertificateParsingException
 import java.security.cert.PKIXParameters
 import java.security.cert.TrustAnchor
 import java.security.cert.X509Certificate
-import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 /**
- * Android OS の CA 証明書を使って TLS サーバー証明書チェーンを検証します。
+ * libwebrtc の `SSLCertificateVerifier` として TURN-TLS のサーバー証明書チェーンを検証します。
+ *
+ * 検証には Android OS の CA 証明書を利用し、`caCertificate` が指定された場合は
+ * その CA 証明書のみを利用します。
  */
-internal class AndroidSystemCaSslCertificateVerifier(
+internal class TurnTlsCertificateVerifier(
     private val insecure: Boolean,
+    private val caCertificate: X509Certificate? = null,
 ) : SSLCertificateVerifier {
     companion object {
-        private val TAG = AndroidSystemCaSslCertificateVerifier::class.simpleName
+        private val TAG = TurnTlsCertificateVerifier::class.simpleName
         private const val OID_SERVER_AUTH = "1.3.6.1.5.5.7.3.1"
         private const val OID_ANY_EXTENDED_KEY_USAGE = "2.5.29.37.0"
     }
 
-    private val trustManager: X509TrustManager = createTrustManager()
+    private val trustManager: X509TrustManager =
+        if (caCertificate == null) {
+            TlsConfigFactory.createSystemTrustManager()
+        } else {
+            TlsConfigFactory.createCustomCaTrustManager(caCertificate).also {
+                SoraLogger.i(TAG, "using only the specified CA certificate for TURN-TLS without the system trust store")
+            }
+        }
 
     // verifyChain を実装している場合は verifyChain が呼び出されるため
     // verify は基本的に利用しない想定になっています。
@@ -94,15 +104,4 @@ internal class AndroidSystemCaSslCertificateVerifier(
             SoraLogger.w(TAG, "EKU の解析に失敗しました: ${error.message}")
             false
         }
-
-    private fun createTrustManager(): X509TrustManager {
-        val trustManagerFactory =
-            TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-        trustManagerFactory.init(null as KeyStore?)
-
-        return trustManagerFactory.trustManagers
-            .filterIsInstance<X509TrustManager>()
-            .firstOrNull()
-            ?: throw IllegalStateException("X509TrustManager を取得できませんでした")
-    }
 }

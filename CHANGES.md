@@ -25,6 +25,11 @@
     - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
   - @zztkm
+- [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
+  - `SoraMediaChannel` に `caCertificate` 引数を追加する
+  - システムの信頼ストアを使用せず、指定された CA 証明書のみを使用する
+  - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
+  - @zztkm
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm

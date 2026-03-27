@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.NotificationMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.channel.tls.TlsConfigFactory
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -31,48 +32,6 @@ import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.X509TrustManager
-
-private class InsecureTlsConfig(
-    val trustManager: X509TrustManager,
-    val sslSocketFactory: SSLSocketFactory,
-    val hostnameVerifier: HostnameVerifier,
-)
-
-/**
- * WebSocket の TLS 証明書検証をスキップするための設定を生成します。
- *
- * @return insecure 用の TLS 設定
- */
-private fun createInsecureTlsConfig(): InsecureTlsConfig {
-    val trustAllCertificatesManager =
-        object : X509TrustManager {
-            override fun checkClientTrusted(
-                chain: Array<X509Certificate>,
-                authType: String,
-            ) {
-            }
-
-            override fun checkServerTrusted(
-                chain: Array<X509Certificate>,
-                authType: String,
-            ) {
-            }
-
-            override fun getAcceptedIssuers(): Array<X509Certificate> = emptyArray()
-        }
-    val sslContext = SSLContext.getInstance("TLS")
-    sslContext.init(null, arrayOf(trustAllCertificatesManager), null)
-
-    return InsecureTlsConfig(
-        trustManager = trustAllCertificatesManager,
-        sslSocketFactory = sslContext.socketFactory,
-        hostnameVerifier = HostnameVerifier { _, _ -> true },
-    )
-}
 
 interface SignalingChannel {
     fun connect()
@@ -143,6 +102,7 @@ class SignalingChannelImpl
         private val bundleId: String? = null,
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
+        private val caCertificate: X509Certificate? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -191,14 +151,28 @@ class SignalingChannelImpl
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
                     if (insecure) {
-                        val insecureTlsConfig = createInsecureTlsConfig()
+                        val insecureTlsConfig = TlsConfigFactory.createInsecureTlsSocketConfig()
                         SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
                         builder =
                             builder
                                 .sslSocketFactory(
                                     insecureTlsConfig.sslSocketFactory,
                                     insecureTlsConfig.trustManager,
-                                ).hostnameVerifier(insecureTlsConfig.hostnameVerifier)
+                                )
+                        insecureTlsConfig.hostnameVerifier?.let { hostnameVerifier ->
+                            builder = builder.hostnameVerifier(hostnameVerifier)
+                        }
+                    } else if (caCertificate != null) {
+                        val tlsSocketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
+                        SoraLogger.i(
+                            TAG,
+                            "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
+                        )
+                        builder =
+                            builder.sslSocketFactory(
+                                tlsSocketConfig.sslSocketFactory,
+                                tlsSocketConfig.trustManager,
+                            )
                     }
 
                     if (mediaOption.proxy.type != ProxyType.NONE) {
