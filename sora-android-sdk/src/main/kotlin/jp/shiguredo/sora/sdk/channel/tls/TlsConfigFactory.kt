@@ -64,7 +64,7 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * 追加の CA 証明書を利用する TLS ソケット設定を生成します。
+     * 指定した CA 証明書のみを利用する TLS ソケット設定を生成します。
      */
     fun createCustomCaTlsSocketConfig(caCertificate: X509Certificate): TlsSocketConfig {
         val trustManager = createCustomCaTrustManager(caCertificate)
@@ -157,7 +157,7 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * 指定された `TrustManager` から `SSLSocketFactory` を生成します。
+     * 指定された TrustManager と KeyManager から `SSLSocketFactory` を生成します。
      */
     private fun createSslSocketFactory(
         trustManager: X509TrustManager,
