@@ -11,6 +11,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.channel.tls.TlsConfigFactory
+import jp.shiguredo.sora.sdk.channel.tls.TlsSocketConfig
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -126,10 +127,6 @@ class SignalingChannelImpl
             SYSTEM_DEFAULT,
         }
 
-        private data class SignalingTlsCustomization(
-            val socketConfig: jp.shiguredo.sora.sdk.channel.tls.TlsSocketConfig,
-        )
-
         private val client: OkHttpClient
         private val closing = AtomicBoolean(false)
 
@@ -186,7 +183,7 @@ class SignalingChannelImpl
          * この関数は [needsCustomTlsConfiguration] が `true` の場合にのみ呼び出される前提です。
          * ログ出力もこの関数内で行い、条件分岐とログ内容を同じ場所で管理します。
          */
-        private fun createTlsCustomization(): SignalingTlsCustomization =
+        private fun createTlsCustomization(): TlsSocketConfig =
             when (resolveTlsMode()) {
                 SignalingTlsMode.INSECURE -> {
                     if (hasClientAuthentication()) {
@@ -197,12 +194,9 @@ class SignalingChannelImpl
                     } else {
                         SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
                     }
-                    SignalingTlsCustomization(
-                        socketConfig =
-                            TlsConfigFactory.createInsecureTlsSocketConfig(
-                                clientCertificate = clientCertificate,
-                                clientPrivateKey = clientPrivateKey,
-                            ),
+                    TlsConfigFactory.createInsecureTlsSocketConfig(
+                        clientCertificate = clientCertificate,
+                        clientPrivateKey = clientPrivateKey,
                     )
                 }
 
@@ -212,22 +206,17 @@ class SignalingChannelImpl
                             TAG,
                             "[signaling:$role] using the specified CA certificate and client certificate for webSocket signaling without the system trust store",
                         )
-                        SignalingTlsCustomization(
-                            socketConfig =
-                                TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
-                                    caCertificate = caCertificate!!,
-                                    clientCertificate = clientCertificate!!,
-                                    clientPrivateKey = clientPrivateKey!!,
-                                ),
+                        TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
+                            caCertificate = caCertificate!!,
+                            clientCertificate = clientCertificate!!,
+                            clientPrivateKey = clientPrivateKey!!,
                         )
                     } else {
                         SoraLogger.i(
                             TAG,
                             "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
                         )
-                        SignalingTlsCustomization(
-                            socketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate!!),
-                        )
+                        TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate!!)
                     }
 
                 SignalingTlsMode.SYSTEM_DEFAULT -> {
@@ -235,12 +224,9 @@ class SignalingChannelImpl
                         TAG,
                         "[signaling:$role] using the specified client certificate for webSocket signaling",
                     )
-                    SignalingTlsCustomization(
-                        socketConfig =
-                            TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
-                                clientCertificate = clientCertificate!!,
-                                clientPrivateKey = clientPrivateKey!!,
-                            ),
+                    TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
+                        clientCertificate = clientCertificate!!,
+                        clientPrivateKey = clientPrivateKey!!,
                     )
                 }
             }
@@ -255,8 +241,7 @@ class SignalingChannelImpl
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
                     if (needsCustomTlsConfiguration()) {
-                        val tlsCustomization = createTlsCustomization()
-                        val tlsSocketConfig = tlsCustomization.socketConfig
+                        val tlsSocketConfig = createTlsCustomization()
                         builder =
                             builder.sslSocketFactory(
                                 tlsSocketConfig.sslSocketFactory,
