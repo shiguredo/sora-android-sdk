@@ -11,6 +11,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
 import jp.shiguredo.sora.sdk.channel.tls.TlsConfigFactory
+import jp.shiguredo.sora.sdk.channel.tls.TlsSocketConfig
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.util.SoraLogger
@@ -28,6 +29,7 @@ import org.webrtc.RTCStatsReport
 import org.webrtc.SessionDescription
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.PrivateKey
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -103,6 +105,8 @@ class SignalingChannelImpl
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
+        private val clientCertificate: X509Certificate? = null,
+        private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -115,6 +119,12 @@ class SignalingChannelImpl
     ) : SignalingChannel {
         companion object {
             private val TAG = SignalingChannelImpl::class.simpleName
+        }
+
+        private enum class SignalingTlsMode {
+            INSECURE,
+            CUSTOM_CA,
+            SYSTEM_DEFAULT,
         }
 
         private val client: OkHttpClient
@@ -141,6 +151,86 @@ class SignalingChannelImpl
             closing.set(true)
         }
 
+        /**
+         * WebSocket シグナリングで利用する TLS モードを決定します。
+         *
+         * `insecure` が最優先で、それ以外ではカスタム CA の有無で切り替えます。
+         */
+        private fun resolveTlsMode(): SignalingTlsMode =
+            when {
+                insecure -> SignalingTlsMode.INSECURE
+                caCertificate != null -> SignalingTlsMode.CUSTOM_CA
+                else -> SignalingTlsMode.SYSTEM_DEFAULT
+            }
+
+        /**
+         * クライアント証明書認証を有効にするための情報がそろっているかを返します。
+         */
+        private fun hasClientAuthentication(): Boolean = clientCertificate != null && clientPrivateKey != null
+
+        /**
+         * OkHttpClient にカスタム TLS 設定を適用する必要があるかを返します。
+         *
+         * システム既定のサーバー証明書検証のみを使い、クライアント証明書も指定されていない場合は
+         * `false` になります。
+         */
+        private fun needsCustomTlsConfiguration(): Boolean =
+            resolveTlsMode() != SignalingTlsMode.SYSTEM_DEFAULT || hasClientAuthentication()
+
+        /**
+         * 現在の設定に対応する TLS カスタマイズ内容を生成します。
+         *
+         * この関数は [needsCustomTlsConfiguration] が `true` の場合にのみ呼び出される前提です。
+         * ログ出力もこの関数内で行い、条件分岐とログ内容を同じ場所で管理します。
+         */
+        private fun createTlsCustomization(): TlsSocketConfig =
+            when (resolveTlsMode()) {
+                SignalingTlsMode.INSECURE -> {
+                    if (hasClientAuthentication()) {
+                        SoraLogger.w(
+                            TAG,
+                            "[signaling:$role] skip TLS certificate and hostname verification and use the specified client certificate for webSocket signaling",
+                        )
+                    } else {
+                        SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
+                    }
+                    TlsConfigFactory.createInsecureTlsSocketConfig(
+                        clientCertificate = clientCertificate,
+                        clientPrivateKey = clientPrivateKey,
+                    )
+                }
+
+                SignalingTlsMode.CUSTOM_CA ->
+                    if (hasClientAuthentication()) {
+                        SoraLogger.i(
+                            TAG,
+                            "[signaling:$role] using the specified CA certificate and client certificate for webSocket signaling without the system trust store",
+                        )
+                        TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
+                            caCertificate = caCertificate!!,
+                            clientCertificate = clientCertificate!!,
+                            clientPrivateKey = clientPrivateKey!!,
+                        )
+                    } else {
+                        SoraLogger.i(
+                            TAG,
+                            "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
+                        )
+                        TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate!!)
+                    }
+
+                SignalingTlsMode.SYSTEM_DEFAULT -> {
+                    SoraLogger.i(
+                        TAG,
+                        "[signaling:$role] using the specified client certificate for webSocket signaling",
+                    )
+                    TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
+                        clientCertificate = clientCertificate!!,
+                        clientPrivateKey = clientPrivateKey!!,
+                    )
+                }
+            }
+
         init {
             // OkHttpClient は main スレッドで初期化しない
             // プロキシの設定としてホスト名が指定された場合、名前解決のネットワーク通信が発生し、
@@ -150,29 +240,16 @@ class SignalingChannelImpl
                 runBlocking(Dispatchers.IO) {
                     var builder = OkHttpClient.Builder().readTimeout(0, TimeUnit.MILLISECONDS)
 
-                    if (insecure) {
-                        val insecureTlsConfig = TlsConfigFactory.createInsecureTlsSocketConfig()
-                        SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
-                        builder =
-                            builder
-                                .sslSocketFactory(
-                                    insecureTlsConfig.sslSocketFactory,
-                                    insecureTlsConfig.trustManager,
-                                )
-                        insecureTlsConfig.hostnameVerifier?.let { hostnameVerifier ->
-                            builder = builder.hostnameVerifier(hostnameVerifier)
-                        }
-                    } else if (caCertificate != null) {
-                        val tlsSocketConfig = TlsConfigFactory.createCustomCaTlsSocketConfig(caCertificate)
-                        SoraLogger.i(
-                            TAG,
-                            "[signaling:$role] using only the specified CA certificate for webSocket signaling without the system trust store",
-                        )
+                    if (needsCustomTlsConfiguration()) {
+                        val tlsSocketConfig = createTlsCustomization()
                         builder =
                             builder.sslSocketFactory(
                                 tlsSocketConfig.sslSocketFactory,
                                 tlsSocketConfig.trustManager,
                             )
+                        tlsSocketConfig.hostnameVerifier?.let { hostnameVerifier ->
+                            builder = builder.hostnameVerifier(hostnameVerifier)
+                        }
                     }
 
                     if (mediaOption.proxy.type != ProxyType.NONE) {
