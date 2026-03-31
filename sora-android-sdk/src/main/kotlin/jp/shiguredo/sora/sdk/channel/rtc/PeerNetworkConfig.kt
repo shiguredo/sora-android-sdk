@@ -5,11 +5,15 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.CryptoOptions
 import org.webrtc.PeerConnection
+import java.security.PrivateKey
+import java.security.cert.X509Certificate
 
 class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
+    private val clientCertificate: X509Certificate? = null,
+    private val clientPrivateKey: PrivateKey? = null,
 ) {
     companion object {
         private val TAG = PeerNetworkConfig::class.simpleName
@@ -52,6 +56,16 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
+                                if (url.startsWith("turns:") &&
+                                    clientCertificate != null &&
+                                    clientPrivateKey != null
+                                ) {
+                                    TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
+                                        builder = this,
+                                        privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
+                                        certificatePem = TurnTlsClientCertificatePem.toCertificatePem(clientCertificate),
+                                    )
+                                }
                                 if (insecure && url.startsWith("turns:")) {
                                     SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
                                     setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)

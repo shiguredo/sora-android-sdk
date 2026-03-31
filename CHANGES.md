@@ -41,10 +41,10 @@
   - システムの信頼ストアを使用せず、指定された CA 証明書のみを使用する
   - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
   - @zztkm
-- [ADD] WSS の接続に利用するクライアント証明書を指定できるようにする
+- [ADD] WSS と TURN-TLS の接続に利用するクライアント証明書を指定できるようにする
   - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を追加する
   - @zztkm
-- [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
+- [ADD] WSS と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
 - [ADD] SoraMediaOption に H.265 向け映像コーデックパラメーター videoH265Params を追加する

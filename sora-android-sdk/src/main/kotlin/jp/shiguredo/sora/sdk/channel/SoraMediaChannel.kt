@@ -98,8 +98,8 @@ import kotlin.coroutines.resume
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
- * @param clientCertificate mTLS で使用するクライアント証明書を指定。現時点では WebSocket にのみ適用され、TURN-TLS には適用されません。
- * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。現時点では WebSocket にのみ適用され、TURN-TLS には適用されません。
+ * @param clientCertificate mTLS で使用するクライアント証明書を指定。WebSocket と TURN-TLS の両方に適用されます。
+ * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。WebSocket と TURN-TLS の両方に適用されます。
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -1244,6 +1244,8 @@ class SoraMediaChannel
                                 ),
                             mediaOption = mediaOption,
                             insecure = insecure,
+                            clientCertificate = clientCertificate,
+                            clientPrivateKey = clientPrivateKey,
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
@@ -1336,6 +1338,8 @@ class SoraMediaChannel
                             serverConfig = offerMessage.config,
                             mediaOption = mediaOption,
                             insecure = insecure,
+                            clientCertificate = clientCertificate,
+                            clientPrivateKey = clientPrivateKey,
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
