@@ -106,6 +106,7 @@ class SignalingChannelImpl
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
         private val clientCertificate: X509Certificate? = null,
+        private val clientCertificateChain: List<X509Certificate>? = null,
         private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
@@ -166,7 +167,8 @@ class SignalingChannelImpl
         /**
          * クライアント証明書認証を有効にするための情報がそろっているかを返します。
          */
-        private fun hasClientAuthentication(): Boolean = clientCertificate != null && clientPrivateKey != null
+        private fun hasClientAuthentication(): Boolean =
+            (clientCertificate != null || clientCertificateChain != null) && clientPrivateKey != null
 
         /**
          * OkHttpClient にカスタム TLS 設定を適用する必要があるかを返します。
@@ -196,6 +198,7 @@ class SignalingChannelImpl
                     }
                     TlsConfigFactory.createInsecureTlsSocketConfig(
                         clientCertificate = clientCertificate,
+                        clientCertificateChain = clientCertificateChain,
                         clientPrivateKey = clientPrivateKey,
                     )
                 }
@@ -208,7 +211,7 @@ class SignalingChannelImpl
                         )
                         TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
                             caCertificate = caCertificate!!,
-                            clientCertificate = clientCertificate!!,
+                            clientCertificateChain = clientCertificateChain ?: listOf(clientCertificate!!),
                             clientPrivateKey = clientPrivateKey!!,
                         )
                     } else {
@@ -225,7 +228,7 @@ class SignalingChannelImpl
                         "[signaling:$role] using the specified client certificate for webSocket signaling",
                     )
                     TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
-                        clientCertificate = clientCertificate!!,
+                        clientCertificateChain = clientCertificateChain ?: listOf(clientCertificate!!),
                         clientPrivateKey = clientPrivateKey!!,
                     )
                 }

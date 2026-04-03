@@ -83,6 +83,16 @@ internal object TlsConfigFactory {
     fun createClientAuthenticationTlsSocketConfig(
         clientCertificate: X509Certificate,
         clientPrivateKey: PrivateKey,
+    ): TlsSocketConfig = createClientAuthenticationTlsSocketConfig(listOf(clientCertificate), clientPrivateKey)
+
+    /**
+     * クライアント証明書チェーンを利用する TLS ソケット設定を生成します。
+     *
+     * サーバー証明書検証には Android OS の既定の CA 証明書を利用します。
+     */
+    fun createClientAuthenticationTlsSocketConfig(
+        clientCertificateChain: List<X509Certificate>,
+        clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createSystemTrustManager()
 
@@ -91,7 +101,7 @@ internal object TlsConfigFactory {
             sslSocketFactory =
                 createSslSocketFactory(
                     trustManager = trustManager,
-                    keyManagers = createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey),
+                    keyManagers = createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey),
                 ),
         )
     }
@@ -103,6 +113,20 @@ internal object TlsConfigFactory {
         caCertificate: X509Certificate,
         clientCertificate: X509Certificate,
         clientPrivateKey: PrivateKey,
+    ): TlsSocketConfig =
+        createCustomCaWithClientAuthenticationTlsSocketConfig(
+            caCertificate = caCertificate,
+            clientCertificateChain = listOf(clientCertificate),
+            clientPrivateKey = clientPrivateKey,
+        )
+
+    /**
+     * 指定した CA 証明書とクライアント証明書チェーンを併用する TLS ソケット設定を生成します。
+     */
+    fun createCustomCaWithClientAuthenticationTlsSocketConfig(
+        caCertificate: X509Certificate,
+        clientCertificateChain: List<X509Certificate>,
+        clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createCustomCaTrustManager(caCertificate)
 
@@ -111,7 +135,7 @@ internal object TlsConfigFactory {
             sslSocketFactory =
                 createSslSocketFactory(
                     trustManager = trustManager,
-                    keyManagers = createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey),
+                    keyManagers = createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey),
                 ),
         )
     }
@@ -124,6 +148,7 @@ internal object TlsConfigFactory {
      */
     fun createInsecureTlsSocketConfig(
         clientCertificate: X509Certificate? = null,
+        clientCertificateChain: List<X509Certificate>? = null,
         clientPrivateKey: PrivateKey? = null,
     ): TlsSocketConfig {
         val trustManager =
@@ -150,7 +175,9 @@ internal object TlsConfigFactory {
                     trustManager = trustManager,
                     keyManagers =
                         if (clientCertificate != null && clientPrivateKey != null) {
-                            createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey)
+                            createClientAuthenticationKeyManagers(listOf(clientCertificate), clientPrivateKey)
+                        } else if (clientCertificateChain != null && clientPrivateKey != null) {
+                            createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey)
                         } else {
                             null
                         },
@@ -175,7 +202,7 @@ internal object TlsConfigFactory {
      * クライアント認証で利用する `KeyManager` を生成します。
      */
     private fun createClientAuthenticationKeyManagers(
-        clientCertificate: X509Certificate,
+        clientCertificateChain: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): Array<KeyManager> {
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
@@ -184,7 +211,7 @@ internal object TlsConfigFactory {
             CLIENT_CERTIFICATE_ALIAS,
             clientPrivateKey,
             null,
-            arrayOf(clientCertificate),
+            clientCertificateChain.toTypedArray(),
         )
 
         val keyManagerFactory =

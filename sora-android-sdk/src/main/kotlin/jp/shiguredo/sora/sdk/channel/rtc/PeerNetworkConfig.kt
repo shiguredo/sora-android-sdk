@@ -13,6 +13,7 @@ class PeerNetworkConfig(
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
     private val clientCertificate: X509Certificate? = null,
+    private val clientCertificateChain: List<X509Certificate>? = null,
     private val clientPrivateKey: PrivateKey? = null,
 ) {
     companion object {
@@ -56,15 +57,21 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
-                                if (url.startsWith("turns:") &&
-                                    clientCertificate != null &&
-                                    clientPrivateKey != null
-                                ) {
-                                    TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
-                                        builder = this,
-                                        privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
-                                        certificatePem = TurnTlsClientCertificatePem.toCertificatePem(clientCertificate),
-                                    )
+                                if (url.startsWith("turns:") && clientPrivateKey != null) {
+                                    if (clientCertificate != null) {
+                                        TurnTlsClientCertificateConfigurer.applySingleCertificateToIceServerBuilder(
+                                            builder = this,
+                                            privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
+                                            certificatePem = TurnTlsClientCertificatePem.toCertificatePem(clientCertificate),
+                                        )
+                                    } else if (clientCertificateChain != null) {
+                                        TurnTlsClientCertificateConfigurer.applyCertificateChainToIceServerBuilder(
+                                            builder = this,
+                                            privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
+                                            certificateChainPem =
+                                                TurnTlsClientCertificatePem.toCertificateChainPem(clientCertificateChain),
+                                        )
+                                    }
                                 }
                                 if (insecure && url.startsWith("turns:")) {
                                     SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
