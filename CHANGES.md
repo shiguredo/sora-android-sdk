@@ -37,6 +37,11 @@
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
 
+### misc
+
+- [CHANGE] prek.toml に切り替える
+  - @voluntas
+
 ## 2026.1.0
 
 **リリース日**: 2026-03-02

@@ -1,0 +1,44 @@
+# prek 用の Git フック設定
+# https://prek.j178.dev
+#:schema https://www.schemastore.org/prek.json
+
+# ビルトインフック
+# prek 同梱の Rust ネイティブ実装。オフライン動作で追加セットアップ不要
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-yaml" },
+  { id = "check-toml" },
+  { id = "check-merge-conflict" },
+  { id = "detect-private-key" },
+  { id = "end-of-file-fixer" },
+  { id = "trailing-whitespace" },
+  { id = "mixed-line-ending" },
+  { id = "check-added-large-files" },
+]
+
+# ktlint によるフォーマットとチェック
+# format で自動修正してから check で検証する
+# 同一 repo 内では priority が小さい順に実行される
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "ktlint-format"
+name = "ktlint format"
+language = "system"
+entry = "./gradlew ktlintFormat"
+pass_filenames = false
+files = '\.(kt|kts)$'
+stages = ["pre-commit"]
+priority = 10
+
+[[repos.hooks]]
+id = "ktlint-check"
+name = "ktlint check"
+language = "system"
+entry = "./gradlew ktlintCheck"
+pass_filenames = false
+files = '\.(kt|kts)$'
+stages = ["pre-commit"]
+priority = 20
