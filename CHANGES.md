@@ -36,6 +36,10 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [ADD] AudioTrack と VideoTrack に `streamId` を追加する
+  - Kotlin では `AudioTrack.streamId` と `VideoTrack.streamId` の拡張プロパティを追加する
+  - Java では `TrackStreamIds.get(track)` で streamId を取得できる
+  - @zztkm
 
 ### misc
 
