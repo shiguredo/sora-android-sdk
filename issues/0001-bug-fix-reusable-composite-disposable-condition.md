@@ -2,6 +2,7 @@
 
 - Priority: High
 - Created: 2026-05-24
+- Completed: 2026-05-26
 - Model: deepseek-v4-pro
 - Branch: feature/fix-reusable-composite-disposable
 
@@ -80,7 +81,16 @@ class ReusableCompositeDisposable {
 
 ## 解決方法
 
-`ReusableCompositeDisposable.kt` の `add()` メソッドの条件式を修正する。`dispose()` メソッドは変更不要。
+`ReusableCompositeDisposable.kt` の `add()` メソッドの条件式を `if (compositeDisposable == null)` に修正し、初回 `add()` 時に `CompositeDisposable` が正しく初期化されるようにした。`dispose()` メソッドは変更していない。
+
+また、`sora-android-sdk/src/test/kotlin/jp/shiguredo/sora/sdk/util/ReusableCompositeDisposableTest.kt` を追加し、以下をモックなしで検証した。
+
+- `add()` 直後は購読が解除されていないこと
+- `dispose()` 後は登録済みの全購読が解除されること
+- `dispose()` 後に再度 `add()` と `dispose()` ができること
+- `add()` 未実行で `dispose()` しても例外が発生しないこと
+
+テストは `./gradlew :sora-android-sdk:testDebugUnitTest --tests jp.shiguredo.sora.sdk.util.ReusableCompositeDisposableTest` で通過を確認した。
 
 ```kotlin
 fun add(subscription: Disposable) {
