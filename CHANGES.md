@@ -36,6 +36,9 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] getStatsTimer と handleReqStats で peer をローカル変数にする
+  - peer の再参照不整合を防ぐため
+  - @t-miya
 - [FIX] internalDisconnect で localStream を null クリアする
   - 切断後に setAudioSoftMute が安全に false を返すようにする
   - @t-miya

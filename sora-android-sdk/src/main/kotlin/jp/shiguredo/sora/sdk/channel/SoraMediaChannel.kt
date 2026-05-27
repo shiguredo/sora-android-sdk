@@ -1259,7 +1259,8 @@ class SoraMediaChannel
                 getStatsTimer = Timer()
                 SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
                 getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
-                    peer?.getStats(
+                    val currentPeer = peer ?: return@schedule
+                    currentPeer.getStats(
                         RTCStatsCollectorCallback {
                             listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
                         },
@@ -1453,9 +1454,10 @@ class SoraMediaChannel
         }
 
         private fun handleReqStats(dataChannel: DataChannel) {
-            peer?.getStats {
-                it?.let { reports ->
-                    peer?.sendStats(dataChannel, reports)
+            val currentPeer = peer ?: return
+            currentPeer.getStats { reports ->
+                if (reports != null) {
+                    currentPeer.sendStats(dataChannel, reports)
                 }
             }
         }
