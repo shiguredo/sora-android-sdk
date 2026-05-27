@@ -2,6 +2,7 @@
 
 - Priority: High
 - Created: 2026-05-24
+- Completed: 2026-05-27
 - Model: deepseek-v4-pro
 - Branch: feature/fix-connect-signaling-channel-closing-guard
 
