@@ -36,6 +36,8 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] ZipHelper と stringToDataChannelBuffer で zlib ストリームの close 漏れを修正する
+  - @t-miya
 - [FIX] SimulcastVideoEncoderFactoryWrapper の ExecutorService と scaledBuffer を try/finally で安全に処理するように修正する
   - @t-miya
 - [FIX] SignalingChannel の ping 競合 NPE と wsCandidates クリーンアップ不足を修正する
