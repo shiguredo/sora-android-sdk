@@ -1598,6 +1598,7 @@ class SoraMediaChannel
             peer?.disconnect(null)
             peer = null
             localStream = null
+            dataChannels.clear()
 
             listener?.onClose(this)
             if (closeEvent != null) {
