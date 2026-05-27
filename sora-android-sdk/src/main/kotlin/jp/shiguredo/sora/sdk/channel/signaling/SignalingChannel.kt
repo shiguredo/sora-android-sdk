@@ -452,6 +452,7 @@ class SignalingChannelImpl
             closing.set(true)
             client.dispatcher.executorService.shutdown()
             synchronized(this) {
+                // ws と wsCandidates を同時に更新するため排他制御する
                 ws?.close(1000, null)
                 wsCandidates.forEach { it.cancel() }
                 wsCandidates.clear()
