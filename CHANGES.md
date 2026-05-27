@@ -36,6 +36,8 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] initializeIfNeeded で 2 回目以降に異なる useTracer 値が指定された場合に警告ログを出力する
+  - @t-miya
 - [FIX] internalDisconnect で dataChannels をクリアするように修正する
   - 切断後に dispose 済み DataChannel への参照が残留しないようにする
   - @t-miya
