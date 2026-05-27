@@ -757,7 +757,7 @@ class PeerChannelImpl(
                 false ->
                     ByteArrayInputStream(data.toByteArray())
             }
-        val byteBuffer = ByteBuffer.wrap(inStream.readBytes())
+        val byteBuffer = inStream.use { stream -> ByteBuffer.wrap(stream.readBytes()) }
         return DataChannel.Buffer(byteBuffer, true)
     }
 
