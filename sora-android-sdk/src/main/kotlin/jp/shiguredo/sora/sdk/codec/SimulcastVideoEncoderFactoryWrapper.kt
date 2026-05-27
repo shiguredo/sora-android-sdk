@@ -108,13 +108,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                                         it.width,
                                         it.height,
                                     )
-                            /*
-                            SoraLogger.d(
-                                TAG,
-                                "scale: ${originalWidth}x$originalHeight => " +
-                                    "${it.width}x${it.height}"
-                            )
-                             */
                                 try {
                                     val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
                                     encoder.encode(scaledFrame, encodeInfo)
