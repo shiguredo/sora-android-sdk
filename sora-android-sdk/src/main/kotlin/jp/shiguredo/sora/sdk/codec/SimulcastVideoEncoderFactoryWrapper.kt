@@ -76,7 +76,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(
 
         override fun release(): VideoCodecStatus {
             val future = executor.submit(Callable { return@Callable encoder.release() })
-            return future.get()
+            return try {
+                future.get()
+            } finally {
+                executor.shutdown()
+            }
         }
 
         override fun encode(
@@ -111,10 +115,12 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                                     "${it.width}x${it.height}"
                             )
                              */
-                                val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
-                                val result = encoder.encode(scaledFrame, encodeInfo)
-                                scaledBuffer.release()
-                                result
+                                try {
+                                    val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
+                                    encoder.encode(scaledFrame, encodeInfo)
+                                } finally {
+                                    scaledBuffer.release()
+                                }
                             }
                         } ?: run {
                             // streamSettings は null にならない想定だが force unwrap を防ぐためにこのように記述する

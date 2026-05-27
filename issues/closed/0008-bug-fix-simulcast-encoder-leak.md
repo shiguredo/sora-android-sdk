@@ -2,6 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-05-24
+- Completed: 2026-05-27
 - Model: deepseek-v4-pro
 - Branch: feature/fix-simulcast-encoder-leak
 
@@ -65,12 +66,16 @@ result
 
 ### 1. release(): executor.shutdown() を追加
 
+`encoder.release()` が失敗した場合でも `executor` が確実に shutdown されるよう、`try/finally` で保護する。
+
 ```kotlin
 override fun release(): VideoCodecStatus {
     val future = executor.submit(Callable { return@Callable encoder.release() })
-    val result = future.get()
-    executor.shutdown()
-    return result
+    return try {
+        future.get()
+    } finally {
+        executor.shutdown()
+    }
 }
 ```
 
