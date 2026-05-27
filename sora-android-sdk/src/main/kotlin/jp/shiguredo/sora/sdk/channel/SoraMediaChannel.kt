@@ -492,6 +492,7 @@ class SoraMediaChannel
         private var switchedToDataChannel = false
 
         // 切断処理を開始したことを示すフラグ
+        @Volatile
         private var closing = false
 
         // type: redirect で再利用するために、初回接続時の clientOffer を保持する
@@ -1176,6 +1177,10 @@ class SoraMediaChannel
             clientOfferSdp: SessionDescription?,
             redirectLocation: String? = null,
         ) {
+            // 切断処理に入っている場合は抜ける
+            if (closing) {
+                return
+            }
             val endpoints =
                 when {
                     redirectLocation != null -> listOf(redirectLocation)

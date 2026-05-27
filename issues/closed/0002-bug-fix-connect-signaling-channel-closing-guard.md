@@ -2,6 +2,7 @@
 
 - Priority: High
 - Created: 2026-05-24
+- Completed: 2026-05-27
 - Model: deepseek-v4-pro
 - Branch: feature/fix-connect-signaling-channel-closing-guard
 
@@ -110,7 +111,7 @@ private fun connectSignalingChannel(
 - `closing` の読み書き頻度は極めて低く（接続時・切断時に数回のみ）、メモリバリアのパフォーマンス影響は無視できる
 - ロックベースの解決（`synchronized` 等）は不要。`closing` は実質的に「一度 true になったら false に戻らない」フラグであり、単一フィールドの可視性保証で十分
 
-TOCTOU 競合（`connectSignalingChannel()` の `closing` チェック通過直後に別スレッドが `internalDisconnect()` を呼ぶケース）は `@Volatile` では防げないが、これは極めて狭いタイムウィンドウであり、現実的な確率は大幅に下がる。完全な同期は別 issue で対応する。
+TOCTOU 競合（`connectSignalingChannel()` の `closing` チェック通過直後に別スレッドが `internalDisconnect()` を呼ぶケース）は `@Volatile` では防げないが、少なくとも現在の明白な再接続経路を遮断できる。完全な同期は別 issue で対応する。
 
 ## 挙動変化と影響範囲
 
