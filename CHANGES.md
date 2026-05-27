@@ -36,6 +36,8 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] unzipBufferIfNeeded で compress=false 時にネイティブ ByteBuffer のコピーを返すようにする
+  - @t-miya
 - [FIX] clientOfferPeer をフィールド化し切断時に WebRTC リソースを解放するようにする
   - @t-miya
 - [FIX] connectSignalingChannel に closing ガードを追加し切断後の不要なシグナリング再接続を防ぐ

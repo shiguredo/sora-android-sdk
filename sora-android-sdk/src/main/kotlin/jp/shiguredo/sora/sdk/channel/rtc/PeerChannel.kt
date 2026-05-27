@@ -735,7 +735,14 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "peer: unzipBufferIfNeeded, label=$label, compress=$compress")
         return when (compress) {
             true -> ZipHelper.unzip(buffer)
-            false -> buffer
+            false -> {
+                // WebRTC 由来の direct ByteBuffer はコールバックを抜けると再利用・解放される可能性があるため、
+                // コピーバックでないと非同期利用時に寿命未保証のネイティブバッファへアクセスする危険がある
+                val copy = ByteBuffer.allocate(buffer.remaining())
+                copy.put(buffer.duplicate())
+                copy.flip()
+                copy
+            }
         }
     }
 
