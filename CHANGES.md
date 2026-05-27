@@ -36,6 +36,9 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] internalDisconnect で dataChannels をクリアするように修正する
+  - 切断後に dispose 済み DataChannel への参照が残留しないようにする
+  - @t-miya
 - [FIX] ZipHelper と stringToDataChannelBuffer で zlib ストリームの close 漏れを修正する
   - @t-miya
 - [FIX] SimulcastVideoEncoderFactoryWrapper の ExecutorService と scaledBuffer を try/finally で安全に処理するように修正する
