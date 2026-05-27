@@ -36,6 +36,8 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] connectSignalingChannel に closing ガードを追加し切断後の不要なシグナリング再接続を防ぐ
+  - @t-miya
 - [FIX] ReusableCompositeDisposable の初期化条件を修正して Rx 購読が正しく管理されるようにする
   - @t-miya
 
