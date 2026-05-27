@@ -451,7 +451,12 @@ class SignalingChannelImpl
 
             closing.set(true)
             client.dispatcher.executorService.shutdown()
-            ws?.close(1000, null)
+            synchronized(this) {
+                ws?.close(1000, null)
+                wsCandidates.forEach { it.cancel() }
+                wsCandidates.clear()
+                ws = null
+            }
 
             // type: redirect を受信している場合は onDisconnect を発火させない
             if (!receivedRedirectMessage.get()) {
@@ -557,8 +562,9 @@ class SignalingChannelImpl
             SoraLogger.d(TAG, "[signaling:$role] <- ping")
             SoraLogger.d(TAG, "[signaling:$role] -> pong")
             val ping = MessageConverter.parsePingMessage(text)
-            if (ping.stats == true && listener != null) {
-                listener!!.getStats { report ->
+            val currentListener = listener
+            if (ping.stats == true && currentListener != null) {
+                currentListener.getStats { report ->
                     sendPongMessage(report)
                 }
             } else {
@@ -567,6 +573,9 @@ class SignalingChannelImpl
         }
 
         private fun sendPongMessage(report: RTCStatsReport?) {
+            if (closing.get()) {
+                return
+            }
             ws?.let { ws ->
                 val msg = MessageConverter.buildPongMessage(report)
                 SoraLogger.d(TAG, msg)
@@ -624,6 +633,7 @@ class SignalingChannelImpl
 
                         if (closing.get()) {
                             SoraLogger.i(TAG, "signaling is closing")
+                            webSocket.close(1000, null)
                             return
                         }
 

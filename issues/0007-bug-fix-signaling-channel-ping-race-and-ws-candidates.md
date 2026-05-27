@@ -2,6 +2,7 @@
 
 - Priority: High
 - Created: 2026-05-24
+- Completed: 2026-05-27
 - Model: deepseek-v4-pro
 - Branch: feature/fix-signaling-channel-race
 
@@ -17,7 +18,7 @@
 ### 問題 1: ping getStats 競合
 
 - `listener != null` チェックと `listener!!.getStats()` の間に `disconnect()` が `listener = null` を実行すると NPE
-- `getStats` の非同期コールバック内で `ws.send()` を呼ぶが、`ws` は切断後に null クリアされないため、切断済み WebSocket に send する可能性がある
+- `getStats` の非同期コールバック内で `sendPongMessage` → `ws?.let { ... }.send()` が呼ばれるが、`ws` の null クリアは行われておらず、切断後に不要な send が発生する可能性がある。ただし `ws?.let` で保護されているため NPE には至らない
 
 ### 問題 2: wsCandidates クリーンアップ不足
 
@@ -73,7 +74,7 @@ if (closing.get()) {
 
 ### wsCandidates クリーンアップ
 
-`disconnect()` 内で `wsCandidates` を走査し、すべての候補 WebSocket をキャンセルする。`ws` も null クリアする。これらの操作は既存のコードコメントに従い `synchronized(this)` で保護する（`ws` と `wsCandidates` は両方を同時に更新する必要があるため）。
+`disconnect()` 内で `wsCandidates` を走査し、未解決の候補 WebSocket をすべてキャンセルしてクリアする。`ws` は一貫性のために null クリアするが、本修正の主眼は `wsCandidates` の解放と、`onOpen` 内での late callback 抑止である。これらの操作は既存のコードコメントに従い `synchronized(this)` で保護する（`ws` と `wsCandidates` は両方を同時に更新する必要があるため）。
 
 `onOpen` の `closing` チェック時にも `webSocket.close()` を呼んでリソースを解放する。
 
@@ -94,14 +95,14 @@ if (closing.get()) {
 ## 完了条件
 
 - `onPingMessage` と `disconnect()` が並行して実行されても NPE が発生しないこと
-- `disconnect()` 後に ping の非同期コールバックが完了しても、切断済み WebSocket に send しないこと
-- `disconnect()` 呼び出し時に `wsCandidates` 内の全 WebSocket が適切にクローズされること
+- `disconnect()` 後に ping の非同期コールバックが完了しても、切断済み WebSocket に不要な send が発生しないこと
+- `disconnect()` 呼び出し時に `wsCandidates` 内の未解決候補 WebSocket がすべてキャンセルされ、解放されること
 - 切断確定後の late `onOpen` で WebSocket がクローズされること
 - `CHANGES.md` の `develop` セクションに `[FIX]` エントリを追記すること（`- @<担当者名>` の行も忘れずに追記する）
 
 ## 解決方法
 
-3 箇所を修正する:
+4 箇所を修正する:
 
 ### 1. onPingMessage: ローカルスナップショット化
 
@@ -144,5 +145,21 @@ if (closing.get()) {
     SoraLogger.i(TAG, "signaling is closing")
     webSocket.close(1000, null)
     return
+}
+```
+
+### 4. sendPongMessage: closing ガードを追加
+
+`disconnect()` が先に走った後、遅れて完了する `getStats` 非同期コールバックからの send を抑制する。
+
+```kotlin
+private fun sendPongMessage(report: RTCStatsReport?) {
+    if (closing.get()) {
+        return
+    }
+    ws?.let { ws ->
+        val msg = MessageConverter.buildPongMessage(report)
+        ws.send(msg)
+    }
 }
 ```
