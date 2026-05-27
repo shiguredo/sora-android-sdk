@@ -36,6 +36,8 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] SignalingChannel の ping 競合 NPE と wsCandidates クリーンアップ不足を修正する
+  - @t-miya
 - [FIX] getStatsTimer と handleReqStats で peer をローカル変数にする
   - peer の再参照不整合を防ぐため
   - @t-miya
