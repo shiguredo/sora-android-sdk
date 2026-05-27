@@ -36,6 +36,9 @@
 - [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
+- [FIX] internalDisconnect で localStream を null クリアする
+  - 切断後に setAudioSoftMute が安全に false を返すようにする
+  - @t-miya
 - [FIX] unzipBufferIfNeeded で compress=false 時にネイティブ ByteBuffer のコピーを返すようにする
   - @t-miya
 - [FIX] clientOfferPeer をフィールド化し切断時に WebRTC リソースを解放するようにする
