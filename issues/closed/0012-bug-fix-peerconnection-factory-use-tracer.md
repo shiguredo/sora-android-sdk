@@ -2,6 +2,7 @@
 
 - Priority: Low
 - Created: 2026-05-24
+- Completed: 2026-05-27
 - Model: deepseek-v4-pro
 - Branch: feature/fix-peerconnection-factory-use-tracer
 
@@ -37,7 +38,7 @@ fun initializeIfNeeded(context: Context, useTracer: Boolean) {
 
 ## 設計方針
 
-2 回目以降の呼び出しで初回と異なる `useTracer` 値が指定された場合、意図した値が反映されていないことを警告ログで通知する。`PeerConnectionFactory.initialize()` の 1 回制約は変更不可のため、挙動自体は変更しない。
+初回の `useTracer` 値を保持する変数を追加し、2 回目以降の呼び出しで初回と異なる値が指定された場合に警告ログで通知する。`PeerConnectionFactory.initialize()` の 1 回制約は変更不可のため、挙動自体は変更しない。
 
 ## テスト戦略
 
@@ -51,9 +52,12 @@ fun initializeIfNeeded(context: Context, useTracer: Boolean) {
 
 ## 解決方法
 
-`initializeIfNeeded()` に else 分岐を追加し、初回と異なる `useTracer` 値が指定された場合にログを出力する:
+初回の `useTracer` 値を保持する変数を追加し、2 回目以降に比較する:
 
 ```kotlin
+private var isInitialized = false
+private var initialUseTracer: Boolean? = null
+
 fun initializeIfNeeded(context: Context, useTracer: Boolean) {
     if (!isInitialized) {
         val options = PeerConnectionFactory.InitializationOptions
@@ -62,9 +66,13 @@ fun initializeIfNeeded(context: Context, useTracer: Boolean) {
             .setFieldTrials("")
             .createInitializationOptions()
         PeerConnectionFactory.initialize(options)
+        if (SoraLogger.libjingleEnabled) {
+            Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
+        }
         isInitialized = true
-    } else {
-        SoraLogger.d(TAG, "PeerConnectionFactory.initialize() already called. useTracer=$useTracer is ignored.")
+        initialUseTracer = useTracer
+    } else if (useTracer != initialUseTracer) {
+        SoraLogger.w(TAG, "PeerConnectionFactory.initialize() already called with useTracer=$initialUseTracer. useTracer=$useTracer is ignored.")
     }
 }
 ```

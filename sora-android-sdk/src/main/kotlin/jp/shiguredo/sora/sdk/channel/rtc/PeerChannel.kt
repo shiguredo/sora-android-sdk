@@ -159,6 +159,9 @@ class PeerChannelImpl(
 
         private var isInitialized = false
 
+        // 2 回目以降の呼び出しで異なる useTracer 値が指定されたことを検知するために初回の値を保持する
+        private var initialUseTracer: Boolean? = null
+
         fun initializeIfNeeded(
             context: Context,
             useTracer: Boolean,
@@ -175,6 +178,12 @@ class PeerChannelImpl(
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
                 isInitialized = true
+                initialUseTracer = useTracer
+            } else if (useTracer != initialUseTracer) {
+                SoraLogger.w(
+                    TAG,
+                    "PeerConnectionFactory.initialize() already called with useTracer=$initialUseTracer. useTracer=$useTracer is ignored.",
+                )
             }
         }
     }
