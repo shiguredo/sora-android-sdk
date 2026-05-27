@@ -486,9 +486,17 @@ class SoraMediaChannel
             ) {}
         }
 
+        // Sora とのメディア通信に使用する PeerConnection
         private var peer: PeerChannel? = null
+
+        // Sora に送信する client offer SDP を生成するための PeerConnection
+        // internalDisconnect() から到達可能にするためにフィールドとして保持する
+        private var clientOfferPeer: PeerChannel? = null
+
+        // Sora とのシグナリング通信 (WebSocket / DataChannel) を管理する
         private var signaling: SignalingChannel? = null
 
+        // DataChennal に切り替わり済みかを示すフラグ
         private var switchedToDataChannel = false
 
         // 切断処理を開始したことを示すフラグ
@@ -1125,7 +1133,7 @@ class SoraMediaChannel
                     enableVideoDownstream(null)
                     enableAudioDownstream()
                 }
-            val clientOfferPeer =
+            val clientPeer =
                 PeerChannelImpl(
                     appContext = context,
                     networkConfig =
@@ -1143,7 +1151,8 @@ class SoraMediaChannel
                     caCertificate = caCertificate,
                     listener = null,
                 )
-            clientOfferPeer.run {
+            clientOfferPeer = clientPeer
+            clientPeer.run {
                 val subscription =
                     requestClientOfferSdp()
                         .observeOn(Schedulers.io())
@@ -1151,6 +1160,7 @@ class SoraMediaChannel
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
                                 disconnect(null)
+                                clientOfferPeer = null
 
                                 if (it.isFailure) {
                                     SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
@@ -1167,6 +1177,7 @@ class SoraMediaChannel
                                     "[channel:$role] failed request client offer SDP: ${it.message}",
                                 )
                                 disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
+                                clientOfferPeer = null
                             },
                         )
                 compositeDisposable.add(subscription)
@@ -1580,6 +1591,8 @@ class SoraMediaChannel
             getStatsTimer = null
 
             // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
+            clientOfferPeer?.disconnect(null)
+            clientOfferPeer = null
             peer?.disconnect(null)
             peer = null
 
