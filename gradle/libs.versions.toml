@@ -9,7 +9,7 @@ android-maven-plugin = "2.1"
 
 # Android
 compileSdk = "36"
-minSdk = "21" 
+minSdk = "21"
 targetSdk = "36"
 
 # Java/JVM
@@ -17,7 +17,7 @@ jvmTarget = "1.8"
 javaCompatibility = "1.8"
 
 # Libraries
-libwebrtc = "146.7680.3.1"
+libwebrtc = "148.7778.7.0"
 gson = "2.13.1"
 okhttp = "4.12.0"
 kotlinx-coroutines = "1.9.0"
@@ -70,4 +70,3 @@ versions = { id = "com.github.ben-manes.versions", version.ref = "versions-plugi
 [bundles]
 reactive = ["rxjava2", "rxandroid2", "rxkotlin2"]
 testBase = ["junit", "androidx-test-core", "kotlin-test-junit"]
-
