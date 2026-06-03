@@ -3,17 +3,13 @@
 - Priority: Low
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/add-on-ice-candidate-error-log
 
 ## 目的
 
 libwebrtc に追加された `onIceCandidateError` コールバックを `PeerConnection.Observer` で実装し、ICE candidate のエラー情報をログ出力できるようにする。ICE 接続のトラブルシュートを容易にする。
-
-## 優先度根拠
-
-- 既存の ICE 接続処理の挙動を変えるものではなく、デバッグ用のログ追加であるため緊急性は低い。
-- 障害調査時の情報が増える利点はあるため対応する価値はあるが、Low とする。
 
 ## 現状
 
@@ -26,18 +22,23 @@ libwebrtc に追加された `onIceCandidateError` コールバックを `PeerCo
 - `onIceGatheringChange(state: PeerConnection.IceGatheringState?)`
 - `onStandardizedIceConnectionChange(newState: PeerConnection.IceConnectionState?)`
 
-一方、ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバーライドしておらず、エラー発生時に何も記録されない。libwebrtc 側では objc / java 層に ICE candidate error のコールバックが追加されている。
+ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバーライドしておらず、エラー発生時に何も記録されない。
 
 ## 設計方針
 
-- `connectionObserver` に `onIceCandidateError` のオーバーライドを追加し、`SoraLogger` でエラー内容（address、port、url、errorCode、errorText など、コールバックが提供する情報）をログ出力する。
-- まずはログ出力のみを行う。アプリケーションへのコールバック通知が必要かどうかは別途判断する（本 issue ではログ出力に限定する）。
-- `onIceCandidateError` の引数の型（`PeerConnection.IceCandidateErrorEvent` 相当）は実装時に `org.webrtc` の API で確認する。
+- `connectionObserver` に `onIceCandidateError` のオーバーライドを追加し、既存の ICE コールバックと同様の書式 `[rtc] @onIceCandidateError: ...` で、コールバックが提供する全情報（address、port、url、errorCode、errorText 等）をログ出力する。
+- ログレベルは `SoraLogger.w`（warning）とし、エラー情報であることを明確にする。
+- 本 issue のスコープはログ出力に限定し、アプリケーションへのコールバック通知追加は別途判断する。
+- `onIceCandidateError` のシグネチャ（引数の型）は libwebrtc の API に従う。
 
 ## 完了条件
 
 - ICE candidate のエラー発生時に `onIceCandidateError` がエラー内容をログ出力すること。
 - 既存の ICE 関連コールバックの挙動が変わらないこと。
-- `CHANGES.md` の `develop` セクションに該当エントリを追記すること。
+- `CHANGES.md` の `develop` セクションに以下を追記すること:
+  ```
+  - [ADD] PeerConnection.Observer に onIceCandidateError のログ出力を追加する
+    - @担当者
+  ```
 
 ## 解決方法

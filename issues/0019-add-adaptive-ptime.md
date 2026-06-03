@@ -3,33 +3,47 @@
 - Priority: Low
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/add-adaptive-ptime
 
 ## 目的
 
-音声送信における adaptivePtime（適応的パケット化時間）を設定できるようにする。Sora Android SDK にサイマルキャストを実装した時点では `libwebrtc/sdk/android` が adaptivePtime の API を実装していなかったが、その後 libwebrtc 側に対応が入ったため、SDK 側でも利用できるようにする。
+音声送信における adaptivePtime（適応的パケット化時間）を設定できるようにする。libwebrtc 側に対応が入ったため、SDK 側でも利用できるようにする。
 
-## 優先度根拠
+## 前提
 
-- libwebrtc 側は既に対応済みで、SDK 側の対応待ちの状態である。
-- 利用者が明示的に求める頻度は高くなく、緊急性は低いため Low とする。
+libwebrtc の `RtpParameters.Encoding` に以下の API が存在することを確認済み:
+
+- フィールド: `boolean adaptiveAudioPacketTime`（`RtpParameters.java:92`）
+- getter: `getAdaptivePTime()`（`RtpParameters.java:177`）
+- 設定先は `RtpParameters.Encoding` ごと（`RtpParameters` 直下ではない）
 
 ## 現状
 
-- 音声送信の RtpParameters / RtpSender に対して adaptivePtime を設定する経路が SDK に存在しない。
-- 映像送信の `degradationPreference` は `PeerChannel.kt` の `updateSenderOfferEncodings` / `configureSenderDegradationPreference` で `RtpSender#getParameters` / `setParameters` を介して設定しており、送信側パラメーターを操作する仕組みは既にある。adaptivePtime も同様の経路で設定できると考えられる。
-- `org.webrtc.RtpParameters` には adaptivePtime に対応する API が存在するため、`audioSender`（`PeerChannel.kt` に `private var audioSender: RtpSender? = null` として保持）の `parameters` に対して設定できるかを実装時に確認する。
+- `SoraMediaOption.kt:338`: 映像の `degradationPreference` は `RtpParameters.degradationPreference` 経由で設定済み。
+- `PeerChannel.kt:211`: `audioSender: RtpSender?` は既に保持されている。
+- `PeerChannel.kt:555-567`: `configureSenderDegradationPreference` で `RtpSender.getParameters()` → 変更 → `setParameters()` のパターンが確立済み。
+- ただし `handleUpdatedRemoteOffer`（`PeerChannel.kt:417-435`）では `setRemoteDescription` 後のパラメータ再設定が `videoSender` のみで、`audioSender` のパラメータ再設定経路は存在しない。
+- `setTrack`（`PeerChannel.kt:437-454`）も `configureSenderDegradationPreference` が video の場合のみ呼ばれており、audio に対するパラメータ設定は未実装。
 
 ## 設計方針
 
-- `SoraMediaOption` に adaptivePtime を有効化するオプションを追加する。
-- 音声送信用の `RtpSender`（`audioSender`）の `RtpParameters`（`encodings` 等）へ adaptivePtime を設定する。設定対象のフィールドと設定タイミングは、`degradationPreference` の設定経路（`RtpSender#getParameters` で取得し、値を変更してから `setParameters` で適用する）にならって実装する。
-- `setRemoteDescription` でパラメーターがリセットされる可能性があるため、`degradationPreference` の再設定と同じ箇所で adaptivePtime も再設定できるかを確認する。
+- `SoraMediaOption` に `enableAdaptivePtime: Boolean = false` を追加する。`SoraMediaOption` 直下に置く根拠は、`degradationPreference` と同様に `RtpSender` の `RtpParameters` を直接操作するパラメータであるため。
+- 設定先は `RtpParameters.Encoding.adaptiveAudioPacketTime`（libwebrtc 側のフィールド名）。
+- `configureSenderDegradationPreference` と同様の try-catch パターンで、audioSender 向けのパラメータ設定メソッドを新設する。
+- `setTrack` の audio 分岐内で新設メソッドを呼び出す。
+- `handleUpdatedRemoteOffer` にも audioSender の再設定呼び出しを追加する。
+- `handleInitialRemoteOffer` の audioSender 設定箇所でも同様に呼び出す。
 
 ## 完了条件
 
-- `SoraMediaOption` で adaptivePtime を有効化でき、音声送信の RtpParameters に反映されること。
-- `CHANGES.md` の `develop` セクションに `[ADD]` エントリを追記すること。
+- `SoraMediaOption.enableAdaptivePtime` を `true` にすると、audioSender の `RtpParameters` に adaptivePtime が設定されること。
+- `setRemoteDescription` 後も adaptivePtime が再設定されること。
+- `CHANGES.md` の `develop` セクションに以下を追記すること:
+  ```
+  - [ADD] adaptivePtime を設定できるようにする
+    - @担当者
+  ```
 
 ## 解決方法

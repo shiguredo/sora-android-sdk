@@ -3,44 +3,106 @@
 - Priority: Low
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/refactor-simulcast-encoder-recvonly
 
 ## 目的
 
-`RTCComponentFactory` の映像エンコーダーファクトリー生成ロジックを見直し、映像送信を行わない構成では `SimulcastVideoEncoderFactoryWrapper` を生成しないようにする。
+映像送信を行わない構成（`role: recvonly` や音声のみの `sendrecv` など）では、`simulcastEnabled` が `true` であっても `SimulcastVideoEncoderFactoryWrapper` を生成する必要はない。エンコーダーは利用されず、`SoraDefaultVideoEncoderFactory` で十分であるため、不要なインスタンス化を抑制する。
 
-`role: recvonly` のように映像送信を行わない構成でも `simulcastEnabled` が `true` であれば `SimulcastVideoEncoderFactoryWrapper` をインスタンス化してしまう。この場合エンコーダーは利用されないため、`SoraDefaultVideoEncoderFactory` で十分である。
+## 前提
 
-## 優先度根拠
+`RTCComponentFactory` の `simulcastEnabled` は Sora サーバーの offer メッセージ (`offerMessage.simulcast`) 由来であり、`SoraMediaOption.simulcastEnabled` とは別の値である。Sora サーバーは、recvonly のクライアントに対しても `simulcast: true` を含む offer を返す場合がある。
 
-- 現状でも動作には問題がなく、不要なインスタンス化が行われるだけのため不急とする。
-- ただし映像受信のみの構成で無駄なエンコーダーファクトリーを生成しており、リソースと意図の明確さの観点で整理する価値がある。
+`PeerChannel.kt:424` および `PeerChannel.kt:488` では、既に `simulcastEnabled && mediaOption.videoUpstreamEnabled` の組み合わせで映像送信の有無を判定しており、本対応はこの既存パターンを `RTCComponentFactory` 側にも適用するものである。
 
 ## 現状
 
-`RTCComponentFactory.kt` のエンコーダーファクトリー生成は `simulcastEnabled` のみを条件に分岐しており、映像送信の有無を判定していない。
+`RTCComponentFactory.kt:77-123` のエンコーダーファクトリー選択 (when 式) は、`simulcastEnabled` 単独で分岐しており映像送信の有無を判定していない。
 
 ```kotlin
-// RTCComponentFactory.kt（抜粋）
-simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
-    SoraDefaultVideoEncoderFactory(...)
+// RTCComponentFactory.kt:77-123 (抜粋・簡略化)
+when {
+    mediaOption.videoEncoderFactory != null ->
+        mediaOption.videoEncoderFactory!!
 
-simulcastEnabled ->
-    SimulcastVideoEncoderFactoryWrapper(...)   // 映像送信がなくても生成される
+    simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
+        SoraDefaultVideoEncoderFactory(
+            mediaOption.videoUpstreamContext,
+            resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+            softwareOnly = mediaOption.softwareVideoEncoderOnly,
+        )
 
-else ->
-    SoraDefaultVideoEncoderFactory(...)
+    simulcastEnabled ->
+        SimulcastVideoEncoderFactoryWrapper(
+            mediaOption.videoUpstreamContext,
+            resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+        )
+
+    mediaOption.videoUpstreamContext != null ->
+        SoraDefaultVideoEncoderFactory(mediaOption.videoUpstreamContext, ...)
+
+    mediaOption.videoDownstreamContext != null ->
+        SoraDefaultVideoEncoderFactory(mediaOption.videoDownstreamContext, ...)
+
+    else ->
+        SoraDefaultVideoEncoderFactory(null, ...)
+}
 ```
 
 ## 設計方針
 
-- `simulcastEnabled` の分岐に映像送信が有効かどうかの条件を追加し、映像送信を行わない構成では `SoraDefaultVideoEncoderFactory` を生成する。
-- 映像送信の有無の判定には `SoraMediaOption` 側の映像送信フラグを利用する（実装時に正確なフラグを確認する）。
+`mediaOption.videoUpstreamEnabled` (`SoraMediaOption.kt:39`, internal var) は `enableVideoUpstream()` の呼び出しでのみ `true` になり、`RTCComponentFactory` と同一モジュール内からアクセス可能である。
+
+### 修正内容
+
+`simulcastEnabled` 分岐（上記 3 番目）に `mediaOption.videoUpstreamEnabled` を追加する。`softwareVideoEncoderOnly` 分岐（上記 2 番目）は単体では `simulcastEnabled` でガードされているため、修正後の `simulcastEnabled` 分岐がマッチしない場合だけ 2 番目の分岐が評価される。映像送信がないケースでは `simulcastEnabled` 分岐（修正後）にマッチしないため、`softwareVideoEncoderOnly` 分岐にもマッチせず、そのまま後続の fallback 分岐に進む。よって `softwareVideoEncoderOnly` 分岐への `videoUpstreamEnabled` 追加は不要である。
+
+```kotlin
+// 変更前
+simulcastEnabled ->
+    SimulcastVideoEncoderFactoryWrapper(
+        mediaOption.videoUpstreamContext,
+        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+    )
+
+// 変更後
+simulcastEnabled && mediaOption.videoUpstreamEnabled ->
+    SimulcastVideoEncoderFactoryWrapper(
+        mediaOption.videoUpstreamContext,
+        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+    )
+```
+
+### フォールバック経路
+
+`simulcastEnabled=true && videoUpstreamEnabled=false` の場合のフォールバック先:
+
+| 構成 | マッチする分岐 | 生成されるファクトリー |
+|---|---|---|
+| recvonly (映像受信あり) | `videoDownstreamContext != null` | `SoraDefaultVideoEncoderFactory(videoDownstreamContext, ...)` |
+| 音声のみ | `else` | `SoraDefaultVideoEncoderFactory(null, ...)` |
+
+いずれも `SimulcastVideoEncoderFactoryWrapper` は生成されず、正常に動作する。
 
 ## 完了条件
 
-- 映像送信を行わない構成（recvonly など）で `simulcastEnabled` が `true` でも `SimulcastVideoEncoderFactoryWrapper` が生成されないこと。
-- 映像送信を行う構成での既存のサイマルキャスト動作が変わらないこと。
+- `simulcastEnabled=true` かつ `videoUpstreamEnabled=false` の構成で `SimulcastVideoEncoderFactoryWrapper` が生成されず、後続の fallback 分岐で適切な `SoraDefaultVideoEncoderFactory` が選択されること。
+- `simulcastEnabled=true` かつ `videoUpstreamEnabled=true` の構成での既存動作（`SimulcastVideoEncoderFactoryWrapper` の生成）が変わらないこと。
+
+## テスト方針
+
+`RTCComponentFactory.createPeerConnectionFactory()` の単体テストで、以下の組み合わせを検証する:
+
+| simulcastEnabled | videoUpstreamEnabled | videoDownstreamContext | videoEncoderFactory (ユーザー指定) | 期待されるファクトリー種別 |
+|---|---|---|---|---|
+| false | false | non-null | なし | `SoraDefaultVideoEncoderFactory` |
+| false | true | - | なし | `SoraDefaultVideoEncoderFactory` |
+| true | false | non-null | なし | `SoraDefaultVideoEncoderFactory` (fallback) |
+| true | true | - | なし | `SimulcastVideoEncoderFactoryWrapper` |
+| true | false | non-null | あり (カスタム) | カスタム `VideoEncoderFactory` |
+
+音声のみの構成（`videoUpstreamEnabled=false`, `videoDownstreamContext=null`）についても、`SimulcastVideoEncoderFactoryWrapper` が生成されないことを確認する。
 
 ## 解決方法
