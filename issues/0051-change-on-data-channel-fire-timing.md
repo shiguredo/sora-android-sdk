@@ -3,6 +3,7 @@
 - Priority: Medium
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/change-on-data-channel-fire-timing
 

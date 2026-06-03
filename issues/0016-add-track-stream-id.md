@@ -3,44 +3,81 @@
 - Priority: Medium
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/add-track-stream-id
 
 ## 目的
 
-リモートの映像・音声トラックから、そのトラックが所属するストリーム ID（`stream_id`）を取得できるようにする。これにより connection ID とトラックを結びつけられるようにする。
+リモートの映像・音声トラックから、そのトラックが所属するストリーム ID （`stream_id`）を取得できるようにする。Sora ではリモートストリームのストリーム ID はリモート接続の `connection_id` と同一である。この機能により connection ID とトラックの対応付けが可能になる。
 
-現状の Android SDK は公開 API も内部実装もストリームベースだが、内部実装をトラックベースへ寄せていきたい。そのためにはトラックが所属するストリーム ID を知る必要がある。また、ユースケースによっては connection ID からトラックを特定する必要があり、トラックからストリーム ID を取得できれば特定が可能になる。
+具体的なユースケース:
 
-具体的なユースケース例:
+- マルチストリームでリモート映像にユーザー名を重畳する
+- スポットライトでフォーカスされた接続の映像トラックを特定する
 
-- マルチストリームでリモート映像の枠の中にユーザー名を出す場合、ユーザーの connection ID とトラックを結びつける必要がある。
-- スポットライトでフォーカスされた人の映像に枠を出す / 大きくする場合、通知された connection ID のユーザーの映像トラックを特定する必要がある。
-
-## 優先度根拠
-
-- 内部実装をストリームベースからトラックベースへ移行するための前提となる機能であり、技術的な重要度は高い。
-- 一方で現行のストリームベース API でも主要なユースケースは成立しており、緊急性は中程度のため Medium とする。
+本 issue は `0024-refactor-deprecated-on-add-stream`（`onAddStream` 依存の解消）の前提となる。
 
 ## 現状
 
 リモートトラックの受信は `PeerChannel.kt` の `PeerConnection.Observer` で扱っているが、ストリーム ID をトラック側から取得して上位へ伝える経路がない。
 
-- `PeerChannel.kt` の `onAddStream` で `MediaStream` を受け取り、`listener?.onAddRemoteStream(ms)` でストリーム単位のまま上位に渡している。
-- `onAddTrack(receiver: RtpReceiver?, ms: Array<out MediaStream>?)` と `onTrack(transceiver: RtpTransceiver)` は現状ログ出力のみで、トラックとストリーム ID の対応付けは行っていない。
-- `SoraMediaChannel.kt` の `onAddRemoteStream(ms: MediaStream)` も `MediaStream` 単位で上位リスナーに通知しており、トラックからストリーム ID を引く API は公開していない。
+- `PeerChannel.kt:267-269`: `onAddStream` で `MediaStream` を受け取り、`listener?.onAddRemoteStream(ms)` でストリーム単位のまま渡している。
+- `PeerChannel.kt:272-277`: `onAddTrack(receiver, ms: Array<out MediaStream>?)` — ログ出力のみ。`ms` 配列からストリーム ID が直接取得可能だが、未使用。
+- `PeerChannel.kt:283-290`: `onTrack(transceiver)` — ログ出力のみ。`transceiver.receiver` から `RtpReceiver` を得られる。以下の TODO が残っている:
+  ```
+  // TODO(shino): Unified plan に onRemoveTrack が来たらこっちで対応する。
+  // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
+  ```
+- `SoraMediaChannel.kt:880-887`: `onAddRemoteStream` も `MediaStream` 単位で上位リスナーに通知。マルチストリーム時に `ms.id == connectionId` の場合、自己ストリームとしてフィルタリングしている。
 
-参考として、他言語の SDK では受信側の `RtpReceiver` が持つ `stream_ids()` の先頭要素をトラックのストリーム ID として公開する実装がある。`org.webrtc.RtpReceiver` にも対応する API が存在するかを実装時に確認する。
+`PeerChannel.Listener` および `SoraMediaChannel.Listener` にはトラック単位のコールバックが存在せず、新規追加が必要である。
 
 ## 設計方針
 
-- リモートトラックに対してストリーム ID を引けるようにする。`onAddTrack` / `onTrack` で得られる `RtpReceiver` の `streamIds`（`stream_ids()` 相当）を利用してトラックとストリーム ID を対応付ける。
-- 既存のストリームベース公開 API は維持したまま、トラックからストリーム ID を取得する手段を追加する形を基本とする。公開 API の形は実装時に検討する。
-- `org.webrtc` 側で `RtpReceiver` から `streamIds` を取得できるかを確認し、取得できない場合の代替経路（`onAddStream` で得た `MediaStream` の `id` とトラックの対応付け）も検討する。
+### スコープ
+
+本 issue の対象はリモートトラックのみとする。ローカルトラックのストリーム ID は `PeerChannelImpl.localStreamId` で既に管理されている。
+
+### トラック→ストリーム ID 対応付け
+
+`onAddTrack(receiver, ms)` の第 2 引数 `ms: Array<out MediaStream>?` の先頭要素 `ms[0].id` をストリーム ID として使用する。これは `org.webrtc.RtpReceiver` の API 存在確認を待たずに確定できる経路である。`ms` が null または空だった場合は `onTrack(transceiver)` の `transceiver.receiver` 経由の取得にフォールバックする。
+
+### データ構造
+
+`PeerChannelImpl` 内に `private val trackToStreamId = ConcurrentHashMap<String, String>()` を持ち、キーをトラック ID、値をストリーム ID とする。スレッドセーフなデータ構造とし、`closeInternal()` でクリアする。
+
+### 公開 API
+
+以下の新規コールバックを `PeerChannel.Listener` に追加し、`SoraMediaChannel.Listener` にも同名で追加する:
+
+```kotlin
+// PeerChannel.Listener
+fun onAddRemoteTrack(track: MediaStreamTrack, streamId: String)
+
+// SoraMediaChannel.Listener
+fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String)
+```
+
+既存の `onAddRemoteStream(ms: MediaStream)` コールバックは変更せず、併存させる。
+
+### 自己ストリームフィルタリング
+
+マルチストリーム時、`streamId == connectionId` の場合は自己ストリームとしてフィルタリングし、`onAddRemoteTrack` を発火しない。既存の `onAddRemoteStream` と同等の挙動をトラックレベルでも維持する。
+
+### マッピングのライフサイクル
+
+- **追加**: `onAddTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
+- **削除**: `onRemoveTrack` 発火時に `trackToStreamId.remove(track.id())` でマッピングを削除する。
+- **ストリーム削除**: `onRemoveStream` 発火時にそのストリームに属する全トラックのマッピングを削除する。
+- **切断時**: `closeInternal()` で `trackToStreamId.clear()` する。
 
 ## 完了条件
 
-- リモートの映像・音声トラックから、そのトラックが所属するストリーム ID を取得できること。
-- 既存のストリームベース公開 API の動作が変わらないこと。
+- リモートの映像・音声トラックからストリーム ID が取得できること。
+- トラック削除時にマッピングがクリーンアップされること。
+- 既存の `onAddRemoteStream` コールバックの動作が変わらないこと。
+- 実機での動作確認テストが存在すること（マルチストリーム環境での検証を含む）。
+- `CHANGES.md` の `develop` セクションに `[ADD]` エントリを追記すること。
 
 ## 解決方法

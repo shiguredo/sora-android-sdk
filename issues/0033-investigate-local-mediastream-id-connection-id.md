@@ -3,8 +3,9 @@
 - Priority: Low
 - Created: 2026-06-03
 - Completed:
+- Polished: 2026-06-03
 - Model: Opus 4.8
-- Branch:
+- Branch: feature/investigate-local-mediastream-id-connection-id
 
 ## 目的
 
