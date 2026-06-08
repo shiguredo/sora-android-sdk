@@ -105,6 +105,11 @@ class SoraMediaOption {
     var videoH264Params: Any? = null
 
     /**
+     * H.265 向け映像コーデックパラメーター.
+     */
+    var videoH265Params: Any? = null
+
+    /**
      * 映像の視聴を有効にします.
      *
      * cf.
@@ -355,7 +360,8 @@ class SoraMediaOption {
             videoBitrate == null &&
             videoVp9Params == null &&
             videoAv1Params == null &&
-            videoH264Params == null
+            videoH264Params == null &&
+            videoH265Params == null
 
     /**
      * シグナリング type: connect メッセージの audio に含めるデータがすべてデフォルト値かどうか.
