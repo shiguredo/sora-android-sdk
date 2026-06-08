@@ -15,8 +15,9 @@
   - @zztkm
 - [UPDATE] libwebrtc を 148.7778.7.0 に上げる
   - @t-miya @zztkm
-- [UPDATE] RTCComponentFactory のビデオエンコーダーファクトリー選択条件に videoUpstreamEnabled を追加する
-  - 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
+- [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
+  - 不要なインスタンス生成をしないようにする
+  - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
   - @t-miya
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
   - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
