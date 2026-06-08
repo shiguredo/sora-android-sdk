@@ -1074,6 +1074,7 @@ class SoraMediaChannel
             |videoVp9Params             = ${mediaOption.videoVp9Params}
             |videoAv1Params             = ${mediaOption.videoAv1Params}
             |videoH264Params            = ${mediaOption.videoH264Params}
+            |videoH265Params            = ${mediaOption.videoH265Params}
             |videoCapturer              = ${mediaOption.userSettingVideoCapturer()}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}

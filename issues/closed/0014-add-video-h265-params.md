@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-06-05
 - Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/add-video-h265-params
@@ -51,3 +51,21 @@
 既存の映像コーデックパラメーター（VP9/AV1/H.264）についてもテストは存在しないため、本 issue では新規追加しない。動作確認は実機またはエミュレーターでの手動テスト、およびコードレビューで検証する。
 
 ## 解決方法
+
+### 実装
+
+既存の `videoH264Params` の実装パターンにならい、以下の 5 箇所に H.265 向けの対応を追加した:
+
+1. **`SoraMediaOption.kt:110`**: `videoH265Params: Any? = null` を定義
+2. **`SoraMediaOption.kt:364`**: `isDefaultVideoOption()` に `&& videoH265Params == null` を追加
+3. **`SoraMediaChannel.kt:1077`**: デバッグログ `|videoH265Params = ${mediaOption.videoH265Params}` を追加
+4. **`MessageConverter.kt:98`**: 配信者パスの `VideoSetting` 生成ブロックに `mediaOption.videoH265Params?.let { h265Params = it }` を追加
+5. **`Catalog.kt:72`**: `VideoSetting` に `@SerializedName("h265_params") var h265Params: Any? = null` を追加
+
+### 変更履歴
+
+`CHANGES.md` の `## develop` セクションに `[ADD]` エントリを追加した。
+
+### 動作確認
+
+実機で H.265 プロファイルを指定した接続が正常に行われることを確認した。サンプルアプリ (`sora-android-sdk-samples`) の接続設定画面にも H.265 プロファイル選択 UI を追加した。

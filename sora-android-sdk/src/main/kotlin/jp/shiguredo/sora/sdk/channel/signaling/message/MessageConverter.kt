@@ -95,6 +95,7 @@ class MessageConverter {
                                 mediaOption.videoVp9Params?.let { vp9Params = it }
                                 mediaOption.videoAv1Params?.let { av1Params = it }
                                 mediaOption.videoH264Params?.let { h264Params = it }
+                                mediaOption.videoH265Params?.let { h265Params = it }
                             }
                     }
                 } else {
