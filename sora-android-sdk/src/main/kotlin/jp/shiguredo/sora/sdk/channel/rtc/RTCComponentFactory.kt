@@ -10,6 +10,7 @@ import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.DefaultVideoDecoderFactory
 import org.webrtc.MediaConstraints
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.VideoEncoderFactory
 import org.webrtc.audio.AudioDeviceModule
 import org.webrtc.audio.JavaAudioDeviceModule
 import java.security.cert.X509Certificate
@@ -23,6 +24,27 @@ class RTCComponentFactory(
 ) {
     companion object {
         private val TAG = RTCComponentFactory::class.simpleName
+    }
+
+    // createVideoEncoderFactory でどの VideoEncoderFactory を生成するかを表す internal enum
+    internal enum class VideoEncoderFactoryType {
+        // ユーザー指定の VideoEncoderFactory をそのまま利用する
+        CUSTOM,
+
+        // Simulcast + ソフトウェアエンコーダーのみ: SoraDefaultVideoEncoderFactory (softwareOnly=true)
+        SIMULCAST_SOFTWARE,
+
+        // Simulcast + ハードウェアエンコーダー: SimulcastVideoEncoderFactoryWrapper
+        SIMULCAST,
+
+        // 映像送信あり (simulcast 無効): SoraDefaultVideoEncoderFactory (upstreamContext)
+        UPSTREAM,
+
+        // 映像受信のみ: SoraDefaultVideoEncoderFactory (downstreamContext)
+        DOWNSTREAM,
+
+        // 映像の送受信なし (音声のみ): SoraDefaultVideoEncoderFactory (context=null)
+        NULL,
     }
 
     // Controllable ADM（内部生成時のみ設定）
@@ -74,56 +96,9 @@ class RTCComponentFactory(
         SoraLogger.d(TAG, "videoEncoderFactory => ${mediaOption.videoEncoderFactory}")
         SoraLogger.d(TAG, "videoUpstreamContext => ${mediaOption.videoUpstreamContext}")
         SoraLogger.d(TAG, "softwareVideoEncoderOnly => ${mediaOption.softwareVideoEncoderOnly}")
-        val encoderFactory =
-            when {
-                mediaOption.videoEncoderFactory != null ->
-                    mediaOption.videoEncoderFactory!!
-
-                simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
-                    // NOTE: Simulcast を利用するかつ SW オンリーの場合に SoraDefaultVideoEncoderFactory を使う理由
-                    //
-                    // softwareOnly の場合に SoraDefaultVideoEncoderFactory 内で SoftwareVideoEncoderFactory が使われる
-                    // SoftwareVideoEncoderFactory は JNI で BuiltinVideoEncoderFactory を生成し、
-                    // その Create() が SimulcastEncoderAdapter を返すため、SW でも自動的に
-                    // Simulcast をサポートできるため SimulcastVideoEncoderFactory を使う SimulcastVideoEncoderFactoryWrapper は不要。
-                    // SimulcastEncoderAdapter 自体は与えられた VideoEncoderFactory から複数エンコーダを
-                    // 生成してサイマルキャストを実現するため、SoftwareVideoEncoderFactory でも問題なく機能する。
-                    SoraDefaultVideoEncoderFactory(
-                        mediaOption.videoUpstreamContext,
-                        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
-                        softwareOnly = mediaOption.softwareVideoEncoderOnly,
-                    )
-
-                simulcastEnabled ->
-                    SimulcastVideoEncoderFactoryWrapper(
-                        mediaOption.videoUpstreamContext,
-                        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
-                    )
-
-                mediaOption.videoUpstreamContext != null ->
-                    SoraDefaultVideoEncoderFactory(
-                        mediaOption.videoUpstreamContext,
-                        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
-                        softwareOnly = mediaOption.softwareVideoEncoderOnly,
-                    )
-
-                mediaOption.videoDownstreamContext != null ->
-                    SoraDefaultVideoEncoderFactory(
-                        mediaOption.videoDownstreamContext,
-                        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
-                        softwareOnly = mediaOption.softwareVideoEncoderOnly,
-                    )
-
-                else ->
-                    SoraDefaultVideoEncoderFactory(
-                        null,
-                        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
-                        softwareOnly = mediaOption.softwareVideoEncoderOnly,
-                    )
-            }
+        val encoderFactory = createVideoEncoderFactory()
 
         SoraLogger.d(TAG, "videoDecoderFactory => ${mediaOption.videoDecoderFactory}")
-        SoraLogger.d(TAG, "videoDownstreamContext => ${mediaOption.videoDownstreamContext}")
         val decoderFactory =
             when {
                 mediaOption.videoDecoderFactory != null ->
@@ -163,6 +138,87 @@ class RTCComponentFactory(
 
         return factoryBuilder.createPeerConnectionFactory()
     }
+
+    internal fun createVideoEncoderFactory(): VideoEncoderFactory {
+        val resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment
+        // MediaOption やサイマルキャストの利用設定から VideoEncoderFactoryType を判定して適用する
+        return when (determineVideoEncoderFactoryType()) {
+            VideoEncoderFactoryType.CUSTOM ->
+                mediaOption.videoEncoderFactory!!
+
+            VideoEncoderFactoryType.SIMULCAST_SOFTWARE ->
+                // NOTE: Simulcast を利用するかつ SW オンリーの場合に SoraDefaultVideoEncoderFactory を使う理由
+                //
+                // softwareOnly の場合に SoraDefaultVideoEncoderFactory 内で SoftwareVideoEncoderFactory が使われる
+                // SoftwareVideoEncoderFactory は JNI で BuiltinVideoEncoderFactory を生成し、
+                // その Create() が SimulcastEncoderAdapter を返すため、SW でも自動的に
+                // Simulcast をサポートできるため SimulcastVideoEncoderFactory を使う SimulcastVideoEncoderFactoryWrapper は不要。
+                // SimulcastEncoderAdapter 自体は与えられた VideoEncoderFactory から複数エンコーダを
+                // 生成してサイマルキャストを実現するため、SoftwareVideoEncoderFactory でも問題なく機能する。
+                SoraDefaultVideoEncoderFactory(
+                    mediaOption.videoUpstreamContext,
+                    resolutionAdjustment = resolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
+                )
+
+            VideoEncoderFactoryType.SIMULCAST ->
+                SimulcastVideoEncoderFactoryWrapper(
+                    mediaOption.videoUpstreamContext,
+                    resolutionAdjustment = resolutionAdjustment,
+                )
+
+            VideoEncoderFactoryType.UPSTREAM ->
+                SoraDefaultVideoEncoderFactory(
+                    mediaOption.videoUpstreamContext,
+                    resolutionAdjustment = resolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
+                )
+
+            VideoEncoderFactoryType.DOWNSTREAM ->
+                SoraDefaultVideoEncoderFactory(
+                    mediaOption.videoDownstreamContext,
+                    resolutionAdjustment = resolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
+                )
+
+            VideoEncoderFactoryType.NULL ->
+                SoraDefaultVideoEncoderFactory(
+                    null,
+                    resolutionAdjustment = resolutionAdjustment,
+                    softwareOnly = mediaOption.softwareVideoEncoderOnly,
+                )
+        }
+    }
+
+    // ビデオエンコーダーファクトリーの種別を判定する。
+    // 実際の VideoEncoderFactory 生成は createVideoEncoderFactory() 側で行うため、
+    // この関数は WebRTC ネイティブコードに依存せず単体テストが可能。
+    internal fun determineVideoEncoderFactoryType(): VideoEncoderFactoryType =
+        when {
+            // ユーザー指定の VideoEncoderFactory が最優先
+            mediaOption.videoEncoderFactory != null ->
+                VideoEncoderFactoryType.CUSTOM
+
+            // サイマルキャスト有効 + SW エンコーダーのみ + 映像送信あり
+            simulcastEnabled && mediaOption.softwareVideoEncoderOnly && mediaOption.videoUpstreamEnabled ->
+                VideoEncoderFactoryType.SIMULCAST_SOFTWARE
+
+            // サイマルキャスト有効 + 映像送信あり
+            simulcastEnabled && mediaOption.videoUpstreamEnabled ->
+                VideoEncoderFactoryType.SIMULCAST
+
+            // 映像送信あり (サイマルキャスト無効)
+            mediaOption.videoUpstreamContext != null ->
+                VideoEncoderFactoryType.UPSTREAM
+
+            // 映像受信のみ (サイマルキャスト無効 または videoUpstreamEnabled=false で fallback)
+            mediaOption.videoDownstreamContext != null ->
+                VideoEncoderFactoryType.DOWNSTREAM
+
+            // 映像の送受信なし (音声のみ)
+            else ->
+                VideoEncoderFactoryType.NULL
+        }
 
     internal fun createSSLCertificateVerifier() =
         TurnTlsCertificateVerifier(

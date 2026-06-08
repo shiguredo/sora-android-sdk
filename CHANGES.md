@@ -15,6 +15,10 @@
   - @zztkm
 - [UPDATE] libwebrtc を 148.7778.7.0 に上げる
   - @t-miya @zztkm
+- [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
+  - 不要なインスタンス生成をしないようにする
+  - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
+  - @t-miya
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
   - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
   - Sora JavaScript SDK に合わせるため、通知対象を `sora-js-sdk 2025.2.0` (commit: `9b76c0757cb213cc76a2e7387b24f4cd5eb73764`) の signaling callback と同じシグナリング項目にする

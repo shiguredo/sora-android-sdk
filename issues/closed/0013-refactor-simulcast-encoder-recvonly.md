@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-06-05
 - Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/refactor-simulcast-encoder-recvonly
@@ -57,17 +57,33 @@ when {
 
 ### 修正内容
 
-`simulcastEnabled` 分岐（上記 3 番目）に `mediaOption.videoUpstreamEnabled` を追加する。`softwareVideoEncoderOnly` 分岐（上記 2 番目）は単体では `simulcastEnabled` でガードされているため、修正後の `simulcastEnabled` 分岐がマッチしない場合だけ 2 番目の分岐が評価される。映像送信がないケースでは `simulcastEnabled` 分岐（修正後）にマッチしないため、`softwareVideoEncoderOnly` 分岐にもマッチせず、そのまま後続の fallback 分岐に進む。よって `softwareVideoEncoderOnly` 分岐への `videoUpstreamEnabled` 追加は不要である。
+`simulcastEnabled` が関与する 2 つの分岐（上記 2, 3 番目）に `mediaOption.videoUpstreamEnabled` を追加する。when 式の分岐は上から順に評価されるため、3 番目の分岐 (`simulcastEnabled ->`) だけに `videoUpstreamEnabled` を追加しても、`softwareVideoEncoderOnly` 分岐（2 番目）が先に評価される。そのため `simulcastEnabled=true && softwareVideoEncoderOnly=true && videoUpstreamEnabled=false` のケースでは 2 番目の分岐にマッチしてしまい、fallback に進まない。不要なエンコーダーファクトリーの生成を確実に抑制するため、両方の分岐に `videoUpstreamEnabled` を追加する。
 
 ```kotlin
-// 変更前
+// 変更前（2 番目の分岐）
+simulcastEnabled && mediaOption.softwareVideoEncoderOnly ->
+    SoraDefaultVideoEncoderFactory(
+        mediaOption.videoUpstreamContext,
+        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+        softwareOnly = mediaOption.softwareVideoEncoderOnly,
+    )
+
+// 変更後（2 番目の分岐）
+simulcastEnabled && mediaOption.softwareVideoEncoderOnly && mediaOption.videoUpstreamEnabled ->
+    SoraDefaultVideoEncoderFactory(
+        mediaOption.videoUpstreamContext,
+        resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
+        softwareOnly = mediaOption.softwareVideoEncoderOnly,
+    )
+
+// 変更前（3 番目の分岐）
 simulcastEnabled ->
     SimulcastVideoEncoderFactoryWrapper(
         mediaOption.videoUpstreamContext,
         resolutionAdjustment = mediaOption.hardwareVideoEncoderResolutionAdjustment,
     )
 
-// 変更後
+// 変更後（3 番目の分岐）
 simulcastEnabled && mediaOption.videoUpstreamEnabled ->
     SimulcastVideoEncoderFactoryWrapper(
         mediaOption.videoUpstreamContext,
@@ -77,7 +93,7 @@ simulcastEnabled && mediaOption.videoUpstreamEnabled ->
 
 ### フォールバック経路
 
-`simulcastEnabled=true && videoUpstreamEnabled=false` の場合のフォールバック先:
+修正後、`simulcastEnabled=true && videoUpstreamEnabled=false` の場合、`softwareVideoEncoderOnly` の値にかかわらず simulcast 関連の 2 分岐（2, 3 番目）はいずれもマッチせず、後続の fallback 分岐に進む:
 
 | 構成 | マッチする分岐 | 生成されるファクトリー |
 |---|---|---|
@@ -95,14 +111,39 @@ simulcastEnabled && mediaOption.videoUpstreamEnabled ->
 
 `RTCComponentFactory.createPeerConnectionFactory()` の単体テストで、以下の組み合わせを検証する:
 
-| simulcastEnabled | videoUpstreamEnabled | videoDownstreamContext | videoEncoderFactory (ユーザー指定) | 期待されるファクトリー種別 |
-|---|---|---|---|---|
-| false | false | non-null | なし | `SoraDefaultVideoEncoderFactory` |
-| false | true | - | なし | `SoraDefaultVideoEncoderFactory` |
-| true | false | non-null | なし | `SoraDefaultVideoEncoderFactory` (fallback) |
-| true | true | - | なし | `SimulcastVideoEncoderFactoryWrapper` |
-| true | false | non-null | あり (カスタム) | カスタム `VideoEncoderFactory` |
+| simulcastEnabled | videoUpstreamEnabled | softwareVideoEncoderOnly | videoDownstreamContext | videoEncoderFactory (ユーザー指定) | 期待されるファクトリー種別 |
+|---|---|---|---|---|---|
+| false | false | - | non-null | なし | `SoraDefaultVideoEncoderFactory` |
+| false | true | - | - | なし | `SoraDefaultVideoEncoderFactory` |
+| true | false | false | non-null | なし | `SoraDefaultVideoEncoderFactory` (fallback) |
+| true | false | true | non-null | なし | `SoraDefaultVideoEncoderFactory` (fallback) |
+| true | true | - | - | なし | `SimulcastVideoEncoderFactoryWrapper` |
+| true | false | - | non-null | あり (カスタム) | カスタム `VideoEncoderFactory` |
 
 音声のみの構成（`videoUpstreamEnabled=false`, `videoDownstreamContext=null`）についても、`SimulcastVideoEncoderFactoryWrapper` が生成されないことを確認する。
 
 ## 解決方法
+
+### 実装
+
+`RTCComponentFactory.kt` のエンコーダーファクトリー選択 when 式において、`simulcastEnabled` が関与する 2 つの分岐に `mediaOption.videoUpstreamEnabled` を追加した:
+
+1. `simulcastEnabled && mediaOption.softwareVideoEncoderOnly` → `simulcastEnabled && mediaOption.softwareVideoEncoderOnly && mediaOption.videoUpstreamEnabled`
+2. `simulcastEnabled` → `simulcastEnabled && mediaOption.videoUpstreamEnabled`
+
+これにより `videoUpstreamEnabled=false` の構成では `SimulcastVideoEncoderFactoryWrapper` が生成されず、後続の fallback 分岐で適切な `SoraDefaultVideoEncoderFactory` が選択される。
+
+### テスト
+
+`RTCComponentFactory.kt` に `determineVideoEncoderFactoryType()` と `VideoEncoderFactoryType` enum を追加し、ファクトリー種別の決定ロジックを WebRTC ネイティブコードに依存しない形で分離した。`RTCComponentFactoryTest.kt` で以下の 9 ケースを検証:
+
+| テスト | 検証内容 |
+|---|---|
+| `determineVideoEncoderFactoryType()` 8 件 | 全分岐の決定ロジック |
+| `createVideoEncoderFactory()` 1 件 | CUSTOM 分岐の実ファクトリー返却 (`assertSame`) |
+
+ソフトウェアエンコーダーのみ (`softwareVideoEncoderOnly=true`) かつ映像送信なし (`videoUpstreamEnabled=false`) のケースも含め、`SimulcastVideoEncoderFactoryWrapper` が誤って生成されないことを確認した。
+
+### 変更履歴
+
+`CHANGES.md` の `## develop` セクションに `[UPDATE]` エントリを追加した。
