@@ -26,6 +26,7 @@ class RTCComponentFactory(
         private val TAG = RTCComponentFactory::class.simpleName
     }
 
+    // createVideoEncoderFactory でどの VideoEncoderFactory を生成するかを表す internal enum
     internal enum class VideoEncoderFactoryType {
         // ユーザー指定の VideoEncoderFactory をそのまま利用する
         CUSTOM,
