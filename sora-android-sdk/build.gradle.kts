@@ -46,8 +46,11 @@ android {
                 .get()
                 .toInt()
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         buildConfigField("String", "REVISION", "\"$gitRevision\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
+        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("SORA_SIGNALING_URL") ?: ""}\"")
     }
 
     lint {
@@ -63,6 +66,9 @@ android {
         }
         getByName("test") {
             java.srcDirs("src/test/kotlin")
+        }
+        getByName("androidTest") {
+            java.srcDirs("src/androidTest/kotlin")
         }
     }
 
@@ -162,6 +168,11 @@ dependencies {
     testImplementation(libs.robolectric) {
         exclude(group = "com.google.auto.service", module = "auto-service")
     }
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
 
 configurations.all {
