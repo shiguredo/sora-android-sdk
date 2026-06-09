@@ -72,6 +72,14 @@
 
 - [CHANGE] prek.toml に切り替える
   - @voluntas
+- [ADD] androidTest にダミー映像キャプチャ DummyVideoCapturer を追加する
+  - 7 色横カラーバーをフレームごとに横シフトする I420 フレームを生成
+  - SW エンコードで実機カメラ不要の E2E テストを可能にする
+  - @t-miya
+- [ADD] androidTest に E2E テストを追加する
+  - シミュレーター利用での実行を想定している
+  - recvonly で Sora との接続・切断を行うテストを追加する
+  - @t-miya
 
 ## 2026.1.0
 

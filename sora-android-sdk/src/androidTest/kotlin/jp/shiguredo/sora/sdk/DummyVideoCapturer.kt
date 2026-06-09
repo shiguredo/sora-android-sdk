@@ -6,11 +6,10 @@ import android.util.Log
 import org.webrtc.CapturerObserver
 import org.webrtc.JavaI420Buffer
 import org.webrtc.SurfaceTextureHelper
-import org.webrtc.TimestampAligner
 import org.webrtc.VideoCapturer
 import org.webrtc.VideoFrame
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 // 7 色の横カラーバーをフレームごとに横シフトするダミー VideoCapturer 実装
 internal class DummyVideoCapturer : VideoCapturer {
@@ -38,22 +37,21 @@ internal class DummyVideoCapturer : VideoCapturer {
         )
 
     private val isRunning = AtomicBoolean(false)
-    private val timestampAligner = TimestampAligner()
 
     private var handler: Handler? = null
     private var observer: CapturerObserver? = null
     private var width: Int = 0
     private var height: Int = 0
     private var fps: Int = 0
-    private var frameIndex: Long = 0
-    val currentFrameIndex: Long get() = frameIndex
+    private val frameIndex = AtomicLong(0)
+    val currentFrameIndex: Long get() = frameIndex.get()
 
     private val isDisposed = AtomicBoolean(false)
 
     private val generateFrameRunnable =
         object : Runnable {
             override fun run() {
-                if (!isRunning.get()) {
+                if (!isRunning.get() || isDisposed.get()) {
                     return
                 }
                 generateFrame()
@@ -80,7 +78,7 @@ internal class DummyVideoCapturer : VideoCapturer {
         this.width = width
         this.height = height
         this.fps = fps
-        this.frameIndex = 0
+        this.frameIndex.set(0)
         isRunning.set(true)
         val delayMs = 1000L / fps.coerceAtLeast(1)
         Log.d(TAG, "startCapture: ${width}x$height@${fps}fps handler=${handler != null} delayMs=$delayMs")
@@ -110,12 +108,11 @@ internal class DummyVideoCapturer : VideoCapturer {
             Log.d(TAG, "dispose: 二重呼び出しのためスキップ")
             return
         }
-        Log.d(TAG, "dispose: 解放開始 frameIndex=$frameIndex")
+        Log.d(TAG, "dispose: 解放開始 frameIndex=${frameIndex.get()}")
         isRunning.set(false)
         handler?.removeCallbacks(generateFrameRunnable)
         handler = null
         observer = null
-        timestampAligner.dispose()
     }
 
     override fun isScreencast(): Boolean = false
@@ -130,7 +127,8 @@ internal class DummyVideoCapturer : VideoCapturer {
 
         val buffer = JavaI420Buffer.allocate(w, h)
         val barWidth = w / colorTable.size + 1
-        val shift = (frameIndex * 4).toInt() % w
+        val shiftValue = frameIndex.get() * 4
+        val shift = shiftValue.toInt() % w
 
         // Y プレーンの描画
         val yBuffer = buffer.dataY
@@ -162,18 +160,17 @@ internal class DummyVideoCapturer : VideoCapturer {
             }
         }
 
-        val timestampNs =
-            timestampAligner.translateTimestamp(
-                TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis()),
-            )
+        val timestampNs = System.nanoTime()
         val videoFrame = VideoFrame(buffer, 0, timestampNs)
         observer?.onFrameCaptured(videoFrame)
-        // VideoFrame の解放は VideoSource 側に任せる。
-        // 即時 release すると VideoSource がエンコード前にバッファを失う可能性があるため呼ばない
+        // VideoFrame がバッファの所有権を持つ前提の API のため、
+        // onFrameCaptured() の後は必ず release() で参照を解放する。
+        // VideoSource 側で必要な場合は内部で retain() される
+        videoFrame.release()
 
-        if (frameIndex % 10 == 0L) {
-            Log.d(TAG, "generateFrame: frameIndex=$frameIndex ${w}x$h sent")
+        if (frameIndex.get() % 10 == 0L) {
+            Log.d(TAG, "generateFrame: frameIndex=${frameIndex.get()} ${w}x$h sent")
         }
-        frameIndex++
+        frameIndex.incrementAndGet()
     }
 }
