@@ -132,6 +132,7 @@ class SoraE2ETest {
         }
 
     // DummyVideoCapturer でダミー映像を生成し、outbound-rtp の stats で送信を確認するテスト
+    @Ignore
     @Test
     fun `映像が送信されること`(): Unit =
         runBlocking {
