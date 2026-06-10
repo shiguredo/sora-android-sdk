@@ -98,6 +98,19 @@ android {
                 .get()
                 .toInt()
         unitTests.isIncludeAndroidResources = true
+
+        managedDevices {
+            localDevices {
+                // macOS arm64 の self-hosted runner で利用する Gradle Managed Device。
+                // ホストが arm64 のため、arm64-v8a system image が選択される前提で構成する。
+                create("pixelApi35") {
+                    device = "Pixel 7"
+                    apiLevel = 35
+                    systemImageSource = "google"
+                    require64Bit = true
+                }
+            }
+        }
     }
 
     // AGP 8.0 からモジュールレベルの build script 内に namespace が必要になった
@@ -110,6 +123,12 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     compilerOptions {
         jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvmTarget.get()))
     }
+}
+
+tasks.register("pixelApi35AndroidE2ETest") {
+    group = "verification"
+    description = "Run Android E2E tests on the pixelApi35 managed device."
+    dependsOn(":sora-android-sdk:pixelApi35DebugAndroidTest")
 }
 
 tasks.dokkaHtml.configure {

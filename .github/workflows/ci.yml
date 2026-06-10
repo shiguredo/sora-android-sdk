@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'CHANGES.md'
+      - 'CLAUDE.md'
+      - 'LICENSE'
+      - 'THANKS'
+      - '.github/workflows/claude.yml'
+      - '.github/copilot-instructions.md'
+      - 'sora-android-sdk/packages.md'
+      - 'docs/**'
+      - 'jitpack.yml'
+      - 'canary.py'
+      - '.gitignore'
+
+permissions:
+  actions: read
+
+jobs:
+  e2e:
+
+    runs-on: [self-hosted, macOS, ARM64]
+    timeout-minutes: 45
+    env:
+      SORA_SIGNALING_URL: ${{ secrets.SORA_SIGNALING_URL }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          # macOS arm64 の self-hosted runner でも利用可能な配布元を明示する。
+          # runner ローカルの JDK 状態に依存せず、CI では常に JDK 17 を再現する。
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      - name: Validate Android SDK
+        run: |
+          test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
+          test -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || {
+            echo "sdkmanager not found at $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+            exit 1
+          }
+      - name: Copy gradle.properties
+        run: cp gradle.properties.example gradle.properties
+      - name: Validate E2E secrets
+        run: |
+          test -n "${SORA_SIGNALING_URL:-}" || {
+            echo "SORA_SIGNALING_URL is not set"
+            exit 1
+          }
+      - name: Accept SDK licenses
+        run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+      - name: Install Android SDK packages
+        run: |
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "emulator" \
+            "system-images;android-35;google_apis;arm64-v8a"
+      - name: Run E2E tests
+        run: ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
+
+  slack_notify:
+    needs: [e2e]
+    runs-on: ubuntu-slim
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: shiguredo/github-actions/.github/actions/slack-notify@main
+        with:
+          status: ${{ job.status }}
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_channel: sora-android-sdk
+        env:
+          GH_TOKEN: ${{ github.token }}
