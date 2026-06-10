@@ -32,6 +32,8 @@ jobs:
     env:
       SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_CHANNEL_ID_SUFFIX: _${{ github.run_id }}
       ANDROID_SDK_ROOT: /opt/android-sdk
       ADB_PATH: /opt/android-sdk/platform-tools/adb
 

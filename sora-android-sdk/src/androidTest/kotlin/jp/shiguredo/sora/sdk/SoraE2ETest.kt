@@ -27,11 +27,14 @@ import org.junit.runner.RunWith
 class SoraE2ETest {
     companion object {
         private const val TAG = "SoraE2ETest"
+        private const val BASE_CHANNEL_ID = "e2e-test"
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private var capturer: DummyVideoCapturer? = null
     private var channel: SoraMediaChannel? = null
+    private val channelId =
+        "${BuildConfig.TEST_CHANNEL_ID_PREFIX}$BASE_CHANNEL_ID${BuildConfig.TEST_CHANNEL_ID_SUFFIX}"
 
     private val signalingMetadata: Map<String, String>? =
         BuildConfig.TEST_SECRET_KEY
@@ -43,6 +46,12 @@ class SoraE2ETest {
         assumeTrue(
             "SORA_SIGNALING_URL が未設定のためテストをスキップします",
             BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
+        )
+        Log.d(
+            TAG,
+            "setup: channelId configured " +
+                "(prefix=${BuildConfig.TEST_CHANNEL_ID_PREFIX.isNotEmpty()}, " +
+                "suffix=${BuildConfig.TEST_CHANNEL_ID_SUFFIX.isNotEmpty()})",
         )
         // Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
 
@@ -275,7 +284,7 @@ class SoraE2ETest {
         SoraMediaChannel(
             context = context,
             signalingEndpointCandidates = listOf(BuildConfig.TEST_SIGNALING_URL),
-            channelId = "e2e-test",
+            channelId = channelId,
             signalingMetadata = signalingMetadata,
             mediaOption = mediaOption,
             listener =
