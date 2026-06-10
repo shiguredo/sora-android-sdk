@@ -37,9 +37,9 @@ class SoraE2ETest {
     fun setup() {
         assumeTrue(
             "SORA_SIGNALING_URL が未設定のためテストをスキップします",
-            BuildConfig.SORA_SIGNALING_URL.isNotEmpty(),
+            BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
         )
-        // Log.d(TAG, "setup: SORA_SIGNALING_URL=${BuildConfig.SORA_SIGNALING_URL}")
+        // Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
 
         // shiguredo-webrtc-android の AAR は arm64-v8a のみ対応。
         // x86_64 エミュレータではネイティブライブラリが読み込めないためスキップする
