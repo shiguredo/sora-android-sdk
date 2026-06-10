@@ -33,6 +33,11 @@ class SoraE2ETest {
     private var capturer: DummyVideoCapturer? = null
     private var channel: SoraMediaChannel? = null
 
+    private val signalingMetadata: Map<String, String>? =
+        BuildConfig.TEST_SECRET_KEY
+            .takeIf { it.isNotEmpty() }
+            ?.let { mapOf("access_token" to it) }
+
     @Before
     fun setup() {
         assumeTrue(
@@ -271,6 +276,7 @@ class SoraE2ETest {
             context = context,
             signalingEndpointCandidates = listOf(BuildConfig.TEST_SIGNALING_URL),
             channelId = "e2e-test",
+            signalingMetadata = signalingMetadata,
             mediaOption = mediaOption,
             listener =
                 object : SoraMediaChannel.Listener {

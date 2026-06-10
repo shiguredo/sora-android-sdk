@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 45
     env:
       SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       ANDROID_SDK_ROOT: /opt/android-sdk
       ADB_PATH: /opt/android-sdk/platform-tools/adb
 
