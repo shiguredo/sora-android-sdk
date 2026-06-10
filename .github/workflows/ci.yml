@@ -67,8 +67,8 @@ jobs:
       #       "system-images;android-35;google_apis;arm64-v8a"
       - name: Start filtered logcat
         run: |
-          "$ADB_PATH" logcat -c
-          "$ADB_PATH" logcat -v time SoraE2ETest:D *:S > sora-e2e-logcat.txt &
+          nohup "$ADB_PATH" logcat -v time SoraE2ETest:D *:S \
+            > sora-e2e-logcat.txt 2>&1 < /dev/null &
           echo $! > sora-e2e-logcat.pid
       - name: Run E2E tests
         run: ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
