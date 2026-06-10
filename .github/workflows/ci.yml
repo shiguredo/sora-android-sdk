@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 45
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      ANDROID_SDK_ROOT: /opt/android-sdk
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -42,13 +43,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
-      # - name: Validate Android SDK
-      #   run: |
-      #     test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
-      #     test -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || {
-      #       echo "sdkmanager not found at $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-      #       exit 1
-      #     }
+      - name: Validate Android SDK
+        run: |
+          test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
+          test -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || {
+            echo "sdkmanager not found at $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+            exit 1
+          }
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
       # - name: Accept SDK licenses
