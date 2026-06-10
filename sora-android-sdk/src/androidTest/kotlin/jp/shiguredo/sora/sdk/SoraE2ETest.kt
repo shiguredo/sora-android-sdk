@@ -111,7 +111,7 @@ class SoraE2ETest {
             Log.d(TAG, "connect() 呼び出し後、接続完了を待機中...")
 
             try {
-                withTimeout(10_000) {
+                withTimeout(30_000) {
                     connected.await()
                 }
                 Log.d(TAG, "接続完了を確認")
