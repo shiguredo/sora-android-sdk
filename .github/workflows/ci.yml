@@ -30,7 +30,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, Apple-M1]
     timeout-minutes: 45
     env:
-      SORA_SIGNALING_URL: ${{ secrets.SORA_SIGNALING_URL }}
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -51,12 +51,6 @@ jobs:
           }
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
-      - name: Validate E2E secrets
-        run: |
-          test -n "${SORA_SIGNALING_URL:-}" || {
-            echo "SORA_SIGNALING_URL is not set"
-            exit 1
-          }
       - name: Accept SDK licenses
         run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
       - name: Install Android SDK packages
