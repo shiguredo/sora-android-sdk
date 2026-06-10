@@ -32,6 +32,7 @@ jobs:
     env:
       SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       ANDROID_SDK_ROOT: /opt/android-sdk
+      ADB_PATH: /opt/android-sdk/platform-tools/adb
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -52,6 +53,9 @@ jobs:
           }
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
+      - name: Validate E2E environment
+        run: |
+          test -n "${SORA_SIGNALING_URL:-}" || { echo "SORA_SIGNALING_URL is not set"; exit 1; }
       # - name: Accept SDK licenses
       #   run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
       # - name: Install Android SDK packages
@@ -61,13 +65,23 @@ jobs:
       #       "platforms;android-35" \
       #       "emulator" \
       #       "system-images;android-35;google_apis;arm64-v8a"
+      - name: Start filtered logcat
+        run: |
+          "$ADB_PATH" logcat -c
+          "$ADB_PATH" logcat -v time SoraE2ETest:D *:S > sora-e2e-logcat.txt &
+          echo $! > sora-e2e-logcat.pid
       - name: Run E2E tests
         run: ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
+      - name: Show SoraE2ETest logs
+        if: always()
+        run: |
+          kill "$(cat sora-e2e-logcat.pid)" || true
+          cat sora-e2e-logcat.txt || true
       - name: Dump adb diagnostics on failure
         if: failure()
         run: |
-          adb devices || true
-          adb logcat -d -b main -b system -b crash -v time || true
+          "$ADB_PATH" devices || true
+          "$ADB_PATH" logcat -d -b main -b system -b crash -v time || true
 
   # slack_notify:
   #   needs: [e2e]
