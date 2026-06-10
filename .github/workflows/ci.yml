@@ -30,7 +30,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, Apple-M1]
     timeout-minutes: 45
     env:
-      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       ANDROID_SDK_ROOT: /opt/android-sdk
 
     steps:
