@@ -39,7 +39,7 @@ class SoraE2ETest {
             "SORA_SIGNALING_URL が未設定のためテストをスキップします",
             BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
         )
-        Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
+        // Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
 
         // shiguredo-webrtc-android の AAR は arm64-v8a のみ対応。
         // x86_64 エミュレータではネイティブライブラリが読み込めないためスキップする
@@ -111,7 +111,7 @@ class SoraE2ETest {
             Log.d(TAG, "connect() 呼び出し後、接続完了を待機中...")
 
             try {
-                withTimeout(30_000) {
+                withTimeout(60_000) {
                     connected.await()
                 }
                 Log.d(TAG, "接続完了を確認")

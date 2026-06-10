@@ -63,11 +63,11 @@ jobs:
       #       "system-images;android-35;google_apis;arm64-v8a"
       - name: Run E2E tests
         run: ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
-      # - name: Dump adb diagnostics on failure
-      #   if: failure()
-      #   run: |
-      #     adb devices || true
-      #     adb logcat -d -b main -b system -b crash -v time || true
+      - name: Dump adb diagnostics on failure
+        if: failure()
+        run: |
+          adb devices || true
+          adb logcat -d -b main -b system -b crash -v time || true
 
   # slack_notify:
   #   needs: [e2e]
