@@ -52,7 +52,6 @@ class SoraE2ETest {
                 "(prefix=${BuildConfig.TEST_CHANNEL_ID_PREFIX.isNotEmpty()}, " +
                 "suffix=${BuildConfig.TEST_CHANNEL_ID_SUFFIX.isNotEmpty()})",
         )
-        // Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
 
         // shiguredo-webrtc-android の AAR は arm64-v8a のみ対応。
         // x86_64 エミュレータではネイティブライブラリが読み込めないためスキップする

@@ -22,7 +22,6 @@ permissions:
 
 jobs:
   e2e:
-
     runs-on: [self-hosted, macOS, ARM64, Apple-M1]
     timeout-minutes: 45
     env:
@@ -46,6 +45,7 @@ jobs:
       - name: Validate Android SDK
         run: |
           test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
+          test -x "$ADB_PATH" || { echo "adb not found at $ADB_PATH"; exit 1; }
           test -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || {
             echo "sdkmanager not found at $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
             exit 1
@@ -59,16 +59,20 @@ jobs:
         run: |
           set +e
 
+          cleanup() {
+            if [ -n "${LOGCAT_PID:-}" ]; then
+              kill "$LOGCAT_PID" || true
+              wait "$LOGCAT_PID" 2>/dev/null || true
+            fi
+            cat sora-e2e-logcat.txt || true
+          }
+          trap cleanup EXIT
+
           "$ADB_PATH" logcat -v time SoraE2ETest:D *:S > sora-e2e-logcat.txt 2>&1 &
           LOGCAT_PID=$!
 
           ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
-          TEST_EXIT_CODE=$?
-
-          kill "$LOGCAT_PID" || true
-          cat sora-e2e-logcat.txt || true
-
-          exit "$TEST_EXIT_CODE"
+          exit $?
   slack_notify:
     needs: [e2e]
     runs-on: ubuntu-slim
@@ -77,7 +81,7 @@ jobs:
       - name: Slack Notification
         uses: shiguredo/github-actions/.github/actions/slack-notify@main
         with:
-          status: ${{ job.status }}
+          status: ${{ needs.e2e.result }}
           slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
           slack_channel: sora-android-sdk
         env:
