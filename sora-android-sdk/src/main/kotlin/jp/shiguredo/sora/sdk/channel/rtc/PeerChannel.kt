@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.security.cert.X509Certificate
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
 
@@ -140,6 +141,11 @@ interface PeerChannel {
             reason: SoraErrorReason,
             message: String,
         )
+
+        fun onAddRemoteTrack(
+            track: MediaStreamTrack,
+            streamId: String,
+        ) {}
     }
 }
 
@@ -216,6 +222,13 @@ class PeerChannelImpl(
     private var audioRecordingPaused: Boolean = false
     private val localStreamId: String = UUID.randomUUID().toString()
 
+    // トラック ID → ストリーム ID のマッピング
+    internal val trackToStreamId = ConcurrentHashMap<String, String>()
+
+    // RtpReceiver → トラック ID のマッピング。
+    // onRemoveTrack で receiver.track() が null の場合に receiver から trackId を逆引きするために使用する
+    private val receiverToTrackId = ConcurrentHashMap<RtpReceiver, String>()
+
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private var compressLabels: List<String> = emptyList()
 
@@ -274,10 +287,45 @@ class PeerChannelImpl(
                 ms: Array<out MediaStream>?,
             ) {
                 SoraLogger.d(TAG, "[rtc] @onAddTrack")
+                val r = receiver ?: return
+                val track = r.track() ?: return
+                val streamId =
+                    if (ms != null && ms.isNotEmpty()) {
+                        // Sora ではリモートトラックは 1 つの streamId に対応する前提のため、先頭要素を採用する。
+                        ms[0].id
+                    } else {
+                        null
+                    }
+                if (streamId != null) {
+                    trackToStreamId[track.id()] = streamId
+                    receiverToTrackId[r] = track.id()
+                    listener?.onAddRemoteTrack(track, streamId)
+                }
             }
 
             override fun onRemoveTrack(receiver: RtpReceiver?) {
                 SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
+                // まず receiver.track() から直接トラック ID を取得する
+                val track = receiver?.track()
+                var trackId = track?.id()
+                if (trackId != null) {
+                    trackToStreamId.remove(trackId)
+                } else if (receiver != null) {
+                    // receiver.track() が null の場合は receiver → trackId マッピングから逆引きする
+                    // remove は後段で一括して行うため、ここでは get で参照のみ
+                    trackId = receiverToTrackId[receiver]
+                    if (trackId != null) {
+                        trackToStreamId.remove(trackId)
+                    } else {
+                        SoraLogger.w(TAG, "[rtc] @onRemoveTrack: receiver.track() is null and no receiverToTrackId mapping found")
+                    }
+                } else {
+                    SoraLogger.w(TAG, "[rtc] @onRemoveTrack: receiver is null")
+                }
+                // いずれの場合も receiverToTrackId から receiver のエントリを削除する
+                if (receiver != null) {
+                    receiverToTrackId.remove(receiver)
+                }
             }
 
             override fun onTrack(transceiver: RtpTransceiver) {
@@ -389,6 +437,27 @@ class PeerChannelImpl(
 
             override fun onRemoveStream(ms: MediaStream?) {
                 SoraLogger.d(TAG, "[rtc] @onRemoveStream")
+                // JNI 側の MediaStream は既に無効化されている可能性があるため、
+                // ms.audioTracks / ms.videoTracks による列挙は使用せず、
+                // trackToStreamId を走査して該当ストリームのエントリを削除する。
+                // 対応する receiverToTrackId エントリも同時に削除する。
+                // ConcurrentHashMap の removeIf は個々の削除はアトミックだが
+                // 全体操作は非アトミックである。closeInternal の clear() と競合しても
+                // 最終的に全エントリが削除される方向に収束するため結果整合性は保たれる
+                ms?.let { stream ->
+                    val trackIdsToRemove = mutableListOf<String>()
+                    trackToStreamId.entries.removeIf { entry ->
+                        if (entry.value == stream.id) {
+                            trackIdsToRemove.add(entry.key)
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    receiverToTrackId.entries.removeIf { entry ->
+                        entry.value in trackIdsToRemove
+                    }
+                }
                 // When this thread's loop finished, this media-stream object is dead on JNI(C++) side.
                 // but in most case, this callback is handled in UI-thread's next loop.
                 // So, we need to pick up the label-string beforehand.
@@ -868,6 +937,10 @@ class PeerChannelImpl(
         }
         SoraLogger.d(TAG, "disconnect")
         closing = true
+        // trackToStreamId / receiverToTrackId を listener=null より前にクリアし、
+        // conn?.dispose() によるコールバックからの競合アクセスを防ぐ
+        trackToStreamId.clear()
+        receiverToTrackId.clear()
         listener?.onDisconnect(disconnectReason)
         listener = null
         SoraLogger.d(TAG, "dispose peer connection")

@@ -50,6 +50,7 @@ import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
+import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
@@ -506,6 +507,23 @@ class SoraMediaChannel
                 label: String,
                 data: ByteBuffer,
             ) {}
+
+            /**
+             * リモートトラックが追加されたときに呼び出されるコールバック.
+             *
+             * cf.
+             * - `org.webrtc.MediaStreamTrack`
+             * - `org.webrtc.RtpReceiver`
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param track 追加されたメディアトラック
+             * @param streamId トラックが所属するストリーム ID
+             */
+            fun onAddRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                track: MediaStreamTrack,
+                streamId: String,
+            ) {}
         }
 
         // Sora とのメディア通信に使用する PeerConnection
@@ -906,6 +924,26 @@ class SoraMediaChannel
                         return
                     }
                     listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
+                }
+
+                override fun onAddRemoteTrack(
+                    track: MediaStreamTrack,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onAddRemoteTrack trackId=${track.id()}, streamId=$streamId, connectionId=$connectionId",
+                    )
+                    // マルチストリーム時に自己ストリームをフィルタリングする。
+                    // multistreamEnabled は通常 true（enableMultistream() で設定）だが、
+                    // デフォルト（null）や非推奨の enableLegacyStream()（false）の場合もあるため、
+                    // != false で判定する。非マルチストリーム時（null）は streamId が
+                    // connectionId と一致しないため、実質的にフィルタされない。
+                    if (mediaOption.multistreamEnabled != false && connectionId != null && streamId == connectionId) {
+                        SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: ${track.id()}")
+                        return
+                    }
+                    listener?.onAddRemoteTrack(this@SoraMediaChannel, track, streamId)
                 }
 
                 override fun onAddLocalStream(ms: MediaStream) {
