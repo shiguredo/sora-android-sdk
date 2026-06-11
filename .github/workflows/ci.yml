@@ -20,10 +20,6 @@ on:
 permissions:
   actions: read
 
-# concurrency:
-#   group: ci-e2e-${{ github.ref }}
-#   cancel-in-progress: true
-
 jobs:
   e2e:
 
@@ -59,15 +55,6 @@ jobs:
       - name: Validate E2E environment
         run: |
           test -n "${SORA_SIGNALING_URL:-}" || { echo "SORA_SIGNALING_URL is not set"; exit 1; }
-      # - name: Accept SDK licenses
-      #   run: yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
-      # - name: Install Android SDK packages
-      #   run: |
-      #     "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
-      #       "platform-tools" \
-      #       "platforms;android-35" \
-      #       "emulator" \
-      #       "system-images;android-35;google_apis;arm64-v8a"
       - name: Run E2E tests with logcat
         run: |
           set +e
@@ -82,17 +69,16 @@ jobs:
           cat sora-e2e-logcat.txt || true
 
           exit "$TEST_EXIT_CODE"
-  # slack_notify:
-  #   needs: [e2e]
-  #   runs-on: ubuntu-slim
-  #   if: always()
-  #   steps:
-  #     - name: Slack Notification
-  #       uses: shiguredo/github-actions/.github/actions/slack-notify@main
-  #       with:
-  #         status: ${{ job.status }}
-  ##         status: ${{ needs.e2e.result }}
-  #         slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
-  #         slack_channel: sora-android-sdk
-  #       env:
-  #         GH_TOKEN: ${{ github.token }}
+  slack_notify:
+    needs: [e2e]
+    runs-on: ubuntu-slim
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: shiguredo/github-actions/.github/actions/slack-notify@main
+        with:
+          status: ${{ job.status }}
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_channel: sora-android-sdk
+        env:
+          GH_TOKEN: ${{ github.token }}
