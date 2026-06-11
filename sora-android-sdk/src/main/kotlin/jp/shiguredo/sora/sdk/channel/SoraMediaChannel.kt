@@ -198,6 +198,28 @@ class SoraMediaChannel
         @Synchronized
         fun dataToString(data: ByteBuffer): String = utf8Decoder.decode(data).toString()
 
+        // ログ出力時に token / secret / password 系の値を再帰的にマスクする
+        private fun maskSensitiveLogValue(value: Any?): Any? =
+            when (value) {
+                is Map<*, *> ->
+                    value.mapValues { (key, nestedValue) ->
+                        val keyString = key?.toString()?.lowercase().orEmpty()
+                        if (
+                            keyString.contains("token") ||
+                            keyString.contains("secret") ||
+                            keyString.contains("password") ||
+                            keyString.contains("authorization") ||
+                            keyString.contains("credential")
+                        ) {
+                            "***"
+                        } else {
+                            maskSensitiveLogValue(nestedValue)
+                        }
+                    }
+                is List<*> -> value.map { maskSensitiveLogValue(it) }
+                else -> value
+            }
+
         init {
             if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
                 (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())
@@ -1082,10 +1104,10 @@ class SoraMediaChannel
             |spotlightEnabled           = ${mediaOption.spotlightEnabled}
             |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}
             |audioStreamingLanguageCode = ${mediaOption.audioStreamingLanguageCode}
-            |signalingMetadata          = ${this.signalingMetadata}
+            |signalingMetadata          = ${maskSensitiveLogValue(this.signalingMetadata)}
             |clientId                   = ${this.clientId}
             |bundleId                   = ${this.bundleId}
-            |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
+            |signalingNotifyMetadata    = ${maskSensitiveLogValue(this.signalingNotifyMetadata)}
             |forwardingFilter           = ${this.forwardingFilterOption}
             |forwardingFilters           = ${this.forwardingFiltersOption}
                 """.trimMargin(),

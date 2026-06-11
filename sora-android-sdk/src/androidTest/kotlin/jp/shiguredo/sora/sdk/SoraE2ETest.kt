@@ -26,11 +26,19 @@ import org.junit.runner.RunWith
 class SoraE2ETest {
     companion object {
         private const val TAG = "SoraE2ETest"
+        private const val BASE_CHANNEL_ID = "e2e-test"
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private var capturer: DummyVideoCapturer? = null
     private var channel: SoraMediaChannel? = null
+    private val channelId =
+        "${BuildConfig.TEST_CHANNEL_ID_PREFIX}$BASE_CHANNEL_ID${BuildConfig.TEST_CHANNEL_ID_SUFFIX}"
+
+    private val signalingMetadata: Map<String, String>? =
+        BuildConfig.TEST_SECRET_KEY
+            .takeIf { it.isNotEmpty() }
+            ?.let { mapOf("access_token" to it) }
 
     @Before
     fun setup() {
@@ -38,7 +46,12 @@ class SoraE2ETest {
             "SORA_SIGNALING_URL が未設定のためテストをスキップします",
             BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
         )
-        Log.d(TAG, "setup: TEST_SIGNALING_URL=${BuildConfig.TEST_SIGNALING_URL}")
+        Log.d(
+            TAG,
+            "setup: channelId configured " +
+                "(prefix=${BuildConfig.TEST_CHANNEL_ID_PREFIX.isNotEmpty()}, " +
+                "suffix=${BuildConfig.TEST_CHANNEL_ID_SUFFIX.isNotEmpty()})",
+        )
 
         // shiguredo-webrtc-android の AAR は arm64-v8a のみ対応。
         // x86_64 エミュレータではネイティブライブラリが読み込めないためスキップする
@@ -110,7 +123,7 @@ class SoraE2ETest {
             Log.d(TAG, "connect() 呼び出し後、接続完了を待機中...")
 
             try {
-                withTimeout(10_000) {
+                withTimeout(60_000) {
                     connected.await()
                 }
                 Log.d(TAG, "接続完了を確認")
@@ -268,7 +281,8 @@ class SoraE2ETest {
         SoraMediaChannel(
             context = context,
             signalingEndpointCandidates = listOf(BuildConfig.TEST_SIGNALING_URL),
-            channelId = "e2e-test",
+            channelId = channelId,
+            signalingMetadata = signalingMetadata,
             mediaOption = mediaOption,
             listener =
                 object : SoraMediaChannel.Listener {
