@@ -16,7 +16,6 @@ import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -147,7 +146,6 @@ class SoraE2ETest {
         }
 
     // DummyVideoCapturer でダミー映像を生成し、outbound-rtp の stats で送信を確認するテスト
-    @Ignore("映像送信テストの CI 安定化まで一時的に無効化する")
     @Test
     fun `映像が送信されること`(): Unit =
         runBlocking {
