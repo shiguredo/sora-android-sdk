@@ -49,7 +49,7 @@
 
 `PeerChannelImpl` 内に以下の 2 つのマッピングを持つ:
 
-- `internal val trackToStreamId = ConcurrentHashMap<String, String>()`: キーをトラック ID、値をストリーム ID とする。可視性を `internal` とし、issue 0024 からの参照を可能にする
+- `private val trackToStreamId = ConcurrentHashMap<String, String>()`: キーをトラック ID、値をストリーム ID とする。`PeerChannelImpl` の内部状態としてのみ扱う
 - `private val receiverToTrackId = ConcurrentHashMap<RtpReceiver, String>()`: `onRemoveTrack` で `receiver.track()` が null の場合に `RtpReceiver` から `trackId` を逆引きするために使用する
 
 ### 公開 API
@@ -105,6 +105,29 @@ fun onAddRemoteTrack(
 
 - `PeerChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` 追加、`trackToStreamId` / `receiverToTrackId` マッピング追加、`onAddTrack` / `onRemoveTrack` / `onRemoveStream` / `closeInternal` 内でマッピング操作とコールバック発火を実装。`resolveTrackId()` を抽出し `onTrack` の古い TODO コメントを削除
 - `SoraMediaChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` 追加、`peerListener` に実装追加。`isSelfStreamId()` に抽出し `onAddRemoteStream` / `onAddRemoteTrack` で共通利用
-- `CHANGES.md` — `[CHANGE]` エントリ追記
+- `CHANGES.md` — `[ADD]` エントリ追記
 
 ## 解決方法
+
+### PeerChannel.kt
+
+`PeerChannel.Listener` に `onAddRemoteTrack(track: MediaStreamTrack, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+
+`PeerChannelImpl` に以下の変更を加えた:
+
+- `trackToStreamId` (`ConcurrentHashMap<String, String>`) と `receiverToTrackId` (`ConcurrentHashMap<RtpReceiver, String>`) を追加
+- `onAddTrack` 内で `ms[0]?.id` からストリーム ID を取得し、マッピングに登録して `listener?.onAddRemoteTrack` を発火する処理を実装した。`closing` ガード、`ms[0]` の null 安全、空文字列ガード (`isNullOrEmpty`) を導入した
+- `onRemoveTrack` を `resolveTrackId(receiver)` に抽出し、本体を簡略化した。`receiver.track()` が null の場合は `receiverToTrackId` から逆引きする
+- `onRemoveStream` で `trackToStreamId` を走査し、該当ストリームのエントリと対応する `receiverToTrackId` エントリを `remove(key)` で削除する処理を実装した（`removeIf` からの変更）
+- `closeInternal` で `listener = null` / `conn?.dispose()` より前に `clear()` を実行し、競合アクセスを防止した
+- `onTrack` の古い TODO コメントを削除した
+
+### SoraMediaChannel.kt
+
+`SoraMediaChannel.Listener` に `onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+
+`peerListener` に `onAddRemoteTrack` の実装を追加し、自己ストリームフィルタリング (`isSelfStreamId`) を適用した上で上位リスナーに通知するようにした。`isSelfStreamId` は `onAddRemoteStream` とも共通化した。
+
+### CHANGES.md
+
+`[ADD]` エントリを `## develop` セクションに追記した。
