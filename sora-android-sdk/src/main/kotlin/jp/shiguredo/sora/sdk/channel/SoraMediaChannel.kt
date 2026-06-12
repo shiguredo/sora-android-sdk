@@ -919,7 +919,7 @@ class SoraMediaChannel
 
                 override fun onAddRemoteStream(ms: MediaStream) {
                     SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=$connectionId")
-                    if (mediaOption.multistreamEnabled != false && connectionId != null && ms.id == connectionId) {
+                    if (isSelfStreamId(ms.id)) {
                         SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                         return
                     }
@@ -934,12 +934,7 @@ class SoraMediaChannel
                         TAG,
                         "[channel:$role] @peer:onAddRemoteTrack trackId=${track.id()}, streamId=$streamId, connectionId=$connectionId",
                     )
-                    // マルチストリーム時に自己ストリームをフィルタリングする。
-                    // multistreamEnabled は通常 true（enableMultistream() で設定）だが、
-                    // デフォルト（null）や非推奨の enableLegacyStream()（false）の場合もあるため、
-                    // != false で判定する。非マルチストリーム時（null）は streamId が
-                    // connectionId と一致しないため、実質的にフィルタされない。
-                    if (mediaOption.multistreamEnabled != false && connectionId != null && streamId == connectionId) {
+                    if (isSelfStreamId(streamId)) {
                         SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: ${track.id()}")
                         return
                     }
@@ -1086,6 +1081,14 @@ class SoraMediaChannel
                     )
                 }
             }
+
+        // マルチストリーム時に自己ストリームをフィルタリングする。
+        // multistreamEnabled は通常 true（enableMultistream() で設定）だが、
+        // デフォルト（null）や非推奨の enableLegacyStream()（false）の場合もあるため、
+        // != false で判定する。非マルチストリーム時（null）は id が
+        // connectionId と一致しないため、実質的にフィルタされない。
+        private fun isSelfStreamId(id: String): Boolean =
+            mediaOption.multistreamEnabled != false && connectionId != null && id == connectionId
 
         /**
          * Sora に接続します.
