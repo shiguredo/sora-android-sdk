@@ -56,11 +56,16 @@
 
 以下の新規コールバックを `PeerChannel.Listener` に追加し、`SoraMediaChannel.Listener` にも同名で追加する。新規メソッドには空のデフォルト実装 `{}` を付与し、後方互換性を維持する。
 
-`PeerChannel.Listener` への追加（`PeerChannel.kt:97` の直後）:
+`PeerChannel.Listener` への追加:
 
 ```kotlin
 fun onAddRemoteTrack(
     track: MediaStreamTrack,
+    streamId: String,
+) {}
+
+fun onRemoveRemoteTrack(
+    trackId: String,
     streamId: String,
 ) {}
 ```
@@ -73,9 +78,17 @@ fun onAddRemoteTrack(
     track: MediaStreamTrack,
     streamId: String,
 ) {}
+
+fun onRemoveRemoteTrack(
+    mediaChannel: SoraMediaChannel,
+    trackId: String,
+    streamId: String,
+) {}
 ```
 
-既存の `onAddRemoteStream(ms: MediaStream)` コールバックは変更せず、併存させる。
+`onRemoveRemoteTrack` は `onRemoveTrack` 発火時点で `MediaStreamTrack` が既に JNI 側で dispose 済みの可能性があるため、`trackId: String` と `streamId: String` で通知する。利用者側は `onAddRemoteTrack` で受け取った `track.id()` と突き合わせればよい。
+
+既存の `onAddRemoteStream(ms: MediaStream)` / `onRemoveRemoteStream(label: String)` コールバックは変更せず、併存させる。
 
 ### 自己ストリームフィルタリング
 
@@ -86,16 +99,16 @@ fun onAddRemoteTrack(
 ### マッピングのライフサイクル
 
 - **追加**: `onAddTrack` 発火時に `ms` が non-null かつ non-empty かつ `ms[0]?.id` が non-null かつ非空文字列の場合、`trackToStreamId[track.id()] = streamId` と `receiverToTrackId[r] = track.id()` の両方を設定し、`listener?.onAddRemoteTrack(track, streamId)` を呼び出す。`closing` が true の場合、`receiver` が null の場合、`receiver.track()` が null の場合はマッピングもコールバックも行わない
-- **トラック削除**: `onRemoveTrack` 発火時に `resolveTrackId(receiver)` で削除すべきトラック ID を解決する。`receiver.track()` が non-null ならその ID を返し、null の場合は `receiverToTrackId` から逆引きする。解決できた trackId で `trackToStreamId.remove(trackId)` を実行する。最後に `receiverToTrackId.remove(receiver)` で receiver 側のエントリも削除する
-- **ストリーム削除**: `onRemoveStream` 発火時は `trackToStreamId` の全エントリを走査し、`value == ms.id` のエントリを収集した後 `remove(key)` で個別に削除する。対応する `receiverToTrackId` のエントリも削除する。`ms.audioTracks` / `ms.videoTracks` による列挙は JNI 側ですでに無効化されている可能性があるため使用しない
+- **トラック削除**: `onRemoveTrack` 発火時に `resolveTrackId(receiver)` で削除すべきトラック ID を解決する。`trackToStreamId.remove(trackId)` でストリーム ID を取得し、`listener?.onRemoveRemoteTrack(trackId, streamId)` を発火する。最後に `receiverToTrackId.remove(receiver)` で receiver 側のエントリも削除する
+- **ストリーム削除**: `onRemoveStream` 発火時は `trackToStreamId` の全エントリを走査し、`value == ms.id` のエントリを収集した後 `remove(key)` で個別に削除し、各エントリで `listener?.onRemoveRemoteTrack(trackId, streamId)` を発火する。対応する `receiverToTrackId` のエントリも削除する。`ms.audioTracks` / `ms.videoTracks` による列挙は JNI 側ですでに無効化されている可能性があるため使用しない
 - **切断時**: `closeInternal()` で `trackToStreamId.clear()` と `receiverToTrackId.clear()` を行う。クリアは `listener = null` より前、かつ `conn?.dispose()` より前に行い、dispose 中のコールバックからのアクセス競合を防ぐ。`closeInternal()` は明示的 `disconnect()` と `FAILED` / `CLOSED` 遷移時のみ呼ばれる
 - **再接続**: `DISCONNECTED` 遷移（`PeerChannel.kt:372-377`）ではクリアしない。`DISCONNECTED` は一時的な不安定状態であり、現行実装でも切断処理を行わず `onWarning` 通知のみである。接続復帰後に既存トラックのマッピングを維持する必要がある
 
 ## 完了条件
 
 - リモートの映像・音声トラックからストリーム ID が取得できること
-- トラック削除時に `receiver.track()` が null でも `receiverToTrackId` 経由でマッピングがクリーンアップされること
-- ストリーム削除時にマッピングがクリーンアップされること
+- トラック削除時に `receiver.track()` が null でも `receiverToTrackId` 経由でマッピングがクリーンアップされ、`onRemoveRemoteTrack` が発火すること
+- ストリーム削除時にマッピングがクリーンアップされ、該当トラックの `onRemoveRemoteTrack` が発火すること
 - 既存の `onAddRemoteStream` コールバックの動作が変わらないこと
 - 既存の `Listener` 実装がコンパイルエラーにならないこと（デフォルト実装 `{}` 付きのため）
 - 動作確認テストが存在すること（エミュレーター可、マルチストリーム環境での検証を含む）
@@ -103,30 +116,30 @@ fun onAddRemoteTrack(
 
 ## 変更対象ファイル
 
-- `PeerChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` 追加、`trackToStreamId` / `receiverToTrackId` マッピング追加、`onAddTrack` / `onRemoveTrack` / `onRemoveStream` / `closeInternal` 内でマッピング操作とコールバック発火を実装。`resolveTrackId()` を抽出し `onTrack` の古い TODO コメントを削除
-- `SoraMediaChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` 追加、`peerListener` に実装追加。`isSelfStreamId()` に抽出し `onAddRemoteStream` / `onAddRemoteTrack` で共通利用
+- `PeerChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` / `onRemoveRemoteTrack` 追加、`trackToStreamId` / `receiverToTrackId` マッピング追加、`onAddTrack` / `onRemoveTrack` / `onRemoveStream` / `closeInternal` 内でマッピング操作とコールバック発火を実装。`resolveTrackId()` を抽出し `onTrack` の古い TODO コメントを削除
+- `SoraMediaChannel.kt` — `Listener` インターフェースに `onAddRemoteTrack` / `onRemoveRemoteTrack` 追加、`peerListener` に実装追加。`isSelfStreamId()` に抽出し `onAddRemoteStream` / `onAddRemoteTrack` で共通利用
 - `CHANGES.md` — `[ADD]` エントリ追記
 
 ## 解決方法
 
 ### PeerChannel.kt
 
-`PeerChannel.Listener` に `onAddRemoteTrack(track: MediaStreamTrack, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+`PeerChannel.Listener` に `onAddRemoteTrack(track: MediaStreamTrack, streamId: String)` と `onRemoveRemoteTrack(trackId: String, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
 
 `PeerChannelImpl` に以下の変更を加えた:
 
 - `trackToStreamId` (`ConcurrentHashMap<String, String>`) と `receiverToTrackId` (`ConcurrentHashMap<RtpReceiver, String>`) を追加
 - `onAddTrack` 内で `ms[0]?.id` からストリーム ID を取得し、マッピングに登録して `listener?.onAddRemoteTrack` を発火する処理を実装した。`closing` ガード、`ms[0]` の null 安全、空文字列ガード (`isNullOrEmpty`) を導入した
-- `onRemoveTrack` を `resolveTrackId(receiver)` に抽出し、本体を簡略化した。`receiver.track()` が null の場合は `receiverToTrackId` から逆引きする
-- `onRemoveStream` で `trackToStreamId` を走査し、該当ストリームのエントリと対応する `receiverToTrackId` エントリを `remove(key)` で削除する処理を実装した（`removeIf` からの変更）
+- `onRemoveTrack` を `resolveTrackId(receiver)` に抽出し、本体を簡略化した。`trackToStreamId.remove(trackId)` でストリーム ID を取得し `listener?.onRemoveRemoteTrack(trackId, streamId)` を発火する。`receiver.track()` が null の場合は `receiverToTrackId` から逆引きする
+- `onRemoveStream` で `trackToStreamId` を走査し、該当ストリームのエントリと対応する `receiverToTrackId` エントリを `remove(key)` で削除する処理を実装した。各削除エントリで `onRemoveRemoteTrack` を発火する
 - `closeInternal` で `listener = null` / `conn?.dispose()` より前に `clear()` を実行し、競合アクセスを防止した
 - `onTrack` の古い TODO コメントを削除した
 
 ### SoraMediaChannel.kt
 
-`SoraMediaChannel.Listener` に `onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+`SoraMediaChannel.Listener` に `onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String)` と `onRemoveRemoteTrack(mediaChannel: SoraMediaChannel, trackId: String, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
 
-`peerListener` に `onAddRemoteTrack` の実装を追加し、自己ストリームフィルタリング (`isSelfStreamId`) を適用した上で上位リスナーに通知するようにした。`isSelfStreamId` は `onAddRemoteStream` とも共通化した。
+`peerListener` に実装を追加し、`onAddRemoteTrack` / `onRemoveRemoteTrack` とも自己ストリームフィルタリング (`isSelfStreamId`) を適用した上で上位リスナーに通知するようにした。`isSelfStreamId` は `onAddRemoteStream` とも共通化した。
 
 ### CHANGES.md
 

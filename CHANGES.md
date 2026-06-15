@@ -19,7 +19,7 @@
   - 不要なインスタンス生成をしないようにする
   - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
   - @t-miya
-- [ADD] PeerChannel.Listener と SoraMediaChannel.Listener に onAddRemoteTrack を追加する
+- [ADD] PeerChannel.Listener と SoraMediaChannel.Listener に onAddRemoteTrack / onRemoveRemoteTrack を追加する
   - リモートトラックからストリーム ID を取得できるようになる
   - @t-miya
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する

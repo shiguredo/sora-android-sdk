@@ -152,6 +152,17 @@ interface PeerChannel {
             track: MediaStreamTrack,
             streamId: String,
         ) {}
+
+        /**
+         * リモートトラックが削除されたときに呼び出されるコールバック.
+         *
+         * @param trackId 削除されたメディアトラックの ID
+         * @param streamId トラックが所属していたストリーム ID
+         */
+        fun onRemoveRemoteTrack(
+            trackId: String,
+            streamId: String,
+        ) {}
     }
 }
 
@@ -323,7 +334,10 @@ class PeerChannelImpl(
                 SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
                 val trackId = resolveTrackId(receiver)
                 if (trackId != null) {
-                    trackToStreamId.remove(trackId)
+                    val streamId = trackToStreamId.remove(trackId)
+                    if (streamId != null) {
+                        listener?.onRemoveRemoteTrack(trackId, streamId)
+                    }
                 }
                 if (receiver != null) {
                     receiverToTrackId.remove(receiver)
@@ -449,7 +463,10 @@ class PeerChannelImpl(
                         }
                     }
                     for (trackId in trackIdsToRemove) {
-                        trackToStreamId.remove(trackId)
+                        val streamId = trackToStreamId.remove(trackId)
+                        if (streamId != null) {
+                            listener?.onRemoveRemoteTrack(trackId, streamId)
+                        }
                     }
                     for (entry in receiverToTrackId.entries) {
                         if (entry.value in trackIdsToRemove) {

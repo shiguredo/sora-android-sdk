@@ -524,6 +524,19 @@ class SoraMediaChannel
                 track: MediaStreamTrack,
                 streamId: String,
             ) {}
+
+            /**
+             * リモートトラックが削除されたときに呼び出されるコールバック.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param trackId 削除されたメディアトラックの ID
+             * @param streamId トラックが所属していたストリーム ID
+             */
+            fun onRemoveRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                trackId: String,
+                streamId: String,
+            ) {}
         }
 
         // Sora とのメディア通信に使用する PeerConnection
@@ -939,6 +952,20 @@ class SoraMediaChannel
                         return
                     }
                     listener?.onAddRemoteTrack(this@SoraMediaChannel, track, streamId)
+                }
+
+                override fun onRemoveRemoteTrack(
+                    trackId: String,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onRemoveRemoteTrack trackId=$trackId, streamId=$streamId",
+                    )
+                    if (isSelfStreamId(streamId)) {
+                        return
+                    }
+                    listener?.onRemoveRemoteTrack(this@SoraMediaChannel, trackId, streamId)
                 }
 
                 override fun onAddLocalStream(ms: MediaStream) {
