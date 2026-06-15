@@ -203,9 +203,10 @@ FakeAudioInput::StopRecording()
 'android_fake_audio_device.patch',
 ```
 
-#### 既存の android_audio_pause_resume.patch との関連
+#### 既存パッチとの関連
 
-`android_audio_pause_resume.patch` は `JavaAudioDeviceModule.java` と `WebRtcAudioRecord.java` を修正する。`FakeAudioDeviceModule` は `JavaAudioDeviceModule` を継承せず、独立した `AudioDeviceModule` 実装として動作する。両パッチに依存関係はなく、共存可能。
+- `android_audio_pause_resume.patch`: `JavaAudioDeviceModule.java` と `WebRtcAudioRecord.java` を修正する。本パッチは新規ファイル作成のみでこれらのファイルに干渉しない。依存関係はなく共存可能。
+- `BUILD.gn` 修正: 本パッチが修正する行 (~459, ~928, ~1368) は、BUILD.gn を触る既存パッチ4件 (`android_webrtc_version`, `android_proxy`, `android_simulcast`, `android_audio_track_sink`) の修正行 (~52, ~121, ~154, ~290, ~320, ~588, ~788, ~1055, ~1535) と重複しない。適用順序に依存せず単独で機能する。
 
 ### android-sdk 側の変更
 
@@ -272,5 +273,182 @@ fun `音声が送信されること`(): Unit = runBlocking {
 - `sora-android-sdk/`:
   - `src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraE2ETest.kt` — 音声送信確認テストを追加
   - `gradle/libs.versions.toml` — AAR バージョン更新
+
+## 設計案2: ExternalAudioDeviceModule（Java 側から PCM 注入方式）
+
+### 設計案1 との対比
+
+| | 設計案1 (Fake) | 設計案2 (External) |
+|---|---|---|
+| 音声生成場所 | C++ 内蔵(SineWaveGenerator) | Java/Kotlin 側(任意) |
+| 供給タイミング | C++ 専用スレッド 10ms 自動 | Java 側が `write()` を呼ぶ |
+| 音源種別 | 正弦波 440Hz のみ | 任意(WAV/合成音/処理後音声) |
+| 内部バッファ | 不要(C++ で直接生成) | 要(Java-C++ 間のリングバッファ) |
+| 複雑さ | 低 | 中 |
+| iOS 転用 | 不可(`jni::AudioInput` 依存) | 不可(同様) |
+
+### アーキテクチャ
+
+```
+[androidTest / アプリ]
+  val adm = ExternalAudioDeviceModule(sampleRate=48000, channels=1)
+  mediaOption.audioOption.audioDeviceModule = adm
+  connect()
+  // 別スレッドで音声供給
+  launch(Dispatchers.IO) {
+      while (recording) {
+          val pcm = generateAudioFrame()  // 任意の音声生成
+          adm.write(pcm, frames)
+          delay(10)
+      }
+  }
+       │
+       ▼
+[ExternalAudioDeviceModule.java]          (新規: webrtc-build パッチ)
+  implements AudioDeviceModule
+  write(ByteBuffer pcm, int numFrames)     // PCM データを注入（スレッドセーフ）
+  getNative() → nativeCreate(envRef, sampleRate, channels)
+       │
+       ▼  JNI
+[external_audio_device_module_jni.cc]     (新規: webrtc-build パッチ)
+  ExternalAudioInput + ExternalAudioOutput を生成
+  CreateAudioDeviceModuleFromInputAndOutput() に渡す
+       │
+       ├─► [ExternalAudioInput]           (新規: C++, implements jni::AudioInput)
+       │     内部スレッド (10ms 周期)
+       │     PaUtilRingBuffer (lock-free SPSC, modules/third_party/portaudio/)
+       │     Java write() ──JNI──→ ring_buffer.Write()
+       │     専用スレッド ──→ ring_buffer.Read() ──→ AudioDeviceBuffer::DeliverRecordedData()
+       │     アンダーラン時は無音を自動供給
+       │
+       └─► [ExternalAudioOutput]          (新規: C++, implements jni::AudioOutput)
+             全メソッド no-op（再生不要）
+       │
+       ▼
+[AndroidAudioDeviceModule]                (既存: libwebrtc)
+  AudioInput/AudioOutput を AudioDeviceModule インターフェースに合成
+       │
+       ▼
+[WebRTC エンコーダ] → [RTP] → [Sora Server]
+```
+
+### データ供給方式: リングバッファ介在
+
+`AudioRecordJni` は Java 側が `AudioRecord.read()` の一定周期でデータを供給する前提だが、外部注入では Java 側の書き込みタイミングが不規則になる可能性がある。このため libwebrtc に既存の `PaUtilRingBuffer`（`modules/third_party/portaudio/pa_ringbuffer.h`、ロックフリー SPSC）で Java 書き込みスレッドと C++ 読み取りスレッドを分離する。
+
+- Java `write()`: リングバッファに書き込み。満杯時は古いデータを上書き（ノンブロッキング）
+- C++ 専用スレッド: 10ms 周期でリングバッファを読み取り。空時は無音を供給
+- `PaUtilRingBuffer` は `AudioDeviceMac` で macOS Core Audio コールバックとの同期に実績あり
+
+| リングバッファパラメータ | デフォルト | 説明 |
+|------------------------|-----------|------|
+| バッファ長 | 200ms | = sampleRate * channels * 0.2 要素 |
+| 要素サイズ | channels * 2 bytes | int16 PCM |
+| 型 | lock-free SPSC | `PaUtilRingBuffer` |
+| 書き込みブロック | なし | 満杯時は上書き |
+| 読み取りブロック | なし | 空時は無音(ゼロ)出力 |
+
+### Java API
+
+```java
+public class ExternalAudioDeviceModule implements AudioDeviceModule {
+    /**
+     * @param sampleRate    サンプルレート (e.g. 48000)
+     * @param channels      チャンネル数 (1 or 2)
+     * @param bufferSizeMs  リングバッファサイズ (default: 200ms)
+     */
+    public ExternalAudioDeviceModule(int sampleRate, int channels);
+    public ExternalAudioDeviceModule(int sampleRate, int channels, int bufferSizeMs);
+
+    /**
+     * 音声 PCM データを注入する。スレッドセーフ。
+     * @param pcm       direct ByteBuffer, int16 PCM, interleaved
+     * @param numFrames フレーム数 (sampleRate/100 = 10ms 推奨)
+     * @return 実際に書き込まれたフレーム数（0 の場合はリングバッファ満杯）
+     */
+    public int write(ByteBuffer pcm, int numFrames);
+
+    @Override public long getNative(long webrtcEnvRef);
+    @Override public void release();
+    @Override public void setSpeakerMute(boolean mute);    // no-op
+    @Override public void setMicrophoneMute(boolean mute); // no-op
+}
+```
+
+### webrtc-build 変更内容
+
+#### 新規ファイル (6件、パッチで作成)
+
+| # | ファイルパス（`src/` からの相対） | 内容 |
+|---|--------------------------------|------|
+| 1 | `sdk/android/api/org/webrtc/audio/ExternalAudioDeviceModule.java` | `AudioDeviceModule` 実装。`write()` で PCM 注入 |
+| 2 | `sdk/android/src/jni/audio_device/external_audio_input.h` | `jni::AudioInput` 実装、`PaUtilRingBuffer` 内包、専用読み取りスレッド |
+| 3 | `sdk/android/src/jni/audio_device/external_audio_input.cc` | 同上実装 |
+| 4 | `sdk/android/src/jni/audio_device/external_audio_output.h` | `jni::AudioOutput` 実装、全 no-op |
+| 5 | `sdk/android/src/jni/audio_device/external_audio_output.cc` | 同上実装（空） |
+| 6 | `sdk/android/src/jni/audio_device/external_audio_device_module_jni.cc` | JNI 関数: `ExternalAudioInput`/`ExternalAudioOutput` を生成し `CreateAudioDeviceModuleFromInputAndOutput()` で合成 |
+
+#### BUILD.gn 修正箇所
+
+| ターゲット | 変更 |
+|-----------|------|
+| `:java_audio_device_module` (line 1368) | `sources` に `external_audio_input.cc/h`, `external_audio_output.cc/h` を追加。`deps` に `../../modules/third_party/portaudio:portaudio` を追加 |
+| 新規 `:generated_external_audio_device_module_jni` | `ExternalAudioDeviceModule.java` から JNI ヘッダ自動生成 |
+| `:java_audio_device_module_jni` (line 928) | `sources` に `external_audio_device_module_jni.cc` を追加, `deps` に `:generated_external_audio_device_module_jni` を追加 |
+| `:java_audio_device_module_java` (line 459) | `sources` に `ExternalAudioDeviceModule.java` を追加 |
+
+#### 既存パッチとの関連
+
+設計案1 と同様、新規ファイル作成のみのため既存パッチ (`android_audio_pause_resume` 他) と干渉しない。BUILD.gn 修正行も既存パッチの修正行と重複なし。単独で機能する。
+
+### E2E テストでの使用例
+
+```kotlin
+@Test
+fun `音声が送信されること`(): Unit = runBlocking {
+    val adm = ExternalAudioDeviceModule(sampleRate = 48000, channels = 1)
+
+    val mediaOption = SoraMediaOption().apply {
+        audioOption.audioDeviceModule = adm
+        enableAudioUpstream()
+    }
+
+    channel = createChannel(mediaOption = mediaOption, ...)
+    channel?.connect()
+    withTimeout(10_000) { connected.await() }
+
+    // 440Hz 正弦波を 10ms ごとに供給（設計案2 ではユーザー側で生成）
+    val framesPer10ms = 480  // 48000 / 100
+    val buffer = ByteBuffer.allocateDirect(framesPer10ms * 2)
+    val phaseStep = 2.0 * Math.PI * 440.0 / 48000.0
+    var phase = 0.0
+
+    launch(Dispatchers.Default) {
+        while (isActive) {
+            val shortBuf = buffer.asShortBuffer()
+            for (i in 0 until framesPer10ms) {
+                shortBuf.put(i, (32767.0 * 0.1 * sin(phase)).toInt().toShort())
+                phase += phaseStep
+            }
+            adm.write(buffer, framesPer10ms)
+            delay(10)
+        }
+    }
+
+    // stats ポーリングで bytesSent > 0 確認（設計案1 と同一）
+    // ...
+}
+```
+
+### 両案の使い分け
+
+| 用途 | 推奨案 |
+|------|-------|
+| E2E で音声送信の基本確認のみ | 設計案1 (Fake) |
+| 特定の音声パターンでの動作検証（ステレオ、特定ビットレート条件 etc.） | 設計案2 (External) |
+| WAV ファイル再生によるリグレッションテスト | 設計案2 (External) |
+| 音声処理パイプラインに任意データを注入する単体テスト | 設計案2 (External) |
+
+設計案1 と設計案2 は競合しない。両方を実装することも可能であり、設計案1 は設計案2 の `write()` ループを `SineWaveGenerator` で自動化した特殊ケースとみなすこともできる。
 
 ## 解決方法
