@@ -41,7 +41,9 @@
 
 ### トラック→ストリーム ID 対応付け
 
-`onAddTrack(receiver, ms)` の第 2 引数 `ms: Array<out MediaStream>?` の先頭要素 `ms[0].id` をストリーム ID として使用する。これは `org.webrtc.RtpReceiver` の API 存在確認を待たずに確定できる経路である。`ms` が null または空だった場合は `onTrack(transceiver)` の `transceiver.receiver` 経由の取得にフォールバックする。
+`onTrack(transceiver)` の `transceiver.receiver` から `getStreams()` でストリーム ID を取得する。libwebrtc 側に `android_rtp_receiver_get_streams.patch` を適用することで `RtpReceiver.getStreams()` が利用可能になる。
+
+`onAddTrack(receiver, ms)` の `ms[0].id` 経路は Plan B semantics でのみ有効であり、Unified Plan では `ms` が常に空となるため使用しない。
 
 ### データ構造
 
@@ -67,7 +69,7 @@ fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, st
 
 ### マッピングのライフサイクル
 
-- **追加**: `onAddTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
+- **追加**: `onTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
 - **削除**: `onRemoveTrack` 発火時に `trackToStreamId.remove(track.id())` でマッピングを削除する。
 - **ストリーム削除**: `onRemoveStream` 発火時にそのストリームに属する全トラックのマッピングを削除する。
 - **切断時**: `closeInternal()` で `trackToStreamId.clear()` する。
@@ -81,3 +83,71 @@ fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, st
 - `CHANGES.md` の `develop` セクションに `[ADD]` エントリを追記すること。
 
 ## 解決方法
+
+### libwebrtc 側の対応
+
+`onTrack(transceiver)` で受け取った `RtpTransceiver` から `transceiver.receiver.getStreams()` でストリーム ID を取得する。この API を追加するために webrtc-build の `android_rtp_receiver_get_streams.patch` が必要。
+
+`android_rtp_receiver_get_streams.patch` による変更内容:
+
+| ファイル | 内容 |
+|----------|------|
+| `sdk/android/api/org/webrtc/RtpReceiver.java` | `getStreams()` メソッド追加、`import java.util.List` 追加、`nativeGetStreams()` native 宣言追加 |
+| `sdk/android/src/jni/pc/rtp_receiver.cc` | `JNI_RtpReceiver_GetStreams()` JNI 実装追加。`RtpReceiverInterface::stream_ids()` を呼び Java の `List<String>` に変換 |
+
+このパッチは独立した新規パッチであり、既存パッチとの競合はない。`run.py` の `android` / `android_sdk` ターゲットに登録して適用する。
+
+> **Note**: `onAddTrack(receiver, ms)` の `ms[0].id` 経路は Plan B SDP semantics でのみ有効であり、Unified Plan では `ms` が常に空となるため使用不可。本 issue では `onTrack + getStreams()` のみを経路とする。
+
+### SDK 側の実装
+
+#### ストリーム ID 取得
+
+`onTrack(transceiver)` コールバック内で `transceiver.receiver.getStreams()` を呼び出してストリーム ID を取得する。
+
+```kotlin
+override fun onTrack(transceiver: RtpTransceiver) {
+    val track = transceiver.receiver.track() ?: return
+    val streamIds = transceiver.receiver.getStreams()
+    val streamId = streamIds.firstOrNull() ?: return
+    // ...
+}
+```
+
+#### 変更対象ファイル
+
+- **`PeerChannel.kt`**
+  - `Listener` に `onAddRemoteTrack(track, streamId)` を追加
+  - `PeerChannelImpl` に `trackToStreamId: ConcurrentHashMap<String, String>` を追加
+  - `onTrack` ハンドラーを実装: `transceiver.receiver.getStreams()` から streamId を取得、`trackToStreamId` へ登録、`listener?.onAddRemoteTrack()` を発火
+  - `onRemoveTrack` で `trackToStreamId.remove(track.id())`
+  - `onRemoveStream` でストリームに属する全トラックのマッピングを削除
+  - `closeInternal()` で `trackToStreamId.clear()`
+
+- **`SoraMediaChannel.kt`**
+  - `Listener` に `onAddRemoteTrack(mediaChannel, track, streamId)` を追加
+  - `PeerChannel.Listener` 実装に `onAddRemoteTrack` ハンドラーを追加: 自己ストリームフィルタリング (`streamId == connectionId` かつ multistreamEnabled) 後、`listener?.onAddRemoteTrack()` を発火
+
+- **`CHANGES.md`**
+  - `develop` セクションに `[ADD]` エントリを追記
+
+#### 自己ストリームフィルタリング
+
+```kotlin
+override fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String) {
+    if (mediaOption.multistreamEnabled != false && connectionId != null && streamId == connectionId) {
+        SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: $streamId")
+        return
+    }
+    listener?.onAddRemoteTrack(this@SoraMediaChannel, track, streamId)
+}
+```
+
+既存の `onAddRemoteStream` と同等のロジックをトラックレベルで再実装する。
+
+#### マッピングのライフサイクル（再掲）
+
+- **追加**: `onTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
+- **削除**: `onRemoveTrack` 発火時に `trackToStreamId.remove(track.id())` でマッピングを削除する。
+- **ストリーム削除**: `onRemoveStream` 発火時にそのストリームに属する全トラックのマッピングを削除する。
+- **切断時**: `closeInternal()` で `trackToStreamId.clear()` する。
