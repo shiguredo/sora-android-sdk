@@ -24,27 +24,30 @@
 
 `src` 配下のコードに `kotlin.reflect` API を直接利用している箇所は見当たらない。シグナリングの JSON シリアライズ / デシリアライズには Gson を利用しているが、Gson は Java のリフレクションを使用しており `kotlin-reflect` を必要としない。
 
+`releaseRuntimeClasspath` の依存グラフ上でも、`kotlin-reflect` は明示的な `implementation` 宣言によって入っており、他依存が実質的に必須として持ち込んでいる状況は確認できていない。
+
 ## 調査項目
 
-1. **推移的依存の有無**: `kotlinx-coroutines-android` や他の依存が `kotlin-reflect` を推移的に取り込んでいないか。`./gradlew :sora-android-sdk:dependencies --configuration releaseRuntimeClasspath` で確認する。
-   - 推移的依存がある場合、明示的な `implementation` 宣言を削除しても依存グラフから消えない。その場合は `exclude` の要否を判断する。
-2. **テストコードの調査**: `src/test` 配下で `kotlin.reflect` が `testImplementation` として利用されていないかも確認する。
-3. **Gson 使用箇所の精査**: コードベース内の全 Gson 使用箇所（`GsonBuilder` 設定を含む）で `kotlin-reflect` への暗黙的依存がないことを確認する。
-4. **R8 難読化後の検証**: release ビルドで R8 を適用した状態で、以下のシナリオが正しく動作することを実機または Robolectric テストで確認する。
-   - `Sora.connect()` → `Sora.disconnect()` の基本接続サイクル
-   - シグナリング `type: connect` / `type: offer` / `type: answer` の全メッセージラウンドトリップ
-   - DataChannel の送受信
+1. **依存宣言の削除**: `gradle/libs.versions.toml` と `sora-android-sdk/build.gradle.kts` から `kotlin-reflect` の宣言を削除する。
+2. **依存グラフの再確認**: 削除後の `releaseRuntimeClasspath` を確認し、`kotlin-reflect` が依存グラフから消えることを確認する。
+3. **コード / テスト利用の再確認**: `src/main` / `src/test` / `src/androidTest` 配下で `kotlin.reflect` API を使っていないことを再確認する。
+4. **既存検証の実行**: 削除後に既存の build / test / E2E が成立することを確認する。
+   - `./gradlew :sora-android-sdk:assembleDebug`
+   - `./gradlew :sora-android-sdk:testDebugUnitTest`
+   - 実行可能な E2E テストがあれば、その結果を確認する
 
 ## 設計方針
 
-- 上記調査で `kotlin-reflect` が不要と確認できたら、`gradle/libs.versions.toml` と `sora-android-sdk/build.gradle.kts` から宣言を削除する。
+- 現時点では `kotlin-reflect` の直接利用箇所が見当たらず、依存グラフ上でも明示依存としてのみ入っているため、まずは削除を前提に作業する。
+- 削除後に既存 build / test / E2E で問題が出た場合のみ、必要性を再調査する。
 - 削除する場合は `CHANGES.md` の `develop` セクションに `[CHANGE]` エントリを追記する。
 
 ## 完了条件
 
-- `kotlin-reflect` を削除した状態でビルドと全テストが通ること。
-- シグナリングの JSON シリアライズ / デシリアライズを含む既存機能が R8 難読化後も正しく動作すること。
-- 削除前後で AAR に含まれるクラス数または AAR サイズの差分を計測し、削除に意味があることを確認すること。
+- `gradle/libs.versions.toml` と `sora-android-sdk/build.gradle.kts` から `kotlin-reflect` の宣言が削除されていること。
+- `kotlin-reflect` を削除した状態で `:sora-android-sdk:assembleDebug` と `:sora-android-sdk:testDebugUnitTest` が通ること。
+- 既存の E2E テストを実行できる場合は、それが通ること。
+- `releaseRuntimeClasspath` の依存グラフから `kotlin-reflect` が消えていること。
 - `CHANGES.md` の `develop` セクションに該当エントリを追記すること。
 
 ## 解決方法
