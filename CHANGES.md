@@ -13,6 +13,10 @@
 
 - [CHANGE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
   - @zztkm
+- [UPDATE] JitPack ビルドで利用する JDK のバージョンを 21 に上げる
+  - @t-miya
+- [UPDATE] GitHub Actions で利用する JDK のバージョンを 21 に上げる
+  - @t-miya
 - [UPDATE] libwebrtc を 150.7871.2.1 に上げる
   - @t-miya @zztkm
 - [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
