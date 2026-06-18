@@ -50,6 +50,7 @@ import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
+import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
@@ -506,6 +507,43 @@ class SoraMediaChannel
                 label: String,
                 data: ByteBuffer,
             ) {}
+
+            /**
+             * リモートトラックが追加されたときに呼び出されるコールバック.
+             *
+             * PeerConnection.Observer.onTrack は PeerChannelImpl 内部に閉じており
+             * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+             * トラックとストリーム ID を通知する.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param track 追加されたメディアトラック
+             * @param streamId トラックが所属するストリーム ID
+             */
+            fun onAddRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                track: MediaStreamTrack,
+                streamId: String,
+            ) {}
+
+            /**
+             * リモートトラックが削除されたときに呼び出されるコールバック.
+             *
+             * PeerConnection.Observer.onRemoveTrack は PeerChannelImpl 内部に閉じており
+             * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+             * トラック ID とストリーム ID を通知する.
+             *
+             * 削除時点で MediaStreamTrack が JNI 側で dispose 済みの可能性があるため、
+             * トラックオブジェクトではなく ID とストリーム ID で通知する.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param trackId 削除されたメディアトラックの ID
+             * @param streamId トラックが所属していたストリーム ID
+             */
+            fun onRemoveRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                trackId: String,
+                streamId: String,
+            ) {}
         }
 
         // Sora とのメディア通信に使用する PeerConnection
@@ -892,7 +930,7 @@ class SoraMediaChannel
 
                 override fun onRemoveRemoteStream(label: String) {
                     SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveRemoteStream:$label")
-                    if (connectionId != null && label == connectionId) {
+                    if (isSelfStreamId(label)) {
                         SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore")
                         return
                     }
@@ -900,12 +938,42 @@ class SoraMediaChannel
                 }
 
                 override fun onAddRemoteStream(ms: MediaStream) {
-                    SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=$connectionId")
-                    if (mediaOption.multistreamEnabled != false && connectionId != null && ms.id == connectionId) {
+                    SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=${ms.id}, connectionId=$connectionId")
+                    if (isSelfStreamId(ms.id)) {
                         SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                         return
                     }
                     listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
+                }
+
+                override fun onAddRemoteTrack(
+                    track: MediaStreamTrack,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onAddRemoteTrack trackId=${track.id()}, streamId=$streamId, connectionId=$connectionId",
+                    )
+                    if (isSelfStreamId(streamId)) {
+                        SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: ${track.id()}")
+                        return
+                    }
+                    listener?.onAddRemoteTrack(this@SoraMediaChannel, track, streamId)
+                }
+
+                override fun onRemoveRemoteTrack(
+                    trackId: String,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onRemoveRemoteTrack trackId=$trackId, streamId=$streamId",
+                    )
+                    if (isSelfStreamId(streamId)) {
+                        SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: $trackId")
+                        return
+                    }
+                    listener?.onRemoveRemoteTrack(this@SoraMediaChannel, trackId, streamId)
                 }
 
                 override fun onAddLocalStream(ms: MediaStream) {
@@ -1048,6 +1116,14 @@ class SoraMediaChannel
                     )
                 }
             }
+
+        // マルチストリーム時に自己ストリームをフィルタリングする。
+        // multistreamEnabled は通常 true（enableMultistream() で設定）だが、
+        // デフォルト（null）や非推奨の enableLegacyStream()（false）の場合もあるため、
+        // != false で判定する。非マルチストリーム時（null）は id が
+        // connectionId と一致しないため、実質的にフィルタされない。
+        private fun isSelfStreamId(id: String): Boolean =
+            mediaOption.multistreamEnabled != false && connectionId != null && id == connectionId
 
         /**
          * Sora に接続します.

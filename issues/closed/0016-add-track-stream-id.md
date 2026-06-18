@@ -2,8 +2,8 @@
 
 - Priority: Medium
 - Created: 2026-06-03
-- Completed:
-- Polished: 2026-06-03
+- Completed: 2026-06-18
+- Polished: 2026-06-18
 - Model: Opus 4.8
 - Branch: feature/add-track-stream-id
 
@@ -41,7 +41,9 @@
 
 ### トラック→ストリーム ID 対応付け
 
-`onAddTrack(receiver, ms)` の第 2 引数 `ms: Array<out MediaStream>?` の先頭要素 `ms[0].id` をストリーム ID として使用する。これは `org.webrtc.RtpReceiver` の API 存在確認を待たずに確定できる経路である。`ms` が null または空だった場合は `onTrack(transceiver)` の `transceiver.receiver` 経由の取得にフォールバックする。
+`onTrack(transceiver)` の `transceiver.receiver` から `getStreams()` でストリーム ID を取得する。libwebrtc 側に `android_rtp_receiver_get_streams.patch` を適用することで `RtpReceiver.getStreams()` が利用可能になる。
+
+`onAddTrack(receiver, ms)` の `ms[0].id` 経路は Plan B semantics でのみ有効であり、Unified Plan では `ms` が常に空となるため使用しない。
 
 ### データ構造
 
@@ -67,7 +69,7 @@ fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, st
 
 ### マッピングのライフサイクル
 
-- **追加**: `onAddTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
+- **追加**: `onTrack` 発火時に `trackToStreamId[track.id()] = streamId` を設定する。
 - **削除**: `onRemoveTrack` 発火時に `trackToStreamId.remove(track.id())` でマッピングを削除する。
 - **ストリーム削除**: `onRemoveStream` 発火時にそのストリームに属する全トラックのマッピングを削除する。
 - **切断時**: `closeInternal()` で `trackToStreamId.clear()` する。
@@ -81,3 +83,34 @@ fun onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, st
 - `CHANGES.md` の `develop` セクションに `[ADD]` エントリを追記すること。
 
 ## 解決方法
+
+### libwebrtc 側の対応
+
+`RtpReceiver.getStreams()` を追加する `android_rtp_receiver_get_streams.patch` を適用した libwebrtc 150.7871.2.1 を使用する。
+
+### PeerChannel.kt
+
+`PeerChannel.Listener` に `onAddRemoteTrack(track: MediaStreamTrack, streamId: String)` と `onRemoveRemoteTrack(trackId: String, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+
+`PeerChannelImpl` に以下の変更を加えた:
+
+- `trackToStreamId: ConcurrentHashMap<String, String>` を追加。
+- `onTrack` で `transceiver.receiver.getStreams().firstOrNull()` からストリーム ID を取得し、`trackToStreamId[track.id()] = streamId` でマッピングに登録後、`listener?.onAddRemoteTrack(track, streamId)` を発火する。`closing` ガード、`receiver.track()` の null チェック、`getStreams()` 空時の早期 return を実装した。
+- `onRemoveTrack` で `trackToStreamId.remove(trackId)` によりマッピングを削除し、`listener?.onRemoveRemoteTrack(trackId, streamId)` を発火する。`closing` ガード、`receiver.track()` の null チェックを実装した。`trackToStreamId` に対象エントリが存在しない場合は通知しない。
+- `onRemoveStream` で `trackToStreamId` を走査し、該当ストリームに属する全トラックのマッピングを削除して `onRemoveRemoteTrack` を発火する。`closing` ガードを実装した。`ms.audioTracks` / `ms.videoTracks` による列挙は JNI 側で無効化済みの可能性があるため使用しない。
+- `closeInternal()` で `trackToStreamId.clear()` を実行し、切断時にマッピングを解放する。
+- `onConnectionChange(CONNECTED)` に `closing` ガードを追加した。
+- `closing` に `@Volatile` を付与し、複数スレッド間の可視性を保証した。
+- 古い `TODO(shino)` コメントを削除した。
+
+### SoraMediaChannel.kt
+
+`SoraMediaChannel.Listener` に `onAddRemoteTrack(mediaChannel: SoraMediaChannel, track: MediaStreamTrack, streamId: String)` と `onRemoveRemoteTrack(mediaChannel: SoraMediaChannel, trackId: String, streamId: String)` をデフォルト実装 `{}` 付きで追加した。
+
+`peerListener` に `onAddRemoteTrack` / `onRemoveRemoteTrack` の実装を追加し、自己ストリームフィルタリング (`isSelfStreamId`) を適用した上で上位リスナーに通知するようにした。
+
+`isSelfStreamId` メソッドを抽出し、`onAddRemoteStream` / `onRemoveRemoteStream` / `onAddRemoteTrack` / `onRemoveRemoteTrack` で共通利用するようにした。`onRemoveRemoteStream` の既存のインライン条件判定との一貫性のため、`multistreamEnabled != false` の判定を含む。
+
+### CHANGES.md
+
+`## develop` セクションに `[ADD]` エントリを追記し、libwebrtc バージョンを 150.7871.2.1 に更新した。
