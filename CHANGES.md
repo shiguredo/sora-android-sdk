@@ -13,11 +13,14 @@
 
 - [CHANGE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
   - @zztkm
-- [UPDATE] libwebrtc を 148.7778.7.0 に上げる
+- [UPDATE] libwebrtc を 150.7871.2.1 に上げる
   - @t-miya @zztkm
 - [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
   - 不要なインスタンス生成をしないようにする
   - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
+  - @t-miya
+- [ADD] PeerChannel.Listener と SoraMediaChannel.Listener に onAddRemoteTrack / onRemoveRemoteTrack を追加する
+  - リモートトラックからストリーム ID を取得できるようになる
   - @t-miya
 - [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
   - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
