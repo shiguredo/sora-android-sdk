@@ -1,0 +1,73 @@
+name: Deploy API Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'CHANGES.md'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'LICENSE'
+      - 'THANKS'
+      - '.github/workflows/claude.yml'
+      - '.github/copilot-instructions.md'
+      - 'docs/**'
+      - 'jitpack.yml'
+      - 'canary.py'
+      - '.gitignore'
+
+permissions:
+  actions: read
+
+concurrency:
+  group: "deploy-api-docs"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: github-pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Set up JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          # shiguredo-webrtc-android の classes.jar が Java 21 class file を含むため、
+          # CI でも JDK 21 を利用する。
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Copy gradle.properties
+        run: cp gradle.properties.example gradle.properties
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - name: Build API docs with Dokka
+        run: ./gradlew :sora-android-sdk:dokkaHtml
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: sora-android-sdk/build/dokka/html/
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  slack_notify:
+    needs: [deploy]
+    runs-on: ubuntu-slim
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: shiguredo/github-actions/.github/actions/slack-notify@main
+        with:
+          status: ${{ needs.deploy.result }}
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_channel: sora-android-sdk
+        env:
+          GH_TOKEN: ${{ github.token }}
