@@ -87,6 +87,8 @@
   - シミュレーター利用での実行を想定している
   - recvonly で Sora との接続・切断を行うテストを追加する
   - @t-miya
+- [ADD] GitHub Actions で API ドキュメントを GitHub Pages にデプロイする
+  - @voluntas
 
 ## 2026.1.0
 
