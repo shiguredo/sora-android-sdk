@@ -17,7 +17,7 @@
   - @t-miya
 - [UPDATE] GitHub Actions で利用する JDK のバージョンを 21 に上げる
   - @t-miya
-- [UPDATE] libwebrtc を 150.7871.2.1 に上げる
+- [UPDATE] libwebrtc を 150.7871.3.0 に上げる
   - @t-miya @zztkm
 - [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
   - 不要なインスタンス生成をしないようにする
