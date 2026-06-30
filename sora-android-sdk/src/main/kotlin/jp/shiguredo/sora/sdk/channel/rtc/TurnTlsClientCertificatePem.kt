@@ -1,8 +1,8 @@
 package jp.shiguredo.sora.sdk.channel.rtc
 
+import android.util.Base64
 import java.security.PrivateKey
 import java.security.cert.X509Certificate
-import java.util.Base64
 
 internal object TurnTlsClientCertificatePem {
     private const val PEM_LINE_LENGTH = 64
@@ -28,7 +28,11 @@ internal object TurnTlsClientCertificatePem {
         type: String,
         der: ByteArray,
     ): String {
-        val base64 = Base64.getMimeEncoder(PEM_LINE_LENGTH, "\n".toByteArray()).encodeToString(der)
+        val base64 =
+            Base64
+                .encodeToString(der, Base64.NO_WRAP)
+                .chunked(PEM_LINE_LENGTH)
+                .joinToString(separator = "\n")
         return "-----BEGIN $type-----\n$base64\n-----END $type-----\n"
     }
 }
