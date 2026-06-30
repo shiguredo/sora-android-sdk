@@ -13,11 +13,23 @@ class PeerNetworkConfig(
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
     private val clientCertificate: X509Certificate? = null,
-    private val clientCertificateChain: List<X509Certificate>? = null,
     private val clientPrivateKey: PrivateKey? = null,
+    private val clientCertificateChain: List<X509Certificate>? = null,
 ) {
     companion object {
         private val TAG = PeerNetworkConfig::class.simpleName
+    }
+
+    init {
+        require(clientCertificate == null || clientCertificateChain == null) {
+            "clientCertificate and clientCertificateChain are mutually exclusive"
+        }
+        require(clientCertificateChain == null || clientCertificateChain.isNotEmpty()) {
+            "clientCertificateChain must not be empty"
+        }
+        require((clientCertificate != null || clientCertificateChain != null) == (clientPrivateKey != null)) {
+            "either clientCertificate or clientCertificateChain and clientPrivateKey must be specified together"
+        }
     }
 
     fun createConfiguration(): PeerConnection.RTCConfiguration {
@@ -46,6 +58,15 @@ class PeerNetworkConfig(
         return conf
     }
 
+    /**
+     * シグナリングから受け取った ICE サーバー設定を libwebrtc の IceServer リストに変換する。
+     *
+     * turns: URL かつクライアント秘密鍵が指定されている場合、リフレクション経由で
+     * `setTlsClientCertificate` を呼び出し TURN-TLS のクライアント認証を設定する。
+     * `certificatePem` には単一証明書と証明書チェーン（concatenated PEM）の両方に対応する。
+     *
+     * insecure が true かつ turns: URL の場合は TLS 証明書検証をスキップする。
+     */
     private fun gatherIceServerSetting(serverConfig: OfferConfig?): List<PeerConnection.IceServer> {
         val iceServers = mutableListOf<PeerConnection.IceServer>()
         serverConfig?.let {
@@ -58,18 +79,19 @@ class PeerNetworkConfig(
                             .setPassword(server.credential)
                             .apply {
                                 if (url.startsWith("turns:") && clientPrivateKey != null) {
-                                    if (clientCertificate != null) {
-                                        TurnTlsClientCertificateConfigurer.applySingleCertificateToIceServerBuilder(
+                                    val certificatePem =
+                                        when {
+                                            clientCertificate != null ->
+                                                TurnTlsClientCertificatePem.toCertificatePem(clientCertificate)
+                                            clientCertificateChain != null ->
+                                                TurnTlsClientCertificatePem.toCertificateChainPem(clientCertificateChain)
+                                            else -> null
+                                        }
+                                    if (certificatePem != null) {
+                                        TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
                                             builder = this,
                                             privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
-                                            certificatePem = TurnTlsClientCertificatePem.toCertificatePem(clientCertificate),
-                                        )
-                                    } else if (clientCertificateChain != null) {
-                                        TurnTlsClientCertificateConfigurer.applyCertificateChainToIceServerBuilder(
-                                            builder = this,
-                                            privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
-                                            certificateChainPem =
-                                                TurnTlsClientCertificatePem.toCertificateChainPem(clientCertificateChain),
+                                            certificatePem = certificatePem,
                                         )
                                     }
                                 }

@@ -99,8 +99,8 @@ import kotlin.coroutines.resume
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
  * @param clientCertificate mTLS で使用するクライアント証明書を指定。WebSocket と TURN-TLS の両方に適用されます。
- * @param clientCertificateChain mTLS で使用するクライアント証明書チェーンを指定。WebSocket と TURN-TLS の両方に適用されます。単一証明書を指定する場合は `clientCertificate` を利用してください。
  * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。WebSocket と TURN-TLS の両方に適用されます。
+ * @param clientCertificateChain mTLS で使用するクライアント証明書チェーンを指定。WebSocket と TURN-TLS の両方に適用されます。単一証明書を指定する場合は `clientCertificate` を利用してください。
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -130,8 +130,8 @@ class SoraMediaChannel
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
         private val clientCertificate: X509Certificate? = null,
-        private val clientCertificateChain: List<X509Certificate>? = null,
         private val clientPrivateKey: PrivateKey? = null,
+        private val clientCertificateChain: List<X509Certificate>? = null,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName

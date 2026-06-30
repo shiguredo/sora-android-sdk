@@ -76,16 +76,6 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * クライアント証明書を利用する TLS ソケット設定を生成します。
-     *
-     * サーバー証明書検証には Android OS の既定の CA 証明書を利用します。
-     */
-    fun createClientAuthenticationTlsSocketConfig(
-        clientCertificate: X509Certificate,
-        clientPrivateKey: PrivateKey,
-    ): TlsSocketConfig = createClientAuthenticationTlsSocketConfig(listOf(clientCertificate), clientPrivateKey)
-
-    /**
      * クライアント証明書チェーンを利用する TLS ソケット設定を生成します。
      *
      * サーバー証明書検証には Android OS の既定の CA 証明書を利用します。
@@ -105,20 +95,6 @@ internal object TlsConfigFactory {
                 ),
         )
     }
-
-    /**
-     * 指定した CA 証明書とクライアント証明書を併用する TLS ソケット設定を生成します。
-     */
-    fun createCustomCaWithClientAuthenticationTlsSocketConfig(
-        caCertificate: X509Certificate,
-        clientCertificate: X509Certificate,
-        clientPrivateKey: PrivateKey,
-    ): TlsSocketConfig =
-        createCustomCaWithClientAuthenticationTlsSocketConfig(
-            caCertificate = caCertificate,
-            clientCertificateChain = listOf(clientCertificate),
-            clientPrivateKey = clientPrivateKey,
-        )
 
     /**
      * 指定した CA 証明書とクライアント証明書チェーンを併用する TLS ソケット設定を生成します。
@@ -143,14 +119,17 @@ internal object TlsConfigFactory {
     /**
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      *
-     * `clientCertificate` と `clientPrivateKey` を指定した場合は、
-     * サーバー証明書検証を無効化したままクライアント証明書認証を有効にします。
+     * `clientCertificate` と `clientCertificateChain` は排他です。
+     * `clientPrivateKey` と対で指定する必要があります。
      */
     fun createInsecureTlsSocketConfig(
         clientCertificate: X509Certificate? = null,
         clientCertificateChain: List<X509Certificate>? = null,
         clientPrivateKey: PrivateKey? = null,
     ): TlsSocketConfig {
+        require(clientCertificate == null || clientCertificateChain == null) {
+            "clientCertificate and clientCertificateChain are mutually exclusive"
+        }
         val trustManager =
             object : X509TrustManager {
                 override fun checkClientTrusted(

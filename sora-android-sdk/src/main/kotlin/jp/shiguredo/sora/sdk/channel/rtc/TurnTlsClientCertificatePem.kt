@@ -33,37 +33,40 @@ internal object TurnTlsClientCertificatePem {
     }
 }
 
+/**
+ * リフレクションで libwebrtc の `PeerConnection.IceServer.Builder.setTlsClientCertificate` を呼び出す。
+ *
+ * このメソッドは Shiguredo パッチ (`android_turn_tls_client_certificate.patch`) で追加された API であり、
+ * 標準の libwebrtc 公開 API には存在しない。
+ *
+ * `certificatePem` には単一証明書の PEM と証明書チェーン（concatenated PEM）の両方を指定できる。
+ * 内部では `SSLIdentity::CreateFromPEMChainStrings()` が使用される。
+ */
 internal object TurnTlsClientCertificateConfigurer {
-    private const val SINGLE_CERTIFICATE_METHOD_NAME = "setTlsClientCertificate"
-    private const val CERTIFICATE_CHAIN_METHOD_NAME = "setTlsClientCertificateChain"
+    private const val METHOD_NAME = "setTlsClientCertificate"
 
-    fun applySingleCertificateToIceServerBuilder(
+    fun applyToIceServerBuilder(
         builder: Any,
         privateKeyPem: String,
         certificatePem: String,
     ) {
-        val method = findMethod(builder, SINGLE_CERTIFICATE_METHOD_NAME)
-        method.invoke(builder, privateKeyPem, certificatePem)
+        val method =
+            builder.javaClass.methods.firstOrNull { candidate ->
+                candidate.name == METHOD_NAME &&
+                    candidate.parameterTypes.contentEquals(arrayOf(String::class.java, String::class.java))
+            }
+                ?: throw IllegalStateException(
+                    "libwebrtc does not support TURN-TLS client certificates or certificate chains. " +
+                        "Apply android_turn_tls_client_certificate.patch to the Android build.",
+                )
+        try {
+            method.invoke(builder, privateKeyPem, certificatePem)
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            throw IllegalStateException(
+                "Failed to set TURN-TLS client certificate. " +
+                    "The provided private key or certificate PEM may be invalid.",
+                e.cause,
+            )
+        }
     }
-
-    fun applyCertificateChainToIceServerBuilder(
-        builder: Any,
-        privateKeyPem: String,
-        certificateChainPem: String,
-    ) {
-        val method = findMethod(builder, CERTIFICATE_CHAIN_METHOD_NAME)
-        method.invoke(builder, privateKeyPem, certificateChainPem)
-    }
-
-    private fun findMethod(
-        builder: Any,
-        methodName: String,
-    ) = builder.javaClass.methods.firstOrNull { candidate ->
-        candidate.name == methodName &&
-            candidate.parameterTypes.contentEquals(arrayOf(String::class.java, String::class.java))
-    }
-        ?: throw IllegalStateException(
-            "libwebrtc does not support TURN-TLS client certificates or certificate chains. " +
-                "Apply android_turn_tls_client_certificate.patch to the Android build.",
-        )
 }
