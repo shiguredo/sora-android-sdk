@@ -98,7 +98,7 @@ import kotlin.coroutines.resume
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
  * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
- * @param clientCertificateChain mTLS で使用するクライアント証明書チェーンを指定。単一証明書の場合は要素数 1 のリストを指定します。WebSocket と TURN-TLS の両方に適用されます。
+ * @param clientCertificate mTLS で使用するクライアント証明書チェーンを指定。単一証明書の場合は要素数 1 のリストを指定します。WebSocket と TURN-TLS の両方に適用されます。
  * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。WebSocket と TURN-TLS の両方に適用されます。
  */
 class SoraMediaChannel
@@ -128,7 +128,7 @@ class SoraMediaChannel
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
-        private val clientCertificateChain: List<X509Certificate>? = null,
+        private val clientCertificate: List<X509Certificate>? = null,
         private val clientPrivateKey: PrivateKey? = null,
     ) {
         companion object {
@@ -228,11 +228,11 @@ class SoraMediaChannel
                 throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
             }
 
-            require(clientCertificateChain == null || clientCertificateChain.isNotEmpty()) {
-                "clientCertificateChain must not be empty"
+            require(clientCertificate == null || clientCertificate.isNotEmpty()) {
+                "clientCertificate must not be empty"
             }
-            require((clientCertificateChain != null) == (clientPrivateKey != null)) {
-                "clientCertificateChain and clientPrivateKey must be specified together"
+            require((clientCertificate != null) == (clientPrivateKey != null)) {
+                "clientCertificate and clientPrivateKey must be specified together"
             }
 
             // コンストラクタ以外で dataChannelSignaling, ignoreDisconnectWebSocket を参照すべきではない
@@ -1247,7 +1247,7 @@ class SoraMediaChannel
                                 ),
                             mediaOption = mediaOption,
                             insecure = insecure,
-                            clientCertificateChain = clientCertificateChain,
+                            clientCertificate = clientCertificate,
                             clientPrivateKey = clientPrivateKey,
                         ),
                     mediaOption = mediaOption,
@@ -1323,7 +1323,7 @@ class SoraMediaChannel
                     forwardingFilterOption = forwardingFilterOption,
                     forwardingFiltersOption = forwardingFiltersOption,
                     caCertificate = caCertificate,
-                    clientCertificateChain = clientCertificateChain,
+                    clientCertificate = clientCertificate,
                     clientPrivateKey = clientPrivateKey,
                 )
             signaling!!.connect()
@@ -1341,7 +1341,7 @@ class SoraMediaChannel
                             serverConfig = offerMessage.config,
                             mediaOption = mediaOption,
                             insecure = insecure,
-                            clientCertificateChain = clientCertificateChain,
+                            clientCertificate = clientCertificate,
                             clientPrivateKey = clientPrivateKey,
                         ),
                     mediaOption = mediaOption,

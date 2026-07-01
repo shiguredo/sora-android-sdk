@@ -12,7 +12,7 @@ class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
-    private val clientCertificateChain: List<X509Certificate>? = null,
+    private val clientCertificate: List<X509Certificate>? = null,
     private val clientPrivateKey: PrivateKey? = null,
 ) {
     companion object {
@@ -21,13 +21,13 @@ class PeerNetworkConfig(
 
     init {
         // SoraMediaChannel 以外から直接生成される経路でも不正な証明書設定を早期に検出する。
-        // 単一証明書は要素数 1 のリストとして clientCertificateChain に指定する。
+        // 単一証明書は要素数 1 のリストとして clientCertificate に指定する。
         // クライアント証明書を指定する場合は対応する clientPrivateKey も必須である。
-        require(clientCertificateChain == null || clientCertificateChain.isNotEmpty()) {
-            "clientCertificateChain must not be empty"
+        require(clientCertificate == null || clientCertificate.isNotEmpty()) {
+            "clientCertificate must not be empty"
         }
-        require((clientCertificateChain != null) == (clientPrivateKey != null)) {
-            "clientCertificateChain and clientPrivateKey must be specified together"
+        require((clientCertificate != null) == (clientPrivateKey != null)) {
+            "clientCertificate and clientPrivateKey must be specified together"
         }
     }
 
@@ -78,14 +78,14 @@ class PeerNetworkConfig(
                             .setPassword(server.credential)
                             .apply {
                                 if (url.startsWith("turns:") && clientPrivateKey != null &&
-                                    clientCertificateChain != null
+                                    clientCertificate != null
                                 ) {
                                     TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
                                         builder = this,
                                         privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
                                         certificatePem =
                                             TurnTlsClientCertificatePem.toCertificateChainPem(
-                                                clientCertificateChain,
+                                                clientCertificate,
                                             ),
                                     )
                                 }

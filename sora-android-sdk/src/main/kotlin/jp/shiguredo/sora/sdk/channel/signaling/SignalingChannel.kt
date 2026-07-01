@@ -105,7 +105,7 @@ class SignalingChannelImpl
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
-        private val clientCertificateChain: List<X509Certificate>? = null,
+        private val clientCertificate: List<X509Certificate>? = null,
         private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
@@ -166,7 +166,7 @@ class SignalingChannelImpl
         /**
          * クライアント証明書認証を有効にするための情報がそろっているかを返します。
          */
-        private fun hasClientAuthentication(): Boolean = clientCertificateChain != null && clientPrivateKey != null
+        private fun hasClientAuthentication(): Boolean = clientCertificate != null && clientPrivateKey != null
 
         /**
          * OkHttpClient にカスタム TLS 設定を適用する必要があるかを返します。
@@ -195,7 +195,7 @@ class SignalingChannelImpl
                         SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
                     }
                     TlsConfigFactory.createInsecureTlsSocketConfig(
-                        clientCertificateChain = clientCertificateChain,
+                        clientCertificate = clientCertificate,
                         clientPrivateKey = clientPrivateKey,
                     )
                 }
@@ -208,7 +208,7 @@ class SignalingChannelImpl
                         )
                         TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
                             caCertificate = caCertificate!!,
-                            clientCertificateChain = clientCertificateChain!!,
+                            clientCertificate = clientCertificate!!,
                             clientPrivateKey = clientPrivateKey!!,
                         )
                     } else {
@@ -225,7 +225,7 @@ class SignalingChannelImpl
                         "[signaling:$role] using the specified client certificate for webSocket signaling",
                     )
                     TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
-                        clientCertificateChain = clientCertificateChain!!,
+                        clientCertificate = clientCertificate!!,
                         clientPrivateKey = clientPrivateKey!!,
                     )
                 }

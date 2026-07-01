@@ -81,7 +81,7 @@ internal object TlsConfigFactory {
      * サーバー証明書検証には Android OS の既定の CA 証明書を利用します。
      */
     fun createClientAuthenticationTlsSocketConfig(
-        clientCertificateChain: List<X509Certificate>,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createSystemTrustManager()
@@ -91,7 +91,7 @@ internal object TlsConfigFactory {
             sslSocketFactory =
                 createSslSocketFactory(
                     trustManager = trustManager,
-                    keyManagers = createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey),
+                    keyManagers = createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey),
                 ),
         )
     }
@@ -101,7 +101,7 @@ internal object TlsConfigFactory {
      */
     fun createCustomCaWithClientAuthenticationTlsSocketConfig(
         caCertificate: X509Certificate,
-        clientCertificateChain: List<X509Certificate>,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createCustomCaTrustManager(caCertificate)
@@ -111,7 +111,7 @@ internal object TlsConfigFactory {
             sslSocketFactory =
                 createSslSocketFactory(
                     trustManager = trustManager,
-                    keyManagers = createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey),
+                    keyManagers = createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey),
                 ),
         )
     }
@@ -120,13 +120,13 @@ internal object TlsConfigFactory {
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      *
      * クライアント証明書を指定しない場合は全引数を省略（デフォルトの `null`）で呼び出します。
-     * クライアント証明書を指定する場合は `clientCertificateChain` と
+     * クライアント証明書を指定する場合は `clientCertificate` と
      * 対応する `clientPrivateKey` をセットで指定する必要があります。
      * なお、`clientPrivateKey` が対で指定されているかのチェックはこのメソッドでは行わず、
      * 上位レイヤ（`SoraMediaChannel`、`PeerNetworkConfig`）で実施します。
      */
     fun createInsecureTlsSocketConfig(
-        clientCertificateChain: List<X509Certificate>? = null,
+        clientCertificate: List<X509Certificate>? = null,
         clientPrivateKey: PrivateKey? = null,
     ): TlsSocketConfig {
         val trustManager =
@@ -152,8 +152,8 @@ internal object TlsConfigFactory {
                 createSslSocketFactory(
                     trustManager = trustManager,
                     keyManagers =
-                        if (clientCertificateChain != null && clientPrivateKey != null) {
-                            createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey)
+                        if (clientCertificate != null && clientPrivateKey != null) {
+                            createClientAuthenticationKeyManagers(clientCertificate, clientPrivateKey)
                         } else {
                             null
                         },
@@ -178,7 +178,7 @@ internal object TlsConfigFactory {
      * クライアント認証で利用する `KeyManager` を生成します。
      */
     private fun createClientAuthenticationKeyManagers(
-        clientCertificateChain: List<X509Certificate>,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): Array<KeyManager> {
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
@@ -187,7 +187,7 @@ internal object TlsConfigFactory {
             CLIENT_CERTIFICATE_ALIAS,
             clientPrivateKey,
             null,
-            clientCertificateChain.toTypedArray(),
+            clientCertificate.toTypedArray(),
         )
 
         val keyManagerFactory =

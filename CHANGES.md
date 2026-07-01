@@ -42,7 +42,7 @@
   - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
   - @zztkm
 - [ADD] WSS と TURN-TLS の接続に利用するクライアント証明書を指定できるようにする
-  - `SoraMediaChannel` に `clientCertificateChain` と `clientPrivateKey` 引数を追加する
+  - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を追加する
   - 単一証明書は要素数 1 のリストとして指定し、証明書チェーンは複数要素のリストとして指定する
   - @zztkm @t-miya
 - [ADD] WSS と TURN-TLS で insecure モードを利用できるようにする
