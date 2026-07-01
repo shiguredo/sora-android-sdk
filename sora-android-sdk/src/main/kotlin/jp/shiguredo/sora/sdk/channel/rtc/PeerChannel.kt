@@ -21,6 +21,7 @@ import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionDependencies
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.Priority
 import org.webrtc.ProxyType
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
@@ -598,6 +599,31 @@ class PeerChannelImpl(
             }
     }
 
+    /**
+     * Sora シグナリングの encodings に含まれる networkPriority 文字列を
+     * libwebrtc の Priority 定数に変換する。
+     *
+     * 変換できなかった場合（未知の値、空文字列など）は null を返す。
+     * 呼び出し元では null の場合に代入をスキップし、既存の networkPriority を上書きしない。
+     *
+     * Priority 型は @interface アノテーションだが、VERY_LOW / LOW / MEDIUM / HIGH は
+     * int 定数として定義されており、RtpParameters.Encoding.networkPriority (int) にそのまま代入できる。
+     *
+     * 参考: W3C WebRTC Priority Control API
+     * https://www.w3.org/TR/webrtc-priority/#dom-rtcrtpencodingparameters-networkpriority
+     */
+    private fun mapNetworkPriority(value: String): Int? =
+        when (value) {
+            "very-low" -> Priority.VERY_LOW
+            "low" -> Priority.LOW
+            "medium" -> Priority.MEDIUM
+            "high" -> Priority.HIGH
+            else -> {
+                SoraLogger.w(TAG, "unknown networkPriority value: $value, skipping update")
+                null
+            }
+        }
+
     private fun updateSenderOfferEncodings(sender: RtpSender) {
         if (offerEncodings == null) {
             return
@@ -614,6 +640,11 @@ class PeerChannelImpl(
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
             offerEncoding.scaleResolutionDownTo?.also { senderEncoding.scaleResolutionDownTo = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
+            offerEncoding.networkPriority?.let { value ->
+                mapNetworkPriority(value)?.let { priority ->
+                    senderEncoding.networkPriority = priority
+                }
+            }
         }
 
         // degradationPreference を再設定（setRemoteDescription でリセットされる可能性があるため）
@@ -633,6 +664,14 @@ class PeerChannelImpl(
                     } else {
                         "null"
                     }
+                val networkPriorityLabel =
+                    when (networkPriority) {
+                        Priority.VERY_LOW -> "very-low"
+                        Priority.LOW -> "low"
+                        Priority.MEDIUM -> "medium"
+                        Priority.HIGH -> "high"
+                        else -> "unknown"
+                    }
                 SoraLogger.d(
                     TAG,
                     "update sender encoding: " +
@@ -644,6 +683,7 @@ class PeerChannelImpl(
                         "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
+                        "networkPriority=$networkPriority ($networkPriorityLabel), " +
                         "ssrc=$ssrc",
                 )
             }
