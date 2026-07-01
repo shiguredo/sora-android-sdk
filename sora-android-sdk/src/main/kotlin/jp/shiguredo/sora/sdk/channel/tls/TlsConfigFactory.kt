@@ -120,19 +120,15 @@ internal object TlsConfigFactory {
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      *
      * クライアント証明書を指定しない場合は全引数を省略（デフォルトの `null`）で呼び出します。
-     * クライアント証明書を指定する場合は `clientCertificate` と `clientCertificateChain` は排他であり、
-     * いずれか片方と対応する `clientPrivateKey` をセットで指定する必要があります。
+     * クライアント証明書を指定する場合は `clientCertificateChain` と
+     * 対応する `clientPrivateKey` をセットで指定する必要があります。
      * なお、`clientPrivateKey` が対で指定されているかのチェックはこのメソッドでは行わず、
      * 上位レイヤ（`SoraMediaChannel`、`PeerNetworkConfig`）で実施します。
      */
     fun createInsecureTlsSocketConfig(
-        clientCertificate: X509Certificate? = null,
         clientCertificateChain: List<X509Certificate>? = null,
         clientPrivateKey: PrivateKey? = null,
     ): TlsSocketConfig {
-        require(clientCertificate == null || clientCertificateChain == null) {
-            "clientCertificate and clientCertificateChain are mutually exclusive"
-        }
         val trustManager =
             object : X509TrustManager {
                 override fun checkClientTrusted(
@@ -156,9 +152,7 @@ internal object TlsConfigFactory {
                 createSslSocketFactory(
                     trustManager = trustManager,
                     keyManagers =
-                        if (clientCertificate != null && clientPrivateKey != null) {
-                            createClientAuthenticationKeyManagers(listOf(clientCertificate), clientPrivateKey)
-                        } else if (clientCertificateChain != null && clientPrivateKey != null) {
+                        if (clientCertificateChain != null && clientPrivateKey != null) {
                             createClientAuthenticationKeyManagers(clientCertificateChain, clientPrivateKey)
                         } else {
                             null

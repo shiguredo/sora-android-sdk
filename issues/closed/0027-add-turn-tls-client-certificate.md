@@ -25,24 +25,26 @@ Shiguredo 管理の libwebrtc ビルドに `android_turn_tls_client_certificate.
 
 SDK 側では Java リフレクションで `setTlsClientCertificate` を呼び出し、
 `SoraMediaChannel` → `PeerNetworkConfig` の経路で
-`clientCertificate` / `clientCertificateChain` / `clientPrivateKey` を伝搬する。
+`clientCertificateChain` / `clientPrivateKey` を伝搬する。
+単一証明書と証明書チェーンは単一の引数 `clientCertificateChain: List<X509Certificate>?` に統一し、
+単一証明書の場合は要素数 1 のリストとして指定する。
 
 ### 変更ファイル
 
 | ファイル | 変更内容 |
 |----------|----------|
 | `channel/rtc/TurnTlsClientCertificatePem.kt` | 新規。`X509Certificate` / `PrivateKey` を PEM 文字列に変換するユーティリティ (`TurnTlsClientCertificatePem`) と、リフレクションで `setTlsClientCertificate` を呼び出す設定器 (`TurnTlsClientCertificateConfigurer`) を追加 |
-| `channel/rtc/PeerNetworkConfig.kt` | `gatherIceServerSetting()` で `turns:` URL に対してクライアント証明書を適用するロジックを追加。`clientCertificate` / `clientCertificateChain` / `clientPrivateKey` パラメータを追加 |
+| `channel/rtc/PeerNetworkConfig.kt` | `gatherIceServerSetting()` で `turns:` URL に対してクライアント証明書を適用するロジックを追加。`clientCertificateChain` / `clientPrivateKey` パラメータを追加 |
 | `channel/rtc/RTCComponentFactory.kt` | `createSSLCertificateVerifier()` で `caCertificate` を `TurnTlsCertificateVerifier` に渡す（クライアント証明書は IceServer 側で設定するため不要） |
-| `channel/SoraMediaChannel.kt` | `clientCertificate` / `clientCertificateChain` / `clientPrivateKey` コンストラクタ引数を追加。`handleInitialOffer()` と `requestClientOfferSdp()` で `PeerNetworkConfig` に伝搬。`clientCertificate` と `clientCertificateChain` の排他チェックを追加 |
-| `channel/signaling/SignalingChannel.kt` | `clientCertificate` / `clientCertificateChain` / `clientPrivateKey` を WebSocket mTLS 用に `TlsConfigFactory` へ伝搬 |
+| `channel/SoraMediaChannel.kt` | `clientCertificateChain` / `clientPrivateKey` コンストラクタ引数を追加。`handleInitialOffer()` と `requestClientOfferSdp()` で `PeerNetworkConfig` に伝搬。単一証明書は要素数 1 のリストとして指定する |
+| `channel/signaling/SignalingChannel.kt` | `clientCertificateChain` / `clientPrivateKey` を WebSocket mTLS 用に `TlsConfigFactory` へ伝搬 |
 | `channel/tls/TlsConfigFactory.kt` | クライアント証明書チェーン対応 (`clientAuthenticationKeyManagers`, `createCustomCaWithClientAuthenticationTlsSocketConfig` など) |
 
 ### 注意点
 
 - libwebrtc 標準の公開 API には `setTlsClientCertificate` は存在しない。Shiguredo パッチ適用済みの libwebrtc ビルドが必要。
 - `setTlsClientCertificateChain` はパッチに存在しないため、SDK 側でも単一メソッドで証明書・チェーン両方に対応している。
-- `clientCertificate` と `clientCertificateChain` は排他（同時指定不可）。
+- 単一証明書と証明書チェーンは `clientCertificateChain: List<X509Certificate>?` に統一。単一証明書の場合は要素数 1 のリストとして指定する。
 - クライアント証明書と秘密鍵は対で指定必須。
 
 ## 検証結果
@@ -70,14 +72,14 @@ TURN-TLS 用の NGINX 設定では `ssl_client_certificate`、`ssl_verify_client
 
 #### 正常系: 単一証明書
 
-- `clientCertificate` と `clientPrivateKey` を指定して接続
+- `clientCertificateChain` に要素数 1 のリストを指定し、`clientPrivateKey` とともに接続
 - WSS 接続成功
 - TURN-TLS 接続成功
 - relay candidate の生成を確認
 
 #### 正常系: 証明書チェーン
 
-- `clientCertificateChain` と `clientPrivateKey` を指定して接続
+- `clientCertificateChain` に複数要素のリストを指定し、`clientPrivateKey` とともに接続
 - WSS 接続成功
 - TURN-TLS 接続成功
 - relay candidate の生成を確認
@@ -86,7 +88,7 @@ TURN-TLS 用の NGINX 設定では `ssl_client_certificate`、`ssl_verify_client
 
 #### 異常系: クライアント証明書未指定
 
-- `clientCertificate` / `clientCertificateChain` / `clientPrivateKey` を未指定で接続
+- `clientCertificateChain` / `clientPrivateKey` を未指定で接続
 - TURN-TLS 接続失敗
 - relay candidate は生成されない
 
@@ -99,8 +101,8 @@ TURN-TLS 用の NGINX 設定では `ssl_client_certificate`、`ssl_verify_client
 ### 結論
 
 - TURN-TLS でクライアント証明書を提示して接続できることを確認した
-- `clientCertificate` と `clientPrivateKey` の組み合わせで動作することを確認した
-- `clientCertificateChain` と `clientPrivateKey` の組み合わせで動作することを確認した
+- `clientCertificateChain` に要素数 1 のリスト（単一証明書）を指定した場合に動作することを確認した
+- `clientCertificateChain` に複数要素のリスト（証明書チェーン）を指定した場合に動作することを確認した
 - TURN-TLS サーバー側でクライアント証明書要求が有効であることを確認した
 - クライアント証明書未指定または不正時には TURN-TLS 接続に失敗することを確認した
 - TURN-TCP / TURN-TLS の双方で relay candidate が生成されることを確認した

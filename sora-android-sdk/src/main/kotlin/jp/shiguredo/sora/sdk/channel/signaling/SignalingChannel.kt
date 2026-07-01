@@ -105,9 +105,8 @@ class SignalingChannelImpl
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
-        private val clientCertificate: X509Certificate? = null,
-        private val clientPrivateKey: PrivateKey? = null,
         private val clientCertificateChain: List<X509Certificate>? = null,
+        private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
@@ -167,8 +166,7 @@ class SignalingChannelImpl
         /**
          * クライアント証明書認証を有効にするための情報がそろっているかを返します。
          */
-        private fun hasClientAuthentication(): Boolean =
-            (clientCertificate != null || clientCertificateChain != null) && clientPrivateKey != null
+        private fun hasClientAuthentication(): Boolean = clientCertificateChain != null && clientPrivateKey != null
 
         /**
          * OkHttpClient にカスタム TLS 設定を適用する必要があるかを返します。
@@ -185,11 +183,8 @@ class SignalingChannelImpl
          * この関数は [needsCustomTlsConfiguration] が `true` の場合にのみ呼び出される前提です。
          * ログ出力もこの関数内で行い、条件分岐とログ内容を同じ場所で管理します。
          */
-        private fun createTlsCustomization(): TlsSocketConfig {
-            val effectiveClientCertChain: List<X509Certificate>? =
-                clientCertificateChain ?: clientCertificate?.let(::listOf)
-
-            return when (resolveTlsMode()) {
+        private fun createTlsCustomization(): TlsSocketConfig =
+            when (resolveTlsMode()) {
                 SignalingTlsMode.INSECURE -> {
                     if (hasClientAuthentication()) {
                         SoraLogger.w(
@@ -200,7 +195,6 @@ class SignalingChannelImpl
                         SoraLogger.w(TAG, "[signaling:$role] skip TLS certificate and hostname verification")
                     }
                     TlsConfigFactory.createInsecureTlsSocketConfig(
-                        clientCertificate = clientCertificate,
                         clientCertificateChain = clientCertificateChain,
                         clientPrivateKey = clientPrivateKey,
                     )
@@ -214,7 +208,7 @@ class SignalingChannelImpl
                         )
                         TlsConfigFactory.createCustomCaWithClientAuthenticationTlsSocketConfig(
                             caCertificate = caCertificate!!,
-                            clientCertificateChain = effectiveClientCertChain!!,
+                            clientCertificateChain = clientCertificateChain!!,
                             clientPrivateKey = clientPrivateKey!!,
                         )
                     } else {
@@ -231,12 +225,11 @@ class SignalingChannelImpl
                         "[signaling:$role] using the specified client certificate for webSocket signaling",
                     )
                     TlsConfigFactory.createClientAuthenticationTlsSocketConfig(
-                        clientCertificateChain = effectiveClientCertChain!!,
+                        clientCertificateChain = clientCertificateChain!!,
                         clientPrivateKey = clientPrivateKey!!,
                     )
                 }
             }
-        }
 
         init {
             // OkHttpClient は main スレッドで初期化しない

@@ -12,9 +12,8 @@ class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
-    private val clientCertificate: X509Certificate? = null,
-    private val clientPrivateKey: PrivateKey? = null,
     private val clientCertificateChain: List<X509Certificate>? = null,
+    private val clientPrivateKey: PrivateKey? = null,
 ) {
     companion object {
         private val TAG = PeerNetworkConfig::class.simpleName
@@ -22,16 +21,13 @@ class PeerNetworkConfig(
 
     init {
         // SoraMediaChannel 以外から直接生成される経路でも不正な証明書設定を早期に検出する。
-        // TURN-TLS のクライアント証明書設定は clientCertificate / clientCertificateChain が排他であり、
-        // いずれかを指定する場合は対応する clientPrivateKey も必須である。
-        require(clientCertificate == null || clientCertificateChain == null) {
-            "clientCertificate and clientCertificateChain are mutually exclusive"
-        }
+        // 単一証明書は要素数 1 のリストとして clientCertificateChain に指定する。
+        // クライアント証明書を指定する場合は対応する clientPrivateKey も必須である。
         require(clientCertificateChain == null || clientCertificateChain.isNotEmpty()) {
             "clientCertificateChain must not be empty"
         }
-        require((clientCertificate != null || clientCertificateChain != null) == (clientPrivateKey != null)) {
-            "either clientCertificate or clientCertificateChain and clientPrivateKey must be specified together"
+        require((clientCertificateChain != null) == (clientPrivateKey != null)) {
+            "clientCertificateChain and clientPrivateKey must be specified together"
         }
     }
 
@@ -66,7 +62,7 @@ class PeerNetworkConfig(
      *
      * turns: URL かつクライアント秘密鍵が指定されている場合、リフレクション経由で
      * `setTlsClientCertificate` を呼び出し TURN-TLS のクライアント認証を設定する。
-     * `certificatePem` には単一証明書と証明書チェーン（concatenated PEM）の両方に対応する。
+     * 単一証明書、証明書チェーンのいずれも `toCertificateChainPem` で concatenated PEM に変換する。
      *
      * insecure が true かつ turns: URL の場合は TLS 証明書検証をスキップする。
      */
@@ -81,22 +77,17 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
-                                if (url.startsWith("turns:") && clientPrivateKey != null) {
-                                    val certificatePem =
-                                        when {
-                                            clientCertificate != null ->
-                                                TurnTlsClientCertificatePem.toCertificatePem(clientCertificate)
-                                            clientCertificateChain != null ->
-                                                TurnTlsClientCertificatePem.toCertificateChainPem(clientCertificateChain)
-                                            else -> null
-                                        }
-                                    if (certificatePem != null) {
-                                        TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
-                                            builder = this,
-                                            privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
-                                            certificatePem = certificatePem,
-                                        )
-                                    }
+                                if (url.startsWith("turns:") && clientPrivateKey != null &&
+                                    clientCertificateChain != null
+                                ) {
+                                    TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
+                                        builder = this,
+                                        privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
+                                        certificatePem =
+                                            TurnTlsClientCertificatePem.toCertificateChainPem(
+                                                clientCertificateChain,
+                                            ),
+                                    )
                                 }
                                 if (insecure && url.startsWith("turns:")) {
                                     SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
