@@ -119,8 +119,11 @@ internal object TlsConfigFactory {
     /**
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      *
-     * `clientCertificate` と `clientCertificateChain` は排他です。
-     * `clientPrivateKey` と対で指定する必要があります。
+     * クライアント証明書を指定しない場合は全引数を省略（デフォルトの `null`）で呼び出します。
+     * クライアント証明書を指定する場合は `clientCertificate` と `clientCertificateChain` は排他であり、
+     * いずれか片方と対応する `clientPrivateKey` をセットで指定する必要があります。
+     * なお、`clientPrivateKey` が対で指定されているかのチェックはこのメソッドでは行わず、
+     * 上位レイヤ（`SoraMediaChannel`、`PeerNetworkConfig`）で実施します。
      */
     fun createInsecureTlsSocketConfig(
         clientCertificate: X509Certificate? = null,

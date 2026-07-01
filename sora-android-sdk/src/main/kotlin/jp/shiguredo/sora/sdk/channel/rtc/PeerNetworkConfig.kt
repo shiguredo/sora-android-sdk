@@ -21,6 +21,9 @@ class PeerNetworkConfig(
     }
 
     init {
+        // SoraMediaChannel 以外から直接生成される経路でも不正な証明書設定を早期に検出する。
+        // TURN-TLS のクライアント証明書設定は clientCertificate / clientCertificateChain が排他であり、
+        // いずれかを指定する場合は対応する clientPrivateKey も必須である。
         require(clientCertificate == null || clientCertificateChain == null) {
             "clientCertificate and clientCertificateChain are mutually exclusive"
         }
