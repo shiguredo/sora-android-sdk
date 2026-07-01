@@ -11,7 +11,7 @@
 
 ## develop
 
-- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS の CA 証明書を既定で使うようにする
+- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS のシステム信頼ストアを既定で使うようにする
   - @zztkm
 - [UPDATE] JitPack ビルドで利用する JDK のバージョンを 21 に上げる
   - @t-miya
@@ -38,13 +38,14 @@
   - @zztkm
 - [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
   - `SoraMediaChannel` に `caCertificate` 引数を追加する
-  - システムの信頼ストアを使用せず、指定された CA 証明書のみを使用する
+  - CA 証明書を指定した場合、システムの信頼ストアを使用せず、指定された CA 証明書のみを使用できる
   - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
   - @zztkm
-- [ADD] WSS の接続に利用するクライアント証明書を指定できるようにする
+- [ADD] WSS と TURN-TLS の接続に利用するクライアント証明書を指定できるようにする
   - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を追加する
-  - @zztkm
-- [ADD] WebSocket 接続と TURN-TLS で insecure モードを利用できるようにする
+  - 単一証明書は要素数 1 のリストとして指定し、証明書チェーンは複数要素のリストとして指定する
+  - @zztkm @t-miya
+- [ADD] WSS と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
   - @zztkm
 - [ADD] SoraMediaOption に H.265 向け映像コーデックパラメーター videoH265Params を追加する
