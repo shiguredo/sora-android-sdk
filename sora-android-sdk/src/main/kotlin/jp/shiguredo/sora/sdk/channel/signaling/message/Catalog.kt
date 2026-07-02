@@ -108,6 +108,7 @@ data class Encoding(
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
     @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: RtpParameters.ResolutionRestriction?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?,
+    @SerializedName("networkPriority") val networkPriority: String?,
 )
 
 data class RedirectMessage(

@@ -23,6 +23,9 @@
   - 不要なインスタンス生成をしないようにする
   - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
   - @t-miya
+- [ADD] offer の simulcast_encodings の networkPriority を RtpParameters.Encoding に反映する
+  - Sora 側で指定されたネットワーク優先度を送信側エンコーディングに適用する
+  - @t-miya
 - [ADD] PeerChannel.Listener と SoraMediaChannel.Listener に onAddRemoteTrack / onRemoveRemoteTrack を追加する
   - リモートトラックからストリーム ID を取得できるようになる
   - @t-miya
