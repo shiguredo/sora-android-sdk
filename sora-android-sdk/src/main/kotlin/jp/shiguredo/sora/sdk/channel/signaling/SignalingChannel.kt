@@ -105,7 +105,7 @@ class SignalingChannelImpl
         private val signalingNotifyMetadata: Any? = null,
         private val insecure: Boolean = false,
         private val caCertificate: X509Certificate? = null,
-        private val clientCertificate: X509Certificate? = null,
+        private val clientCertificate: List<X509Certificate>? = null,
         private val clientPrivateKey: PrivateKey? = null,
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,

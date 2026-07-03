@@ -76,12 +76,12 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * クライアント証明書を利用する TLS ソケット設定を生成します。
+     * クライアント証明書チェーンを利用する TLS ソケット設定を生成します。
      *
      * サーバー証明書検証には Android OS の既定の CA 証明書を利用します。
      */
     fun createClientAuthenticationTlsSocketConfig(
-        clientCertificate: X509Certificate,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createSystemTrustManager()
@@ -97,11 +97,11 @@ internal object TlsConfigFactory {
     }
 
     /**
-     * 指定した CA 証明書とクライアント証明書を併用する TLS ソケット設定を生成します。
+     * 指定した CA 証明書とクライアント証明書チェーンを併用する TLS ソケット設定を生成します。
      */
     fun createCustomCaWithClientAuthenticationTlsSocketConfig(
         caCertificate: X509Certificate,
-        clientCertificate: X509Certificate,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): TlsSocketConfig {
         val trustManager = createCustomCaTrustManager(caCertificate)
@@ -119,11 +119,14 @@ internal object TlsConfigFactory {
     /**
      * 証明書検証とホスト名検証を無効化する TLS ソケット設定を生成します。
      *
-     * `clientCertificate` と `clientPrivateKey` を指定した場合は、
-     * サーバー証明書検証を無効化したままクライアント証明書認証を有効にします。
+     * クライアント証明書を指定しない場合は全引数を省略（デフォルトの `null`）で呼び出します。
+     * クライアント証明書を指定する場合は `clientCertificate` と
+     * 対応する `clientPrivateKey` をセットで指定する必要があります。
+     * なお、`clientPrivateKey` が対で指定されているかのチェックはこのメソッドでは行わず、
+     * 上位レイヤ（`SoraMediaChannel`、`PeerNetworkConfig`）で実施します。
      */
     fun createInsecureTlsSocketConfig(
-        clientCertificate: X509Certificate? = null,
+        clientCertificate: List<X509Certificate>? = null,
         clientPrivateKey: PrivateKey? = null,
     ): TlsSocketConfig {
         val trustManager =
@@ -175,7 +178,7 @@ internal object TlsConfigFactory {
      * クライアント認証で利用する `KeyManager` を生成します。
      */
     private fun createClientAuthenticationKeyManagers(
-        clientCertificate: X509Certificate,
+        clientCertificate: List<X509Certificate>,
         clientPrivateKey: PrivateKey,
     ): Array<KeyManager> {
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
@@ -184,7 +187,7 @@ internal object TlsConfigFactory {
             CLIENT_CERTIFICATE_ALIAS,
             clientPrivateKey,
             null,
-            arrayOf(clientCertificate),
+            clientCertificate.toTypedArray(),
         )
 
         val keyManagerFactory =

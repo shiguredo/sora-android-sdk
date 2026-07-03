@@ -5,14 +5,30 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.util.SoraLogger
 import org.webrtc.CryptoOptions
 import org.webrtc.PeerConnection
+import java.security.PrivateKey
+import java.security.cert.X509Certificate
 
 class PeerNetworkConfig(
     private val serverConfig: OfferConfig?,
     private val mediaOption: SoraMediaOption,
     private val insecure: Boolean = false,
+    private val clientCertificate: List<X509Certificate>? = null,
+    private val clientPrivateKey: PrivateKey? = null,
 ) {
     companion object {
         private val TAG = PeerNetworkConfig::class.simpleName
+    }
+
+    init {
+        // SoraMediaChannel 以外から直接生成される経路でも不正な証明書設定を早期に検出する。
+        // 単一証明書は要素数 1 のリストとして clientCertificate に指定する。
+        // クライアント証明書を指定する場合は対応する clientPrivateKey も必須である。
+        require(clientCertificate == null || clientCertificate.isNotEmpty()) {
+            "clientCertificate must not be empty"
+        }
+        require((clientCertificate != null) == (clientPrivateKey != null)) {
+            "clientCertificate and clientPrivateKey must be specified together"
+        }
     }
 
     fun createConfiguration(): PeerConnection.RTCConfiguration {
@@ -41,6 +57,15 @@ class PeerNetworkConfig(
         return conf
     }
 
+    /**
+     * シグナリングから受け取った ICE サーバー設定を libwebrtc の IceServer リストに変換する。
+     *
+     * turns: URL かつクライアント秘密鍵が指定されている場合、リフレクション経由で
+     * `setTlsClientCertificate` を呼び出し TURN-TLS のクライアント認証を設定する。
+     * 単一証明書、証明書チェーンのいずれも `toCertificateChainPem` で concatenated PEM に変換する。
+     *
+     * insecure が true かつ turns: URL の場合は TLS 証明書検証をスキップする。
+     */
     private fun gatherIceServerSetting(serverConfig: OfferConfig?): List<PeerConnection.IceServer> {
         val iceServers = mutableListOf<PeerConnection.IceServer>()
         serverConfig?.let {
@@ -52,6 +77,18 @@ class PeerNetworkConfig(
                             .setUsername(server.username)
                             .setPassword(server.credential)
                             .apply {
+                                if (url.startsWith("turns:") && clientPrivateKey != null &&
+                                    clientCertificate != null
+                                ) {
+                                    TurnTlsClientCertificateConfigurer.applyToIceServerBuilder(
+                                        builder = this,
+                                        privateKeyPem = TurnTlsClientCertificatePem.toPrivateKeyPem(clientPrivateKey),
+                                        certificatePem =
+                                            TurnTlsClientCertificatePem.toCertificateChainPem(
+                                                clientCertificate,
+                                            ),
+                                    )
+                                }
                                 if (insecure && url.startsWith("turns:")) {
                                     SoraLogger.w(TAG, "[rtc] insecure is enabled for TURN-TLS: $url")
                                     setTlsCertPolicy(PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
