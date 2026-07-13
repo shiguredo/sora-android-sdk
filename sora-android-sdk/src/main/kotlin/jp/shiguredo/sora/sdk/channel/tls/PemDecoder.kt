@@ -30,12 +30,12 @@ internal object PemDecoder {
      * `-----END CERTIFICATE-----` を含む PEM をそのまま解釈できるため、
      * ヘッダ除去や Base64 デコードは行わない。
      *
-     * この関数は証明書が「ちょうど 1 個」であることを要求する。CA 証明書のように単数を
+     * この関数は証明書が 1 個のみであることを要求する。CA 証明書のように単数を
      * 前提とする用途で、複数証明書を連結した PEM (チェーン / バンドル) を誤って渡した場合に、
      * 先頭のみを黙って採用して trust anchor を取り違えることを防ぐため、複数含む PEM は拒否する。
      *
      * @throws IllegalArgumentException PEM の形式が不正、証明書のパースに失敗、
-     *   または証明書がちょうど 1 個でない (0 個または複数) 場合
+     *   または証明書が 1 個のみでない (0 個または複数) 場合
      */
     fun decodeCertificate(pem: String): X509Certificate {
         val certificates =
