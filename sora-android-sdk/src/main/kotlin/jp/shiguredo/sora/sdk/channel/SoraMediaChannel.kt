@@ -31,6 +31,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.channel.tls.PemDecoder
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
@@ -97,9 +98,9 @@ import kotlin.coroutines.resume
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
  * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
- * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を指定。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。
- * @param clientCertificate mTLS で使用するクライアント証明書チェーンを指定。単一証明書の場合は要素数 1 のリストを指定します。WebSocket と TURN-TLS の両方に適用されます。
- * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を指定。WebSocket と TURN-TLS の両方に適用されます。
+ * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を PEM 文字列で指定。証明書はちょうど 1 個だけを含む PEM を指定します（複数証明書を連結した PEM を指定した場合は `IllegalArgumentException` を送出します）。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
+ * @param clientCertificate mTLS で使用するクライアント証明書を PEM 文字列で指定。証明書チェーンの場合は複数の証明書を連結した PEM を指定します。WebSocket と TURN-TLS の両方に適用されます。不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
+ * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を PKCS#8 PEM 文字列で指定。WebSocket と TURN-TLS の両方に適用されます。PKCS#8 以外の形式や不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -127,9 +128,9 @@ class SoraMediaChannel
         private val forwardingFilterOption: SoraForwardingFilterOption? = null,
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
         private val insecure: Boolean = false,
-        private val caCertificate: X509Certificate? = null,
-        private val clientCertificate: List<X509Certificate>? = null,
-        private val clientPrivateKey: PrivateKey? = null,
+        caCertificate: String? = null,
+        clientCertificate: String? = null,
+        clientPrivateKey: String? = null,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName
@@ -221,6 +222,17 @@ class SoraMediaChannel
                 else -> value
             }
 
+        // PEM 文字列から変換した CA 証明書 (未指定の場合は null)
+        // WebSocket と TURN-TLS のサーバー証明書検証に利用する
+        private val caCertificateX509: X509Certificate?
+
+        // PEM 文字列から変換したクライアント証明書チェーン (未指定の場合は null)
+        // 単一証明書・証明書チェーンのいずれも要素数 1 以上のリストになる
+        private val clientCertificateChain: List<X509Certificate>?
+
+        // PKCS#8 PEM 文字列から変換したクライアント秘密鍵 (未指定の場合は null)
+        private val clientPrivateKeyObject: PrivateKey?
+
         init {
             if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
                 (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())
@@ -228,12 +240,28 @@ class SoraMediaChannel
                 throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
             }
 
-            require(clientCertificate == null || clientCertificate.isNotEmpty()) {
-                "clientCertificate must not be empty"
-            }
+            // クライアント証明書と秘密鍵は対で指定する必要がある
             require((clientCertificate != null) == (clientPrivateKey != null)) {
                 "clientCertificate and clientPrivateKey must be specified together"
             }
+            // PEM 文字列を指定する場合は空文字列や空白文字列を禁止する。
+            // null の場合はシステムの CA 証明書を使用するか、クライアント証明書認証を行わない。
+            require(caCertificate == null || caCertificate.isNotBlank()) {
+                "caCertificate must not be blank"
+            }
+            require(clientCertificate == null || clientCertificate.isNotBlank()) {
+                "clientCertificate must not be blank"
+            }
+            require(clientPrivateKey == null || clientPrivateKey.isNotBlank()) {
+                "clientPrivateKey must not be blank"
+            }
+
+            // 公開 API で受け取った PEM 文字列を型オブジェクトへ変換する。
+            // 変換はこの 1 か所でのみ行い、変換後の値を内部コンポーネントへ引き渡す。
+            // 不正な PEM の場合は PemDecoder が IllegalArgumentException を送出する。
+            caCertificateX509 = caCertificate?.let { PemDecoder.decodeCertificate(it) }
+            clientCertificateChain = clientCertificate?.let { PemDecoder.decodeCertificateChain(it) }
+            clientPrivateKeyObject = clientPrivateKey?.let { PemDecoder.decodePkcs8PrivateKey(it) }
 
             // コンストラクタ以外で dataChannelSignaling, ignoreDisconnectWebSocket を参照すべきではない
             // 各種ロジックの判定には Sora のメッセージに含まれる値を参照する必要があるため、以下を利用するのが正しい
@@ -1247,12 +1275,12 @@ class SoraMediaChannel
                                 ),
                             mediaOption = mediaOption,
                             insecure = insecure,
-                            clientCertificate = clientCertificate,
-                            clientPrivateKey = clientPrivateKey,
+                            clientCertificate = clientCertificateChain,
+                            clientPrivateKey = clientPrivateKeyObject,
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
-                    caCertificate = caCertificate,
+                    caCertificate = caCertificateX509,
                     listener = null,
                 )
             clientOfferPeer = clientPeer
@@ -1322,9 +1350,9 @@ class SoraMediaChannel
                     redirect = redirectLocation != null,
                     forwardingFilterOption = forwardingFilterOption,
                     forwardingFiltersOption = forwardingFiltersOption,
-                    caCertificate = caCertificate,
-                    clientCertificate = clientCertificate,
-                    clientPrivateKey = clientPrivateKey,
+                    caCertificate = caCertificateX509,
+                    clientCertificate = clientCertificateChain,
+                    clientPrivateKey = clientPrivateKeyObject,
                 )
             signaling!!.connect()
         }
@@ -1341,12 +1369,12 @@ class SoraMediaChannel
                             serverConfig = offerMessage.config,
                             mediaOption = mediaOption,
                             insecure = insecure,
-                            clientCertificate = clientCertificate,
-                            clientPrivateKey = clientPrivateKey,
+                            clientCertificate = clientCertificateChain,
+                            clientPrivateKey = clientPrivateKeyObject,
                         ),
                     mediaOption = mediaOption,
                     insecure = insecure,
-                    caCertificate = caCertificate,
+                    caCertificate = caCertificateX509,
                     simulcastEnabled = offerMessage.simulcast,
                     dataChannelConfigs = offerMessage.dataChannels,
                     listener = peerListener,
