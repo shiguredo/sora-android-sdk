@@ -10,7 +10,12 @@ hooks = [
   { id = "check-yaml" },
   { id = "check-toml" },
   { id = "check-merge-conflict" },
-  { id = "detect-private-key" },
+  # PEM マーカー (-----BEGIN (RSA/EC )?PRIVATE KEY-----) を含むが機密ではないファイルを除外する。
+  # - PemDecoder.kt: PKCS#8 ヘッダを定数として持つだけ (鍵本体なし)
+  # - PemDecoderTest.kt: テスト入力の PEM 文字列 (鍵本体なし)
+  # - TestPemFixtures.kt: テスト用に生成した使い捨て鍵 (どのサーバーにも紐づかない)
+  # - issues/.../0026-...md: ドキュメント中のマーカー引用
+  { id = "detect-private-key", exclude = '^(sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/tls/PemDecoder\.kt|sora-android-sdk/src/test/kotlin/jp/shiguredo/sora/sdk/TestPemFixtures\.kt|sora-android-sdk/src/test/kotlin/jp/shiguredo/sora/sdk/channel/tls/PemDecoderTest\.kt|issues/(closed/)?0026-change-ca-certificate-pem-string\.md)$' },
   { id = "end-of-file-fixer" },
   { id = "trailing-whitespace" },
   { id = "mixed-line-ending" },

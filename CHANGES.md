@@ -40,13 +40,14 @@
   - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
   - @zztkm
 - [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
-  - `SoraMediaChannel` に `caCertificate` 引数を追加する
+  - `SoraMediaChannel` に `caCertificate` 引数を PEM 文字列型 (`String?`) で追加する
   - CA 証明書を指定した場合、システムの信頼ストアを使用せず、指定された CA 証明書のみを使用できる
   - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
-  - @zztkm
+  - @zztkm @t-miya
 - [ADD] WSS と TURN-TLS の接続に利用するクライアント証明書を指定できるようにする
-  - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を追加する
-  - 単一証明書は要素数 1 のリストとして指定し、証明書チェーンは複数要素のリストとして指定する
+  - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を PEM 文字列型 (`String?`) で追加する
+  - `clientCertificate` は単一証明書・証明書チェーンのいずれも PEM 文字列で指定する
+  - `clientPrivateKey` は PKCS#8 PEM 文字列で指定する
   - @zztkm @t-miya
 - [ADD] WSS と TURN-TLS で insecure モードを利用できるようにする
   - insecure = true の場合はサーバー証明書の検証をスキップする
