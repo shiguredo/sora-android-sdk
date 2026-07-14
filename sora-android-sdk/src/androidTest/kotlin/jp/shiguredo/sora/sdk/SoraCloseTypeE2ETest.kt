@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk
 
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import jp.shiguredo.sora.sdk.channel.SoraCloseEvent
 import jp.shiguredo.sora.sdk.channel.SoraSignalingDirection
 import jp.shiguredo.sora.sdk.channel.SoraSignalingTransportType
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
@@ -39,7 +40,7 @@ class SoraCloseTypeE2ETest : SoraE2ETestBase() {
 
             val connected = CompletableDeferred<Unit>()
             val switchedReceived = CompletableDeferred<Unit>()
-            val closeReceived = CompletableDeferred<Int>()
+            val closeReceived = CompletableDeferred<SoraCloseEvent>()
             val dataChannelSignalingUnsupported = AtomicBoolean(false)
 
             // onSignalingMessage で捕捉するシグナリングメッセージ
@@ -71,7 +72,7 @@ class SoraCloseTypeE2ETest : SoraE2ETestBase() {
                                 RuntimeException("closed before switched: ${closeEvent.code}"),
                             )
                         }
-                        closeReceived.complete(closeEvent.code)
+                        closeReceived.complete(closeEvent)
                     },
                     onError = { _, reason, message ->
                         Log.e(TAG, "onError: reason=$reason message=$message")
@@ -159,12 +160,17 @@ class SoraCloseTypeE2ETest : SoraE2ETestBase() {
             Log.d(TAG, "disconnect() を呼び出し")
             channel?.disconnect()
             try {
-                val code = withTimeout(10_000) { closeReceived.await() }
-                Log.d(TAG, "切断完了: code=$code")
+                val event = withTimeout(10_000) { closeReceived.await() }
+                Log.d(TAG, "切断完了: code=${event.code} reason=${event.reason}")
                 assertEquals(
-                    "正常切断であること",
+                    "正常切断の code であること",
                     1000,
-                    code,
+                    event.code,
+                )
+                assertEquals(
+                    "正常切断の reason であること",
+                    "NO-ERROR",
+                    event.reason,
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "切断待機中に例外が発生しました: ${e.message}", e)
