@@ -92,6 +92,7 @@
   - シミュレーター利用での実行を想定している
   - recvonly で Sora との接続・切断を行うテストを追加する
   - DataChannel signaling 有効時に onSignalingMessage で switched を受信するテストを追加する
+  - DataChannel signaling only での切断経路が DataChannel であることを検証するテストを追加する
   - @t-miya
 - [ADD] GitHub Actions で API ドキュメントを GitHub Pages にデプロイする
   - @voluntas

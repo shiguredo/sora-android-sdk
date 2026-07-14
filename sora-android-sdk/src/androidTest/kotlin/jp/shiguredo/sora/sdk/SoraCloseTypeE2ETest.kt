@@ -11,23 +11,26 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 
-// DataChannel signaling を有効にし、onSignalingMessage で switched を受信するテスト。
+// DataChannel signaling only (WebSocket 切断を無視する構成) で切断し、
+// 切断シグナリングが DataChannel 経由で行われることを検証するテスト。
 // Sora サーバー側で data_channel_signaling が有効でない場合は skip する。
 @RunWith(AndroidJUnit4::class)
-class SoraSignalingE2ETest : SoraE2ETestBase() {
+class SoraCloseTypeE2ETest : SoraE2ETestBase() {
     companion object {
-        private const val TAG = "SoraSignalingE2ETest"
+        private const val TAG = "SoraCloseTypeE2ETest"
     }
 
     @Test
-    fun `DataChannelシグナリング有効時にonSignalingMessageでswitchedを受信すること`(): Unit =
+    fun `DataChannelシグナリングのみの切断経路がDataChannelであることを検証すること`(): Unit =
         runBlocking {
-            Log.d(TAG, "=== テスト開始: DataChannelシグナリング有効時にonSignalingMessageでswitchedを受信すること ===")
+            Log.d(TAG, "=== テスト開始: DataChannelシグナリングのみの切断経路がDataChannelであることを検証すること ===")
 
             val mediaOption =
                 SoraMediaOption().apply {
@@ -36,18 +39,18 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
 
             val connected = CompletableDeferred<Unit>()
             val switchedReceived = CompletableDeferred<Unit>()
-            // Sora サーバーが data_channel_signaling 非対応かを offer メッセージから判定するフラグ
-            // onSignalingMessage コールバック(SDK スレッド)でセットし、テスト本体(JUnit スレッド)で読み取る
+            val closeReceived = CompletableDeferred<Int>()
             val dataChannelSignalingUnsupported = AtomicBoolean(false)
 
-            // switched 検出時の direction / transportType を保存し、JUnit スレッドでアサートする。
-            // switchedReceived.complete() の happens-before によりスレッド間可視性は担保されるが、
-            // 非同期書き込み + 別スレッド読み取りをクラスに集約し意図を明確化する
-            class SwitchedInfo(
-                var direction: SoraSignalingDirection? = null,
-                var transportType: SoraSignalingTransportType? = null,
+            // onSignalingMessage で捕捉するシグナリングメッセージ
+            data class CapturedMessage(
+                val direction: SoraSignalingDirection,
+                val transportType: SoraSignalingTransportType,
+                val json: JSONObject,
             )
-            val switchedInfo = SwitchedInfo()
+            // onSignalingMessage (SDK スレッド) で追加し、テスト本体 (JUnit スレッド) で走査するため
+            // スレッドセーフなリストを使用する
+            val capturedMessages = CopyOnWriteArrayList<CapturedMessage>()
 
             channel =
                 createChannel(
@@ -58,16 +61,17 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                     },
                     onClose = { _, closeEvent ->
                         Log.d(TAG, "onClose: code=${closeEvent.code} reason=${closeEvent.reason}")
-                        // 接続前に close した場合も switched 待機に伝搬する
                         if (!connected.isCompleted) {
-                            connected.completeExceptionally(RuntimeException("closed before connect: ${closeEvent.code}"))
-                        }
-                        // switched 受信前に close した場合も伝搬する
-                        if (!switchedReceived.isCompleted) {
-                            switchedReceived.completeExceptionally(
-                                RuntimeException("closed before switched: code=${closeEvent.code}"),
+                            connected.completeExceptionally(
+                                RuntimeException("closed before connect: ${closeEvent.code}"),
                             )
                         }
+                        if (!switchedReceived.isCompleted) {
+                            switchedReceived.completeExceptionally(
+                                RuntimeException("closed before switched: ${closeEvent.code}"),
+                            )
+                        }
+                        closeReceived.complete(closeEvent.code)
                     },
                     onError = { _, reason, message ->
                         Log.e(TAG, "onError: reason=$reason message=$message")
@@ -78,14 +82,20 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                         if (!switchedReceived.isCompleted) {
                             switchedReceived.completeExceptionally(error)
                         }
+                        if (!closeReceived.isCompleted) {
+                            closeReceived.completeExceptionally(error)
+                        }
                     },
                     dataChannelSignaling = true,
+                    ignoreDisconnectWebSocket = true,
                     onSignalingMessage = { _, direction, transportType, rawMessage ->
+                        val json = JSONObject(rawMessage)
                         Log.d(
                             TAG,
                             "onSignalingMessage: direction=$direction transportType=$transportType rawMessage=$rawMessage",
                         )
-                        val json = JSONObject(rawMessage)
+                        capturedMessages.add(CapturedMessage(direction, transportType, json))
+
                         val type = json.optString("type")
                         // offer メッセージから data_channel_signaling 対応可否を判定する
                         if (type == "offer") {
@@ -95,13 +105,11 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                                 dataChannelSignalingUnsupported.set(true)
                             }
                         }
-                        // switched メッセージを検出したら direction / transportType を保存し待機を完了する
+                        // switched メッセージを検出したら待機を完了する
                         if (type == "switched" &&
                             transportType == SoraSignalingTransportType.WEBSOCKET
                         ) {
-                            Log.d(TAG, "switched メッセージを受信: direction=$direction transportType=$transportType")
-                            switchedInfo.direction = direction
-                            switchedInfo.transportType = transportType
+                            Log.d(TAG, "switched メッセージを受信")
                             switchedReceived.complete(Unit)
                         }
                     },
@@ -111,7 +119,6 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
             channel?.connect()
             Log.d(TAG, "connect() 呼び出し後、接続完了を待機中...")
 
-            // まず接続完了を待つ
             try {
                 withTimeout(60_000) {
                     connected.await()
@@ -123,7 +130,6 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
             }
 
             // 接続完了後、switched メッセージを待つ。
-            // 待機中に dataChannelSignalingUnsupported フラグが立ったらスキップする
             try {
                 withTimeout(30_000) {
                     while (!switchedReceived.isCompleted) {
@@ -135,21 +141,9 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                         }
                         delay(100)
                     }
-                    // switchedReceived が完了したら await() で結果を取り出す（例外があれば伝搬）
                     switchedReceived.await()
                 }
                 Log.d(TAG, "switched 受信を確認")
-                // JUnit スレッドで direction / transportType をアサートする
-                assertEquals(
-                    "switched は受信メッセージであること",
-                    SoraSignalingDirection.RECEIVED,
-                    switchedInfo.direction,
-                )
-                assertEquals(
-                    "switched は WebSocket 経由で届くこと",
-                    SoraSignalingTransportType.WEBSOCKET,
-                    switchedInfo.transportType,
-                )
             } catch (e: Exception) {
                 // onClose / onError が switched 待機より先に発火して completeExceptionally された場合、
                 // 待機ループが assumeTrue(false) に到達する前に抜けてしまう。
@@ -161,8 +155,35 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                 throw e
             }
 
+            // disconnect() を呼び、切断完了を待つ
             Log.d(TAG, "disconnect() を呼び出し")
             channel?.disconnect()
-            Log.d(TAG, "=== テスト完了: DataChannelシグナリング有効時にonSignalingMessageでswitchedを受信すること ===")
+            try {
+                val code = withTimeout(10_000) { closeReceived.await() }
+                Log.d(TAG, "切断完了: code=$code")
+                assertEquals(
+                    "正常切断であること",
+                    1000,
+                    code,
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "切断待機中に例外が発生しました: ${e.message}", e)
+                throw e
+            }
+
+            // 蓄積した onSignalingMessage から切断経路を検証する
+            val disconnectMessages =
+                capturedMessages.filter {
+                    it.json.optString("type") == "disconnect"
+                }
+            assertTrue(
+                "type: disconnect が DataChannel 経由で送信されていること",
+                disconnectMessages.any {
+                    it.direction == SoraSignalingDirection.SENT &&
+                        it.transportType == SoraSignalingTransportType.DATA_CHANNEL
+                },
+            )
+
+            Log.d(TAG, "=== テスト完了: DataChannelシグナリングのみの切断経路がDataChannelであることを検証すること ===")
         }
 }
