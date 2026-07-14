@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-13
-- Completed:
+- Completed: 2026-07-13
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-e2e-signaling-switched-message
 - Polished: 2026-07-13
@@ -117,3 +117,15 @@ recvonly（`enableVideoDownstream(null)`）で十分。映像送信は不要で�
 - 接続先 Sora サーバーが `data_channel_signaling` を有効にしていることが前提
 
 ## 解決方法
+
+- `SoraE2ETestBase.kt` を新規作成し、全 E2E テストの共通基盤（setup / tearDown / createChannel ヘルパー）を抽出した。
+  - `createChannel` に `dataChannelSignaling: Boolean? = null` と `onSignalingMessage: ((SoraMediaChannel, SoraSignalingDirection, SoraSignalingTransportType, String) -> Unit)? = null` 引数を追加。
+- `SoraSignalingE2ETest.kt` を新規作成し、`SoraE2ETestBase` を継承して switched 受信テストを実装した。
+  - `dataChannelSignaling = true` で接続し、`onSignalingMessage` フックで switched を `CompletableDeferred` で待機（`withTimeout(30_000)`）。
+  - `onClose` / `onError` を `switchedReceived.completeExceptionally()` に伝搬し、早期失敗時に原因特定可能。
+  - switched 検出時に `direction == RECEIVED`、`transportType == WEBSOCKET`、`type == "switched"` を検証（`SwitchedInfo` クラスで値を保存し、JUnit スレッドで `assertEquals`）。
+  - offer の `data_channels` 非存在を `AtomicBoolean` で検出し、JUnit スレッドで `assumeTrue(false)` によりテストスキップ。
+- 既存テストの分割に伴い、`DummyVideoCapturer` の可視性を `public` に変更（基底クラスの `protected var capturer` から露出するための Kotlin 可視性ルール対応）。androidTest ソースセット内のため AAR には含まれない。
+- `.github/workflows/ci.yml` の logcat フィルタを `SoraE2ETest:D` から `Sora*E2ETest:D` に更新（テストクラス分割に伴う TAG 変更対応）。
+- `CHANGES.md` に switched テストのエントリを追記。
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認済み。
