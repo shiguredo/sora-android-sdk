@@ -11,8 +11,10 @@ import org.webrtc.VideoFrame
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
-// 7 色の横カラーバーをフレームごとに横シフトするダミー VideoCapturer 実装
-internal class DummyVideoCapturer : VideoCapturer {
+// 7 色の横カラーバーをフレームごとに横シフトするダミー VideoCapturer 実装。
+// SoraE2ETestBase の protected var capturer から露出するため internal ではなく public にしている。
+// 本クラスは androidTest ソースセットに属し、AAR には含まれない。
+class DummyVideoCapturer : VideoCapturer {
     companion object {
         private const val TAG = "DummyVideoCapturer"
     }
