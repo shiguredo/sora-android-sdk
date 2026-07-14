@@ -62,9 +62,34 @@ webrtc-build に以下のパッチを追加し、`kDummyAudio` の Java ラッ�
 ## 変更対象ファイル
 
 - `webrtc-build` リポジトリ:
-  - `patches/` 以下に `DummyAudioDeviceModule` の Java クラスと JNI ブリッジを追加するパッチ
+  - `patches/android_fake_audio_device.patch` — 全追加ファイル + BUILD.gn 修正
+  - `run.py` — `PATCHES` 辞書にパッチ追加
 - `sora-android-sdk/`:
   - `src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraE2ETest.kt` — 音声送信確認テストを追加
+
+### パッチ内のファイル依存関係
+
+```
+FakeAudioDeviceModule.java           (Java: AudioDeviceModule 実装)
+  │  nativeCreateFakeAudioDeviceModule()
+  ▼
+fake_audio_device_module_jni.cc      (JNI: ブリッジ)
+  │  FakeAudioInput + FakeAudioOutput を生成
+  │  CreateAudioDeviceModuleFromInputAndOutput() で合成
+  ├──► fake_audio.h / fake_audio.cc
+  │      ├── FakeAudioInput  (AudioInput 実装、正弦波生成)
+  │      └── FakeAudioOutput (AudioOutput 実装、全 no-op)
+  │
+  ▼
+AudioDeviceModule (native ptr)
+  │  FakeAudioDeviceModule.getNative() 経由で返却
+  ▼
+SoraAudioOption.audioDeviceModule    (sora-android-sdk: 注入ポイント、変更不要)
+```
+
+- **依存方向**: Java → JNI → C++ (fake_audio) → libwebrtc 既存 (`CreateAudioDeviceModuleFromInputAndOutput` → `AndroidAudioDeviceModule`)
+- **BUILD.gn**: 全ファイルを既存ターゲットに追加（新規ターゲットは `generate_jni` のみ）
+- **webrtc-build 側は全 4 ファイル**（`FakeAudioInput` と `FakeAudioOutput` は `fake_audio.h/cc` に統合）
 
 ## 依存関係
 
@@ -86,7 +111,7 @@ webrtc-build に以下のパッチを追加し、`kDummyAudio` の Java ラッ�
 - ブラウザが `MediaStreamTrack` → エンコーダ間のパイプラインを内部処理するため、SDK 側で `AudioInput` 相当の実装は不要
 - Android ではこのパイプラインを自分で構築する必要がある
 
-**libwebrtc には `SineWaveGenerator` (`modules/audio_mixer/sine_wave_generator.h`) が既存し、AAR に含まれている。**
+**libwebrtc には `SineWaveGenerator` (`modules/audio_mixer/sine_wave_generator.h`) が既存するが、AAR ビルドでは利用不可。**
 
 ```cpp
 class SineWaveGenerator {
@@ -96,7 +121,10 @@ class SineWaveGenerator {
 };
 ```
 
-これを Java から呼び出す JNI ブリッジは存在しないため、新規追加が必要。
+- `SineWaveGenerator` は `modules/audio_mixer/BUILD.gn` の `audio_mixer_test_utils` ターゲットに含まれる
+- このターゲットは `testonly = true` かつ `if (rtc_include_tests)` ガード下のため、AAR ビルド（`rtc_include_tests = false`）では除外される
+- したがって、`fake_audio.cc` 内に正弦波生成をインライン実装している（`GenerateSample()` メソッド）
+- これは `testonly` 依存を持たず、追加の BUILD.gn 依存も不要
 
 ### アーキテクチャ
 
@@ -160,10 +188,10 @@ FakeAudioDeviceModule(frequencyHz = 880, volume = 0.05)  // 両方指定
 
 ```
 FakeAudioInput::StartRecording()
-  → 専用スレッド起動 (detach, priority=URGENT_AUDIO)
+  → 専用スレッド起動 (detach)
     → 10ms ループ:
-        1. SineWaveGenerator::GenerateNextFrame(audio_frame)  // 10ms 分の正弦波生成
-        2. AudioDeviceBuffer::SetRecordedBuffer(pcm, 480, timestamp_ns)
+        1. 内蔵正弦波生成器で 10ms 分の int16 PCM を生成
+        2. AudioDeviceBuffer::SetRecordedBuffer(pcm, samples, timestamp_ns)
         3. AudioDeviceBuffer::DeliverRecordedData()           // WebRTC パイプラインへ
         4. sleep_until(next_wake_time)
 
@@ -172,29 +200,32 @@ FakeAudioInput::StopRecording()
   → スレッド join
 ```
 
-`AudioRecordJni` と同様に `AudioDeviceBuffer` を介して WebRTC に音声データを供給する。`AudioRecordJni` が Java 側の `AudioRecord.read()` からデータを受け取るのに対し、`FakeAudioInput` は内部の `SineWaveGenerator` からデータを生成する。
+`AudioRecordJni` と同様に `AudioDeviceBuffer` を介して WebRTC に音声データを供給する。`AudioRecordJni` が Java 側の `AudioRecord.read()` からデータを受け取るのに対し、`FakeAudioInput` は内部で正弦波 PCM を生成する。
 
 ### webrtc-build 変更内容
 
-#### 新規ファイル (6件、パッチで作成)
+#### 新規ファイル (4件、パッチで作成)
 
 | # | ファイルパス（`src/` からの相対） | 内容 |
 |---|--------------------------------|------|
 | 1 | `sdk/android/api/org/webrtc/audio/FakeAudioDeviceModule.java` | `AudioDeviceModule` 実装。`nativeCreateFakeAudioDeviceModule()` JNI 呼び出し |
-| 2 | `sdk/android/src/jni/audio_device/fake_audio_input.h` | `jni::AudioInput` 実装、`SineWaveGenerator` 内包、専用スレッド |
-| 3 | `sdk/android/src/jni/audio_device/fake_audio_input.cc` | 同上実装 |
-| 4 | `sdk/android/src/jni/audio_device/fake_audio_output.h` | `jni::AudioOutput` 実装、全 no-op |
-| 5 | `sdk/android/src/jni/audio_device/fake_audio_output.cc` | 同上実装（空） |
-| 6 | `sdk/android/src/jni/audio_device/fake_audio_device_module_jni.cc` | JNI 関数: `FakeAudioInput`/`FakeAudioOutput` を生成し `CreateAudioDeviceModuleFromInputAndOutput()` で合成 |
+| 2 | `sdk/android/src/jni/audio_device/fake_audio.h` | `FakeAudioInput` (正弦波生成) と `FakeAudioOutput` (no-op) の宣言 |
+| 3 | `sdk/android/src/jni/audio_device/fake_audio.cc` | 同上実装 |
+| 4 | `sdk/android/src/jni/audio_device/fake_audio_device_module_jni.cc` | JNI 関数: `FakeAudioInput`/`FakeAudioOutput` を生成し `CreateAudioDeviceModuleFromInputAndOutput()` で合成 |
+
+> **補足**: 当初設計では 6 ファイル（`fake_audio_input.h/cc` + `fake_audio_output.h/cc`）を想定していたが、
+> `FakeAudioOutput` が全 no-op と小規模なため、`FakeAudioInput` と統合して `fake_audio.h/cc` の 2 ファイルに集約した。
+> また、`SineWaveGenerator` は `testonly = true` ターゲットに含まれるため AAR に含まれず、
+> `fake_audio.cc` 内にインライン正弦波生成を実装している。
 
 #### BUILD.gn 修正箇所
 
 | ターゲット | 変更 |
 |-----------|------|
-| `:java_audio_device_module` (line 1368) | `sources` に `fake_audio_input.cc/h`, `fake_audio_output.cc/h` を追加 |
+| `:java_audio_device_module` (line 1371) | `sources` に `fake_audio.cc/h` を追加 |
 | 新規 `:generated_fake_audio_device_module_jni` | `FakeAudioDeviceModule.java` から JNI ヘッダ自動生成 |
-| `:java_audio_device_module_jni` (line 928) | `sources` に `fake_audio_device_module_jni.cc` を追加, `deps` に `:generated_fake_audio_device_module_jni` を追加 |
-| `:java_audio_device_module_java` (line 459) | `sources` に `FakeAudioDeviceModule.java` を追加 |
+| `:java_audio_device_module_jni` (line 931) | `sources` に `fake_audio_device_module_jni.cc` を追加, `deps` に `:generated_fake_audio_device_module_jni` を追加 |
+| `:java_audio_device_module_java` (line 461) | `sources` に `FakeAudioDeviceModule.java` を追加, `deps` に `:generated_fake_audio_device_module_jni_java` を追加 |
 
 #### run.py 修正
 
