@@ -68,7 +68,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          "$ADB_PATH" logcat -v time SoraE2ETest:D *:S > sora-e2e-logcat.txt 2>&1 &
+          "$ADB_PATH" logcat -v time Sora*E2ETest:D *:S > sora-e2e-logcat.txt 2>&1 &
           LOGCAT_PID=$!
 
           ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
