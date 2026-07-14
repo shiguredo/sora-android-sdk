@@ -85,6 +85,7 @@ abstract class SoraE2ETestBase {
         onClose: (SoraMediaChannel, SoraCloseEvent) -> Unit,
         onError: (SoraMediaChannel, SoraErrorReason, String) -> Unit,
         dataChannelSignaling: Boolean? = null,
+        ignoreDisconnectWebSocket: Boolean? = null,
         onSignalingMessage: ((SoraMediaChannel, SoraSignalingDirection, SoraSignalingTransportType, String) -> Unit)? = null,
     ): SoraMediaChannel =
         SoraMediaChannel(
@@ -94,6 +95,7 @@ abstract class SoraE2ETestBase {
             signalingMetadata = signalingMetadata,
             mediaOption = mediaOption,
             dataChannelSignaling = dataChannelSignaling,
+            ignoreDisconnectWebSocket = ignoreDisconnectWebSocket,
             listener =
                 object : SoraMediaChannel.Listener {
                     override fun onConnect(mediaChannel: SoraMediaChannel) {
