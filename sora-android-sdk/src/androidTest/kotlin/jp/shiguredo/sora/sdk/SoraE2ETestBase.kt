@@ -12,6 +12,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import java.nio.ByteBuffer
 
 // Sora E2E テストの共通基盤クラス。
 // 接続先確認、ネイティブライブラリ読み込み、共通フィールド、createChannel ヘルパーを提供する。
@@ -86,7 +87,10 @@ abstract class SoraE2ETestBase {
         onError: (SoraMediaChannel, SoraErrorReason, String) -> Unit,
         dataChannelSignaling: Boolean? = null,
         ignoreDisconnectWebSocket: Boolean? = null,
+        dataChannels: List<Map<String, Any>>? = null,
         onSignalingMessage: ((SoraMediaChannel, SoraSignalingDirection, SoraSignalingTransportType, String) -> Unit)? = null,
+        onDataChannel: ((SoraMediaChannel, List<Map<String, Any>>?) -> Unit)? = null,
+        onDataChannelMessage: ((SoraMediaChannel, String, ByteBuffer) -> Unit)? = null,
     ): SoraMediaChannel =
         SoraMediaChannel(
             context = context,
@@ -96,6 +100,7 @@ abstract class SoraE2ETestBase {
             mediaOption = mediaOption,
             dataChannelSignaling = dataChannelSignaling,
             ignoreDisconnectWebSocket = ignoreDisconnectWebSocket,
+            dataChannels = dataChannels,
             listener =
                 object : SoraMediaChannel.Listener {
                     override fun onConnect(mediaChannel: SoraMediaChannel) {
@@ -127,6 +132,21 @@ abstract class SoraE2ETestBase {
                         rawMessage: String,
                     ) {
                         onSignalingMessage?.invoke(mediaChannel, direction, transportType, rawMessage)
+                    }
+
+                    override fun onDataChannel(
+                        mediaChannel: SoraMediaChannel,
+                        dataChannels: List<Map<String, Any>>?,
+                    ) {
+                        onDataChannel?.invoke(mediaChannel, dataChannels)
+                    }
+
+                    override fun onDataChannelMessage(
+                        mediaChannel: SoraMediaChannel,
+                        label: String,
+                        data: ByteBuffer,
+                    ) {
+                        onDataChannelMessage?.invoke(mediaChannel, label, data)
                     }
                 },
         )

@@ -94,6 +94,7 @@
   - DataChannel signaling 有効時に onSignalingMessage で switched を受信するテストを追加する
   - DataChannel signaling only での切断経路が DataChannel であることを検証するテストを追加する
   - 正常切断時の SoraCloseEvent code=1000 / reason="NO-ERROR" を検証するアサートを追加する
+  - DataChannel messaging で 2 チャネル間の送受信を検証するテストを追加する
   - @t-miya
 - [ADD] GitHub Actions で API ドキュメントを GitHub Pages にデプロイする
   - @voluntas
