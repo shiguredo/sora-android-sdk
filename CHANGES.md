@@ -11,7 +11,7 @@
 
 ## develop
 
-- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS のシステム信頼ストアを既定で使うようにする
+- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS のトラストストアを既定で使うようにする
   - @zztkm
 - [UPDATE] JitPack ビルドで利用する JDK のバージョンを 21 に上げる
   - @t-miya
