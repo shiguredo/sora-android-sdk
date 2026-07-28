@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
 }
@@ -64,15 +63,7 @@ android {
     }
 
     sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/kotlin")
-        }
-        getByName("test") {
-            java.srcDirs("src/test/kotlin")
-        }
-        getByName("androidTest") {
-            java.srcDirs("src/androidTest/kotlin")
-        }
+        // kotlin-android プラグインがソースディレクトリを自動設定するため、手動設定は不要
     }
 
     compileOptions {
@@ -134,23 +125,21 @@ tasks.register("pixelApi35AndroidE2ETest") {
     dependsOn(":sora-android-sdk:pixelApi35DebugAndroidTest")
 }
 
-tasks.dokkaHtml.configure {
-    // デフォルトの出力先は "${buildDir}/dokka". 変更したいときにコメントアウトを行う.
-    // outputDirectory.set(File("${buildDir}/dokka"))
+dokka {
+    // デフォルトの出力先は "${buildDir}/dokka/html". 変更したいときにコメントアウトを行う.
+    // outputDirectory.set(File("${buildDir}/dokka/html"))
     moduleName.set("sora-android-sdk")
     // "default" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
     // cacheRoot.set(file("default"))
 
-    dokkaSourceSets {
-        named("main") {
-            reportUndocumented.set(true)
-            includes.from(files("packages.md"))
+    dokkaSourceSets.configureEach {
+        reportUndocumented.set(true)
+        includes.from(files("packages.md"))
 
-            sourceLink {
-                localDirectory.set(file("src/main/kotlin"))
-                remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin").toURL())
-                remoteLineSuffix.set("#L")
-            }
+        sourceLink {
+            localDirectory.set(file("src/main/kotlin"))
+            remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"))
+            remoteLineSuffix.set("#L")
         }
     }
 }
@@ -208,11 +197,7 @@ tasks.register<Jar>("sourcesJar") {
     // classifier は archiveClassifier に置き換えられた
     // https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
     archiveClassifier.set("sources")
-    from(
-        android.sourceSets
-            .getByName("main")
-            .java.srcDirs,
-    )
+    from("src/main/kotlin", "src/main/java")
 }
 
 tasks.whenTaskAdded {
