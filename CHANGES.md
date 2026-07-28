@@ -13,6 +13,14 @@
 
 - [CHANGE] TURN-TLS のサーバー証明書検証で Android OS のトラストストアを既定で使うようにする
   - @zztkm
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - com.android.tools.build:gradle を 9.2.1 に上げる
+  - Gradle バージョンを 9.5.0 に上げる
+  - kotlin バージョンを 2.2.10 に上げる
+  - com.google.code.gson:gson を 2.14.0 に上げる
+  - org.jlleitschuh.gradle:ktlint-gradle を 14.2.0 に上げる
+  - org.jetbrains.dokka:dokka-gradle-plugin を 2.1.0 に上げる
+  - @t-miya
 - [UPDATE] JitPack ビルドで利用する JDK のバージョンを 21 に上げる
   - @t-miya
 - [UPDATE] GitHub Actions で利用する JDK のバージョンを 21 に上げる

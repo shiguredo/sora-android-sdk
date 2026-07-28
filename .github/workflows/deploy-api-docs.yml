@@ -50,7 +50,7 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Build API docs with Dokka
-        run: ./gradlew :sora-android-sdk:dokkaHtml
+        run: ./gradlew :sora-android-sdk:dokkaGenerateHtml
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.android.maven) apply false
     alias(libs.plugins.ktlint) apply false
 }
@@ -16,10 +15,6 @@ allprojects {
     }
 }
 
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
-}
-
 // 不安定バージョンを除外する設定
 fun isNonStable(version: String): Boolean {
     val qualifiers = listOf("alpha", "beta", "rc", "M")
@@ -29,13 +24,7 @@ fun isNonStable(version: String): Boolean {
 }
 
 tasks.withType<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask> {
-    resolutionStrategy {
-        componentSelection {
-            all {
-                if (isNonStable(candidate.version)) {
-                    reject("Release candidate")
-                }
-            }
-        }
+    rejectVersionIf {
+        isNonStable(candidate.version)
     }
 }
