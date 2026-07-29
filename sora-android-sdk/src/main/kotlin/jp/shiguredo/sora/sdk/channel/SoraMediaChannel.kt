@@ -31,6 +31,7 @@ import jp.shiguredo.sora.sdk.channel.signaling.message.OfferConfig
 import jp.shiguredo.sora.sdk.channel.signaling.message.OfferMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.PushMessage
 import jp.shiguredo.sora.sdk.channel.signaling.message.SwitchedMessage
+import jp.shiguredo.sora.sdk.channel.tls.PemDecoder
 import jp.shiguredo.sora.sdk.error.SoraDisconnectReason
 import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import jp.shiguredo.sora.sdk.error.SoraMessagingError
@@ -50,6 +51,7 @@ import org.webrtc.CameraVideoCapturer
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
+import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
@@ -58,6 +60,8 @@ import org.webrtc.SessionDescription
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
+import java.security.PrivateKey
+import java.security.cert.X509Certificate
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.atomic.AtomicLong
@@ -93,6 +97,10 @@ import kotlin.coroutines.resume
  * @param bundleId connect メッセージに含める `bundle_id`
  * @param forwardingFilterOption 転送フィルター機能の設定
  * @param forwardingFiltersOption リスト形式の転送フィルター機能の設定
+ * @param insecure WebSocket と TURN-TLS のサーバー証明書検証をスキップするかどうか
+ * @param caCertificate WebSocket と TURN-TLS の接続で使用する CA 証明書を PEM 文字列で指定。証明書はちょうど 1 個だけを含む PEM を指定します（複数証明書を連結した PEM を指定した場合は `IllegalArgumentException` を送出します）。システムの信頼ストアを使用せず、指定された CA 証明書のみを使用します。不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
+ * @param clientCertificate mTLS で使用するクライアント証明書を PEM 文字列で指定。証明書チェーンの場合は複数の証明書を連結した PEM を指定します。WebSocket と TURN-TLS の両方に適用されます。不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
+ * @param clientPrivateKey mTLS で使用するクライアント証明書に対応する秘密鍵を PKCS#8 PEM 文字列で指定。WebSocket と TURN-TLS の両方に適用されます。PKCS#8 以外の形式や不正な PEM 文字列を指定した場合は `IllegalArgumentException` を送出します。
  */
 class SoraMediaChannel
     @JvmOverloads
@@ -119,6 +127,10 @@ class SoraMediaChannel
         )
         private val forwardingFilterOption: SoraForwardingFilterOption? = null,
         private val forwardingFiltersOption: List<SoraForwardingFilterOption>? = null,
+        private val insecure: Boolean = false,
+        caCertificate: String? = null,
+        clientCertificate: String? = null,
+        clientPrivateKey: String? = null,
     ) {
         companion object {
             private val TAG = SoraMediaChannel::class.simpleName
@@ -129,6 +141,13 @@ class SoraMediaChannel
             // この定数を使用する withTimeout がミリ秒指定のためミリ秒表現になっている
             private const val DEFAULT_RPC_TIMEOUT_MILLIS = 5_000L
             private const val WEBSOCKET_DISCONNECT_DELAY_SECONDS = 10L
+
+            private val WEBSOCKET_RECEIVED_NOTIFY_TYPES =
+                setOf("offer", "update", "re-offer", "switched", "redirect")
+            private val WEBSOCKET_SENT_NOTIFY_TYPES =
+                setOf("connect", "answer", "candidate", "update", "re-answer", "disconnect")
+            private val DATA_CHANNEL_RECEIVED_NOTIFY_TYPES = setOf("re-offer", "close")
+            private val DATA_CHANNEL_SENT_NOTIFY_TYPES = setOf("re-answer", "disconnect")
         }
 
         // connect メッセージに含める `data_channel_signaling`
@@ -181,12 +200,68 @@ class SoraMediaChannel
         @Synchronized
         fun dataToString(data: ByteBuffer): String = utf8Decoder.decode(data).toString()
 
+        // ログ出力時に token / secret / password 系の値を再帰的にマスクする
+        private fun maskSensitiveLogValue(value: Any?): Any? =
+            when (value) {
+                is Map<*, *> ->
+                    value.mapValues { (key, nestedValue) ->
+                        val keyString = key?.toString()?.lowercase().orEmpty()
+                        if (
+                            keyString.contains("token") ||
+                            keyString.contains("secret") ||
+                            keyString.contains("password") ||
+                            keyString.contains("authorization") ||
+                            keyString.contains("credential")
+                        ) {
+                            "***"
+                        } else {
+                            maskSensitiveLogValue(nestedValue)
+                        }
+                    }
+                is List<*> -> value.map { maskSensitiveLogValue(it) }
+                else -> value
+            }
+
+        // PEM 文字列から変換した CA 証明書 (未指定の場合は null)
+        // WebSocket と TURN-TLS のサーバー証明書検証に利用する
+        private val caCertificateX509: X509Certificate?
+
+        // PEM 文字列から変換したクライアント証明書チェーン (未指定の場合は null)
+        // 単一証明書・証明書チェーンのいずれも要素数 1 以上のリストになる
+        private val clientCertificateChain: List<X509Certificate>?
+
+        // PKCS#8 PEM 文字列から変換したクライアント秘密鍵 (未指定の場合は null)
+        private val clientPrivateKeyObject: PrivateKey?
+
         init {
             if ((signalingEndpoint == null && signalingEndpointCandidates.isEmpty()) ||
                 (signalingEndpoint != null && signalingEndpointCandidates.isNotEmpty())
             ) {
                 throw IllegalArgumentException("Either signalingEndpoint or signalingEndpointCandidates must be specified")
             }
+
+            // クライアント証明書と秘密鍵は対で指定する必要がある
+            require((clientCertificate != null) == (clientPrivateKey != null)) {
+                "clientCertificate and clientPrivateKey must be specified together"
+            }
+            // PEM 文字列を指定する場合は空文字列や空白文字列を禁止する。
+            // null の場合はシステムの CA 証明書を使用するか、クライアント証明書認証を行わない。
+            require(caCertificate == null || caCertificate.isNotBlank()) {
+                "caCertificate must not be blank"
+            }
+            require(clientCertificate == null || clientCertificate.isNotBlank()) {
+                "clientCertificate must not be blank"
+            }
+            require(clientPrivateKey == null || clientPrivateKey.isNotBlank()) {
+                "clientPrivateKey must not be blank"
+            }
+
+            // 公開 API で受け取った PEM 文字列を型オブジェクトへ変換する。
+            // 変換はこの 1 か所でのみ行い、変換後の値を内部コンポーネントへ引き渡す。
+            // 不正な PEM の場合は PemDecoder が IllegalArgumentException を送出する。
+            caCertificateX509 = caCertificate?.let { PemDecoder.decodeCertificate(it) }
+            clientCertificateChain = clientCertificate?.let { PemDecoder.decodeCertificateChain(it) }
+            clientPrivateKeyObject = clientPrivateKey?.let { PemDecoder.decodePkcs8PrivateKey(it) }
 
             // コンストラクタ以外で dataChannelSignaling, ignoreDisconnectWebSocket を参照すべきではない
             // 各種ロジックの判定には Sora のメッセージに含まれる値を参照する必要があるため、以下を利用するのが正しい
@@ -367,6 +442,21 @@ class SoraMediaChannel
             ) {}
 
             /**
+             * シグナリングメッセージを送受信したときに呼び出されるコールバック.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param direction 送受信方向
+             * @param transportType シグナリング経路種別
+             * @param rawMessage シグナリングメッセージの JSON 文字列
+             */
+            fun onSignalingMessage(
+                mediaChannel: SoraMediaChannel,
+                direction: SoraSignalingDirection,
+                transportType: SoraSignalingTransportType,
+                rawMessage: String,
+            ) {}
+
+            /**
              * Sora のシグナリング通知機能の通知を受信したときに呼び出されるコールバック.
              *
              * @param mediaChannel イベントが発生したチャネル
@@ -448,14 +538,60 @@ class SoraMediaChannel
                 label: String,
                 data: ByteBuffer,
             ) {}
+
+            /**
+             * リモートトラックが追加されたときに呼び出されるコールバック.
+             *
+             * PeerConnection.Observer.onTrack は PeerChannelImpl 内部に閉じており
+             * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+             * トラックとストリーム ID を通知する.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param track 追加されたメディアトラック
+             * @param streamId トラックが所属するストリーム ID
+             */
+            fun onAddRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                track: MediaStreamTrack,
+                streamId: String,
+            ) {}
+
+            /**
+             * リモートトラックが削除されたときに呼び出されるコールバック.
+             *
+             * PeerConnection.Observer.onRemoveTrack は PeerChannelImpl 内部に閉じており
+             * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+             * トラック ID とストリーム ID を通知する.
+             *
+             * 削除時点で MediaStreamTrack が JNI 側で dispose 済みの可能性があるため、
+             * トラックオブジェクトではなく ID とストリーム ID で通知する.
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param trackId 削除されたメディアトラックの ID
+             * @param streamId トラックが所属していたストリーム ID
+             */
+            fun onRemoveRemoteTrack(
+                mediaChannel: SoraMediaChannel,
+                trackId: String,
+                streamId: String,
+            ) {}
         }
 
+        // Sora とのメディア通信に使用する PeerConnection
         private var peer: PeerChannel? = null
+
+        // Sora に送信する client offer SDP を生成するための PeerConnection
+        // internalDisconnect() から到達可能にするためにフィールドとして保持する
+        private var clientOfferPeer: PeerChannel? = null
+
+        // Sora とのシグナリング通信 (WebSocket / DataChannel) を管理する
         private var signaling: SignalingChannel? = null
 
+        // DataChennal に切り替わり済みかを示すフラグ
         private var switchedToDataChannel = false
 
         // 切断処理を開始したことを示すフラグ
+        @Volatile
         private var closing = false
 
         // type: redirect で再利用するために、初回接続時の clientOffer を保持する
@@ -664,6 +800,44 @@ class SoraMediaChannel
 
         private val compositeDisposable = ReusableCompositeDisposable()
 
+        /*
+         * onSignalingMessage の通知対象は sora-js-sdk と合わせる。
+         * 参照: sora-js-sdk 2025.2.0 (commit: 9b76c0757cb213cc76a2e7387b24f4cd5eb73764)
+         */
+        private fun shouldNotifySignalingMessage(
+            direction: SoraSignalingDirection,
+            transportType: SoraSignalingTransportType,
+            signalingType: String,
+        ): Boolean =
+            when (transportType) {
+                SoraSignalingTransportType.WEBSOCKET ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            signalingType in WEBSOCKET_RECEIVED_NOTIFY_TYPES
+                        SoraSignalingDirection.SENT ->
+                            signalingType in WEBSOCKET_SENT_NOTIFY_TYPES
+                    }
+                SoraSignalingTransportType.DATA_CHANNEL ->
+                    when (direction) {
+                        SoraSignalingDirection.RECEIVED ->
+                            signalingType in DATA_CHANNEL_RECEIVED_NOTIFY_TYPES
+                        SoraSignalingDirection.SENT ->
+                            signalingType in DATA_CHANNEL_SENT_NOTIFY_TYPES
+                    }
+            }
+
+        private fun notifySignalingMessageIfNeeded(
+            direction: SoraSignalingDirection,
+            transportType: SoraSignalingTransportType,
+            rawMessage: String,
+            signalingType: String,
+        ) {
+            if (!shouldNotifySignalingMessage(direction, transportType, signalingType)) {
+                return
+            }
+            listener?.onSignalingMessage(this@SoraMediaChannel, direction, transportType, rawMessage)
+        }
+
         private val signalingListener =
             object : SignalingChannel.Listener {
                 override fun onDisconnect(
@@ -767,6 +941,15 @@ class SoraMediaChannel
                         connectSignalingChannel(clientOffer, location)
                     }
                 }
+
+                override fun onSignalingMessage(
+                    direction: SoraSignalingDirection,
+                    transportType: SoraSignalingTransportType,
+                    rawMessage: String,
+                    signalingType: String,
+                ) {
+                    notifySignalingMessageIfNeeded(direction, transportType, rawMessage, signalingType)
+                }
             }
 
         private val peerListener =
@@ -778,7 +961,7 @@ class SoraMediaChannel
 
                 override fun onRemoveRemoteStream(label: String) {
                     SoraLogger.d(TAG, "[channel:$role] @peer:onRemoveRemoteStream:$label")
-                    if (connectionId != null && label == connectionId) {
+                    if (isSelfStreamId(label)) {
                         SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore")
                         return
                     }
@@ -786,12 +969,42 @@ class SoraMediaChannel
                 }
 
                 override fun onAddRemoteStream(ms: MediaStream) {
-                    SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=:${ms.id}, connectionId=$connectionId")
-                    if (mediaOption.multistreamEnabled != false && connectionId != null && ms.id == connectionId) {
+                    SoraLogger.d(TAG, "[channel:$role] @peer:onAddRemoteStream msid=${ms.id}, connectionId=$connectionId")
+                    if (isSelfStreamId(ms.id)) {
                         SoraLogger.d(TAG, "[channel:$role] this stream is mine, ignore: ${ms.id}")
                         return
                     }
                     listener?.onAddRemoteStream(this@SoraMediaChannel, ms)
+                }
+
+                override fun onAddRemoteTrack(
+                    track: MediaStreamTrack,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onAddRemoteTrack trackId=${track.id()}, streamId=$streamId, connectionId=$connectionId",
+                    )
+                    if (isSelfStreamId(streamId)) {
+                        SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: ${track.id()}")
+                        return
+                    }
+                    listener?.onAddRemoteTrack(this@SoraMediaChannel, track, streamId)
+                }
+
+                override fun onRemoveRemoteTrack(
+                    trackId: String,
+                    streamId: String,
+                ) {
+                    SoraLogger.d(
+                        TAG,
+                        "[channel:$role] @peer:onRemoveRemoteTrack trackId=$trackId, streamId=$streamId",
+                    )
+                    if (isSelfStreamId(streamId)) {
+                        SoraLogger.d(TAG, "[channel:$role] this track is mine, ignore: $trackId")
+                        return
+                    }
+                    listener?.onRemoveRemoteTrack(this@SoraMediaChannel, trackId, streamId)
                 }
 
                 override fun onAddLocalStream(ms: MediaStream) {
@@ -830,11 +1043,20 @@ class SoraMediaChannel
                     } else {
                         try {
                             val message = dataToString(buffer)
+
                             if (label == "rpc") {
                                 handleRpcViaDataChannel(message)
                                 return
                             }
                             MessageConverter.parseType(message)?.let { type ->
+                                if (label == "signaling") {
+                                    notifySignalingMessageIfNeeded(
+                                        direction = SoraSignalingDirection.RECEIVED,
+                                        transportType = SoraSignalingTransportType.DATA_CHANNEL,
+                                        rawMessage = message,
+                                        signalingType = type,
+                                    )
+                                }
                                 when (label) {
                                     "signaling" -> handleSignalingViaDataChannel(dataChannel, type, message)
                                     "notify" -> handleNotifyViaDataChannel(type, message)
@@ -908,7 +1130,31 @@ class SoraMediaChannel
 
                     internalDisconnect(disconnectReason)
                 }
+
+                override fun onDataChannelSignalingMessageSent(
+                    label: String,
+                    rawMessage: String,
+                    signalingType: String,
+                ) {
+                    if (label != "signaling") {
+                        return
+                    }
+                    notifySignalingMessageIfNeeded(
+                        direction = SoraSignalingDirection.SENT,
+                        transportType = SoraSignalingTransportType.DATA_CHANNEL,
+                        rawMessage = rawMessage,
+                        signalingType = signalingType,
+                    )
+                }
             }
+
+        // マルチストリーム時に自己ストリームをフィルタリングする。
+        // multistreamEnabled は通常 true（enableMultistream() で設定）だが、
+        // デフォルト（null）や非推奨の enableLegacyStream()（false）の場合もあるため、
+        // != false で判定する。非マルチストリーム時（null）は id が
+        // connectionId と一致しないため、実質的にフィルタされない。
+        private fun isSelfStreamId(id: String): Boolean =
+            mediaOption.multistreamEnabled != false && connectionId != null && id == connectionId
 
         /**
          * Sora に接続します.
@@ -957,6 +1203,7 @@ class SoraMediaChannel
             |videoVp9Params             = ${mediaOption.videoVp9Params}
             |videoAv1Params             = ${mediaOption.videoAv1Params}
             |videoH264Params            = ${mediaOption.videoH264Params}
+            |videoH265Params            = ${mediaOption.videoH265Params}
             |videoCapturer              = ${mediaOption.userSettingVideoCapturer()}
             |simulcastEnabled           = ${mediaOption.simulcastEnabled}
             |simulcastRid               = ${mediaOption.simulcastRid}
@@ -964,10 +1211,10 @@ class SoraMediaChannel
             |spotlightEnabled           = ${mediaOption.spotlightEnabled}
             |spotlightNumber            = ${mediaOption.spotlightOption?.spotlightNumber}
             |audioStreamingLanguageCode = ${mediaOption.audioStreamingLanguageCode}
-            |signalingMetadata          = ${this.signalingMetadata}
+            |signalingMetadata          = ${maskSensitiveLogValue(this.signalingMetadata)}
             |clientId                   = ${this.clientId}
             |bundleId                   = ${this.bundleId}
-            |signalingNotifyMetadata    = ${this.signalingNotifyMetadata}
+            |signalingNotifyMetadata    = ${maskSensitiveLogValue(this.signalingNotifyMetadata)}
             |forwardingFilter           = ${this.forwardingFilterOption}
             |forwardingFilters           = ${this.forwardingFiltersOption}
                 """.trimMargin(),
@@ -1016,7 +1263,7 @@ class SoraMediaChannel
                     enableVideoDownstream(null)
                     enableAudioDownstream()
                 }
-            val clientOfferPeer =
+            val clientPeer =
                 PeerChannelImpl(
                     appContext = context,
                     networkConfig =
@@ -1027,11 +1274,17 @@ class SoraMediaChannel
                                     iceTransportPolicy = "",
                                 ),
                             mediaOption = mediaOption,
+                            insecure = insecure,
+                            clientCertificate = clientCertificateChain,
+                            clientPrivateKey = clientPrivateKeyObject,
                         ),
                     mediaOption = mediaOption,
+                    insecure = insecure,
+                    caCertificate = caCertificateX509,
                     listener = null,
                 )
-            clientOfferPeer.run {
+            clientOfferPeer = clientPeer
+            clientPeer.run {
                 val subscription =
                     requestClientOfferSdp()
                         .observeOn(Schedulers.io())
@@ -1039,6 +1292,7 @@ class SoraMediaChannel
                             onSuccess = {
                                 SoraLogger.d(TAG, "[channel:$role] @peer:clientOfferSdp")
                                 disconnect(null)
+                                clientOfferPeer = null
 
                                 if (it.isFailure) {
                                     SoraLogger.d(TAG, "[channel:$role] failed to create client offer SDP: ${it.exceptionOrNull()?.message}")
@@ -1055,6 +1309,7 @@ class SoraMediaChannel
                                     "[channel:$role] failed request client offer SDP: ${it.message}",
                                 )
                                 disconnect(SoraDisconnectReason.SIGNALING_FAILURE)
+                                clientOfferPeer = null
                             },
                         )
                 compositeDisposable.add(subscription)
@@ -1065,6 +1320,10 @@ class SoraMediaChannel
             clientOfferSdp: SessionDescription?,
             redirectLocation: String? = null,
         ) {
+            // 切断処理に入っている場合は抜ける
+            if (closing) {
+                return
+            }
             val endpoints =
                 when {
                     redirectLocation != null -> listOf(redirectLocation)
@@ -1086,10 +1345,14 @@ class SoraMediaChannel
                     clientId = clientId,
                     bundleId = bundleId,
                     signalingNotifyMetadata = signalingNotifyMetadata,
+                    insecure = insecure,
                     connectDataChannels = connectDataChannels,
                     redirect = redirectLocation != null,
                     forwardingFilterOption = forwardingFilterOption,
                     forwardingFiltersOption = forwardingFiltersOption,
+                    caCertificate = caCertificateX509,
+                    clientCertificate = clientCertificateChain,
+                    clientPrivateKey = clientPrivateKeyObject,
                 )
             signaling!!.connect()
         }
@@ -1105,8 +1368,13 @@ class SoraMediaChannel
                         PeerNetworkConfig(
                             serverConfig = offerMessage.config,
                             mediaOption = mediaOption,
+                            insecure = insecure,
+                            clientCertificate = clientCertificateChain,
+                            clientPrivateKey = clientPrivateKeyObject,
                         ),
                     mediaOption = mediaOption,
+                    insecure = insecure,
+                    caCertificate = caCertificateX509,
                     simulcastEnabled = offerMessage.simulcast,
                     dataChannelConfigs = offerMessage.dataChannels,
                     listener = peerListener,
@@ -1125,7 +1393,8 @@ class SoraMediaChannel
                 getStatsTimer = Timer()
                 SoraLogger.d(TAG, "Schedule getStats with interval ${peerConnectionOption.getStatsIntervalMSec} [msec]")
                 getStatsTimer?.schedule(0L, peerConnectionOption.getStatsIntervalMSec) {
-                    peer?.getStats(
+                    val currentPeer = peer ?: return@schedule
+                    currentPeer.getStats(
                         RTCStatsCollectorCallback {
                             listener?.onPeerConnectionStatsReady(this@SoraMediaChannel, it)
                         },
@@ -1319,9 +1588,10 @@ class SoraMediaChannel
         }
 
         private fun handleReqStats(dataChannel: DataChannel) {
-            peer?.getStats {
-                it?.let { reports ->
-                    peer?.sendStats(dataChannel, reports)
+            val currentPeer = peer ?: return
+            currentPeer.getStats { reports ->
+                if (reports != null) {
+                    currentPeer.sendStats(dataChannel, reports)
                 }
             }
         }
@@ -1457,8 +1727,12 @@ class SoraMediaChannel
             getStatsTimer = null
 
             // 既に type: disconnect を送信しているので、 disconnectReason は null で良い
+            clientOfferPeer?.disconnect(null)
+            clientOfferPeer = null
             peer?.disconnect(null)
             peer = null
+            localStream = null
+            dataChannels.clear()
 
             listener?.onClose(this)
             if (closeEvent != null) {

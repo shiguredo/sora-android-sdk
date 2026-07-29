@@ -10,7 +10,7 @@ class ReusableCompositeDisposable {
     private var compositeDisposable: CompositeDisposable? = null
 
     fun add(subscription: Disposable) {
-        if (compositeDisposable != null) {
+        if (compositeDisposable == null) {
             compositeDisposable = CompositeDisposable()
         }
         compositeDisposable?.add(subscription)

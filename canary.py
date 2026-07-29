@@ -14,13 +14,14 @@ def update_sdkinfo_version(packageinfo_content):
         packageinfo_content (list): SDKInfo.ktファイルの各行を要素とするリスト
 
     Returns:
-        tuple: (更新後のファイル内容のリスト, 新しいバージョン文字列)
+        tuple: (更新後のファイル内容のリスト, 現在のバージョン文字列, 新しいバージョン文字列)
 
     Raises:
         ValueError: バージョン指定が見つからない場合
     """
     updated_content = []
     sdk_version_updated = False
+    current_version = None
     new_version = None
 
     for line in packageinfo_content:
@@ -34,6 +35,7 @@ def update_sdkinfo_version(packageinfo_content):
             if version_match:
                 major_minor_patch = version_match.group(1)  # 基本バージョン (例: 1.0.0)
                 canary_suffix = version_match.group(2)  # canaryサフィックス部分
+                current_version = f"{major_minor_patch}{canary_suffix or ''}"
 
                 # canaryサフィックスが無い場合は.0から開始、ある場合は番号をインクリメント
                 if canary_suffix is None:
@@ -53,7 +55,29 @@ def update_sdkinfo_version(packageinfo_content):
     if not sdk_version_updated:
         raise ValueError("Version specification not found in SDKInfo.kt file.")
 
-    return updated_content, new_version
+    return updated_content, current_version, new_version
+
+
+def confirm_execution(current_version, new_version):
+    """
+    バージョン更新の実行可否を確認する
+
+    Args:
+        current_version (str): 現在のバージョン文字列
+        new_version (str): 更新後のバージョン文字列
+
+    Returns:
+        bool: 実行する場合は True、 中断する場合は False
+    """
+    while True:
+        answer = input(
+            f"Update version from {current_version} to {new_version}? (y/n): "
+        ).strip().lower()
+        if answer == "y":
+            return True
+        if answer == "n":
+            return False
+        print("Please enter y or n.")
 
 
 def write_file(filename, updated_content, dry_run):
@@ -133,9 +157,14 @@ def main():
     # SDKInfo.kt を読み込んでバージョンを更新
     with open(SDKINFO_FILE, "r") as file:
         packageinfo_content = file.readlines()
-    updated_packageinfo_content, new_version = update_sdkinfo_version(
+    updated_packageinfo_content, current_version, new_version = update_sdkinfo_version(
         packageinfo_content
     )
+
+    if not args.dry_run and not confirm_execution(current_version, new_version):
+        print("Canceled.")
+        return
+
     write_file(SDKINFO_FILE, updated_packageinfo_content, args.dry_run)
 
     # Git操作の実行

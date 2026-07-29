@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-144.7559-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/7559)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-150.7871-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/7871)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -48,7 +48,7 @@ Please read https://github.com/shiguredo/oss before use.
 
 ## ドキュメント
 
-[Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/) 
+[Sora Android SDK ドキュメント](https://sora-android-sdk.shiguredo.jp/)
 
 ## 有償での優先実装が可能な機能一覧
 
@@ -66,8 +66,8 @@ Please read https://github.com/shiguredo/oss before use.
 
 
 ```
-Copyright 2017, Lyo Kato <lyo.kato at gmail.com> (Original Author)
-Copyright 2017-2025, Shiguredo Inc.
+Copyright 2017 Lyo Kato <lyo.kato at gmail.com> (Original Author)
+Copyright 2017 Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

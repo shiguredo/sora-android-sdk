@@ -69,6 +69,7 @@ data class VideoSetting(
     @SerializedName("vp9_params") var vp9Params: Any? = null,
     @SerializedName("av1_params") var av1Params: Any? = null,
     @SerializedName("h264_params") var h264Params: Any? = null,
+    @SerializedName("h265_params") var h265Params: Any? = null,
 )
 
 data class AudioSetting(
@@ -107,6 +108,7 @@ data class Encoding(
     @SerializedName("scaleResolutionDownBy") val scaleResolutionDownBy: Double?,
     @SerializedName("scaleResolutionDownTo") val scaleResolutionDownTo: RtpParameters.ResolutionRestriction?,
     @SerializedName("scalabilityMode") val scalabilityMode: String?,
+    @SerializedName("networkPriority") val networkPriority: String?,
 )
 
 data class RedirectMessage(

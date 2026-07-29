@@ -21,6 +21,7 @@ import org.webrtc.MediaStreamTrack
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionDependencies
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.Priority
 import org.webrtc.ProxyType
 import org.webrtc.RTCStatsCollectorCallback
 import org.webrtc.RTCStatsReport
@@ -32,7 +33,9 @@ import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
+import java.security.cert.X509Certificate
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.zip.DeflaterInputStream
 
@@ -118,6 +121,12 @@ interface PeerChannel {
             dataChannel: DataChannel,
         )
 
+        fun onDataChannelSignalingMessageSent(
+            label: String,
+            rawMessage: String,
+            signalingType: String,
+        ) {}
+
         fun onSenderEncodings(encodings: List<RtpParameters.Encoding>)
 
         fun onError(reason: SoraErrorReason)
@@ -133,6 +142,39 @@ interface PeerChannel {
             reason: SoraErrorReason,
             message: String,
         )
+
+        /**
+         * リモートトラックが追加されたときに呼び出されるコールバック.
+         *
+         * PeerConnection.Observer.onTrack は PeerChannelImpl 内部に閉じており
+         * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+         * トラックとストリーム ID を上位レイヤーに通知する.
+         *
+         * @param track 追加されたメディアトラック
+         * @param streamId トラックが所属するストリーム ID
+         */
+        fun onAddRemoteTrack(
+            track: MediaStreamTrack,
+            streamId: String,
+        ) {}
+
+        /**
+         * リモートトラックが削除されたときに呼び出されるコールバック.
+         *
+         * PeerConnection.Observer.onRemoveTrack は PeerChannelImpl 内部に閉じており
+         * SDK 利用者が直接アクセスできないため、このコールバックを通じて
+         * トラック ID とストリーム ID を上位レイヤーに通知する.
+         *
+         * 削除時点で MediaStreamTrack が JNI 側で dispose 済みの可能性があるため、
+         * トラックオブジェクトではなく ID とストリーム ID で通知する.
+         *
+         * @param trackId 削除されたメディアトラックの ID
+         * @param streamId トラックが所属していたストリーム ID
+         */
+        fun onRemoveRemoteTrack(
+            trackId: String,
+            streamId: String,
+        ) {}
     }
 }
 
@@ -140,6 +182,8 @@ class PeerChannelImpl(
     private val appContext: Context,
     private val networkConfig: PeerNetworkConfig,
     private val mediaOption: SoraMediaOption,
+    private val insecure: Boolean = false,
+    private val caCertificate: X509Certificate? = null,
     private val simulcastEnabled: Boolean = false,
     dataChannelConfigs: List<Map<String, Any>>? = null,
     private var listener: PeerChannel.Listener?,
@@ -149,6 +193,9 @@ class PeerChannelImpl(
         private val TAG = PeerChannelImpl::class.simpleName
 
         private var isInitialized = false
+
+        // 2 回目以降の呼び出しで異なる useTracer 値が指定されたことを検知するために初回の値を保持する
+        private var initialUseTracer: Boolean? = null
 
         fun initializeIfNeeded(
             context: Context,
@@ -166,11 +213,24 @@ class PeerChannelImpl(
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
                 isInitialized = true
+                initialUseTracer = useTracer
+            } else if (useTracer != initialUseTracer) {
+                SoraLogger.w(
+                    TAG,
+                    "PeerConnectionFactory.initialize() already called with useTracer=$initialUseTracer. useTracer=$useTracer is ignored.",
+                )
             }
         }
     }
 
-    private val componentFactory = RTCComponentFactory(mediaOption, simulcastEnabled, listener)
+    private val componentFactory =
+        RTCComponentFactory(
+            mediaOption = mediaOption,
+            simulcastEnabled = simulcastEnabled,
+            insecure = insecure,
+            caCertificate = caCertificate,
+            listener = listener,
+        )
 
     private var conn: PeerConnection? = null
 
@@ -191,12 +251,17 @@ class PeerChannelImpl(
     private var audioRecordingPaused: Boolean = false
     private val localStreamId: String = UUID.randomUUID().toString()
 
+    // トラック ID → ストリーム ID のマッピング
+    private val trackToStreamId = ConcurrentHashMap<String, String>()
+
     // offer.data_channels の {label:..., compress:...} から compress が true の label リストを作る
     private var compressLabels: List<String> = emptyList()
 
     // PeerChannel は再利用されないため、
     // connected が一度 true になった後、再度 false になることはない
     private var connected = false
+
+    @Volatile
     private var closing = false
 
     // offer 時に受け取った encodings を保持しておく
@@ -252,16 +317,57 @@ class PeerChannelImpl(
             }
 
             override fun onRemoveTrack(receiver: RtpReceiver?) {
+                if (closing) {
+                    return
+                }
                 SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
+
+                val trackId =
+                    receiver?.track()?.id() ?: run {
+                        SoraLogger.d(TAG, "[rtc] @onRemoveTrack: trackId is null")
+                        return
+                    }
+                val streamId = trackToStreamId.remove(trackId)
+                if (streamId != null) {
+                    // onRemoveRemoteTrack は onAddRemoteTrack と対称性を保つため、
+                    // track 単位の削除を trackId と streamId で通知する。
+                    // onRemoveTrack 発火時点で track が JNI 側で dispose 済みの可能性があるため、
+                    // String で通知している。
+                    listener?.onRemoveRemoteTrack(trackId, streamId)
+                } else {
+                    SoraLogger.d(
+                        TAG,
+                        "[rtc] @onRemoveTrack: mapping not found for trackId=$trackId",
+                    )
+                }
             }
 
             override fun onTrack(transceiver: RtpTransceiver) {
+                if (closing) {
+                    SoraLogger.d(TAG, "[rtc] @onTrack ignored because closing=true")
+                    return
+                }
                 SoraLogger.d(TAG, "[rtc] @onTrack direction=${transceiver.direction}")
                 SoraLogger.d(TAG, "[rtc] @onTrack currentDirection=${transceiver.currentDirection}")
                 SoraLogger.d(TAG, "[rtc] @onTrack sender.track=${transceiver.sender.track()}")
                 SoraLogger.d(TAG, "[rtc] @onTrack receiver.track=${transceiver.receiver.track()}")
-                // TODO(shino): Unified plan に onRemoveTrack が来たらこっちで対応する。
-                // 今は SDP semantics に関わらず onAddStream/onRemoveStream でシグナリングに通知している
+
+                val track = transceiver.receiver.track() ?: return
+
+                // Sora では 1 ストリーム 1 トラックを前提とするため、先頭の streamId を採用する。
+                val streamId =
+                    transceiver.receiver.getStreams().firstOrNull() ?: run {
+                        SoraLogger.d(TAG, "[rtc] @onTrack: stream id not found for trackId=${track.id()}")
+                        return
+                    }
+
+                // ストリーム削除時に onRemoveRemoteTrack を発火するためにマッピングを保持する。
+                trackToStreamId[track.id()] = streamId
+
+                // 既存の onAddRemoteStream は MediaStream 単位の通知であり、
+                // MediaStreamTrack を起点に所属する stream_id を直接参照する経路にはならない。
+                // そのため、track と streamId を対で通知する onAddRemoteTrack を追加している。
+                listener?.onAddRemoteTrack(track, streamId)
             }
 
             override fun onDataChannel(dataChannel: DataChannel) {
@@ -335,6 +441,7 @@ class PeerChannelImpl(
                         PeerConnection.PeerConnectionState.CONNECTED -> {
                             // PeerConnectionState が複数回 CONNECTED に遷移する可能性があるが、
                             // 初回の CONNECTED のみで onConnect を実行したい
+                            if (closing) return
                             if (connected) return
 
                             connected = true
@@ -363,7 +470,27 @@ class PeerChannelImpl(
             }
 
             override fun onRemoveStream(ms: MediaStream?) {
+                if (closing) {
+                    return
+                }
                 SoraLogger.d(TAG, "[rtc] @onRemoveStream")
+                // JNI 側の MediaStream は既に無効化されている可能性があるため、
+                // ms.audioTracks / ms.videoTracks による列挙は使用せず、
+                // trackToStreamId を走査して該当ストリームのエントリを削除する。
+                ms?.let { stream ->
+                    val trackIdsToRemove = mutableSetOf<String>()
+                    for (entry in trackToStreamId.entries) {
+                        if (entry.value == stream.id) {
+                            trackIdsToRemove.add(entry.key)
+                        }
+                    }
+                    for (trackId in trackIdsToRemove) {
+                        val streamId = trackToStreamId.remove(trackId)
+                        if (streamId != null) {
+                            listener?.onRemoveRemoteTrack(trackId, streamId)
+                        }
+                    }
+                }
                 // When this thread's loop finished, this media-stream object is dead on JNI(C++) side.
                 // but in most case, this callback is handled in UI-thread's next loop.
                 // So, we need to pick up the label-string beforehand.
@@ -472,6 +599,31 @@ class PeerChannelImpl(
             }
     }
 
+    /**
+     * Sora シグナリングの encodings に含まれる networkPriority 文字列を
+     * libwebrtc の Priority 定数に変換する。
+     *
+     * 変換できなかった場合（未知の値、空文字列など）は null を返す。
+     * 呼び出し元では null の場合に代入をスキップし、既存の networkPriority を上書きしない。
+     *
+     * Priority 型は @interface アノテーションだが、VERY_LOW / LOW / MEDIUM / HIGH は
+     * int 定数として定義されており、RtpParameters.Encoding.networkPriority (int) にそのまま代入できる。
+     *
+     * 参考: W3C WebRTC Priority Control API
+     * https://www.w3.org/TR/webrtc-priority/#dom-rtcrtpencodingparameters-networkpriority
+     */
+    private fun mapNetworkPriority(value: String): Int? =
+        when (value) {
+            "very-low" -> Priority.VERY_LOW
+            "low" -> Priority.LOW
+            "medium" -> Priority.MEDIUM
+            "high" -> Priority.HIGH
+            else -> {
+                SoraLogger.w(TAG, "unknown networkPriority value: $value, skipping update")
+                null
+            }
+        }
+
     private fun updateSenderOfferEncodings(sender: RtpSender) {
         if (offerEncodings == null) {
             return
@@ -488,6 +640,11 @@ class PeerChannelImpl(
             offerEncoding.scaleResolutionDownBy?.also { senderEncoding.scaleResolutionDownBy = it }
             offerEncoding.scaleResolutionDownTo?.also { senderEncoding.scaleResolutionDownTo = it }
             offerEncoding.scalabilityMode?.also { senderEncoding.scalabilityMode = it }
+            offerEncoding.networkPriority?.let { value ->
+                mapNetworkPriority(value)?.let { priority ->
+                    senderEncoding.networkPriority = priority
+                }
+            }
         }
 
         // degradationPreference を再設定（setRemoteDescription でリセットされる可能性があるため）
@@ -507,6 +664,14 @@ class PeerChannelImpl(
                     } else {
                         "null"
                     }
+                val networkPriorityLabel =
+                    when (networkPriority) {
+                        Priority.VERY_LOW -> "very-low"
+                        Priority.LOW -> "low"
+                        Priority.MEDIUM -> "medium"
+                        Priority.HIGH -> "high"
+                        else -> "unknown"
+                    }
                 SoraLogger.d(
                     TAG,
                     "update sender encoding: " +
@@ -518,6 +683,7 @@ class PeerChannelImpl(
                         "scalabilityMode=$scalabilityMode, " +
                         "maxFramerate=$maxFramerate, " +
                         "maxBitrateBps=$maxBitrateBps, " +
+                        "networkPriority=$networkPriority ($networkPriorityLabel), " +
                         "ssrc=$ssrc",
                 )
             }
@@ -598,6 +764,7 @@ class PeerChannelImpl(
 
         SoraLogger.d(TAG, "createPeerConnection")
         val dependenciesBuilder = PeerConnectionDependencies.builder(connectionObserver)
+        dependenciesBuilder.setSSLCertificateVerifier(componentFactory.createSSLCertificateVerifier())
 
         if (mediaOption.proxy.type != ProxyType.NONE) {
             dependenciesBuilder.setProxy(
@@ -658,7 +825,16 @@ class PeerChannelImpl(
         description: String,
     ) {
         val reAnswerMessage = MessageConverter.buildReAnswerMessage(description)
-        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
+        val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), reAnswerMessage))
+        if (sent) {
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                reAnswerMessage,
+                "re-answer",
+            )
+        } else {
+            SoraLogger.w(TAG, "peer: sendReAnswer failed, label=${dataChannel.label()}, message_size=${reAnswerMessage.length}")
+        }
     }
 
     override fun sendStats(
@@ -677,7 +853,16 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "peer: sendDisconnectMessage, label=${dataChannel.label()}")
         val disconnectMessage = MessageConverter.buildDisconnectMessage(disconnectReason)
         SoraLogger.d(TAG, "peer: disconnectMessage=$disconnectMessage")
-        dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+        val sent = dataChannel.send(stringToDataChannelBuffer(dataChannel.label(), disconnectMessage))
+        if (sent) {
+            listener?.onDataChannelSignalingMessageSent(
+                dataChannel.label(),
+                disconnectMessage,
+                "disconnect",
+            )
+        } else {
+            SoraLogger.w(TAG, "peer: sendDisconnect failed, label=${dataChannel.label()}, message_size=${disconnectMessage.length}")
+        }
     }
 
     override fun zipBufferIfNeeded(
@@ -700,7 +885,14 @@ class PeerChannelImpl(
         SoraLogger.d(TAG, "peer: unzipBufferIfNeeded, label=$label, compress=$compress")
         return when (compress) {
             true -> ZipHelper.unzip(buffer)
-            false -> buffer
+            false -> {
+                // WebRTC 由来の direct ByteBuffer はコールバックを抜けると再利用・解放される可能性があるため、
+                // コピーバックでないと非同期利用時に寿命未保証のネイティブバッファへアクセスする危険がある
+                val copy = ByteBuffer.allocate(buffer.remaining())
+                copy.put(buffer.duplicate())
+                copy.flip()
+                copy
+            }
         }
     }
 
@@ -715,7 +907,7 @@ class PeerChannelImpl(
                 false ->
                     ByteArrayInputStream(data.toByteArray())
             }
-        val byteBuffer = ByteBuffer.wrap(inStream.readBytes())
+        val byteBuffer = inStream.use { stream -> ByteBuffer.wrap(stream.readBytes()) }
         return DataChannel.Buffer(byteBuffer, true)
     }
 
@@ -817,6 +1009,8 @@ class PeerChannelImpl(
         }
         SoraLogger.d(TAG, "disconnect")
         closing = true
+        // 切断時にマッピングをクリアする
+        trackToStreamId.clear()
         listener?.onDisconnect(disconnectReason)
         listener = null
         SoraLogger.d(TAG, "dispose peer connection")

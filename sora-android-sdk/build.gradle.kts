@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.dokka)
     alias(libs.plugins.ktlint)
 }
@@ -46,8 +45,14 @@ android {
                 .get()
                 .toInt()
 
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
         buildConfigField("String", "REVISION", "\"$gitRevision\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
+        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("SORA_SIGNALING_URL") ?: ""}\"")
+        buildConfigField("String", "TEST_SECRET_KEY", "\"${System.getenv("TEST_SECRET_KEY") ?: ""}\"")
+        buildConfigField("String", "TEST_CHANNEL_ID_PREFIX", "\"${System.getenv("TEST_CHANNEL_ID_PREFIX") ?: ""}\"")
+        buildConfigField("String", "TEST_CHANNEL_ID_SUFFIX", "\"${System.getenv("TEST_CHANNEL_ID_SUFFIX") ?: ""}\"")
     }
 
     lint {
@@ -58,12 +63,7 @@ android {
     }
 
     sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/kotlin")
-        }
-        getByName("test") {
-            java.srcDirs("src/test/kotlin")
-        }
+        // kotlin-android プラグインがソースディレクトリを自動設定するため、手動設定は不要
     }
 
     compileOptions {
@@ -92,6 +92,19 @@ android {
                 .get()
                 .toInt()
         unitTests.isIncludeAndroidResources = true
+
+        managedDevices {
+            localDevices {
+                // macOS arm64 の self-hosted runner で利用する Gradle Managed Device。
+                // ホストが arm64 のため、arm64-v8a system image が選択される前提で構成する。
+                create("pixelApi35") {
+                    device = "Pixel 7"
+                    apiLevel = 35
+                    systemImageSource = "google"
+                    require64Bit = true
+                }
+            }
+        }
     }
 
     // AGP 8.0 からモジュールレベルの build script 内に namespace が必要になった
@@ -106,21 +119,33 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
-tasks.dokkaHtml.configure {
-    // デフォルトの出力先は "${buildDir}/dokka". 変更したいときにコメントアウトを行う.
-    // outputDirectory.set(File("${buildDir}/dokka"))
+tasks.register("pixelApi35AndroidE2ETest") {
+    group = "verification"
+    description = "Run Android E2E tests on the pixelApi35 managed device."
+    dependsOn(":sora-android-sdk:pixelApi35DebugAndroidTest")
+}
+
+dokka {
+    // デフォルトの出力先は "${buildDir}/dokka/html". 変更したいときにコメントアウトを行う.
+    // outputDirectory.set(File("${buildDir}/dokka/html"))
     moduleName.set("sora-android-sdk")
     // "default" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
     // cacheRoot.set(file("default"))
 
     dokkaSourceSets {
-        named("main") {
+        // AGP 9 系では Dokka が Android / Kotlin のソースセットを自動解決できず、
+        // sourceSets が空になることがあるため、main を明示的に定義する。
+        register("main") {
+            sourceRoots.from(files("src/main/kotlin"))
+        }
+
+        configureEach {
             reportUndocumented.set(true)
             includes.from(files("packages.md"))
 
             sourceLink {
                 localDirectory.set(file("src/main/kotlin"))
-                remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin").toURL())
+                remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"))
                 remoteLineSuffix.set("#L")
             }
         }
@@ -162,6 +187,11 @@ dependencies {
     testImplementation(libs.robolectric) {
         exclude(group = "com.google.auto.service", module = "auto-service")
     }
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
 
 configurations.all {
@@ -175,11 +205,7 @@ tasks.register<Jar>("sourcesJar") {
     // classifier は archiveClassifier に置き換えられた
     // https://docs.gradle.org/7.6/dsl/org.gradle.api.tasks.bundling.Jar.html#org.gradle.api.tasks.bundling.Jar:classifier
     archiveClassifier.set("sources")
-    from(
-        android.sourceSets
-            .getByName("main")
-            .java.srcDirs,
-    )
+    from("src/main/kotlin", "src/main/java")
 }
 
 tasks.whenTaskAdded {

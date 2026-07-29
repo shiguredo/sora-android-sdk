@@ -7,9 +7,15 @@ import java.util.zip.InflaterInputStream
 
 class ZipHelper {
     companion object {
-        fun zip(buffer: ByteBuffer): ByteBuffer = ByteBuffer.wrap(DeflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
+        fun zip(buffer: ByteBuffer): ByteBuffer =
+            DeflaterInputStream(ByteBufferBackedInputStream(buffer)).use { stream ->
+                ByteBuffer.wrap(stream.readBytes())
+            }
 
-        fun unzip(buffer: ByteBuffer): ByteBuffer = ByteBuffer.wrap(InflaterInputStream(ByteBufferBackedInputStream(buffer)).readBytes())
+        fun unzip(buffer: ByteBuffer): ByteBuffer =
+            InflaterInputStream(ByteBufferBackedInputStream(buffer)).use { stream ->
+                ByteBuffer.wrap(stream.readBytes())
+            }
     }
 
     private class ByteBufferBackedInputStream(

@@ -11,6 +11,106 @@
 
 ## develop
 
+## 2026.2.0
+
+**リリース日**: 2026-07-29
+
+- [CHANGE] TURN-TLS のサーバー証明書検証で Android OS のトラストストアを既定で使うようにする
+  - @zztkm
+- [UPDATE] 依存ライブラリーのバージョンを上げる
+  - com.android.tools.build:gradle を 9.2.1 に上げる
+  - Gradle バージョンを 9.5.0 に上げる
+  - kotlin バージョンを 2.2.10 に上げる
+  - com.google.code.gson:gson を 2.14.0 に上げる
+  - org.jlleitschuh.gradle:ktlint-gradle を 14.2.0 に上げる
+  - org.jetbrains.dokka:dokka-gradle-plugin を 2.1.0 に上げる
+  - @t-miya
+- [UPDATE] JitPack ビルドで利用する JDK のバージョンを 21 に上げる
+  - @t-miya
+- [UPDATE] GitHub Actions で利用する JDK のバージョンを 21 に上げる
+  - @t-miya
+- [UPDATE] libwebrtc を 150.7871.3.0 に上げる
+  - @t-miya @zztkm
+- [UPDATE] 映像送信を行わない構成では simulcastEnabled が true であっても SimulcastVideoEncoderFactoryWrapper を生成しないようにする
+  - 不要なインスタンス生成をしないようにする
+  - RTCComponentFactory のビデオエンコーダーファクトリー選択判定で videoUpstreamEnabled を見るようにする
+  - @t-miya
+- [ADD] offer の simulcast_encodings の networkPriority を RtpParameters.Encoding に反映する
+  - Sora 側で指定されたネットワーク優先度を送信側エンコーディングに適用する
+  - @t-miya
+- [ADD] PeerChannel.Listener と SoraMediaChannel.Listener に onAddRemoteTrack / onRemoveRemoteTrack を追加する
+  - リモートトラックからストリーム ID を取得できるようになる
+  - @t-miya
+- [ADD] SoraMediaChannel.Listener に onSignalingMessage を追加する
+  - WebSocket と DataChannel (signaling label のみ) のシグナリングメッセージを JSON 文字列で取得できる
+  - Sora JavaScript SDK に合わせるため、通知対象を `sora-js-sdk 2025.2.0` (commit: `9b76c0757cb213cc76a2e7387b24f4cd5eb73764`) の signaling callback と同じシグナリング項目にする
+  - 現在通知されるシグナリング項目
+    - WebSocket で受信: `offer`, `update`, `re-offer`, `switched`, `redirect`
+    - WebSocket で送信: `connect`, `answer`, `candidate`, `update`, `re-answer`, `disconnect`
+    - DataChannel (`label = signaling`) で受信: `re-offer`, `close`
+    - DataChannel (`label = signaling`) で送信: `re-answer`, `disconnect`
+  - 送受信方向を表す `SoraSignalingDirection` と経路種別を表す `SoraSignalingTransportType` を追加する
+  - @zztkm
+- [ADD] WSS と TURN-TLS のサーバー証明書検証で利用する CA 証明書を設定できるようにする
+  - `SoraMediaChannel` に `caCertificate` 引数を PEM 文字列型 (`String?`) で追加する
+  - CA 証明書を指定した場合、システムの信頼ストアを使用せず、指定された CA 証明書のみを使用できる
+  - `insecure = true` の場合は CA 証明書を指定していてもサーバー証明書検証をスキップする
+  - @zztkm @t-miya
+- [ADD] WSS と TURN-TLS の接続に利用するクライアント証明書を指定できるようにする
+  - `SoraMediaChannel` に `clientCertificate` と `clientPrivateKey` 引数を PEM 文字列型 (`String?`) で追加する
+  - `clientCertificate` は単一証明書・証明書チェーンのいずれも PEM 文字列で指定する
+  - `clientPrivateKey` は PKCS#8 PEM 文字列で指定する
+  - @zztkm @t-miya
+- [ADD] WSS と TURN-TLS で insecure モードを利用できるようにする
+  - insecure = true の場合はサーバー証明書の検証をスキップする
+  - @zztkm
+- [ADD] SoraMediaOption に H.265 向け映像コーデックパラメーター videoH265Params を追加する
+  - @t-miya
+- [FIX] initializeIfNeeded で 2 回目以降に異なる useTracer 値が指定された場合に警告ログを出力する
+  - @t-miya
+- [FIX] internalDisconnect で dataChannels をクリアするように修正する
+  - 切断後に dispose 済み DataChannel への参照が残留しないようにする
+  - @t-miya
+- [FIX] ZipHelper と stringToDataChannelBuffer で zlib ストリームの close 漏れを修正する
+  - @t-miya
+- [FIX] SimulcastVideoEncoderFactoryWrapper の ExecutorService と scaledBuffer を try/finally で安全に処理するように修正する
+  - @t-miya
+- [FIX] SignalingChannel の ping 競合 NPE と wsCandidates クリーンアップ不足を修正する
+  - @t-miya
+- [FIX] getStatsTimer と handleReqStats で peer をローカル変数にする
+  - peer の再参照不整合を防ぐため
+  - @t-miya
+- [FIX] internalDisconnect で localStream を null クリアする
+  - 切断後に setAudioSoftMute が安全に false を返すようにする
+  - @t-miya
+- [FIX] unzipBufferIfNeeded で compress=false 時にネイティブ ByteBuffer のコピーを返すようにする
+  - @t-miya
+- [FIX] clientOfferPeer をフィールド化し切断時に WebRTC リソースを解放するようにする
+  - @t-miya
+- [FIX] connectSignalingChannel に closing ガードを追加し切断後の不要なシグナリング再接続を防ぐ
+  - @t-miya
+- [FIX] ReusableCompositeDisposable の初期化条件を修正して Rx 購読が正しく管理されるようにする
+  - @t-miya
+
+### misc
+
+- [CHANGE] prek.toml に切り替える
+  - @voluntas
+- [ADD] androidTest にダミー映像キャプチャ DummyVideoCapturer を追加する
+  - 7 色横カラーバーをフレームごとに横シフトする I420 フレームを生成
+  - SW エンコードで実機カメラ不要の E2E テストを可能にする
+  - @t-miya
+- [ADD] androidTest に E2E テストを追加する
+  - シミュレーター利用での実行を想定している
+  - recvonly で Sora との接続・切断を行うテストを追加する
+  - DataChannel signaling 有効時に onSignalingMessage で switched を受信するテストを追加する
+  - DataChannel signaling only での切断経路が DataChannel であることを検証するテストを追加する
+  - 正常切断時の SoraCloseEvent code=1000 / reason="NO-ERROR" を検証するアサートを追加する
+  - DataChannel messaging で 2 チャネル間の送受信を検証するテストを追加する
+  - @t-miya
+- [ADD] GitHub Actions で API ドキュメントを GitHub Pages にデプロイする
+  - @voluntas
+
 ## 2026.1.0
 
 **リリース日**: 2026-03-02

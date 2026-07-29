@@ -26,15 +26,14 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
         with:
           distribution: 'temurin'
-          # java-version を 17 にしている理由は以下です
-          # - Android Gradle plugin 8.5 のデフォルト JDK version が 17
-          # - 17 は LTS であり、temurin では 2027年10月までサポート予定
-          java-version: '17'
+          # shiguredo-webrtc-android の classes.jar が Java 21 class file を含むため、
+          # CI でも JDK 21 を利用する。
+          java-version: '21'
           cache: 'gradle'
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
