@@ -132,14 +132,22 @@ dokka {
     // "default" を指定すると $USER_HOME/.cache/dokka を使用するとあるが実際には "${projectDir}/default" を見てしまうのでコメントアウトしている.
     // cacheRoot.set(file("default"))
 
-    dokkaSourceSets.configureEach {
-        reportUndocumented.set(true)
-        includes.from(files("packages.md"))
+    dokkaSourceSets {
+        // AGP 9 系では Dokka が Android / Kotlin のソースセットを自動解決できず、
+        // sourceSets が空になることがあるため、main を明示的に定義する。
+        register("main") {
+            sourceRoots.from(files("src/main/kotlin"))
+        }
 
-        sourceLink {
-            localDirectory.set(file("src/main/kotlin"))
-            remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"))
-            remoteLineSuffix.set("#L")
+        configureEach {
+            reportUndocumented.set(true)
+            includes.from(files("packages.md"))
+
+            sourceLink {
+                localDirectory.set(file("src/main/kotlin"))
+                remoteUrl.set(uri("https://github.com/shiguredo/sora-android-sdk/tree/master/sora-android-sdk/src/main/kotlin"))
+                remoteLineSuffix.set("#L")
+            }
         }
     }
 }
