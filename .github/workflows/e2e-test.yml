@@ -45,7 +45,8 @@ jobs:
       - name: Validate Android SDK
         run: |
           test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
-          test -x "$ADB_PATH" || { echo "adb not found at $ADB_PATH"; exit 1; }
+          test -e "$ADB_PATH" || { echo "adb not found at $ADB_PATH"; exit 1; }
+          test -x "$ADB_PATH" || { echo "adb not executable at $ADB_PATH"; exit 1; }
           test -x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || {
             echo "sdkmanager not found at $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
             exit 1
