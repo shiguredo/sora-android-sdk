@@ -11,6 +11,16 @@
 
 ## develop
 
+## 2026.2.1
+
+**リリース日**: 2026-07-29
+
+### misc
+
+- [FIX] JitPack で Kotlin DSL の publishing 設定が誤って補完されてビルドに失敗する問題を修正する
+  - `android.publishing.singleVariant("release")` を明示する
+  - @t-miya
+
 ## 2026.2.0
 
 **リリース日**: 2026-07-29
