@@ -86,6 +86,12 @@ android {
         }
     }
 
+    publishing {
+        // JitPack が Kotlin DSL に対して誤った publishing 設定を補完しないよう、
+        // 公開対象の variant を明示する。
+        singleVariant("release")
+    }
+
     testOptions {
         targetSdk =
             libs.versions.targetSdk
