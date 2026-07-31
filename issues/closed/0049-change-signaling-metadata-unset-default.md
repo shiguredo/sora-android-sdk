@@ -64,6 +64,7 @@ Sora 側の見解では、 `metadata: ""` と `metadata` 項目なしは別の�
 
 - `MessageConverter.buildConnectMessage` で `metadata` が空文字の場合に connect メッセージから `metadata` を除去するように修正した
   - `gson.toJson(msg)` の時点で空文字の `metadata` は JsonObject に含まれるため、条件分岐の前に `remove("metadata")` を実行し、空文字以外の場合のみ追加し直す実装にした
-- `ConnectMetadataJsonTest` に未設定 (空文字) / `null` / 空文字 / 空文字以外の 4 パターンのテストを追加した
+- `ConnectMetadataJsonTest` に `null` / 空文字 / 空文字以外の 3 パターンのテストを追加した
+  - `MessageConverter.buildConnectMessage` 単体では未設定を直接再現できないため、未設定時の挙動は `SoraMediaChannel` のデフォルト値 (空文字) 経由で空文字テストが代表する
 - `SoraMediaChannel` の KDoc に空文字指定時も `metadata` を送信しない旨を記載した
 - `CHANGES.md` の `## develop` セクションに `[CHANGE]` エントリを追記した
