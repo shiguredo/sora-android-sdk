@@ -167,8 +167,13 @@ class MessageConverter {
             // こうすることで、1部フィールドだけ null を許容した JSON 文字列を生成できる
             val jsonMsg = gson.toJson(msg)
             val connectMessageJsonObject = gson.fromJson(jsonMsg, JsonObject::class.java)
-            if (metadata != null) {
-                connectMessageJsonObject.remove("metadata")
+            // 未設定時と null 指定時だけでなく、空文字を指定した場合も metadata を送信しない。
+            // 空文字の metadata を送信すると、認証ウェブフックに "metadata":"" が渡り、
+            // アプリケーションサーバーの認証ロジックに影響する可能性があるためである。
+            // gson.toJson(msg) の時点で metadata が JsonObject に含まれているため、
+            // 空文字の場合は remove してから追加しない
+            connectMessageJsonObject.remove("metadata")
+            if (metadata != null && metadata != "") {
                 connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
             }
             if (signalingNotifyMetadata != null) {

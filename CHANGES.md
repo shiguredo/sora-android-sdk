@@ -11,6 +11,11 @@
 
 ## develop
 
+- [CHANGE] `signalingMetadata` に空文字を指定した場合に connect メッセージの `metadata` を送信しないようにする
+  - 未設定時と `null` 指定時も同様に `metadata` を送信しない
+  - 空文字の `metadata` を送信すると Sora の認証ウェブフックに `metadata: ""` が渡り、アプリケーションサーバーの認証ロジックに影響する可能性があるため
+  - @t-miya
+
 ### misc
 
 ## 2026.2.1

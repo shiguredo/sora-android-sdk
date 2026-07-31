@@ -1,9 +1,16 @@
 package jp.shiguredo.sora.sdk
 
 import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
+import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.ConnectMessage
+import jp.shiguredo.sora.sdk.channel.signaling.message.MessageConverter
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class ConnectMetadataJsonTest {
@@ -81,6 +88,51 @@ class ConnectMetadataJsonTest {
         val metadata = message.metadata as List<*>
         assertEquals(3, metadata.size)
         assertEquals(listOf(1.0, 2.0, 3.0), metadata)
+    }
+
+    // ここから下は MessageConverter.buildConnectMessage の metadata に関するテスト
+
+    // SoraMediaChannel の signalingMetadata を未設定にした場合は metadata を送信しないこと
+    // SoraMediaChannel のデフォルト値は空文字であるため、空文字を渡すことで未設定を再現する
+    @Test
+    fun `buildConnectMessage で metadata 未設定なら metadata を含まないこと`() {
+        val message = buildConnectMessage(metadata = "")
+        assertFalse(message.has("metadata"))
+    }
+
+    // buildConnectMessage で metadata に null を指定した場合は metadata を送信しないこと
+    @Test
+    fun `buildConnectMessage で metadata が null なら metadata を含まないこと`() {
+        val message = buildConnectMessage(metadata = null)
+        assertFalse(message.has("metadata"))
+    }
+
+    // buildConnectMessage で metadata に空文字を明示的に指定した場合も metadata を送信しないこと
+    @Test
+    fun `buildConnectMessage で metadata が空文字なら metadata を含まないこと`() {
+        val message = buildConnectMessage(metadata = "")
+        assertFalse(message.has("metadata"))
+    }
+
+    // buildConnectMessage で metadata に空文字以外を指定した場合は metadata を送信すること
+    @Test
+    fun `buildConnectMessage で metadata に文字列を指定した場合は metadata を含むこと`() {
+        val message = buildConnectMessage(metadata = "str")
+        assertTrue(message.has("metadata"))
+        assertEquals("str", message["metadata"]?.asString)
+    }
+
+    private fun buildConnectMessage(metadata: Any?): JsonObject {
+        val serialized =
+            MessageConverter.buildConnectMessage(
+                role = SoraChannelRole.SENDRECV,
+                channelId = "sora",
+                dataChannelSignaling = null,
+                ignoreDisconnectWebSocket = null,
+                mediaOption = SoraMediaOption(),
+                metadata = metadata,
+            )
+        return JsonParser.parseString(serialized).asJsonObject
     }
 
     private fun roundtrip(metadata: Any?): ConnectMessage {

@@ -84,7 +84,7 @@ import kotlin.coroutines.resume
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
  * @param signalingEndpointCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
- * @param signalingMetadata connect メッセージに含める `metadata`
+ * @param signalingMetadata connect メッセージに含める `metadata`。未設定・`null` ・空文字を指定した場合は `metadata` を送信しない
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
