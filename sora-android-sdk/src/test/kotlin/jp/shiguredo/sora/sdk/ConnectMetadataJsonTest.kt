@@ -92,14 +92,6 @@ class ConnectMetadataJsonTest {
 
     // ここから下は MessageConverter.buildConnectMessage の metadata に関するテスト
 
-    // SoraMediaChannel の signalingMetadata を未設定にした場合は metadata を送信しないこと
-    // SoraMediaChannel のデフォルト値は空文字であるため、空文字を渡すことで未設定を再現する
-    @Test
-    fun `buildConnectMessage で metadata 未設定なら metadata を含まないこと`() {
-        val message = buildConnectMessage(metadata = "")
-        assertFalse(message.has("metadata"))
-    }
-
     // buildConnectMessage で metadata に null を指定した場合は metadata を送信しないこと
     @Test
     fun `buildConnectMessage で metadata が null なら metadata を含まないこと`() {
@@ -107,7 +99,9 @@ class ConnectMetadataJsonTest {
         assertFalse(message.has("metadata"))
     }
 
-    // buildConnectMessage で metadata に空文字を明示的に指定した場合も metadata を送信しないこと
+    // buildConnectMessage で metadata に空文字を指定した場合も metadata を送信しないこと
+    // SoraMediaChannel の signalingMetadata のデフォルト値は空文字であり (SoraMediaChannel.kt 参照)、
+    // 未設定の場合は空文字が buildConnectMessage へ渡るため、このテストは未設定経路を代表する
     @Test
     fun `buildConnectMessage で metadata が空文字なら metadata を含まないこと`() {
         val message = buildConnectMessage(metadata = "")
