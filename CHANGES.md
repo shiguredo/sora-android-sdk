@@ -13,9 +13,6 @@
 
 ### misc
 
-- [FIX] GitHub Actions の paths-ignore に AGENTS.md を追加する
-  - @t-miya
-
 ## 2026.2.1
 
 **リリース日**: 2026-07-29

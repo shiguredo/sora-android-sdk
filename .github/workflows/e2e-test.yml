@@ -4,10 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths-ignore:
-      - 'README.md'
-      - 'CHANGES.md'
-      - 'CLAUDE.md'
-      - 'AGENTS.md'
+      - '*.md'
       - 'LICENSE'
       - 'THANKS'
       - '.github/workflows/claude.yml'
