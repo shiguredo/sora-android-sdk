@@ -90,7 +90,7 @@ import kotlin.coroutines.resume
  * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
- * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`。`null` を指定した場合は送信しない。空文字を指定した場合は `signaling_notify_metadata` を送信する (`signalingMetadata` と異なり空文字は除去しない)
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
