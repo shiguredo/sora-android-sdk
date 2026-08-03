@@ -11,21 +11,21 @@
 
 ## develop
 
-- [CHANGE] `signalingMetadata` に空文字を指定した場合に connect メッセージの `metadata` を送信しないようにする
-  - 未設定時 (デフォルト値の空文字) と空文字指定時は `metadata` を送信しなくなる。`null` 指定時は従来どおり送信しない
-  - `JsonNull` と空文字の `JsonPrimitive` を指定した場合も `metadata` を送信しない
-  - 空文字の `metadata` を送信すると Sora の認証ウェブフックに `metadata: ""` が渡り、アプリケーションサーバーの認証ロジックに影響する可能性があるため
-  - `metadata: ""` の送信を前提にしていた場合は、`metadata` を送信したいなら空文字以外を指定する必要がある
-  - @t-miya
-- [CHANGE] `signalingNotifyMetadata` に空文字を指定した場合に connect メッセージの `signaling_notify_metadata` を送信しないようにする
-  - `null`・空文字・`JsonNull`・空文字の `JsonPrimitive` を指定した場合は送信しない
-  - `signaling_notify_metadata` は他のクライアントの表示に使われるデータであり、空文字を送信すると表示に問題が出る可能性があるため
+- [CHANGE] `signalingMetadata` を未指定にした場合に connect メッセージの `metadata` を送信しないようにする
+  - `signalingMetadata` のデフォルト値を `""` から `null` に変更した。未指定時 (`null`) と `JsonNull` 指定時は `metadata` を送信しない
+  - 空文字を明示的に指定した場合は従来どおり `metadata: ""` を送信する
+  - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
   - @t-miya
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
-  - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、ネストした null も保持して送信する
+  - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
+  - `null` と `JsonNull` 指定時は `signaling_notify_metadata` を送信しない
   - @t-miya
 
 ### misc
+
+- [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
+  - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
+  - @t-miya
 
 ## 2026.2.1
 
