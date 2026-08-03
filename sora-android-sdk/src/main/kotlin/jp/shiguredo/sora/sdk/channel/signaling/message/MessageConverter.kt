@@ -2,7 +2,9 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraForwardingFilterOption
@@ -171,14 +173,23 @@ class MessageConverter {
             // 空文字の metadata を送信すると、認証ウェブフックに "metadata":"" が渡り、
             // アプリケーションサーバーの認証ロジックに影響する可能性があるためである。
             // gson.toJson(msg) の時点で metadata が JsonObject に含まれているため、
-            // 空文字の場合は remove してから追加しない
+            // 条件の外で一度 remove してから、空文字以外の場合のみ追加し直す。
+            // 空文字判定は String と JsonPrimitive にのみ適用する (Map や List は空でも送信する)。
+            // JsonNull.INSTANCE は Kotlin の null ではなく JsonElement であるため、
+            // null 相当として扱う防御的措置として除去対象に加える。
+            // これは JsonElement 全般の入力を正式にサポートする意図ではない
             connectMessageJsonObject.remove("metadata")
-            if (metadata != null && metadata != "") {
+            if (metadata != null && metadata !is JsonNull && !isMetadataEmpty(metadata)) {
                 connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
             }
-            if (signalingNotifyMetadata != null) {
-                connectMessageJsonObject.remove("signalingNotifyMetadata")
-                connectMessageJsonObject.add("signalingNotifyMetadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
+            // signalingNotifyMetadata も metadata 側と同様に、null ・空文字・JsonNull ・
+            // 空文字の JsonPrimitive を指定した場合は送信しない。
+            // signaling_notify_metadata は他のクライアントの表示に使われるデータであり、
+            // 空文字を送ると表示に問題が出る可能性があるためである。
+            // キーは ConnectMessage の @SerializedName に合わせて snake_case で指定する
+            connectMessageJsonObject.remove("signaling_notify_metadata")
+            if (signalingNotifyMetadata != null && signalingNotifyMetadata !is JsonNull && !isMetadataEmpty(signalingNotifyMetadata)) {
+                connectMessageJsonObject.add("signaling_notify_metadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
             }
             return gsonSerializeNulls.toJson(connectMessageJsonObject)
         }
@@ -234,5 +245,12 @@ class MessageConverter {
         fun parseReqStatsMessage(text: String): ReqStatsMessage = gson.fromJson(text, ReqStatsMessage::class.java)
 
         fun parseRedirectMessage(text: String): RedirectMessage = gson.fromJson(text, RedirectMessage::class.java)
+
+        // metadata が空文字相当かどうかを判定する。
+        // String の空文字に加えて、JsonPrimitive の空文字 (JsonPrimitive("")) も対象とする。
+        // JsonPrimitive("") は String ではないため、String 判定だけでは除去されない
+        private fun isMetadataEmpty(metadata: Any?): Boolean =
+            metadata is String && metadata.isEmpty() ||
+                metadata is JsonPrimitive && metadata.isString && metadata.asString.isEmpty()
     }
 }

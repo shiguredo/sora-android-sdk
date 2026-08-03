@@ -1,8 +1,10 @@
 package jp.shiguredo.sora.sdk
 
 import com.google.gson.Gson
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
 import jp.shiguredo.sora.sdk.channel.option.SoraMediaOption
 import jp.shiguredo.sora.sdk.channel.signaling.message.ConnectMessage
@@ -96,6 +98,7 @@ class ConnectMetadataJsonTest {
     @Test
     fun `buildConnectMessage で metadata が null なら metadata を含まないこと`() {
         val message = buildConnectMessage(metadata = null)
+        assertCommonMessageFields(message)
         assertFalse(message.has("metadata"))
     }
 
@@ -105,18 +108,105 @@ class ConnectMetadataJsonTest {
     @Test
     fun `buildConnectMessage で metadata が空文字なら metadata を含まないこと`() {
         val message = buildConnectMessage(metadata = "")
+        assertCommonMessageFields(message)
         assertFalse(message.has("metadata"))
     }
 
-    // buildConnectMessage で metadata に空文字以外を指定した場合は metadata を送信すること
+    // buildConnectMessage で metadata に空文字以外の文字列を指定した場合は metadata を送信すること
     @Test
     fun `buildConnectMessage で metadata に文字列を指定した場合は metadata を含むこと`() {
         val message = buildConnectMessage(metadata = "str")
+        assertCommonMessageFields(message)
         assertTrue(message.has("metadata"))
         assertEquals("str", message["metadata"]?.asString)
     }
 
-    private fun buildConnectMessage(metadata: Any?): JsonObject {
+    // buildConnectMessage で metadata に JsonNull を指定した場合も metadata を送信しないこと
+    // JsonNull.INSTANCE は Kotlin の null ではなく JsonElement のため、
+    // null 指定時と同じ扱いにする必要がある
+    @Test
+    fun `buildConnectMessage で metadata が JsonNull なら metadata を含まないこと`() {
+        val message = buildConnectMessage(metadata = JsonNull.INSTANCE)
+        assertCommonMessageFields(message)
+        assertFalse(message.has("metadata"))
+    }
+
+    // buildConnectMessage で metadata に JsonPrimitive の空文字を指定した場合も metadata を送信しないこと
+    // JsonPrimitive("") は String ではないため、String 判定だけでは除去されず、
+    // 空文字相当として明示的に除去する必要がある
+    @Test
+    fun `buildConnectMessage で metadata が JsonPrimitive の空文字なら metadata を含まないこと`() {
+        val message = buildConnectMessage(metadata = JsonPrimitive(""))
+        assertCommonMessageFields(message)
+        assertFalse(message.has("metadata"))
+    }
+
+    // buildConnectMessage で metadata に Map を指定した場合は metadata を送信すること
+    // 空文字判定は String と JsonPrimitive にのみ適用されるため、Map は空でも送信される
+    @Test
+    fun `buildConnectMessage で metadata に Map を指定した場合は metadata を含むこと`() {
+        val message = buildConnectMessage(metadata = mapOf("foo" to 1))
+        assertCommonMessageFields(message)
+        assertTrue(message.has("metadata"))
+        assertEquals(1, message["metadata"]?.asJsonObject?.get("foo")?.asInt)
+    }
+
+    // buildConnectMessage で metadata に空の Map を指定した場合も metadata を送信すること
+    // 空文字判定は String と JsonPrimitive にのみ適用されるため、空の Map は除去されない
+    @Test
+    fun `buildConnectMessage で metadata が空の Map なら metadata を含むこと`() {
+        val message = buildConnectMessage(metadata = mapOf<String, Any>())
+        assertCommonMessageFields(message)
+        assertTrue(message.has("metadata"))
+    }
+
+    // buildConnectMessage で signalingNotifyMetadata に null を含む Map を指定した場合、
+    // 正しいキー (signaling_notify_metadata) でネスト null も送信されること
+    // キーは ConnectMessage の @SerializedName に合わせて snake_case になるため、
+    // camelCase のキー (signalingNotifyMetadata) が含まれないことも検証する
+    @Test
+    fun `buildConnectMessage で signalingNotifyMetadata に null を含む Map を指定した場合は正しいキーで送信すること`() {
+        val message = buildConnectMessage(signalingNotifyMetadata = mapOf("foo" to null))
+        assertCommonMessageFields(message)
+        assertTrue(message.has("signaling_notify_metadata"))
+        assertFalse(message.has("signalingNotifyMetadata"))
+        val notifyMetadata = message["signaling_notify_metadata"]?.asJsonObject
+        assertTrue(notifyMetadata?.has("foo") == true)
+        assertTrue(notifyMetadata?.get("foo")?.isJsonNull == true)
+    }
+
+    // buildConnectMessage で signalingNotifyMetadata に空文字を指定した場合も送信しないこと
+    // signaling_notify_metadata は他のクライアントの表示に使われるデータであり、
+    // 空文字を送信すると表示に問題が出る可能性があるため、metadata 側と同様に除去する
+    @Test
+    fun `buildConnectMessage で signalingNotifyMetadata が空文字なら signaling_notify_metadata を含まないこと`() {
+        val message = buildConnectMessage(signalingNotifyMetadata = "")
+        assertCommonMessageFields(message)
+        assertFalse(message.has("signaling_notify_metadata"))
+    }
+
+    // buildConnectMessage で signalingNotifyMetadata に空文字の JsonPrimitive を指定した場合も送信しないこと
+    // metadata 側と同様に、空文字相当の JsonPrimitive は除去する
+    @Test
+    fun `buildConnectMessage で signalingNotifyMetadata が空文字の JsonPrimitive なら signaling_notify_metadata を含まないこと`() {
+        val message = buildConnectMessage(signalingNotifyMetadata = JsonPrimitive(""))
+        assertCommonMessageFields(message)
+        assertFalse(message.has("signaling_notify_metadata"))
+    }
+
+    // buildConnectMessage で signalingNotifyMetadata に JsonNull を指定した場合は送信しないこと
+    // metadata 側と同様に、JsonNull.INSTANCE は null 相当として扱い除去する
+    @Test
+    fun `buildConnectMessage で signalingNotifyMetadata が JsonNull なら signaling_notify_metadata を含まないこと`() {
+        val message = buildConnectMessage(signalingNotifyMetadata = JsonNull.INSTANCE)
+        assertCommonMessageFields(message)
+        assertFalse(message.has("signaling_notify_metadata"))
+    }
+
+    private fun buildConnectMessage(
+        metadata: Any? = null,
+        signalingNotifyMetadata: Any? = null,
+    ): JsonObject {
         val serialized =
             MessageConverter.buildConnectMessage(
                 role = SoraChannelRole.SENDRECV,
@@ -125,8 +215,16 @@ class ConnectMetadataJsonTest {
                 ignoreDisconnectWebSocket = null,
                 mediaOption = SoraMediaOption(),
                 metadata = metadata,
+                signalingNotifyMetadata = signalingNotifyMetadata,
             )
         return JsonParser.parseString(serialized).asJsonObject
+    }
+
+    // metadata の有無にかかわらず、connect メッセージの主要キーが壊れていないことを検証する
+    private fun assertCommonMessageFields(message: JsonObject) {
+        assertEquals("connect", message["type"]?.asString)
+        assertEquals("sendrecv", message["role"]?.asString)
+        assertEquals("sora", message["channel_id"]?.asString)
     }
 
     private fun roundtrip(metadata: Any?): ConnectMessage {

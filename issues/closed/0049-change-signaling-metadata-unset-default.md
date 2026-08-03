@@ -64,7 +64,16 @@ Sora 側の見解では、 `metadata: ""` と `metadata` 項目なしは別の�
 
 - `MessageConverter.buildConnectMessage` で `metadata` が空文字の場合に connect メッセージから `metadata` を除去するように修正した
   - `gson.toJson(msg)` の時点で空文字の `metadata` は JsonObject に含まれるため、条件分岐の前に `remove("metadata")` を実行し、空文字以外の場合のみ追加し直す実装にした
-- `ConnectMetadataJsonTest` に `null` / 空文字 / 空文字以外の 3 パターンのテストを追加した
+  - 空文字判定は `isMetadataEmpty` ヘルパーに切り出し、String の空文字に加えて空文字の `JsonPrimitive` も除去対象にした
+  - `JsonNull.INSTANCE` は Kotlin の null ではなく JsonElement であるため、null 相当として扱う防御的措置として除去対象に加えた
+- `signalingNotifyMetadata` のキーを `@SerializedName` と一致する `signaling_notify_metadata` に修正した
+  - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、ネストした null も保持して送信するようになった
+- `signalingNotifyMetadata` も `metadata` 側と同様に、`null`・空文字・`JsonNull`・空文字の `JsonPrimitive` を指定した場合は送信しないようにした
+  - `signaling_notify_metadata` は他のクライアントの表示に使われるデータであり、空文字を送信すると表示に問題が出る可能性があるため
+- `ConnectMetadataJsonTest` に以下のテストを追加した
+  - `metadata` の除去: `null` / 空文字 / `JsonNull` / 空文字の `JsonPrimitive`
+  - `metadata` の送信: 文字列 / Map / 空の Map
+  - `signalingNotifyMetadata`: null を含む Map (snake_case キーとネスト null の検証) / 空文字 / 空文字の `JsonPrimitive` / `JsonNull`
   - `MessageConverter.buildConnectMessage` 単体では未設定を直接再現できないため、未設定時の挙動は `SoraMediaChannel` のデフォルト値 (空文字) 経由で空文字テストが代表する
-- `SoraMediaChannel` の KDoc に空文字指定時も `metadata` を送信しない旨を記載した
-- `CHANGES.md` の `## develop` セクションに `[CHANGE]` エントリを追記した
+- `SoraMediaChannel` の KDoc に空文字・`JsonNull`・空文字の `JsonPrimitive` 指定時に `metadata` と `signaling_notify_metadata` を送信しない旨を記載した
+- `CHANGES.md` の `## develop` セクションに `[CHANGE]` エントリ 2 件と `[FIX]` エントリ 1 件を追記した

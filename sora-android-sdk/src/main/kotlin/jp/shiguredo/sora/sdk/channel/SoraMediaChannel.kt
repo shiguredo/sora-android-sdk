@@ -84,13 +84,13 @@ import kotlin.coroutines.resume
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
  * @param signalingEndpointCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
- * @param signalingMetadata connect メッセージに含める `metadata`。未設定・`null` ・空文字を指定した場合は `metadata` を送信しない
+ * @param signalingMetadata connect メッセージに含める `metadata`。デフォルト値は空文字であり、未設定・`null`・空文字・`JsonNull`・空文字の `JsonPrimitive` を指定した場合は `metadata` を送信しない
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
- * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`。`null` を指定した場合は送信しない。空文字を指定した場合は `signaling_notify_metadata` を送信する (`signalingMetadata` と異なり空文字は除去しない)
+ * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`。`null`・空文字・`JsonNull`・空文字の `JsonPrimitive` を指定した場合は送信しない。この項目は他のクライアントの表示に使われるため、空文字を送信すると表示に問題が出る可能性がある
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
