@@ -171,7 +171,7 @@ class ConnectMetadataJsonTest {
     }
 
     // buildConnectMessage で signalingNotifyMetadata に null を含む Map を指定した場合、
-    // 正しいキー (signaling_notify_metadata) でネスト null も送信されること
+    // 正しいキー (signaling_notify_metadata) でネスト null (Map の値に含まれる null) も送信されること
     // キーは ConnectMessage の @SerializedName に合わせて snake_case になるため、
     // camelCase のキー (signalingNotifyMetadata) が含まれないことも検証する
     @Test

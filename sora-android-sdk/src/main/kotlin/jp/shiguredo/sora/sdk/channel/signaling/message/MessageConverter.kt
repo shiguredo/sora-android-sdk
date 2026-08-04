@@ -174,7 +174,7 @@ class MessageConverter {
             // JsonNull.INSTANCE は Kotlin の null ではなく JsonElement であり、
             // ここで除去しないと gsonSerializeNulls での再追加時に
             // "metadata":null として送信されてしまうため、明示的に除去する必要がある。
-            // また、gson.toJson(msg) は serializeNulls が無効のため Map 内のネスト null が
+            // また、gson.toJson(msg) は serializeNulls が無効のため Map 内のネスト null (Map の値に含まれる null) が
             // 欠落する。gsonSerializeNulls で再追加することでネスト null を保持する
             connectMessageJsonObject.remove("metadata")
             if (metadata != null && metadata !is JsonNull) {
