@@ -11,7 +11,17 @@
 
 ## develop
 
-### misc
+- [CHANGE] `signalingMetadata` を未指定にした場合に connect メッセージの `metadata` を送信しないようにする
+  - `signalingMetadata` のデフォルト値を `""` から `null` に変更した。未指定時 (`null`) と `JsonNull` 指定時は `metadata` を送信しない
+  - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
+  - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
+  - @t-miya
+- [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
+  - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
+  - @t-miya
+- [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
+  - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
+  - @t-miya
 
 ## 2026.2.1
 

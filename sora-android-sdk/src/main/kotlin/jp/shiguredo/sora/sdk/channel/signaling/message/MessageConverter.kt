@@ -2,6 +2,7 @@ package jp.shiguredo.sora.sdk.channel.signaling.message
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import jp.shiguredo.sora.sdk.channel.option.SoraAudioOption
 import jp.shiguredo.sora.sdk.channel.option.SoraChannelRole
@@ -167,13 +168,22 @@ class MessageConverter {
             // こうすることで、1部フィールドだけ null を許容した JSON 文字列を生成できる
             val jsonMsg = gson.toJson(msg)
             val connectMessageJsonObject = gson.fromJson(jsonMsg, JsonObject::class.java)
-            if (metadata != null) {
-                connectMessageJsonObject.remove("metadata")
+            // metadata と signalingNotifyMetadata は、未指定時 (null) と JsonNull 指定時のみ送信しない。
+            // 空文字を明示的に指定した場合は空文字のまま送信する。
+            // 空文字の明示指定は利用者の意図であり、SDK 側で抑制しない。
+            // JsonNull.INSTANCE は Kotlin の null ではなく JsonElement であり、
+            // ここで除去しないと gsonSerializeNulls での再追加時に
+            // "metadata":null として送信されてしまうため、明示的に除去する必要がある。
+            // また、gson.toJson(msg) は serializeNulls が無効のため Map 内のネスト null (Map の値に含まれる null) が
+            // 欠落する。gsonSerializeNulls で再追加することでネスト null を保持する
+            connectMessageJsonObject.remove("metadata")
+            if (metadata != null && metadata !is JsonNull) {
                 connectMessageJsonObject.add("metadata", gsonSerializeNulls.toJsonTree(metadata))
             }
-            if (signalingNotifyMetadata != null) {
-                connectMessageJsonObject.remove("signalingNotifyMetadata")
-                connectMessageJsonObject.add("signalingNotifyMetadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
+            // キーは ConnectMessage の @SerializedName に合わせて snake_case で指定する
+            connectMessageJsonObject.remove("signaling_notify_metadata")
+            if (signalingNotifyMetadata != null && signalingNotifyMetadata !is JsonNull) {
+                connectMessageJsonObject.add("signaling_notify_metadata", gsonSerializeNulls.toJsonTree(signalingNotifyMetadata))
             }
             return gsonSerializeNulls.toJson(connectMessageJsonObject)
         }

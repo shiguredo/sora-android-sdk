@@ -3,9 +3,11 @@ package jp.shiguredo.sora.sdk.channel
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.BuildConfig
@@ -84,13 +86,13 @@ import kotlin.coroutines.resume
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
  * @param signalingEndpointCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
- * @param signalingMetadata connect メッセージに含める `metadata`
+ * @param signalingMetadata デフォルト値は `null` であり、`signalingMetadata` は未指定時 (`null`) と `JsonNull` を指定した場合は connect メッセージに `metadata` を含めない。それ以外の値 (空文字を含む) はそのまま送信する
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
- * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param signalingNotifyMetadata `signalingNotifyMetadata` は、未指定時 (`null`) と `JsonNull` を指定した場合は connect メッセージに `signaling_notify_metadata` を含めない。それ以外の値 (空文字を含む) はそのまま送信する
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
@@ -109,7 +111,7 @@ class SoraMediaChannel
         private val signalingEndpoint: String? = null,
         private val signalingEndpointCandidates: List<String> = emptyList(),
         private val channelId: String,
-        private val signalingMetadata: Any? = "",
+        private val signalingMetadata: Any? = null,
         private val mediaOption: SoraMediaOption,
         private val timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
         private var listener: Listener?,
@@ -205,22 +207,44 @@ class SoraMediaChannel
             when (value) {
                 is Map<*, *> ->
                     value.mapValues { (key, nestedValue) ->
-                        val keyString = key?.toString()?.lowercase().orEmpty()
-                        if (
-                            keyString.contains("token") ||
-                            keyString.contains("secret") ||
-                            keyString.contains("password") ||
-                            keyString.contains("authorization") ||
-                            keyString.contains("credential")
-                        ) {
+                        if (isSensitiveKey(key)) {
                             "***"
                         } else {
                             maskSensitiveLogValue(nestedValue)
                         }
                     }
                 is List<*> -> value.map { maskSensitiveLogValue(it) }
+                is JsonObject -> {
+                    // Map と同様に、キー名が token / secret / password 系の場合は値をマスクする
+                    val masked = JsonObject()
+                    value.entrySet().forEach { (key, nestedValue) ->
+                        if (isSensitiveKey(key)) {
+                            masked.add(key, JsonPrimitive("***"))
+                        } else {
+                            masked.add(key, maskSensitiveLogValue(nestedValue) as JsonElement)
+                        }
+                    }
+                    masked
+                }
+                is JsonArray -> {
+                    val masked = JsonArray()
+                    value.forEach { masked.add(maskSensitiveLogValue(it) as JsonElement) }
+                    masked
+                }
                 else -> value
             }
+
+        // キー名が token / secret / password 系かどうかを判定する
+        private fun isSensitiveKey(key: Any?): Boolean {
+            val keyString = key?.toString()?.lowercase().orEmpty()
+            return (
+                keyString.contains("token") ||
+                    keyString.contains("secret") ||
+                    keyString.contains("password") ||
+                    keyString.contains("authorization") ||
+                    keyString.contains("credential")
+            )
+        }
 
         // PEM 文字列から変換した CA 証明書 (未指定の場合は null)
         // WebSocket と TURN-TLS のサーバー証明書検証に利用する
