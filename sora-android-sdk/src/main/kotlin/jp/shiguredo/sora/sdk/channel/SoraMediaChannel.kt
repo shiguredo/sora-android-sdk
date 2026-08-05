@@ -945,6 +945,21 @@ class SoraMediaChannel
                     }
                 }
 
+                override fun onError(
+                    reason: SoraErrorReason,
+                    message: String,
+                ) {
+                    SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason:$message")
+                    val ignoreError = switchedIgnoreDisconnectWebSocket
+                    if (switchedToDataChannel && ignoreError) {
+                        // なにもしない
+                        SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
+                    } else {
+                        // エラーをリスナーに通知
+                        listener?.onError(this@SoraMediaChannel, reason, message)
+                    }
+                }
+
                 override fun getStats(handler: (RTCStatsReport?) -> Unit) {
                     if (peer != null) {
                         peer!!.getStats(handler)
@@ -1096,6 +1111,13 @@ class SoraMediaChannel
                             }
                         } catch (e: Exception) {
                             SoraLogger.e(TAG, "failed to process DataChannel message", e)
+                            // DataChannel 経由のシグナリングでメッセージ処理に失敗した場合、
+                            // 例外情報を message としてリスナーに通知する
+                            listener?.onError(
+                                this@SoraMediaChannel,
+                                SoraErrorReason.SIGNALING_FAILURE,
+                                e.toString(),
+                            )
                         }
                     }
                 }
