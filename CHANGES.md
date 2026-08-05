@@ -16,11 +16,12 @@
   - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
   - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
   - @t-miya
-- [ADD] ネットワーク切断エラーの内容を `SoraMediaChannel.Listener.onError` の `message` で受け取れるようにする
-  - `SignalingChannel.Listener` に `onError(reason, message)` を追加する (既存の `onError(reason)` は維持)
-  - WebSocket シグナリングの失敗時 (`onFailure`) に、例外の `toString()` と HTTP ステータスコード・理由句を `message` として伝搬する
+- [UPDATE] ネットワーク切断エラーの内容が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
+  - WebSocket シグナリング失敗時の詳細なエラー情報が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
+    - 内部では `SignalingChannel.Listener` に `onError(reason, message)` を追加し、既存の `onError(reason)` は維持する
+  - WebSocket シグナリングの失敗時 (`onFailure`) に、例外の `toString()` と HTTP ステータスコードや失敗理由を `message` として伝搬する
   - DataChannel 経由のシグナリングでメッセージ処理に失敗した場合も、例外情報を `message` として伝搬する
-  - `response` のヘッダー・本文は機密情報や長大な内容を含みうるため `message` には含めない
+  - `response` のヘッダー・本文は機密情報や長大な内容を含む可能性があるため `message` には含めない
   - @t-miya
 - [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
   - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
