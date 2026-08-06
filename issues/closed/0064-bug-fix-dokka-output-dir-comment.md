@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-06-29
-- Completed:
+- Completed: 2026-08-06
 - Model: opencode-go glm-5.2
 - Branch: feature/fix-dokka-output-dir-comment
 - Polished:
@@ -32,6 +32,17 @@
 
 ## 解決方法
 
-- `sora-android-sdk/build.gradle.kts` のコメントを修正する
-  - `// デフォルトの出力先は "${buildDir}/dokka/html". 変更したいときにコメントアウトを行う.` に修正する
-- `CHANGES.md` の `## develop` セクションの `### misc` サブセクションに `[FIX] Dokka のデフォルト出力先コメントを修正する` を追加する (実装者の `@username` を記載すること)
+本 issue はコミット `fefbb3a`（依存ライブラリを更新する）で既に解決済みであることを確認した。
+
+同コミットで `tasks.dokkaHtml.configure` ブロックを `dokka {}` ブロックへ書き換える際に、コメントも `${buildDir}/dokka` から `${buildDir}/dokka/html` へ同時に修正されている。現在の `sora-android-sdk/build.gradle.kts` は以下の状態であり、完了条件（コメントが実際の出力先と一致すること）を満たしている。
+
+```kotlin
+dokka {
+    // デフォルトの出力先は "${buildDir}/dokka/html". 変更したいときにコメントアウトを行う.
+    // outputDirectory.set(File("${buildDir}/dokka/html"))
+    moduleName.set("sora-android-sdk")
+    ...
+}
+```
+
+`outputDirectory.set(...)` のコメントアウト行も実際のデフォルト値に合わせて `${buildDir}/dokka/html` に更新されている。CHANGES.md へのエントリ追加は、本変更がコメントのみの修正でありユーザーに影響がないため不要と判断した。
