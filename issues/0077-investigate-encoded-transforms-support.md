@@ -29,6 +29,12 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
   - `RTCEncodedVideoFrame` / `RTCEncodedAudioFrame` / `EncodedFrameProcessor` / `RtpSender.setEncodedFrameProcessor` はすべて存在しない（150.7871.3.0 の AAR の classes.jar を確認済み）。
   - encoded フレームを扱える既存の Java API は `FrameEncryptor` / `FrameDecryptor`（`RtpSender.setFrameEncryptor()` / `RtpReceiver.setFrameDecryptor()`）のみであり、フレーム全体の置き換え（暗号化）に特化している。メタデータ改変とキーフレーム制御はできない。
 - 受信側の `sendKeyFrameRequest` に相当するネイティブ API は存在しない。Sora は SFU でありキーフレーム要求はサーバー側の自動 PLI/FIR で管理されるため、初版では提供しない方針とする。
+- 参考実装として、Sora Python SDK が WebRTC Encoded Transform を SDK の一部として提供済みである（https://sora-python-sdk.shiguredo.jp/webrtc_encoded_transform）。
+  - 音声と映像の両方が対象であり、`SoraAudioFrameTransformer` / `SoraVideoFrameTransformer` のように音声と映像で transformer が分離されている。
+  - 送信時は接続作成時のオプション（`audio_frame_transformer` / `video_frame_transformer`）で指定し、受信時は `SoraMediaTrack.set_frame_transformer()` でトラック単位に設定する。
+  - 変換はコールバック（`on_transform`）でフレームを受け取り、`enqueue(frame)` で戻す方式である。
+  - フレームデータは `SoraTransformableAudioFrame` / `SoraTransformableVideoFrame` の `get_data()` / `set_data()` で取得・置き換えする。
+  - 主な用途は音声・映像と同時に何かしらのデータを送ること（例: H.264 SEI の追加）であり、エンドツーエンド暗号化にも利用できる。
 
 ## 設計方針
 
@@ -48,6 +54,11 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
   - `RtpSender.generateKeyFrame(rids)`
 - ネイティブ側には `FrameTransformerInterface` の JNI 実装（JavaFrameTransformer）を追加する。
 - SDK 側は `SoraMediaOption` に processor を渡す公開 API を追加し、`PeerChannelImpl` の sender / receiver に適用する。
+- SDK の公開 API は Sora Python SDK の API 設計を参考に、音声と映像の両方を対象として分離した transformer を提供する。
+  - 送信時は `SoraMediaOption` に音声・映像それぞれの transformer（`SoraAudioFrameTransformer` / `SoraVideoFrameTransformer` 相当）を設定する。
+  - 受信時はトラック単位で transformer を設定する API を追加する（`SoraMediaTrack.set_frame_transformer()` 相当）。
+  - 変換はコールバックでフレームを受け取り、`enqueue()` で戻す方式とする（MDN の TransformStream の pipe に相当）。
+  - オーディオにはキーフレームが存在しないため、`GenerateKeyFrame` によるキーフレーム制御は映像のみに適用する。
 - libwebrtc の更新と同時にリリースされる。
 
 ### 推奨
@@ -60,6 +71,8 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 - 変換後のフレームは元の順序を保ち、重複なく返すこと（MDN の記事にも明記されている）。
 - `EncodedImage` のバッファはネイティブ所有メモリの参照であるため、Java 側にはコピーして渡すこと（GC セーフ）。
 - 送信側の transform はシミュラカストの rid ごとに呼ばれるため、`RTCEncodedVideoFrame` に rid を含めること。
+- 送信側の transform にはエンコーダー出力直後（RTP 分割前）のフレーム、受信側の transform には RTP 結合後（デコーダー入力直前）のフレームが渡る。オーディオも同様である。
+- オーディオフレームにはキーフレームが存在しないため、キーフレーム制御の API は映像専用とする。
 - Sora の re-offer / update（`handleUpdatedRemoteOffer()`）で transceiver が再構成される場合に transform が外れないよう、PeerChannel のライフサイクルに組み込むこと。
 - Sora は SFU であるため、transform はクライアント側のみで完結し、サーバー側の変更は不要である。
 
