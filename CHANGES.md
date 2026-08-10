@@ -30,6 +30,13 @@
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya
 
+### misc
+
+- [UPDATE] GitHub Actions の E2E テストワークフロー名を `E2E Test` に変更する
+  - @zztkm
+- [UPDATE] E2E テストのシグナリング URL 環境変数を `SORA_SIGNALING_URL` から `TEST_SORA_SIGNALING_URL` に変更する
+  - @zztkm
+
 ## 2026.2.1
 
 **リリース日**: 2026-07-29
