@@ -190,11 +190,11 @@ class SoraMessagingE2ETest : SoraE2ETestBase() {
                     throw e
                 }
 
-                // onDataChannel は handleSwitched() 内で発火するが、DataChannel が実際に OPEN
-                // するのは peerListener.onDataChannelOpen() が呼ばれるタイミングであり、
-                // onDataChannel 発火時点では dataChannels[label] に未登録の可能性がある。
-                // そのため dataChannelReady フラグが立った後も、sendDataChannelMessage の
-                // 戻り値で DataChannel OPEN 完了をポーリングする。
+                // onDataChannel はメッセージング用 DataChannel がすべてクライアント側で
+                // OPEN になったタイミングで発火する（switched 受信時ではない）。
+                // そのため onDataChannel 発火時点では dataChannels[label] に登録済みのはずだが、
+                // 発火直後の僅かなタイムラグに備えて sendDataChannelMessage の戻り値で
+                // DataChannel 送信可否をポーリングする。
                 //
                 // まず onDataChannel が発火するのを待つ（発火しなければ DataChannel が開くことはない）
                 withTimeout(10_000) {

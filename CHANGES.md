@@ -16,6 +16,10 @@
   - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
   - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
   - @t-miya
+- [UPDATE] `SoraMediaChannel.Listener.onDataChannel` の発火タイミングを、サーバからの `switched` 受信時からクライアント側でメッセージング用 DataChannel がすべて OPEN になったタイミングに変更する
+  - メッセージング用ラベル（`#` で始まるラベル）の DataChannel がクライアント側で OPEN になった時点で発火するため、発火時点で DataChannel は送受信可能な状態になっている
+  - メッセージング用ラベルが存在しない場合は発火しない
+  - @t-miya
 - [UPDATE] ネットワーク切断エラーの内容が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
   - WebSocket シグナリング失敗時の詳細なエラー情報が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
     - 内部では `SignalingChannel.Listener` に `onError(reason, message)` を追加し、既存の `onError(reason)` は維持する

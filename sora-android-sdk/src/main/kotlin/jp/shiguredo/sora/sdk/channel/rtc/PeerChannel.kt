@@ -397,8 +397,17 @@ class PeerChannelImpl(
                                 "[rtc] @dataChannel.onStateChange" +
                                     " label=$label, id=${dataChannel.id()}, state=${dataChannel.state()}",
                             )
-                            if (dataChannel.state() == DataChannel.State.CLOSED) {
-                                listener?.onDataChannelClosed(dataChannel.label(), dataChannel)
+                            when (dataChannel.state()) {
+                                // DataChannel がクライアント側で OPEN になったタイミングで通知する。
+                                // これにより onDataChannelOpen は「DataChannel オブジェクトが作成された時」ではなく
+                                // 「クライアント側で DataChannel が実際に利用可能になった時」の通知となる。
+                                DataChannel.State.OPEN -> {
+                                    listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
+                                }
+                                DataChannel.State.CLOSED -> {
+                                    listener?.onDataChannelClosed(dataChannel.label(), dataChannel)
+                                }
+                                else -> Unit
                             }
                         }
 
@@ -413,7 +422,14 @@ class PeerChannelImpl(
                     },
                 )
 
-                listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
+                // NOTE: DataChannel の OPEN は onStateChange で検知する。
+                //       libwebrtc の DataChannel.RegisterObserver は登録時に現在の state を
+                //       onStateChange で即時通知するため、登録時点で既に OPEN の場合も
+                //       onDataChannelOpen が通知される。
+                //       ただし、実装依存の挙動であるため、登録時点の state も確認する。
+                if (dataChannel.state() == DataChannel.State.OPEN) {
+                    listener?.onDataChannelOpen(dataChannel.label(), dataChannel)
+                }
             }
 
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
