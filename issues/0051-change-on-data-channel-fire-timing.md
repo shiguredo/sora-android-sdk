@@ -88,3 +88,30 @@ API の後方互換を維持しつつ（`onDataChannel` のシグネチャは不
 - 単体テストまたは E2E テストで上記の発火タイミングを検証すること。
 
 ## 解決方法
+
+### PeerChannel.kt
+
+- `DataChannel.Observer.onStateChange` で `DataChannel.State.OPEN` への遷移を検知し、`PeerChannel.Listener.onDataChannelOpen` を通知するようにした。これにより `onDataChannelOpen` は「DataChannel オブジェクトが作成された時」ではなく「クライアント側で DataChannel が OPEN になった時」の通知となる。
+- 従来は `PeerConnection.onDataChannel`（DataChannel オブジェクト作成時）の直後に `onDataChannelOpen` を呼んでいたが、その直接呼び出しを削除した。
+- libwebrtc の `DataChannel.RegisterObserver` は登録時に現在の state を `onStateChange` で即時通知しない実装であるため、登録時点で既に OPEN の場合の防御的チェックを追加した（`onStateChange` による通知と重複する可能性はあるが、`SoraMediaChannel` 側の `onDataChannelNotified` フラグで二重発火を防止している）。
+
+### SoraMediaChannel.kt
+
+- `openedMessagingLabels`（`MutableSet<String>`）を追加し、`onDataChannelOpen` でメッセージング用ラベル（`#` で始まるラベル）の OPEN を追跡するようにした。
+- `maybeNotifyDataChannelAvailable()` を追加し、`dataChannelsForMessaging` に含まれる全メッセージング用ラベルが OPEN になった時点で `MediaChannel.Listener.onDataChannel` を一度だけ発火するようにした。
+- `handleSwitched()` 内の `onDataChannel` 発火を削除し、`switched` 受信時には発火しないようにした。
+- `handleInitialOffer`（リダイレクト等で offer が再送された場合）と切断時に `openedMessagingLabels` / `onDataChannelNotified` をリセットするようにした。
+- メッセージング用ラベルが存在しない場合は発火しない。
+
+### テスト・変更履歴
+
+- `SoraMessagingE2ETest.kt` のコメントを新しい発火タイミングに合わせて更新した。
+- 発火タイミングの e2e 検証は別 issue（0078）で実施する。
+- `CHANGES.md` の `develop` セクションに `[UPDATE]` エントリを追記した。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugKotlin` が成功すること。
+- `./gradlew :sora-android-sdk:testDebugUnitTest` が成功すること（既存テストへの影響なし）。
+- `./gradlew :sora-android-sdk:ktlintCheck` が成功すること。
+- 実機（sora-android-sdk-samples の MessagingActivity）で `onDataChannel` の発火タイミングを確認した。ログ上 `onDataChannel: data_channels=[...]` が `@signaling:onSwitched` より先に発火し、その直後に `@peer:onDataChannelMessage label=stats` が届くことを確認した。つまり `onDataChannel` 発火時点で DataChannel はクライアント側で OPEN 済みであり、メッセージの送受信が可能な状態であることが確認できた。
