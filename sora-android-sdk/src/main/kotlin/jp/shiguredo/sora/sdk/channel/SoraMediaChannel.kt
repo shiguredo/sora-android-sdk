@@ -558,6 +558,21 @@ class SoraMediaChannel
             ) {}
 
             /**
+             * メッセージング用 DataChannel がラベルごとにクライアント側で OPEN になったときに呼び出されるコールバック
+             *
+             * [onDataChannel] が全メッセージング用ラベルの OPEN をまとめて通知するのに対し、
+             * 本コールバックはラベルごとに 1 回ずつ通知する。
+             * Rust SDK の on_data_channel_open に相当する。
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param label OPEN になったメッセージング用 DataChannel のラベル（# で始まる）
+             */
+            fun onDataChannelOpened(
+                mediaChannel: SoraMediaChannel,
+                label: String,
+            ) {}
+
+            /**
              * メッセージング機能のメッセージを受信したときに呼び出されるコールバック
              * ラベルが # から始まるメッセージのみが通知されます
              *
@@ -1075,7 +1090,11 @@ class SoraMediaChannel
                     // onDataChannel を発火する。このタイミングが「クライアント側で DataChannel が
                     // 利用可能になった」瞬間であり、サーバからの switched 受信時とは区別する。
                     if (label.startsWith("#")) {
-                        openedMessagingLabels.add(label)
+                        // ラベルごとに一度だけ onDataChannelOpened を発火する。
+                        // Rust SDK の on_data_channel_open（OPEN 遷移時・ラベル個別）に相当する。
+                        if (openedMessagingLabels.add(label)) {
+                            listener?.onDataChannelOpened(this@SoraMediaChannel, label)
+                        }
                         maybeNotifyDataChannelAvailable()
                     }
                 }
