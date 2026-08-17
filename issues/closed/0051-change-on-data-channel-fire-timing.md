@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-03
-- Completed: 2026-08-14
+- Completed: 2026-08-17
 - Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch: feature/change-on-data-channel-fire-timing
@@ -17,8 +17,9 @@
 
 2026-08-14 に一旦 close したが、以下の観点で再度 open する。
 
-- 一括通知（`onDataChannel`）のタイミング変更は実装・実機検証済みであるが、Rust SDK 踏襲の**ラベル個別の OPEN 通知コールバック**（Rust の `on_data_channel_open` 相当）が欠落している。
-- Rust SDK は `on_data_channel`（作成時・個別）と `on_data_channel_open`（OPEN 遷移時・個別）を**別コールバック**で持つ。Android SDK はこれに相当する公開コールバックが存在しないため、Rust 踏襲の設計としてラベル個別の OPEN 通知コールバックを追加する。
+- 一括通知（`onDataChannel`）のタイミング変更は実装・実機検証済みであるが、ラベル個別の OPEN 通知コールバックの**対象ラベル範囲**を C++ SDK の実装に合わせて全ラベルに変更する。
+- C++ SDK の `SoraSignaling::OnStateChange`（sora_signaling.cpp）は、offer の `data_channels` に含まれる**全ラベル**（`signaling` / `stats` / `notify` / `#` 始まりを含む）を対象に、ラベル個別・OPEN 時に `OnDataChannel(label)` を発火する。`#` フィルタはない。
+- 当初は Rust SDK の `on_data_channel_open` に合わせて `#` ラベルのみ対象としたが、C++ / Python SDK が全ラベル対象であることを確認したため、Android も全ラベル対象に変更する。
 
 ## 優先度根拠
 
@@ -88,12 +89,12 @@ API の後方互換を維持しつつ（`onDataChannel` のシグネチャは不
 - 既に OPEN 済みのメッセージング用ラベルがある場合は、その状態を保持し、最後の 1 つが OPEN になった時点で発火する。
 - 後方互換: API シグネチャは不変であり、発火タイミングのみの変更となる。
 
-### 2. ラベル個別の OPEN 通知コールバック追加（Rust 踏襲）
+### 2. ラベル個別の OPEN 通知コールバック追加（C++ / Python 踏襲）
 
-- `MediaChannel.Listener` に `onDataChannelOpened(mediaChannel, label)` を追加する。これは Rust SDK の `on_data_channel_open`（OPEN 遷移時・ラベル個別・引数はラベル文字列）とタイミング・粒度を一致させる。
-- 発火条件: メッセージング用ラベル（`#` で始まるラベル）の DataChannel がクライアント側で OPEN になった時点で、ラベルごとに 1 回発火する。
-- `onDataChannelOpen`（内部コールバック）でラベル個別に通知する。重複通知は Rust SDK の `opened_datachannels` 相当の集合で防止する。
-- 既存の `onDataChannel`（一括通知）は維持し、後方互換を保つ。
+- `MediaChannel.Listener` に `onDataChannelOpened(mediaChannel, label)` を追加する。これは C++ SDK の `OnDataChannel`（OPEN 遷移時・ラベル個別・全ラベル対象・引数はラベル文字列）とタイミング・粒度を一致させる。
+- 発火条件: offer の `data_channels` に含まれる**全ラベル**の DataChannel がクライアント側で OPEN になった時点で、ラベルごとに 1 回発火する。`#` 始まりのラベルに限定しない。
+- `onDataChannelOpen`（内部コールバック）でラベル個別に通知する。重複通知は C++ SDK の `notified` フラグ相当の集合（`openedDataChannelLabels`）で防止する。
+- 既存の `onDataChannel`（一括通知・`#` ラベル限定）は維持し、後方互換を保つ。
 
 ### 3. 完了条件・テスト
 
@@ -104,7 +105,7 @@ API の後方互換を維持しつつ（`onDataChannel` のシグネチャは不
 
 - メッセージング用ラベルの DataChannel がすべてクライアント側で OPEN になった時点で `onDataChannel` が発火すること。
 - `type: switched` 受信時には `onDataChannel` が発火しないこと。
-- メッセージング用ラベルの DataChannel が OPEN になった時点で `onDataChannelOpened` がラベルごとに一度だけ発火すること。
+- offer の `data_channels` に含まれる全ラベルの DataChannel が OPEN になった時点で `onDataChannelOpened` がラベルごとに一度だけ発火すること。
 - 発火タイミングの変更と `onDataChannelOpened` の追加を、`CHANGES.md` の `develop` セクションにエントリとして追記すること（`onDataChannel` のタイミング変更は `[UPDATE]`、`onDataChannelOpened` の追加は `[ADD]`）。
 - 単体テストまたは E2E テストで上記の発火タイミングを検証すること。
 
@@ -139,25 +140,28 @@ API の後方互換を維持しつつ（`onDataChannel` のシグネチャは不
 - `./gradlew :sora-android-sdk:ktlintCheck` が成功すること。
 - 実機（sora-android-sdk-samples の MessagingActivity）で `onDataChannel` の発火タイミングを確認した。ログ上 `onDataChannel: data_channels=[...]` が `@signaling:onSwitched` より先に発火し、その直後に `@peer:onDataChannelMessage label=stats` が届くことを確認した。つまり `onDataChannel` 発火時点で DataChannel はクライアント側で OPEN 済みであり、メッセージの送受信が可能な状態であることが確認できた。
 
-### 追加実装（reopen 後・未着手）
+### 追加実装（reopen 後）
 
 #### MediaChannel.Listener への `onDataChannelOpened` 追加
 
-- `SoraMediaChannel.Listener` に `onDataChannelOpened(mediaChannel, label)` を追加する。Rust SDK の `on_data_channel_open`（OPEN 遷移時・ラベル個別・引数はラベル文字列）とタイミング・粒度を一致させる。
+- `SoraMediaChannel.Listener` に `onDataChannelOpened(mediaChannel, label)` を追加した。C++ SDK の `OnDataChannel` と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別・引数はラベル文字列）で通知する。
 - デフォルト実装は空（`{}`）とし、既存の `Listener` 実装に影響を与えない。
 
 #### SoraMediaChannel.kt の変更
 
-- `onDataChannelOpen`（内部コールバック）で、メッセージング用ラベルが OPEN になった時点で `onDataChannelOpened` をラベル個別に発火する。
-- 重複通知は `openedMessagingLabels` で防止する（Rust SDK の `opened_datachannels` 相当）。
+- `onDataChannelOpen`（内部コールバック）で、PeerConnection 経由で受け取った**すべての DataChannel** が OPEN になった時点で `onDataChannelOpened` をラベル個別に発火する。ラベル名によるフィルタ（`#` 始まりに限定する等）は行わない。
+  - 対象の決定方法について: C++ SDK は offer の `data_channels` から構築した `dc_labels_` を基準に発火するが、Android は offer との突合を行わず受信ベースで発火する。Sora サーバは offer に含めた DataChannel しか作成しないため実用上は一致するが、厳密には「offer 基準」と「受信基準」の差異がある。あえて offer 基準のフィルタは入れず、予期しないラベルが届いた場合もユーザーに通知される受信基準を採用した。
+- 重複通知は `openedDataChannelLabels`（全ラベル用）で防止する（C++ SDK の `notified` フラグ相当）。メッセージング用ラベルの追跡（`openedMessagingLabels`）は `onDataChannel`（一括通知）の判定専用に分離した。
+- リセット箇所（offer 再送・切断）に `openedDataChannelLabels.clear()` を追加した。
+- KDoc と実装コメントに「受け取ったすべての DataChannel を対象とする」旨と C++ SDK との対応を明記した。
 
 #### CHANGES.md
 
-- `[ADD]` エントリで `onDataChannelOpened` の追加を追記する。
+- `[ADD]` エントリで `onDataChannelOpened` の追加を追記した。対象は「受け取ったすべての DataChannel」とし、C++ SDK の `OnDataChannel` との対応は「同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）」に限定して記載した。
 
 ### 追加実装の検証
 
 - `./gradlew :sora-android-sdk:compileDebugKotlin` が成功すること。
 - `./gradlew :sora-android-sdk:testDebugUnitTest` が成功すること（既存テストへの影響なし）。
 - `./gradlew :sora-android-sdk:ktlintCheck` が成功すること。
-- 実機（sora-android-sdk-samples の MessagingActivity）で `onDataChannelOpened` のラベル個別発火を確認した。ログ上 `onDataChannelOpened: label=#spam` → `onDataChannelOpened: label=#egg` → `onDataChannel: data_channels=[...]` の順で発火し、ラベルごとに 1 回ずつ通知されること、全ラベル OPEN 後に一括通知が発火することを確認した。重複発火がないことも確認した。
+- 実機（sora-android-sdk-samples の MessagingActivity）で `onDataChannelOpened` のラベル個別発火を確認した。ログ上 `onDataChannelOpened: label=signaling` → `notify` → `push` → `stats` → `rpc` → `#spam` → `#egg` の順で発火し、**全ラベル対象**（`#` 始まりに限定しない）でラベルごとに 1 回ずつ通知されること、全ラベル OPEN 後に一括通知（`onDataChannel`）が発火することを確認した。RPC ラベル（`rpc`）も発火すること、重複発火がないことも確認した。

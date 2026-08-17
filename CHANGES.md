@@ -16,10 +16,6 @@
   - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
   - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
   - @t-miya
-- [ADD] `SoraMediaChannel.Listener.onDataChannelOpened` を追加する
-  - メッセージング用 DataChannel（`#` で始まるラベル）がクライアント側で OPEN になった時点で、ラベルごとに一度だけ呼び出される
-  - Rust SDK の `on_data_channel_open` に相当する
-  - @t-miya
 - [UPDATE] `SoraMediaChannel.Listener.onDataChannel` の発火タイミングを、サーバからの `switched` 受信時からクライアント側でメッセージング用 DataChannel がすべて OPEN になったタイミングに変更する
   - メッセージング用ラベル（`#` で始まるラベル）の DataChannel がクライアント側で OPEN になった時点で発火するため、発火時点で DataChannel は送受信可能な状態になっている
   - メッセージング用ラベルが存在しない場合は発火しない
@@ -33,6 +29,10 @@
   - @t-miya
 - [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
   - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
+  - @t-miya
+- [ADD] `SoraMediaChannel.Listener.onDataChannelOpened` を追加する
+  - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
+  - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
   - @t-miya
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
