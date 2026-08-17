@@ -165,6 +165,18 @@ class SoraMediaChannel
         // offer メッセージに含まれる `data_channels` のうち、 label が # から始まるもの
         private var dataChannelsForMessaging: List<Map<String, Any>>? = null
 
+        // クライアント側で OPEN になったメッセージング用 DataChannel のラベル集合
+        // onDataChannel の発火条件（全メッセージング用ラベルが OPEN になること）の判定に使う
+        private val openedMessagingLabels: MutableSet<String> = mutableSetOf()
+
+        // クライアント側で OPEN になった DataChannel のラベル集合（全ラベル対象）
+        // onDataChannelOpened の重複発火防止に使う
+        private val openedDataChannelLabels: MutableSet<String> = mutableSetOf()
+
+        // MediaChannel.Listener.onDataChannel を発火済みかどうか
+        // 全メッセージング用ラベルが OPEN になった時点で一度だけ発火するためのフラグ
+        private var onDataChannelNotified: Boolean = false
+
         // RPC 機能が Sora 側で有効化されているかを示すフラグ
         // true の場合でも、実際に RPC を呼び出せるかは DataChannel の状態に依存する
         // rpc() メソッド内で DataChannel の状態をチェックしている
@@ -547,6 +559,21 @@ class SoraMediaChannel
             fun onDataChannel(
                 mediaChannel: SoraMediaChannel,
                 dataChannels: List<Map<String, Any>>?,
+            ) {}
+
+            /**
+             * DataChannel がラベルごとにクライアント側で OPEN になったときに呼び出されるコールバック
+             *
+             * [onDataChannel] がメッセージング用ラベル（# で始まるラベル）の OPEN をまとめて通知するのに対し、
+             * 本コールバックはラベルを限定せず、受け取ったすべての DataChannel を対象にラベルごとに 1 回ずつ通知する。
+             * C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param label OPEN になった DataChannel のラベル
+             */
+            fun onDataChannelOpened(
+                mediaChannel: SoraMediaChannel,
+                label: String,
             ) {}
 
             /**
@@ -1063,6 +1090,41 @@ class SoraMediaChannel
                     dataChannel: DataChannel,
                 ) {
                     this@SoraMediaChannel.dataChannels[label] = dataChannel
+                    // ラベルごとに一度だけ onDataChannelOpened を発火する。
+                    // 対象はメッセージング用ラベル（# で始まるラベル）に限定せず、
+                    // PeerConnection で受け取ったすべての DataChannel とする。
+                    // C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
+                    if (openedDataChannelLabels.add(label)) {
+                        listener?.onDataChannelOpened(this@SoraMediaChannel, label)
+                    }
+                    // メッセージング用ラベル（# で始まるラベル）がすべて OPEN になった時点で
+                    // onDataChannel を発火する。このタイミングが「クライアント側で DataChannel が
+                    // 利用可能になった」瞬間であり、サーバからの switched 受信時とは区別する。
+                    if (label.startsWith("#")) {
+                        openedMessagingLabels.add(label)
+                        maybeNotifyDataChannelAvailable()
+                    }
+                }
+
+                // 全メッセージング用ラベルが OPEN になったら onDataChannel を一度だけ発火する
+                private fun maybeNotifyDataChannelAvailable() {
+                    if (onDataChannelNotified) {
+                        return
+                    }
+                    val expectedLabels =
+                        dataChannelsForMessaging
+                            ?.mapNotNull { it["label"] as? String }
+                            ?: return
+                    // メッセージング用ラベルが存在しない場合は発火しない
+                    if (expectedLabels.isEmpty()) {
+                        return
+                    }
+                    // 未 OPEN のメッセージング用ラベルが残っている場合は発火しない
+                    if (expectedLabels.any { it !in openedMessagingLabels }) {
+                        return
+                    }
+                    onDataChannelNotified = true
+                    listener?.onDataChannel(this@SoraMediaChannel, dataChannelsForMessaging)
                 }
 
                 override fun onDataChannelMessage(
@@ -1433,6 +1495,10 @@ class SoraMediaChannel
                         it.containsKey("label") && (it["label"] as? String)?.startsWith("#") ?: false
                     }
             }
+            // リダイレクト等で offer が再送された場合に備えて状態をリセットする
+            openedMessagingLabels.clear()
+            openedDataChannelLabels.clear()
+            onDataChannelNotified = false
             configureRpc(offerMessage)
 
             if (0 < peerConnectionOption.getStatsIntervalMSec) {
@@ -1486,7 +1552,9 @@ class SoraMediaChannel
                         signaling?.disconnect(null)
                     }
             }
-            listener?.onDataChannel(this, dataChannelsForMessaging)
+            // NOTE: onDataChannel はここでは発火しない。
+            //       メッセージング用 DataChannel がクライアント側で OPEN になったタイミングで
+            //       maybeNotifyDataChannelAvailable() から発火する。
         }
 
         private fun handleUpdateOffer(sdp: String) {
@@ -1779,6 +1847,9 @@ class SoraMediaChannel
             peer = null
             localStream = null
             dataChannels.clear()
+            openedMessagingLabels.clear()
+            openedDataChannelLabels.clear()
+            onDataChannelNotified = false
 
             listener?.onClose(this)
             if (closeEvent != null) {
