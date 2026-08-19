@@ -14,7 +14,7 @@ issue 0051 で変更された `SoraMediaChannel.Listener.onDataChannel` の発�
 なお、0051 の完了条件のうち本テストの対象外とする項目は以下のとおり（0051 の完了条件の一部として未検証のまま残る点に注意）:
 
 - `type: switched` 受信時には `onDataChannel` が発火しないこと: e2e では決定的な観測手段がない（switched と onDataChannel の相対順序は仕様上保証されない）ため、本テストでは検証しない。
-- `onDataChannelOpened` の全ラベル対象（`#` 以外のラベルを含むこと）: 検証可能だが、本テストの目的（`onDataChannel` のタイミング検証）の範囲外であるため検証しない。0051 の実機検証に委ねる。
+- `onDataChannelOpened` の全ラベル対象（`#` 以外のラベルを含むこと）の**網羅検証**: 本テストでは「`#` 以外のラベルが少なくとも 1 回発火すること」の最小検証のみ行い、全ラベル個別の網羅検証（各ラベルの発火有無・回数）は行わない。
 
 発火タイミングの仕様は以下のとおり（0051 の実装および実機検証による）:
 
@@ -39,9 +39,10 @@ issue 0051 で変更された `SoraMediaChannel.Listener.onDataChannel` の発�
 switched との相対順序は検証しない（仕様上保証されないため）。代わりに、実装に裏付けられた以下の決定的な順序を検証する。
 
 1. **`onDataChannelOpened` のラベル個別発火**: メッセージング用ラベルごとに `onDataChannelOpened` が一度だけ発火すること。
-2. **`onDataChannelOpened` → `onDataChannel` の順序**: 最後のメッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が発火すること（同一コールスタック内のため決定的。SoraMediaChannel.kt:1097-1106）。
-3. **`onDataChannel` の一度だけ発火**: 発火回数が 1 回であること（`onDataChannelNotified` による二重発火防止の担保）。
-4. **`sendDataChannelMessage` の即時成功**: `switched` 受信と `onDataChannel` 発火の**両方を確認した後**、最初の `sendDataChannelMessage()` が `OK` を返すこと。`LABEL_NOT_FOUND` / `INVALID_STATE` のポーリングが不要であること。
+2. **`onDataChannelOpened` の全ラベル対象（最小検証）**: `onDataChannelOpened` は全ラベル対象の公開 API であり（SoraMediaChannel.kt:565 の KDoc、1093-1099 の実装、CHANGES.md:33 の契約）、本テストのフックは全ラベルを受け取るため、`#` 以外のラベル（`signaling` 等）が少なくとも 1 回発火することを確認する。全ラベル個別の網羅検証は行わない。
+3. **`onDataChannelOpened` → `onDataChannel` の順序**: 最後のメッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が発火すること（同一コールスタック内のため決定的。SoraMediaChannel.kt:1097-1106）。
+4. **`onDataChannel` の一度だけ発火**: 発火回数が 1 回であること（`onDataChannelNotified` による二重発火防止の担保）。
+5. **`sendDataChannelMessage` の即時成功**: `switched` 受信と `onDataChannel` 発火の**両方を確認した後**、最初の `sendDataChannelMessage()` が `OK` を返すこと。`LABEL_NOT_FOUND` / `INVALID_STATE` のポーリングが不要であること。
    - 注意: `NOT_READY` は `switchedToDataChannel` フラグ（`switched` 受信で true）で決まるため、`switched` 受信を待ってから送信することで発生しない。DataChannel の OPEN 状態とは無関係である（SoraMediaChannel.kt:2112-2114）。
    - 送信先ラベルは、offer から抽出した `#` ラベル集合の**先頭要素**を使用する（定数ラベルに固定しない）。定数に固定すると、offer のラベルが定数と異なるサーバ構成で `LABEL_NOT_FOUND` により誤って失敗するため。
 
@@ -55,7 +56,9 @@ switched との相対順序は検証しない（仕様上保証されないた�
 ### テスト構成
 
 - `SoraE2ETestBase.createChannel` に `onDataChannelOpened` フック（`(SoraMediaChannel, String) -> Unit`）を追加し、`SoraMediaChannel.Listener.onDataChannelOpened` から転送する。デフォルト `null` で既存呼び出し元に影響なし。
-  - `onDataChannelOpened` は全ラベル対象で発火するため、テストフック側で `label.startsWith("#")` により `#` ラベルのみを検証対象とする（`signaling` / `rpc` 等の OPEN で待ちが誤って完了しないようにする）。
+  - `onDataChannelOpened` は全ラベル対象で発火するため、テストフック側ではラベル種別で処理を分ける:
+    - `#` ラベル: ラベル別 CompletableDeferred の待ち対象・発火回数のカウント対象（`signaling` / `rpc` 等の OPEN で待ちが誤って完了しないようにする）
+    - `#` 以外のラベル: 少なくとも 1 回発火したことの記録（AtomicBoolean）のみ行い、待ちは完了させない
 - `SoraMessagingE2ETest.kt` に発火タイミング検証のテストメソッドを追加する。既存の送受信テスト（0070 由来）は**シナリオとアサーションを維持**し、ポーリング実装のみ簡素化する（後述）。
 - タイミング検証は単一チャネルで完結するため、基底クラスの `channel` フィールドを使用する（既存の単一チャネル E2E テストと同様。tearDown による切断も基底クラスに任せる）。2 チャネル構成（0070 のローカル変数管理 + finally 切断）は不要である。
 
@@ -73,9 +76,9 @@ switched との相対順序は検証しない（仕様上保証されないた�
 3. switched 受信を待つ（0067 と同様のパターン。onClose / onError が先に来た場合は
    dataChannelSignalingUnsupported 相当のフラグを再確認してから skip 判定する）
 4. 各 # ラベルの onDataChannelOpened をラベル別 CompletableDeferred で待つ
-   - コールバックスレッドで発火し、フック側で label.startsWith("#") により # ラベルのみを対象とする
+   - コールバックスレッドで発火し、フック側で label.startsWith("#") により # ラベルのみを待ち対象とする
    - 各ラベルについて一度だけ発火すること（発火回数を AtomicInteger でラベル別にカウント）
-   - 注: フックは # 以外のラベル（signaling / rpc 等）も受け取るが、これらは待ちを完了させない
+   - # 以外のラベル（signaling / rpc 等）もフックに届くため、少なくとも 1 回発火したことを AtomicBoolean で記録する（全ラベル対象の最小検証。待ちは完了させない）
 5. onDataChannel の発火を待つ
    - onDataChannel コールバック内（発火時点・同一コールスタック）で、その時点の発火済み # ラベル集合を
      toSet() で防御的コピーして CompletableDeferred の値としてテスト本体へ渡す
@@ -86,6 +89,8 @@ switched との相対順序は検証しない（仕様上保証されないた�
    - 注: onDataChannel 発火後に await して確認する実装では、全ラベル判定の退行（先頭ラベル OPEN で発火）を検知できない。発火時点の状態をスナップショットとして受け取ることが必須である
 6. sendDataChannelMessage を 1 回呼び（宛先は offer 抽出 # ラベル集合の先頭要素）、
    SoraMessagingError.OK が返ることを確認（ポーリングなし）
+7. # 以外のラベル（signaling 等）の onDataChannelOpened が少なくとも 1 回発火したことを確認する
+   （AtomicBoolean の記録をテスト本体で検証）
 ```
 
 - タイムアウト値は既存テストを踏襲する: 接続 60s / switched 30s / onDataChannelOpened のラベル待ち全体 10s / onDataChannel 発火待ち 10s / 送信 10s。
@@ -105,6 +110,7 @@ switched との相対順序は検証しない（仕様上保証されないた�
 ## 完了条件
 
 - 新規テスト: `onDataChannelOpened` がメッセージング用ラベルごとに一度だけ発火し、**onDataChannel 発火時点で**全メッセージング用ラベルの `onDataChannelOpened` が発火済みであること、`onDataChannel` が一度だけ発火することを検証すること。
+- 新規テスト: `onDataChannelOpened` が `#` 以外のラベル（`signaling` 等）でも少なくとも 1 回発火すること（全ラベル対象の最小検証）を検証すること。
 - 新規テスト: `switched` 受信と `onDataChannel` 発火の両方を確認した後の最初の `sendDataChannelMessage()` が `OK` を返すこと（`LABEL_NOT_FOUND` / `INVALID_STATE` のポーリングなし）を検証すること。
 - 新規テスト: 接続先 Sora が `data_channel_signaling` 非対応、`#` ラベルを含まない場合、`#` ラベルが 2 つ未満の場合はテストがスキップされること。
 - 既存テスト: ポーリング簡素化（単発 `assertEquals(OK)` 化）とスキップ判定拡張（`data_channels` 非存在 / `#` ラベル不在）を実施し、既存テストが引き続き完走すること。
