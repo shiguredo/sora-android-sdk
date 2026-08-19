@@ -90,6 +90,7 @@ abstract class SoraE2ETestBase {
         dataChannels: List<Map<String, Any>>? = null,
         onSignalingMessage: ((SoraMediaChannel, SoraSignalingDirection, SoraSignalingTransportType, String) -> Unit)? = null,
         onDataChannel: ((SoraMediaChannel, List<Map<String, Any>>?) -> Unit)? = null,
+        onDataChannelOpened: ((SoraMediaChannel, String) -> Unit)? = null,
         onDataChannelMessage: ((SoraMediaChannel, String, ByteBuffer) -> Unit)? = null,
     ): SoraMediaChannel =
         SoraMediaChannel(
@@ -139,6 +140,13 @@ abstract class SoraE2ETestBase {
                         dataChannels: List<Map<String, Any>>?,
                     ) {
                         onDataChannel?.invoke(mediaChannel, dataChannels)
+                    }
+
+                    override fun onDataChannelOpened(
+                        mediaChannel: SoraMediaChannel,
+                        label: String,
+                    ) {
+                        onDataChannelOpened?.invoke(mediaChannel, label)
                     }
 
                     override fun onDataChannelMessage(

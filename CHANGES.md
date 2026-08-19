@@ -38,6 +38,12 @@
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya
 
+### misc
+
+- [ADD] `onDataChannel` と `onDataChannelOpened` の発火タイミングを検証する e2e テストを追加する
+  - `onDataChannelOpened` がラベルごとに一度だけ発火すること、全メッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が一度だけ発火すること、`#` 以外のラベルでも `onDataChannelOpened` が発火すること、発火後の最初の `sendDataChannelMessage` が成功することを検証する
+  - @t-miya
+
 ## 2026.2.1
 
 **リリース日**: 2026-07-29
