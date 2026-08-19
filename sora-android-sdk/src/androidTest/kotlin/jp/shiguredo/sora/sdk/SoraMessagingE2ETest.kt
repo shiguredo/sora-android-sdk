@@ -316,7 +316,7 @@ class SoraMessagingE2ETest : SoraE2ETestBase() {
     //   4. onDataChannel が一度だけ発火すること
     //   5. onDataChannel 発火後の最初の sendDataChannelMessage が OK を返すこと（ポーリング不要）
     @Test
-    fun `onDataChannel と onDataChannelOpened の発火タイミングが検証できること`(): Unit =
+    fun `onDataChannelとonDataChannelOpenedの発火タイミングが検証できること`(): Unit =
         runBlocking {
             Log.d(TAG, "=== テスト開始: onDataChannel と onDataChannelOpened の発火タイミングが検証できること ===")
 
