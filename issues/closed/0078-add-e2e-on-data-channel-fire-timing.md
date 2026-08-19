@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-08-06
-- Completed:
+- Completed: 2026-08-17
 - Model: DeepSeek V4 Flash
 - Branch: feature/add-e2e-on-data-channel-fire-timing
 - Polished: 2026-08-17
@@ -139,3 +139,30 @@ switched との相対順序は検証しない（仕様上保証されないた�
 - 「一度だけ発火」の検証: 防御的チェック（PeerChannel.kt:430-432）と `onStateChange`（同 404-406）の両方で同じラベルの `onDataChannelOpen` が通知され得るため、`onDataChannelNotified` ガード（SoraMediaChannel.kt:1111）が削除された退行では、最後のラベルの OPEN 通知 2 回目で `onDataChannel` が 2 回発火し得る。本テストは `complete()` の返り値記録によりこの二重発火を検出する。なお、防御的チェックの重複通知が実際に発生するかは libwebrtc の `RegisterObserver` 挙動依存であり、プロジェクト内でも PeerChannel.kt:426 のコメント（即時通知する）と 0051 issue の記述（即時通知しない）が矛盾している点に注意する。
 
 ## 解決方法
+
+### SoraE2ETestBase.kt
+
+- `createChannel` に `onDataChannelOpened` フック（`(SoraMediaChannel, String) -> Unit`）を追加し、`SoraMediaChannel.Listener.onDataChannelOpened` から転送するようにした。デフォルト `null` で既存呼び出し元に影響なし。
+
+### SoraMessagingE2ETest.kt
+
+- `onDataChannelとonDataChannelOpenedの発火タイミングが検証できること` テストメソッドを追加した（単一チャネル・`#spam` / `#egg` の 2 ラベル構成）。
+  - `onDataChannelOpened` がメッセージング用ラベルごとに一度だけ発火すること
+  - `onDataChannel` 発火時点で全メッセージング用ラベルの `onDataChannelOpened` が発火済みであること
+  - `onDataChannel` が一度だけ発火すること
+  - `#` 以外のラベル（`signaling` 等）でも `onDataChannelOpened` が少なくとも 1 回発火すること（全ラベル対象の最小検証）
+  - `onDataChannel` 発火後の最初の `sendDataChannelMessage()` が `OK` を返すこと（ポーリングなし）
+  - offer の `data_channels` から `#` ラベル集合を動的に抽出し、`#` ラベルが 2 つ未満の場合はスキップする
+  - コールバックスレッド内では assert せず、発火時点のスナップショットを `CompletableDeferred` でテスト本体へ渡してから検証する
+- 既存テスト（0070 由来）の `sendDataChannelMessage` ポーリングを単発の `assertEquals(OK)` に簡素化し、旧タイミング前提のコメントを新仕様に合わせて更新した。
+- 既存テストのスキップ判定を、offer の `data_channels` に `#` ラベルが含まれない場合にも拡張した。
+
+### CHANGES.md
+
+- `develop` セクションに `### misc` サブセクションを新設し、`[ADD]` エントリを追記した。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- CI（Gradle Managed Device pixelApi35）で e2e テストが完走することを確認した。
+- テストメソッド名にスペースが含まれると DEX 化に失敗する（`Space characters in SimpleName`）ため、テストメソッド名からスペースを除去した。
