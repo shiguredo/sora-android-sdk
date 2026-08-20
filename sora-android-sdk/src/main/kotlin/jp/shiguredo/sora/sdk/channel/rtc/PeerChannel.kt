@@ -197,6 +197,13 @@ class PeerChannelImpl(
         // 2 回目以降の呼び出しで異なる useTracer 値が指定されたことを検知するために初回の値を保持する
         private var initialUseTracer: Boolean? = null
 
+        // PeerConnectionFactory の初期化はプロセス全体で一度だけ行う必要がある。
+        // 複数チャネルを同時に接続すると setupInternal がチャネルごとの executor スレッドで
+        // 並行実行され、isInitialized のチェックとセットの間に競合が発生して
+        // PeerConnectionFactory.initialize() が 2 回呼ばれるとネイティブクラッシュする。
+        // companion object のメソッドに付けた @Synchronized は Companion インスタンスを
+        // ロックするため、全チャネルで直列化される。
+        @Synchronized
         fun initializeIfNeeded(
             context: Context,
             useTracer: Boolean,
