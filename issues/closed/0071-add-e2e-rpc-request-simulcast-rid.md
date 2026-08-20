@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-13
-- Completed:
+- Completed: 2026-08-20
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-e2e-rpc-request-simulcast-rid
 - Polished: 2026-08-19
@@ -30,6 +30,7 @@ RPC 機能で simulcast の受信 rid を切り替えられることを e2e で�
 - `simulcast`: `true`
 - `simulcast_request_rid`: `"r2"`（初期受信 rid。本テストの検証（r0 < r2）が成立する値であること）
 - `simulcast_rpc_rids`: `["none", "r0", "r1", "r2"]`
+- `simulcast_encodings`: r0 の `scaleResolutionDownBy` を **2.0** に調整する（デフォルトの 4.0 ではエミュレータの SW エンコーダで r0 が立ち上がらず、`bytesSent` が 0 のままになる。実測で 2.0 にすると r0 が立ち上がることを確認済み。例: `[{"rid": "r0", "scaleResolutionDownBy": 2.0}, {"rid": "r1", "scaleResolutionDownBy": 2.0}, {"rid": "r2", "scaleResolutionDownBy": 1.0}]`）
 
 ### 着手時の確認タスク
 
@@ -44,13 +45,13 @@ RPC 機能で simulcast の受信 rid を切り替えられることを e2e で�
 ### 検証手段
 
 - rid 切替の効果は **受信映像の解像度変化** で確認する。`getStats()` の `inbound-rtp` の `frameWidth` / `frameHeight` が、RPC 実行前後で変化することを検証する。
-- 解像度差の前提: Sora のデフォルトのサイマルキャスト設定では r0 = 一辺 1/4（960x540 なら 240x135）、r2 = 元解像度（960x540）。r0 と r2 の間に明確な解像度差があるため、`frameWidth` / `frameHeight` の比較で切り替えを検出できる。
+- 解像度差の前提: Sora のサイマルキャスト設定で r0 の `scaleResolutionDownBy` を 2.0 に調整した場合、r0 = 一辺 1/2（960x540 なら 480x270）、r2 = 元解像度（960x540）。r0 と r2 の間に明確な解像度差があるため、`frameWidth` / `frameHeight` の比較で切り替えを検出できる。
 - `simulcast.switched` 通知の `current_rid` による確認は**行わない**。理由: Android SDK では `onSignalingMessage` の通知対象に `notify` が含まれず (SoraMediaChannel.kt:147-148)、また `NotificationMessage` に `current_rid` / `rpc_rids` フィールドが存在しない (Catalog.kt:198-232) ため、Android 側で `current_rid` を取得できない。
 
 ### チャネル構成
 
 - sendonly チャネル: simulcast 有効 (`enableSimulcast()`) + `DummyVideoCapturer` で映像送信。エミュレータでは HW エンコーダの simulcast が使えないため、`softwareVideoEncoderOnly = true` (SIMULCAST_SOFTWARE 経路) を指定する。`capturer.startCapture(width, height, fps)` は接続後に明示的に呼び出す (SoraStatsE2ETest.kt:72-73 のパターン踏襲)。issue 0066 の構成に倣う。
-  - **ストリーム 3 本 (r0 / r1 / r2) を出力するための必要最低設定** (Sora ドキュメント SIMULCAST の「解像度とビットレートとストリーム数の関係」に基づく): 解像度 **960x540**、ビットレート **1200 kbps** (`videoBitRate = 1200_000`)。これ未満 (例: 640x360 / 700 kbps) では 2 本以下になり、r2 が立ち上がらないため本テストの前提 (r0 と r2 の両方が立ち上がる) を満たせない。コーデックは VP8 を使用する (VP8 / H.264 の表の値)。
+  - **ストリーム 3 本 (r0 / r1 / r2) を出力するための必要最低設定** (Sora ドキュメント SIMULCAST の「解像度とビットレートとストリーム数の関係」に基づく): 解像度 **960x540**、ビットレート **1200 kbps** (`videoBitrate = 1200`。Sora の bit_rate は kbps 単位)。これ未満 (例: 640x360 / 700 kbps) では 2 本以下になり、r2 が立ち上がらないため本テストの前提 (r0 と r2 の両方が立ち上がる) を満たせない。コーデックは VP8 を使用する (VP8 / H.264 の表の値)。
   - 参考: 1280x720 / 2500 kbps でも 3 本出力されるが、SW エンコーダの負荷を抑えるため 960x540 / 1200 kbps を採用する。
 - recvonly チャネル: simulcast 受信 + `enableVideoDownstream(null)`（受信デコードの有効化。`inbound-rtp` の `frameWidth` を得るために必須）。初期受信 rid は `enableSimulcast(requestRid)` で指定 (`"r2"`)。RPC はこのチャネルのみで実行する。`dataChannelSignaling = true` は recvonly チャネルのみに指定する（RPC の前提。sendonly には不要）。
 - 両チャネルは**同一 Sora ルーム（同一 channelId）**に接続する。
@@ -123,3 +124,31 @@ RPC 機能で simulcast の受信 rid を切り替えられることを e2e で�
 - issue 0067 (onSignalingMessage フック・スキップ判定パターン) — 完了済み
 
 ## 解決方法
+
+### SoraRpcE2ETest.kt（新規）
+
+- `RPCでsimulcastの受信ridを切り替えて解像度が変化すること` テストメソッドを追加した。
+- sendonly チャネル（simulcast 送信）+ recvonly チャネル（RPC 実行）の 2 チャネル構成。
+  - sendonly: `enableSimulcast()` + `softwareVideoEncoderOnly = true` + DummyVideoCapturer。解像度 960x540 / 30fps / ビットレート 1200 kbps（`videoBitrate = 1200`。Sora の bit_rate は kbps 単位）・VP8。
+  - recvonly: `enableVideoDownstream(null)` + `enableSimulcast(R2)` + `dataChannelSignaling = true`。
+  - 両チャネルは同一 Sora ルーム（同一 channelId）に接続。2 チャネルはローカル変数で管理し、finally で切断（0070 のパターン）。
+- 検証フロー:
+  1. recvonly の offer で `rpc` ラベル + `rpc_methods` に `2025.2.0/RequestSimulcastRid` が含まれることを確認（なければスキップ）
+  2. recvonly の switched 受信と `rpc` DataChannel の OPEN を待機
+  3. sendonly の outbound-rtp を rid 別に分類し、r0 と r2 の両方で `bytesSent > 0` を確認（立ち上がらなければスキップ）
+  4. recvonly の inbound-rtp で初期解像度（r2）をサンプル
+  5. `rpc()` で r0 に切り替え → `SoraRpcResult.Success` を確認 + frameWidth / frameHeight が初期解像度より小さいことを確認
+  6. `rpc()` で r2 に復帰 → 解像度が r0 より大きくなることを確認
+- capturer は基底クラスの `capturer` フィールドに代入し、tearDown で解放。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- Gradle Managed Device (pixelApi35) でテストが通過することを確認した。
+  - r0 の `scaleResolutionDownBy` を 2.0 に調整（認証時払い出しの `simulcast_encodings`）したところ、エミュレータの SW エンコーダで r0 が立ち上がり、テストが通過した。
+  - ビットレートは 1200 kbps（`videoBitrate = 1200`）で、3 本 (r0 / r1 / r2) のストリームが出力されることを確認した。
+- 複数チャネル同時接続によるネイティブクラッシュ（SIGABRT）は、issue 0079 の修正（`initializeIfNeeded()` への `@Synchronized` 付与）により発生しないことを確認した。
+
+### CHANGES.md
+
+- `develop` セクション `### misc` に `[ADD]` エントリを追記した。
