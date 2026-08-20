@@ -37,6 +37,10 @@
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya
+- [FIX] 複数チャネルを同時に接続した際に `PeerConnectionFactory.initialize()` が 2 回呼ばれてネイティブクラッシュする問題を修正する
+  - `PeerChannelImpl.initializeIfNeeded()` に `@Synchronized` を付与し、チャネルをまたいで初期化処理を直列化する
+  - 複数チャネル（マルチストリーム視聴など）を同時に接続するアプリで、タイミングによりプロセスごとクラッシュ（SIGABRT）する問題を解消する
+  - @t-miya
 
 ### misc
 
