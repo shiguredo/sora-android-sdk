@@ -44,6 +44,10 @@
 
 ### misc
 
+- [ADD] RPC (RequestSimulcastRid) で simulcast の受信 rid を切り替えられることを検証する e2e テストを追加する
+  - sendonly（simulcast 送信）+ recvonly（RPC で rid 切替）の 2 チャネル構成で、RPC 実行前後の受信映像の解像度変化（inbound-rtp の frameWidth / frameHeight）を検証する
+  - Sora が RPC 非対応（offer に rpc ラベル・rpc_methods がない）環境や、エミュレータ制約で送信側の rid が立ち上がらない環境ではスキップする
+  - @t-miya
 - [ADD] `onDataChannel` と `onDataChannelOpened` の発火タイミングを検証する e2e テストを追加する
   - `onDataChannelOpened` がラベルごとに一度だけ発火すること、全メッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が一度だけ発火すること、`#` 以外のラベルでも `onDataChannelOpened` が発火すること、発火後の最初の `sendDataChannelMessage` が成功することを検証する
   - @t-miya
