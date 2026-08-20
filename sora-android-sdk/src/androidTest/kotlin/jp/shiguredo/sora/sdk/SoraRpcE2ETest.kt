@@ -32,10 +32,11 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
 
         // 送信解像度: ストリーム 3 本 (r0 / r1 / r2) を出力するための必要最低設定 (960x540 / 1200kbps)
         // Sora ドキュメント SIMULCAST の「解像度とビットレートとストリーム数の関係」に基づく
+        // videoBitrate は kbps 単位
         private const val SEND_WIDTH = 960
         private const val SEND_HEIGHT = 540
         private const val SEND_FPS = 30
-        private const val SEND_BITRATE = 1_200_000
+        private const val SEND_BITRATE = 1200
 
         // 初期受信 rid と、RPC で切り替える rid
         private const val INITIAL_RID = "r2"
