@@ -71,6 +71,28 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                     enableSimulcast(SoraVideoOption.SimulcastRequestRid.R2)
                 }
 
+            // recvonly チャネルには RPC 用の JWT を渡す。
+            // js-sdk の e2e (e2e-tests/rpc/main.ts:56-64) と同様に、JWT の private claims に
+            // rpc_methods / simulcast / simulcast_request_rid / simulcast_rpc_rids を埋め込む。
+            // テストサーバー側はこの claims を検証して認証成功時の払い出しに反映する
+            // (js-sdk のテストサーバー固有機能)。
+            val recvonlyAccessToken =
+                BuildConfig.TEST_SECRET_KEY.takeIf { it.isNotEmpty() }?.let { secretKey ->
+                    JwtGenerator.generate(
+                        channelId = channelId,
+                        secretKey = secretKey,
+                        privateClaims =
+                            mapOf(
+                                "rpc_methods" to listOf(RPC_METHOD_REQUEST_SIMULCAST_RID),
+                                "simulcast" to true,
+                                "simulcast_request_rid" to INITIAL_RID,
+                                "simulcast_rpc_rids" to listOf("none", "r0", "r1", "r2"),
+                            ),
+                    )
+                }
+            val recvonlySignalingMetadata =
+                recvonlyAccessToken?.let { mapOf("access_token" to it) }
+
             val sendonlyConnected = CompletableDeferred<Unit>()
             val recvonlyConnected = CompletableDeferred<Unit>()
             val recvonlySwitched = CompletableDeferred<Unit>()
@@ -123,6 +145,7 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                         if (!recvonlySwitched.isCompleted) recvonlySwitched.completeExceptionally(error)
                     },
                     dataChannelSignaling = true,
+                    signalingMetadataOverride = recvonlySignalingMetadata,
                     onSignalingMessage = { _, _, _, rawMessage ->
                         val json = JSONObject(rawMessage)
                         val type = json.optString("type")
