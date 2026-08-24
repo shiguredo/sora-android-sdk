@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-08-24
 - Polished: 2026-08-21
 - Model: Opus 4.8
 - Branch: feature/refactor-remove-kotlin-reflect
@@ -70,3 +70,18 @@
 - `CHANGES.md` の `develop` セクションに `[UPDATE]` エントリを追記すること。
 
 ## 解決方法
+
+### 実装
+
+- `gradle/libs.versions.toml` から `kotlin-reflect` の宣言を削除した。
+- `sora-android-sdk/build.gradle.kts` から `implementation(libs.kotlin.reflect)` を削除した。
+
+### 検証
+
+- 依存グラフの確認: `releaseRuntimeClasspath` と `testRuntimeClasspath` の両方で、`kotlin-reflect` が実依存として消えていることを確認した（`(c)` の constraint 行も含め 0 件）。
+- ビルド・テスト: `:sora-android-sdk:assembleDebug` / `:sora-android-sdk:testDebugUnitTest` / `:sora-android-sdk:ktlintCheck` / `:sora-android-sdk:assembleRelease` が成功することを確認した。
+- E2E: `pixelApi35AndroidE2ETest` が CI で通ることを確認した（ビルド・起動確認済み）。
+
+### CHANGES.md
+
+- `develop` セクションに `[UPDATE]` エントリを追記した（`kotlin-reflect` は実装依存であり、公開 API に影響しないため `[UPDATE]` とした）。
