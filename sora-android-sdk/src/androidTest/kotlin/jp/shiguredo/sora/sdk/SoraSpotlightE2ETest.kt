@@ -47,6 +47,13 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
         runBlocking {
             Log.d(TAG, "=== テスト開始: spotlightで映像が送受信できること ===")
 
+            // spotlight はセッション単位の属性であり、channelId を共有する他の E2E テスト
+            // （spotlight なし）が先に接続したセッションが残っていると、シグナリング項目が
+            // 一致しない接続として拒否される（invalid_signaling_params）。
+            // そのため js-sdk の e2e（randomUUID による channelId 生成）と同様に、
+            // 本テスト専用の channelId を使う（suffix 側にテスト名を追加する）
+            val spotlightChannelId = "$channelId-spotlight"
+
             // sendonly チャネル（spotlight 送信）: エミュレータ SW エンコーダを使うため
             // softwareVideoEncoderOnly を指定する（0071 の実績）
             // capturer は基底クラスのフィールドに代入し、tearDown で stopCapture / dispose する
@@ -81,6 +88,7 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
             val sendonlyChannel =
                 createChannel(
                     mediaOption = sendonlyMediaOption,
+                    channelId = spotlightChannelId,
                     onConnect = {
                         Log.d(TAG, "sendonly onConnect")
                         sendonlyConnected.complete(Unit)
@@ -131,6 +139,7 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
             val recvonlyChannel =
                 createChannel(
                     mediaOption = recvonlyMediaOption,
+                    channelId = spotlightChannelId,
                     onConnect = {
                         Log.d(TAG, "recvonly onConnect")
                         recvonlyConnected.complete(Unit)
@@ -162,7 +171,7 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
                 withTimeout(60_000) { recvonlyConnected.await() }
                 Log.d(TAG, "recvonly 接続完了")
 
-                // from スキップ判定
+                // スキップ判定
                 if (spotlightUnsupported.get()) {
                     assumeTrue("接続先 Sora が spotlight 非対応のためテストをスキップします", false)
                 }
