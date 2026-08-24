@@ -86,15 +86,17 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
                         sendonlyConnected.complete(Unit)
                     },
                     onClose = { _, closeEvent ->
-                        Log.d(TAG, "sendonly onClose: code=${closeEvent.code}")
+                        Log.d(TAG, "sendonly onClose: code=${closeEvent.code} reason=${closeEvent.reason}")
                         if (!sendonlyConnected.isCompleted) {
-                            sendonlyConnected.completeExceptionally(RuntimeException("sendonly closed before connect: ${closeEvent.code}"))
+                            sendonlyConnected.completeExceptionally(
+                                RuntimeException("sendonly closed before connect: ${closeEvent.code} reason=${closeEvent.reason}"),
+                            )
                         }
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "sendonly onError: $reason $message")
+                        Log.e(TAG, "sendonly onError: reason=$reason message=$message")
                         if (!sendonlyConnected.isCompleted) {
-                            sendonlyConnected.completeExceptionally(RuntimeException("sendonly: $reason: $message"))
+                            sendonlyConnected.completeExceptionally(RuntimeException("sendonly onError: $reason: $message"))
                         }
                     },
                     onSignalingMessage = { _, _, _, rawMessage ->
@@ -134,15 +136,17 @@ class SoraSpotlightE2ETest : SoraE2ETestBase() {
                         recvonlyConnected.complete(Unit)
                     },
                     onClose = { _, closeEvent ->
-                        Log.d(TAG, "recvonly onClose: code=${closeEvent.code}")
+                        Log.d(TAG, "recvonly onClose: code=${closeEvent.code} reason=${closeEvent.reason}")
                         if (!recvonlyConnected.isCompleted) {
-                            recvonlyConnected.completeExceptionally(RuntimeException("recvonly closed before connect: ${closeEvent.code}"))
+                            recvonlyConnected.completeExceptionally(
+                                RuntimeException("recvonly closed before connect: ${closeEvent.code} reason=${closeEvent.reason}"),
+                            )
                         }
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "recvonly onError: $reason $message")
+                        Log.e(TAG, "recvonly onError: reason=$reason message=$message")
                         if (!recvonlyConnected.isCompleted) {
-                            recvonlyConnected.completeExceptionally(RuntimeException("recvonly: $reason: $message"))
+                            recvonlyConnected.completeExceptionally(RuntimeException("recvonly onError: $reason: $message"))
                         }
                     },
                 )
