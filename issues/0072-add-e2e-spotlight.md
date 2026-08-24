@@ -116,3 +116,34 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 - issue 0059 (ダミー音声) — 本 issue では使用しない（音声なし構成。音声の疎通検証は issue 0074 で対応）
 
 ## 解決方法
+
+### SoraSpotlightE2ETest.kt（新規）
+
+- `spotlightで映像が送受信できること` テストメソッドを追加した（スペースを含めない DEX 対応の名前）。
+- sendonly チャネル（spotlight 送信）+ recvonly チャネル（spotlight 受信）の 2 チャネル構成。
+  - sendonly: `enableVideoUpstream(capturer, null)` + `enableSpotlight(SoraSpotlightOption())` + `softwareVideoEncoderOnly = true` + `videoBitrate = 1200` + VP8。解像度 960x540 / 30fps（0071 と同構成）。
+  - recvonly: `enableVideoDownstream(null)` + `enableSpotlight(SoraSpotlightOption())`。
+  - 両チャネルは同一 Sora ルーム（同一 channelId）に接続。2 チャネルはローカル変数で管理し、finally で切断（0071 のパターン）。
+- 検証フロー:
+  1. sendonly の offer の `encodings` で r2 の `active: false` を確認（`onSignalingMessage` フック + AtomicBoolean、テストスレッドで `assumeTrue(false)` によりスキップ。0071 のパターン）
+  2. 両チャネルの接続完了を待機（60 秒）
+  3. `capturer.startCapture(960, 540, 30)`
+  4. 3 秒待機後、sendonly の outbound-rtp を rid 別に分類し r0 / r1 の両方で `bytesSent > 0` かつ `packetsSent > 0` を確認（1 秒間隔・最大 10 回）
+  5. offer で r2 が inactive なのに outbound-rtp で r2 の `bytesSent > 0` を観測した場合は失敗（SDK のエンコーディング適用バグ）
+  6. r0 / r1 のいずれかが観測できない場合はエミュレータ制約としてスキップ（観測値を含むログを出力）
+  7. recvonly の inbound-rtp で video の `bytesReceived > 0` かつ `packetsReceived > 0` を確認（1 秒間隔・最大 10 回。成立しない場合は実測値を含めて失敗）
+- capturer は基底クラスの `capturer` フィールドに代入し、tearDown で解放。
+
+### 着手時の確認タスクの実施結果
+
+- 接続先 Sora の spotlight 対応確認（タスク 1）とシグナリングエラー応答の実測（タスク 2）、エンコーディング調整（タスク 3）、受信成立確認（タスク 4）は、実行環境に SORA_SIGNALING_URL が設定されておらず**未実施**。実測結果は本セクションへ記録する。
+- スキップ判定は、上記タスクで確定した条件下で再検証するまでは、チェックイン後の CI（e2e-test.yml）での実行結果を確認して判断する。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- Gradle Managed Device (pixelApi35) での E2E 完走は、実行環境に SORA_SIGNALING_URL が設定されていないため未確認。CI（e2e-test.yml）での実行を確認する。
+
+### CHANGES.md
+
+- `develop` セクション `### misc` に `[ADD]` エントリを追記した。
