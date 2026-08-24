@@ -244,37 +244,71 @@ class SoraMessagingE2ETest : SoraE2ETestBase() {
                 )
 
                 // stats 検証
-                val statsA = channelA.getStats()
-                assertTrue("channelA getStats() が null でないこと", statsA != null)
-                var foundSent = false
-                for (s in statsA!!.statsMap.values) {
-                    if (s.type != "data-channel") continue
-                    val label = (s.members["label"] as? String) ?: continue
-                    if (label != MESSAGING_LABEL) continue
-                    val state = s.members["state"] as? String
-                    val messagesSent = (s.members["messagesSent"] as? Number)?.toLong() ?: 0L
-                    assertNotNull("channelA data-channel state が存在すること", state)
-                    assertEquals("channelA data-channel state", "open", state)
-                    assertTrue("channelA messagesSent > 0 ($messagesSent)", messagesSent > 0L)
-                    foundSent = true
-                    break
+                // sendDataChannelMessage() は送信成功 (OK) を返すが、SCTP 経由の送信は非同期で、
+                // messagesSent の stats 更新が getStats() 取得タイミングに間に合わないことがある。
+                // そのため messagesSent > 0 になるまで stats をポーリングする。
+                var statsVerified = false
+                for (i in 1..10) {
+                    val statsA = channelA.getStats()
+                    if (statsA == null) {
+                        Log.d(TAG, "channelA getStats() が null ($i/10)")
+                        delay(1_000)
+                        continue
+                    }
+                    var foundSent = false
+                    var messagesSentLatest = 0L
+                    for (s in statsA.statsMap.values) {
+                        if (s.type != "data-channel") continue
+                        val label = (s.members["label"] as? String) ?: continue
+                        if (label != MESSAGING_LABEL) continue
+                        val state = s.members["state"] as? String
+                        messagesSentLatest = (s.members["messagesSent"] as? Number)?.toLong() ?: 0L
+                        assertNotNull("channelA data-channel state が存在すること", state)
+                        assertEquals("channelA data-channel state", "open", state)
+                        foundSent = true
+                        break
+                    }
+                    Log.d(TAG, "channelA data-channel stats[$i/10]: foundSent=$foundSent messagesSent=$messagesSentLatest")
+                    if (foundSent && messagesSentLatest > 0L) {
+                        statsVerified = true
+                        break
+                    }
+                    delay(1_000)
                 }
-                assertTrue("channelA の data-channel stats が見つかること", foundSent)
+                assertTrue("channelA の data-channel stats で messagesSent > 0 になること", statsVerified)
 
-                val statsB = channelB.getStats()
-                assertTrue("channelB getStats() が null でないこと", statsB != null)
-                var foundRecv = false
-                for (s in statsB!!.statsMap.values) {
-                    if (s.type != "data-channel") continue
-                    val label = (s.members["label"] as? String) ?: continue
-                    if (label != MESSAGING_LABEL) continue
-                    val state = s.members["state"] as? String
-                    assertNotNull("channelB data-channel state が存在すること", state)
-                    assertEquals("channelB data-channel state", "open", state)
-                    foundRecv = true
-                    break
+                var messagesReceivedVerified = false
+                for (i in 1..10) {
+                    val statsB = channelB.getStats()
+                    if (statsB == null) {
+                        Log.d(TAG, "channelB getStats() が null ($i/10)")
+                        delay(1_000)
+                        continue
+                    }
+                    var foundRecv = false
+                    var messagesReceivedLatest = 0L
+                    for (s in statsB.statsMap.values) {
+                        if (s.type != "data-channel") continue
+                        val label = (s.members["label"] as? String) ?: continue
+                        if (label != MESSAGING_LABEL) continue
+                        val state = s.members["state"] as? String
+                        messagesReceivedLatest = (s.members["messagesReceived"] as? Number)?.toLong() ?: 0L
+                        assertNotNull("channelB data-channel state が存在すること", state)
+                        assertEquals("channelB data-channel state", "open", state)
+                        foundRecv = true
+                        break
+                    }
+                    Log.d(
+                        TAG,
+                        "channelB data-channel stats[$i/10]: foundRecv=$foundRecv messagesReceived=$messagesReceivedLatest",
+                    )
+                    if (foundRecv && messagesReceivedLatest > 0L) {
+                        messagesReceivedVerified = true
+                        break
+                    }
+                    delay(1_000)
                 }
-                assertTrue("channelB の data-channel stats が見つかること", foundRecv)
+                assertTrue("channelB の data-channel stats で messagesReceived > 0 になること", messagesReceivedVerified)
 
                 Log.d(TAG, "=== テスト完了: DataChannelメッセージングで2チャネル間の送受信ができること ===")
             } finally {

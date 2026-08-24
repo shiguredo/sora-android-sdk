@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-08-21
-- Completed:
+- Completed: 2026-08-21
 - Model: DeepSeek V4 Flash
 - Branch: feature/fix-messaging-e2e-stats-timing
 - Polished:
@@ -64,3 +64,16 @@ CI では `channelA messagesSent > 0 (0)` の AssertionError で失敗する。
 - issue 0078（onDataChannel の発火タイミング検証・ポーリング簡素化）— 完了済み。本 issue の回帰の原因となった
 
 ## 解決方法
+
+### SoraMessagingE2ETest.kt
+
+- stats 検証をポーリング化した。
+  - channelA: `data-channel` stats の `messagesSent` が 0 のまま取得されることがあるため、`messagesSent > 0` になるまで 10 回 × 1 秒ポーリングしてから検証するようにした。
+  - channelB: 同様に `messagesReceived > 0` になるまで 10 回 × 1 秒ポーリングしてから検証するようにした。従来は受信側のカウントは存在確認のみだったが、送信側と同じタイミング問題があり得るため受信カウントも検証対象にした。
+  - ラベル・state（open）の検証はポーリングループ内で維持した。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- CI（Gradle Managed Device pixelApi35）でテストが通ることを確認した。
+- 送信は単発のまま（issue 0078 の簡素化を維持し、ポーリングは stats 検証のみに限定）とした。
