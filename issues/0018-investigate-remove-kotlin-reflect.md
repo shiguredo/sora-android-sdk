@@ -63,29 +63,10 @@
 ## 完了条件
 
 - `gradle/libs.versions.toml` と `sora-android-sdk/build.gradle.kts` から `kotlin-reflect` の宣言が削除されていること。
-<<<<<<< HEAD
 - `kotlin-reflect` を削除した状態で `:sora-android-sdk:assembleDebug` / `:sora-android-sdk:testDebugUnitTest` / `:sora-android-sdk:assembleRelease` が通ること。
 - 既存の E2E テスト（`pixelApi35AndroidE2ETest`、または e2e-test.yml の CI 実行結果）が通ること。
 - `src/main` / `src/test` / `src/androidTest` 配下に `kotlin.reflect` API の利用がないこと。
 - `releaseRuntimeClasspath` と `testRuntimeClasspath` の依存グラフから `kotlin-reflect` が実依存として消えていること（`(c)` の constraint 行は実依存ではないため除外して判定する）。
 - `CHANGES.md` の `develop` セクションに `[UPDATE]` エントリを追記すること。
-
-## 変更対象ファイル
-
-- `gradle/libs.versions.toml`
-- `sora-android-sdk/build.gradle.kts`
-- `CHANGES.md`
-
-## 依存関係
-
-- issue 0061（libwebrtc-c リライトの調査）— 0018 を「独立対応候補」として分類済み（0061:522）。
-  - 0061 の Phase 0（ビルド構成刷新、`compileOnly` 降格）は `build.gradle.kts` の dependencies ブロック（0018 の変更対象）と `libs.versions.toml` を書き換えるため、**0061 Phase 0 のマージ前に 0018 を完了させる**ことを推奨する。0061 Phase 0 が先行して dependencies ブロックを書き換えた場合、kotlin-reflect の行が 0061 側で消え、0018 が moot になる可能性がある。その場合は本 issue を close し、0061 側で対応済みであることを解決方法に記録する。
-  - No-Go 時（kotlin-reflect が必要と判明した場合）の運用: 必要性を再調査した結果を解決方法に追記し、`issues/closed/` へ移動する。ブランチ `feature/refactor-remove-kotlin-reflect` は破棄し、develop には変更を入れない。
-=======
-- `kotlin-reflect` を削除した状態で `:sora-android-sdk:assembleDebug` と `:sora-android-sdk:testDebugUnitTest` が通ること。
-- 既存の E2E テストを実行できる場合は、それが通ること。
-- `releaseRuntimeClasspath` の依存グラフから `kotlin-reflect` が消えていること。
-- `CHANGES.md` の `develop` セクションに該当エントリを追記すること。
->>>>>>> 8429215 (0018 不要なら kotlin-reflect 依存を外す issue を更新)
 
 ## 解決方法
