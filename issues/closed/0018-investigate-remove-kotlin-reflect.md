@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-08-24
 - Polished: 2026-08-21
 - Model: Opus 4.8
 - Branch: feature/refactor-remove-kotlin-reflect
@@ -69,16 +69,19 @@
 - `releaseRuntimeClasspath` と `testRuntimeClasspath` の依存グラフから `kotlin-reflect` が実依存として消えていること（`(c)` の constraint 行は実依存ではないため除外して判定する）。
 - `CHANGES.md` の `develop` セクションに `[UPDATE]` エントリを追記すること。
 
-## 変更対象ファイル
-
-- `gradle/libs.versions.toml`
-- `sora-android-sdk/build.gradle.kts`
-- `CHANGES.md`
-
-## 依存関係
-
-- issue 0061（libwebrtc-c リライトの調査）— 0018 を「独立対応候補」として分類済み（0061:522）。
-  - 0061 の Phase 0（ビルド構成刷新、`compileOnly` 降格）は `build.gradle.kts` の dependencies ブロック（0018 の変更対象）と `libs.versions.toml` を書き換えるため、**0061 Phase 0 のマージ前に 0018 を完了させる**ことを推奨する。0061 Phase 0 が先行して dependencies ブロックを書き換えた場合、kotlin-reflect の行が 0061 側で消え、0018 が moot になる可能性がある。その場合は本 issue を close し、0061 側で対応済みであることを解決方法に記録する。
-  - No-Go 時（kotlin-reflect が必要と判明した場合）の運用: 必要性を再調査した結果を解決方法に追記し、`issues/closed/` へ移動する。ブランチ `feature/refactor-remove-kotlin-reflect` は破棄し、develop には変更を入れない。
-
 ## 解決方法
+
+### 実装
+
+- `gradle/libs.versions.toml` から `kotlin-reflect` の宣言を削除した。
+- `sora-android-sdk/build.gradle.kts` から `implementation(libs.kotlin.reflect)` を削除した。
+
+### 検証
+
+- 依存グラフの確認: `releaseRuntimeClasspath` と `testRuntimeClasspath` の両方で、`kotlin-reflect` が実依存として消えていることを確認した（`(c)` の constraint 行も含め 0 件）。
+- ビルド・テスト: `:sora-android-sdk:assembleDebug` / `:sora-android-sdk:testDebugUnitTest` / `:sora-android-sdk:ktlintCheck` / `:sora-android-sdk:assembleRelease` が成功することを確認した。
+- E2E: `pixelApi35AndroidE2ETest` が CI で通ることを確認した（ビルド・起動確認済み）。
+
+### CHANGES.md
+
+- `develop` セクションに `[UPDATE]` エントリを追記した（`kotlin-reflect` は実装依存であり、公開 API に影響しないため `[UPDATE]` とした）。

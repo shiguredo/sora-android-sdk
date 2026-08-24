@@ -178,8 +178,6 @@ dependencies {
 
     api(libs.shiguredo.webrtc.android)
 
-    implementation(libs.kotlin.reflect)
-
     // required by "signaling" part
     implementation(libs.gson)
     implementation(libs.okhttp)

@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] `kotlin-reflect` 依存を削除する
+  - コードベースに `kotlin.reflect` API の利用箇所がなく、依存グラフ上でも明示的な `implementation` 宣言によってのみ取り込まれていたため不要
+  - 依存数を削減し、SDK を利用するアプリのビルドサイズを軽減する
+  - @t-miya
 - [CHANGE] `signalingMetadata` を未指定にした場合に connect メッセージの `metadata` を送信しないようにする
   - `signalingMetadata` のデフォルト値を `""` から `null` に変更した。未指定時 (`null`) と `JsonNull` 指定時は `metadata` を送信しない
   - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
