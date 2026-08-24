@@ -48,6 +48,10 @@
 
 ### misc
 
+- [ADD] spotlight の接続と映像 RTP 疎通を検証する e2e テストを追加する
+  - sendonly（spotlight 送信）+ recvonly（spotlight 受信）の 2 チャネル構成で、送信側の video outbound-rtp（r0 / r1）と受信側の video inbound-rtp の疎通を検証する
+  - Sora が spotlight 非対応（offer の encodings に r2 active: false が含まれない）環境や、エミュレータ制約で spotlight 用エンコーディングが立ち上がらない環境ではスキップする
+  - @t-miya
 - [ADD] RPC (RequestSimulcastRid) で simulcast の受信 rid を切り替えられることを検証する e2e テストを追加する
   - sendonly（simulcast 送信）+ recvonly（RPC で rid 切替）の 2 チャネル構成で、RPC 実行前後の受信映像の解像度変化（inbound-rtp の frameWidth / frameHeight）を検証する
   - Sora が RPC 非対応（offer に rpc ラベル・rpc_methods がない）環境や、エミュレータ制約で送信側の rid が立ち上がらない環境ではスキップする
