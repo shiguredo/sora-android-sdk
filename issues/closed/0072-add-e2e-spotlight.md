@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-13
-- Completed:
+- Completed: 2026-08-25
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-e2e-spotlight
 - Polished: 2026-08-24
@@ -24,7 +24,7 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 ## 環境前提
 
 - 接続先 Sora で spotlight 機能が有効化されている必要がある。非対応の Sora 環境で `spotlight: true` を指定して接続した場合の挙動（シグナリングエラー応答の有無と content）は、着手時の確認タスクで実測確認する。エラーにならずに接続が成立する場合は、offer の応答内容（確認タスク 1 参照）で spotlight 有効性を判断する。
-- spotlight は simulcast を利用するため、エミュレータの SW エンコーダで送信側の spotlight 用エンコーディング（r0 / r1）が立ち上がる必要がある。r0（scaleResolutionDownBy 4.0）はエミュレータの SW エンコーダでは立ち上がらない可能性が極めて高い（0071 の実測で default の 4.0 では立ち上がらず、2.0 に変更して通過した: `issues/closed/0071-add-e2e-rpc-request-simulcast-rid.md:33,148`）。そのため、**spotlight_encodings の r0 の scaleResolutionDownBy を 2.0 に変更できる Sora 環境を前提とする**（調整手段: sora.conf の `spotlight_encodings_file`、または認証成功時の払い出し `spotlight_encodings`。Sora ドキュメント「スポットライト機能のカスタマイズ」節。https://sora.shiguredo.jp/doc/SPOTLIGHT.html ）。調整可否の確認は着手時に必須とする。
+- spotlight は simulcast を利用するため、エミュレータの SW エンコーダで送信側の spotlight 用エンコーディング（r0 / r1）が立ち上がる必要がある。r0（scaleResolutionDownBy 4.0）はエミュレータの SW エンコーダでは立ち上がらない可能性が極めて高い（0071 の実測で default の 4.0 では立ち上がらず、2.0 に変更して通過した: `issues/closed/0071-add-e2e-rpc-request-simulcast-rid.md:33,148`）。そのため当初は **spotlight_encodings の r0 の scaleResolutionDownBy を 2.0 に変更できる Sora 環境を前提とする**設計とした（調整手段: sora.conf の `spotlight_encodings_file`、または認証成功時の払い出し `spotlight_encodings`。Sora ドキュメント「スポットライト機能のカスタマイズ」節。https://sora.shiguredo.jp/doc/SPOTLIGHT.html ）。しかし実測では調整なしのデフォルト構成でテストがパスした（確認タスク 3 の結果を参照）ため、調整は必須ではない。
 
 ### 着手時の確認タスク
 
@@ -56,6 +56,7 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
   - spotlight_focus_rid / spotlight_unfocus_rid は指定しない（Sora 側の default_spotlight_focus_rid / default_spotlight_unfocus_rid に依存）。フォーカス外の配信（r0）が受信できることは確認タスク 4 で確認する
 - 音声は送信しない（audio 関連は無効のまま）。音声の疎通検証は issue 0074 で別途対応する。
 - 両チャネルは同一 Sora ルーム（同一 channelId）に接続する。
+- **channelId は本テスト専用の値（`${channelId}-spotlight`）を使う**。spotlight はセッション単位の属性であり、channelId を共有する他テスト（spotlight なし）が先に接続したセッションが残っていると、シグナリング項目が一致しない接続として拒否される（`invalid_signaling_params`、実測で `4490 / INVALID-MESSAGE` を確認）。js-sdk の e2e が randomUUID で channelId を毎回生成しているのと同様の理由である。
 
 ### 接続順序と待機
 
@@ -82,7 +83,7 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 
 ### スキップ判定
 
-- 接続先 Sora が spotlight 非対応の場合（シグナリングエラー応答、または offer の `encodings` が spotlight 用でない場合）はスキップする。判定条件は確認タスク 2 で確定し、エラー応答から spotlight 非対応を特定できない場合は失敗とする。
+- 接続先 Sora が spotlight 非対応の場合、offer の `encodings` が spotlight 用（r2 `active: false`）でないことが識別可能な場合にスキップする。**接続失敗（`4490 / INVALID-MESSAGE` 等のシグナリングエラー応答）はスキップせず失敗とする**。理由: spotlight 非対応をシグナリングエラーから特定できないため（誤スキップの防止）。なお、実測で `4490 / INVALID-MESSAGE` が発生したが、これは spotlight 非対応ではなく他テストのセッション残留（invalid_signaling_params）が原因であり、channelId の分離で解消した（チャネル構成セクション参照）。
 - エミュレータ制約により、ポーリング中に送信側の r0 / r1 のいずれか（または両方）が観測できない場合はスキップする（0071 の実装（SoraRpcE2ETest.kt:268-274）と同様。観測できた rid と bytesSent の実測値をログに残す）。ただし、r2 の `bytesSent > 0` を観測した場合はこのスキップ判定より優先して失敗とする（検証対象参照）。
 - スキップ判定はテストスレッドで行う（コールバックスレッド内で `assumeTrue` を直接呼んでもテストへ伝播しない。0071 実装で確立した AtomicBoolean によるフラグ伝達 + テストスレッドの待機ループでの判定パターンを踏襲）。
 
@@ -95,7 +96,7 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 
 - spotlight 送信（sendonly + enableSpotlight）と spotlight 受信（recvonly + enableSpotlight）の 2 チャネル構成で、送信側の video outbound-rtp（r0 / r1）と受信側の video inbound-rtp の疎通を検証する e2e テストが追加されていること。
 - 実機マイク/カメラ権限を要求しないこと（音声なし・`DummyVideoCapturer` 使用）。
-- Sora が spotlight 非対応の場合（シグナリングエラー、または offer の encodings が spotlight 用でない場合）にはスキップする判定が入っていること。
+- Sora が spotlight 非対応の場合（offer の encodings が spotlight 用でない場合）にはスキップする判定が入っていること。接続失敗（シグナリングエラー応答）はスキップせず失敗とすること。
 - エミュレータ制約で spotlight 用エンコーディング（r0 / r1）が立ち上がらない場合にはスキップする判定が入っていること。
 - **確認タスク 1〜4 の実測結果（Sora のバージョン、spotlight 非対応時のエラー応答、offer の encodings の内容、r0 の scaleResolutionDownBy 調整値と調整手段、受信 rid の実測値）と、テストがパスした環境（GMD / 実機等）・実行日を issue に記録すること。これが「スキップのみでの完了は不可」の検証手段になる。スキップのみで完了させてはならない。**
 - 実装時に「解決方法」へテストメソッド名（スペースを含めない DEX 対応の名前）と検証コマンド（`compileDebugAndroidTestKotlin` / `ktlintCheck` 等）を記録すること。テストメソッド名にスペースが含まれると DEX 化に失敗する。
@@ -106,6 +107,8 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 
 - `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraSpotlightE2ETest.kt`（新規）
   - `SoraE2ETestBase` を継承し、ローカル変数管理の 2 チャネル構成で spotlight を検証する（`SoraRpcE2ETest.kt` の構成を雛形とする）
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraE2ETestBase.kt`
+  - `createChannel` に `channelId` パラメータを追加（デフォルトは既存の `channelId` フィールドで、既存テストへの影響なし）
 - `CHANGES.md`
 
 ## 依存関係
@@ -116,3 +119,36 @@ spotlight 機能での接続と映像 RTP 疎通を e2e で検証する。sora-j
 - issue 0059 (ダミー音声) — 本 issue では使用しない（音声なし構成。音声の疎通検証は issue 0074 で対応）
 
 ## 解決方法
+
+### SoraSpotlightE2ETest.kt（新規）
+
+- `spotlightで映像が送受信できること` テストメソッドを追加した（スペースを含めない DEX 対応の名前）。
+- sendonly チャネル（spotlight 送信）+ recvonly チャネル（spotlight 受信）の 2 チャネル構成。
+  - sendonly: `enableVideoUpstream(capturer, null)` + `enableSpotlight(SoraSpotlightOption())` + `softwareVideoEncoderOnly = true` + `videoBitrate = 1200` + VP8。解像度 960x540 / 30fps（0071 と同構成）。
+  - recvonly: `enableVideoDownstream(null)` + `enableSpotlight(SoraSpotlightOption())`。
+  - 両チャネルは本テスト専用の channelId（`${channelId}-spotlight`）で接続（`SoraE2ETestBase.createChannel` に channelId パラメータを追加し対応）。2 チャネルはローカル変数で管理し、finally で切断（0071 のパターン）。
+- 検証フロー:
+  1. sendonly の offer の `encodings` で r2 の `active: false` を確認（`onSignalingMessage` フック + AtomicBoolean、テストスレッドで `assumeTrue(false)` によりスキップ。0071 のパターン）
+  2. 両チャネルの接続完了を待機（60 秒）
+  3. `capturer.startCapture(960, 540, 30)`
+  4. 3 秒待機後、sendonly の outbound-rtp を rid 別に分類し r0 / r1 の両方で `bytesSent > 0` かつ `packetsSent > 0` を確認（1 秒間隔・最大 10 回）
+  5. offer で r2 が inactive なのに outbound-rtp で r2 の `bytesSent > 0` を観測した場合は失敗（SDK のエンコーディング適用バグ）
+  6. r0 / r1 のいずれかが観測できない場合はエミュレータ制約としてスキップ（観測値を含むログを出力）
+  7. recvonly の inbound-rtp で video の `bytesReceived > 0` かつ `packetsReceived > 0` を確認（1 秒間隔・最大 10 回。成立しない場合は実測値を含めて失敗）
+- capturer は基底クラスの `capturer` フィールドに代入し、tearDown で解放。
+
+### 着手時の確認タスクの実施結果
+
+- タスク 1（spotlight 対応確認）: **CI の接続先 Sora は spotlight 対応**。offer の `encodings` に r2 `active: false` が含まれることを確認した。
+- タスク 2（spotlight 非対応時のエラー応答実測）: spotlight 非対応エラーは実測できなかった。代わりに、最初の CI 実行では `4490 + reason=INVALID-MESSAGE` のシグナリングエラーが発生した。これは spotlight 非対応ではなく、**同一 channelId で先行した他テストのセッション残留による invalid_signaling_params**（シグナリング項目が一致しない接続）が原因だった。本テスト専用の channelId（`${channelId}-spotlight`）に分離して解決した（js-sdk の e2e も randomUUID で channelId を毎回生成している）。**この実測により、接続失敗をスキップにしない方針（スキップ判定セクション参照）を確定した**。
+- タスク 3（r0 / r1 の立ち上がり確認）: **spotlight_encodings の scaleResolutionDownBy 調整（2.0 への変更）なしでも、デフォルト構成のまま r0 / r1 が立ち上がった**。エミュレータ SW エンコーダ制約は問題にならなかった（0071 の simulcast`scaleResolutionDownBy 4.0` の実測とは前提が異なる結果である点に注意）。
+- タスク 4（受信成立確認）: recvonly の inbound-rtp で video の `bytesReceived > 0` が成立し、Sora のデフォルト（`default_spotlight_unfocus_rid = r0`）でフォーカス外配信を受信できた。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:compileDebugAndroidTestKotlin :sora-android-sdk:testDebugUnitTest :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- Gradle Managed Device (pixelApi35) の E2E 実行（2026-08-25、CI）で、`SoraSpotlightE2ETest` が**スキップなしでパス**することを確認した。
+
+### CHANGES.md
+
+- `develop` セクション `### misc` に `[ADD]` エントリを追記した。

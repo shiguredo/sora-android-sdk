@@ -85,6 +85,7 @@ abstract class SoraE2ETestBase {
         onConnect: (SoraMediaChannel) -> Unit,
         onClose: (SoraMediaChannel, SoraCloseEvent) -> Unit,
         onError: (SoraMediaChannel, SoraErrorReason, String) -> Unit,
+        channelId: String = this.channelId,
         dataChannelSignaling: Boolean? = null,
         ignoreDisconnectWebSocket: Boolean? = null,
         dataChannels: List<Map<String, Any>>? = null,
