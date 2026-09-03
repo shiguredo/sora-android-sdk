@@ -1299,6 +1299,7 @@ class SoraMediaChannel
             |audioSource                = ${mediaOption.audioOption.audioSource}
             |useStereoInput             = ${mediaOption.audioOption.useStereoInput}
             |useStereoOutput            = ${mediaOption.audioOption.useStereoOutput}
+            |audioAttributes            = ${mediaOption.audioOption.audioAttributes}
             |videoIsRequired            = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled       = ${mediaOption.videoUpstreamEnabled}
             |videoUpstreamContext       = ${mediaOption.videoUpstreamContext}

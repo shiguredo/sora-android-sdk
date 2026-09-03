@@ -38,6 +38,11 @@
   - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
   - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
   - @t-miya
+- [ADD] `SoraAudioOption` に `audioAttributes` を追加する
+  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡され、音声出力の `AudioAttributes` を指定できる
+  - ステレオ受信に利用する場合は `useStereoOutput` と SDP 書き換えとの併用が必要
+  - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
+  - @voluntas
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya
