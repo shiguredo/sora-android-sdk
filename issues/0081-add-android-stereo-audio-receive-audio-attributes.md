@@ -3,7 +3,7 @@
 - Created: 2026-09-03
 - Completed:
 - Branch: feature/add-android-stereo-audio-receive-audio-attributes
-- Polished:
+- Polished: 2026-09-03
 
 ## 目的
 
@@ -11,7 +11,7 @@ Android のステレオ音声受信を実機で成立させるための対応の
 
 本 issue 単体では実機ステレオ受信は成立しない。0082-add-android-stereo-audio-receive-sdp と併用して初めて実機での受信ステレオを検証できる。
 
-関連 issue: 0022 (ステレオ音声受信の調査), 0076 (androidTest にステレオ音声送受信の e2e テストを追加する)。
+関連 issue: 0022 (ステレオ音声受信の調査), 0031 (受信音声が Bluetooth 接続機器に入力音声として認識される問題の調査。AudioAttributes の usage を同一 API で扱う), 0076 (androidTest にステレオ音声送受信の e2e テストを追加する)。
 
 ## 現状
 
@@ -19,7 +19,7 @@ Android のステレオ音声受信を実機で成立させるための対応の
 - `RTCComponentFactory.createJavaAudioDevice` (`sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/RTCComponentFactory.kt`) は `JavaAudioDeviceModule.Builder` に対して `setAudioSource` / `setUseStereoInput` / `setUseStereoOutput` を呼ぶが、`setAudioAttributes` は呼んでいない
 - libwebrtc の `sdk/android/api/org/webrtc/audio/JavaAudioDeviceModule.java` には `Builder#setAudioAttributes(AudioAttributes)` が既に存在する
 - libwebrtc の `sdk/android/src/java/org/webrtc/audio/WebRtcAudioTrack.java` は `overrideAttributes` を渡さない場合、`AudioAttributes.USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` を組み立てる
-- 0022 の調査で「answer SDP の Opus fmtp を書き換えて `channels=2` が出るところまでは到達しても、実機イヤホンではステレオ受信できない」現象が確認されている。上記の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` による AudioPolicy 側のモノラルダウンミックスが最有力仮説
+- 0022 の調査で「answer SDP の Opus fmtp を書き換えて `channels=2` が出るところまでは到達しても、実機イヤホンではステレオ受信できない」現象が確認されている。上記の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` による AudioPolicy 側のモノラルダウンミックスが最有力仮説であり、0031 の調査仮説 (usage による Bluetooth プロファイル選択) と同系統である。本 issue の対応 (オプション追加 + 既定挙動維持) は仮説の正否に依存せず成立する
 
 ## 設計方針
 
@@ -27,7 +27,7 @@ Android のステレオ音声受信を実機で成立させるための対応の
 2. `RTCComponentFactory.createJavaAudioDevice` で `audioAttributes` が非 null のときのみ `JavaAudioDeviceModule.Builder#setAudioAttributes(audioAttributes)` を呼ぶ
 3. 既定 (`audioAttributes = null`) では libwebrtc の従来挙動 (`USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH`) を維持する
 4. `SoraMediaChannel` の設定サマリログに `audioAttributes` を追加する
-5. KDoc に「ステレオ受信を有効にする際は 0082 の SDP 書き換えと併用する必要があること」および「`USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` を指定するとステレオ再生が期待できるが、Bluetooth SCO や通話ルーティングとの相互作用は利用側で確認する必要があること」を明記する
+5. KDoc に「ステレオ受信を有効にする際は、answer SDP の Opus fmtp へ `stereo=1` / `sprop-stereo=1` を追記する SDP 書き換えと併用する必要があること」および「`USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` を指定するとステレオ再生が期待できるが、Bluetooth SCO や通話ルーティングとの相互作用は利用側で確認する必要があること」を明記する
 
 ## 完了条件
 
