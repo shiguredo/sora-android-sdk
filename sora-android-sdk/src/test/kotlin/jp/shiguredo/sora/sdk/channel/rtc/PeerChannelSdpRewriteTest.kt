@@ -151,8 +151,7 @@ class PeerChannelSdpRewriteTest {
         )
     }
 
-    private fun answerOf(sdp: String): SessionDescription =
-        SessionDescription(SessionDescription.Type.ANSWER, sdp)
+    private fun answerOf(sdp: String): SessionDescription = SessionDescription(SessionDescription.Type.ANSWER, sdp)
 
     // 指定 payload type の a=fmtp 行を 1 行だけ取り出す
     // 本番の行分割とは独立した検証用の分割のため、改行コードの両方を扱う
