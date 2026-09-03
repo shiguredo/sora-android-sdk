@@ -3,7 +3,7 @@
 - Created: 2026-09-03
 - Completed:
 - Branch: feature/add-android-stereo-audio-receive-sdp
-- Polished:
+- Polished: 2026-09-03
 
 ## 目的
 
@@ -19,7 +19,8 @@ Android のステレオ音声受信を実機で成立させるための対応の
 - そのため answer SDP を直接書き換える必要がある
 - 0022 の試作では `PeerChannelImpl` の `createAnswer` → `setLocalDescription` の間に SDP を書き換えて `stereo=1;sprop-stereo=1` を追記すると、`WebRtcAudioTrackExternal.initPlayout` のログで `channels=2` が出るところまでは確認できている
 - 試作コードは SDK に取り込まれておらず、`useStereoOutput` が有効な接続でも標準では上記書き換えは行われない
-- answer SDP を組み立てる箇所は `PeerChannel.kt` (`sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/PeerChannel.kt`) の `PeerChannelImpl` 内で `createAnswer()` 後に `setLocalDescription()` を呼ぶ 2 箇所
+- answer SDP を組み立てる箇所は `PeerChannel.kt` (`sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/PeerChannel.kt`) の `PeerChannelImpl` 内で `createAnswer()` 後に `setLocalDescription()` を呼ぶ 2 箇所 (`handleInitialRemoteOffer` / `handleUpdatedRemoteOffer`)
+- 書き換えはクライアント側が answer SDP を組み立てる経路でのみ機能する。クライアント offer 経路 (Sora が answer を組み立てる構成) ではクライアント側に answer SDP が存在しないため、本対応の対象外である
 
 ## 設計方針
 
@@ -33,14 +34,14 @@ Android のステレオ音声受信を実機で成立させるための対応の
 3. `PeerChannelImpl` の 2 箇所の `createAnswer` → `setLocalDescription` 経路の両方で書き換え後の SessionDescription を渡す
 4. SDP 書き換えのユニットテストを追加する (実機を要さないパーサレベルの検証)
    - 単一 audio m= 行、audio+video 混在、既存 fmtp が空、既存 fmtp に他のパラメータあり、Opus 以外の audio codec (未該当)、audio m= 行が無い、の各ケース
-5. `SoraMediaChannel` の設定サマリログに書き換えを適用した旨を出力する
+5. `SoraMediaChannel` の設定サマリログに、`useStereoOutput = true` の場合に SDP 書き換えが有効である旨を出力する。実際の書き換え実行時には `PeerChannelImpl` 側で書き換えを適用した旨のログを出力する
 
 ## 完了条件
 
 - `useStereoOutput = true` の接続で answer SDP の Opus `fmtp` に `stereo=1;sprop-stereo=1` が付与されること
 - `useStereoOutput = false` (既定) では既存挙動どおり書き換えないこと
 - 複数 m= 行がある SDP で Opus 以外の fmtp を壊さないこと (ユニットテスト)
-- 0081 と併用した実機検証で、実機イヤホンからステレオ音声が聴こえること
+- 0081 と併用した実機検証で、Sora が offer を生成する構成の接続で実機イヤホンからステレオ音声が聴こえること (実機検証結果は 0081 側にも記録する)
 - CHANGES.md に追記があること
 
 ## 変更履歴案
