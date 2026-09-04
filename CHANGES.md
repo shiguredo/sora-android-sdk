@@ -38,9 +38,9 @@
   - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
   - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
   - @t-miya
-- [ADD] `SoraAudioOption` に `audioAttributes` を追加する
-  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡され、音声出力の `AudioAttributes` を指定できる
-  - ステレオ受信に利用する場合は `useStereoOutput` と SDP 書き換えとの併用が必要
+- [ADD] ステレオ音声受信のため、音声出力の `AudioAttributes` を指定する `SoraAudioOption.audioAttributes` を追加する
+  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡される
+  - 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` では Android の AudioPolicy 側でステレオ音声がモノラルへダウンミックスされる場合があるため、`USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` などを指定できるようにする
   - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
   - @voluntas
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
