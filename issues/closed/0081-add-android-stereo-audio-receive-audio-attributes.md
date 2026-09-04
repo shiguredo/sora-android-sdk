@@ -1,7 +1,7 @@
 # SoraAudioOption に AudioAttributes を追加する
 
 - Created: 2026-09-03
-- Completed:
+- Completed: 2026-09-03
 - Branch: feature/add-android-stereo-audio-receive-audio-attributes
 - Polished: 2026-09-03
 
@@ -39,3 +39,24 @@ Android のステレオ音声受信を実機で成立させるための対応の
 ## 変更履歴案
 
 - [ADD] `SoraAudioOption` に `audioAttributes` を追加する
+
+## 解決方法
+
+### 実装
+
+- `SoraAudioOption` に `audioAttributes: AudioAttributes? = null` を追加した
+  - KDoc にステレオ受信時の SDP 書き換え併用の必要性と `USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` の注意を明記した
+  - カスタム `audioDeviceModule` 指定時は無視される旨を明記した
+- `RTCComponentFactory` の `createJavaAudioDevice` で `audioAttributes` が非 null のときのみ `JavaAudioDeviceModule.Builder#setAudioAttributes` を呼ぶようにした
+  - 未指定 (null) では従来どおり libwebrtc の既定挙動を維持する
+- `SoraMediaChannel` の設定サマリログに `audioAttributes` を追加した
+
+### テスト
+
+- `SoraAudioOptionTest` を新規追加し、既定 null・値保持・`useStereoOutput` との併用保持を検証する
+- Builder 分岐の自動検証はネイティブ依存のため見送り、実機検証は 0082 との併用で行う
+- ローカル実行は Android SDK 不足のため未実施とし、CI での検証に委ねる
+
+### 変更履歴
+
+- `CHANGES.md` の `## develop` に `[ADD]` エントリを追加した
