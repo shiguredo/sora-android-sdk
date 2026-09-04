@@ -1,4 +1,4 @@
-name: CI
+name: E2E Test
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, Apple-M1]
     timeout-minutes: 45
     env:
-      SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_CHANNEL_ID_SUFFIX: _${{ github.run_id }}
@@ -55,7 +55,7 @@ jobs:
         run: cp gradle.properties.example gradle.properties
       - name: Validate E2E environment
         run: |
-          test -n "${SORA_SIGNALING_URL:-}" || { echo "SORA_SIGNALING_URL is not set"; exit 1; }
+          test -n "${TEST_SORA_SIGNALING_URL:-}" || { echo "TEST_SORA_SIGNALING_URL is not set"; exit 1; }
       - name: Run E2E tests with logcat
         run: |
           set +e

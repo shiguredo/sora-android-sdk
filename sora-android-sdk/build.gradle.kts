@@ -49,7 +49,7 @@ android {
 
         buildConfigField("String", "REVISION", "\"$gitRevision\"")
         buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
-        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("SORA_SIGNALING_URL") ?: ""}\"")
+        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("TEST_SORA_SIGNALING_URL") ?: ""}\"")
         buildConfigField("String", "TEST_SECRET_KEY", "\"${System.getenv("TEST_SECRET_KEY") ?: ""}\"")
         buildConfigField("String", "TEST_CHANNEL_ID_PREFIX", "\"${System.getenv("TEST_CHANNEL_ID_PREFIX") ?: ""}\"")
         buildConfigField("String", "TEST_CHANNEL_ID_SUFFIX", "\"${System.getenv("TEST_CHANNEL_ID_SUFFIX") ?: ""}\"")

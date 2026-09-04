@@ -41,7 +41,7 @@ abstract class SoraE2ETestBase {
     @Before
     fun setup() {
         assumeTrue(
-            "SORA_SIGNALING_URL が未設定のためテストをスキップします",
+            "TEST_SORA_SIGNALING_URL が未設定のためテストをスキップします",
             BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
         )
         Log.d(

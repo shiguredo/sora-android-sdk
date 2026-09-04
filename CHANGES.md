@@ -60,6 +60,13 @@
   - `onDataChannelOpened` がラベルごとに一度だけ発火すること、全メッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が一度だけ発火すること、`#` 以外のラベルでも `onDataChannelOpened` が発火すること、発火後の最初の `sendDataChannelMessage` が成功することを検証する
   - @t-miya
 
+### misc
+
+- [UPDATE] GitHub Actions の E2E テストワークフロー名を `E2E Test` に変更する
+  - @zztkm
+- [UPDATE] E2E テストのシグナリング URL 環境変数を `SORA_SIGNALING_URL` から `TEST_SORA_SIGNALING_URL` に変更する
+  - @zztkm
+
 ## 2026.2.1
 
 **リリース日**: 2026-07-29
