@@ -48,3 +48,7 @@ Sora Android SDK からステレオ音声を送信できるようにする。
 ### 変更履歴
 
 - `CHANGES.md` に `SoraAudioOption` から `audioSource`、`useStereoInput`、`useStereoOutput` を指定できるようにしたことを記載した。
+
+## 関連 issue
+
+- SDK のステレオ音声送信設定を実際の接続で検証できるように、ボイスチャットへステレオ送信オプションを追加する `issues/0086-add-stereo-audio-send-option-to-voice-chat.md` を起票した。
