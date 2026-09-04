@@ -1284,6 +1284,9 @@ class SoraMediaChannel
                 SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
             }
 
+            // ステレオ受信のための answer SDP 書き換えが有効かどうか
+            // クライアント offer 経路では answer SDP を組み立てないため、 enabled でも書き換えは動作しない
+            val stereoAnswerSdpRewrite = if (mediaOption.audioOption.useStereoOutput) "enabled" else "disabled"
             SoraLogger.d(
                 TAG,
                 """connect: SoraMediaOption
@@ -1300,6 +1303,7 @@ class SoraMediaChannel
             |useStereoInput             = ${mediaOption.audioOption.useStereoInput}
             |useStereoOutput            = ${mediaOption.audioOption.useStereoOutput}
             |audioAttributes            = ${mediaOption.audioOption.audioAttributes}
+            |stereoAnswerSdpRewrite     = $stereoAnswerSdpRewrite
             |videoIsRequired            = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled       = ${mediaOption.videoUpstreamEnabled}
             |videoUpstreamContext       = ${mediaOption.videoUpstreamContext}

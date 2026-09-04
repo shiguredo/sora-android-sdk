@@ -228,6 +228,111 @@ class PeerChannelImpl(
                 )
             }
         }
+
+        /**
+         * answer SDP の Opus fmtp 行へステレオ受信のためのパラメータを追記する.
+         *
+         * libwebrtc の WebRTC API では受信側の Opus fmtp に stereo を付与する手段が無いため、
+         * answer SDP を直接書き換える.
+         *
+         * sprop-stereo は送信側がステレオ送信できることの宣言であり、
+         * stereo は受信側がステレオ受信を希望することの宣言である.
+         * 両方を付与することでステレオ受信のネゴシエーションが成立する.
+         *
+         * enabled が false の場合、または書き換え対象が無い場合は入力をそのまま返す.
+         *
+         * @param answer 書き換え対象の answer SDP
+         * @param enabled true の場合のみ書き換えを行う
+         * @return 書き換え後の answer SDP. 書き換えが無い場合は入力と同じインスタンスを返す.
+         */
+        internal fun appendStereoParamsToOpusFmtp(
+            answer: SessionDescription,
+            enabled: Boolean,
+        ): SessionDescription {
+            if (!enabled) {
+                return answer
+            }
+            val rewritten = rewriteOpusFmtp(answer.description)
+            if (rewritten == answer.description) {
+                return answer
+            }
+            return SessionDescription(answer.type, rewritten)
+        }
+
+        // Opus の payload type に対応する a=fmtp 行に stereo=1;sprop-stereo=1 を追記する.
+        //
+        // 対象は audio の m= 行以下にある fmtp のみとし、 m= 行を跨いだ書き換えは行わない.
+        // Opus 以外の codec の fmtp は変更しない.
+        // 既に付与されているパラメータは重複して追記しない.
+        private fun rewriteOpusFmtp(sdp: String): String {
+            val lineBreak = if (sdp.contains("\r\n")) "\r\n" else "\n"
+            val lines = sdp.split(lineBreak).toMutableList()
+
+            // 1 パス目: audio セクション内の Opus の payload type を収集する
+            val opusPayloadTypes = mutableSetOf<String>()
+            var inAudioSection = false
+            for (line in lines) {
+                if (line.startsWith("m=")) {
+                    inAudioSection = line.startsWith("m=audio ")
+                } else if (inAudioSection && line.startsWith("a=rtpmap:")) {
+                    val rest = line.removePrefix("a=rtpmap:")
+                    val payloadType = rest.substringBefore(" ")
+                    val codec = rest.substringAfter(" ", "").substringBefore("/")
+                    if (codec.equals("opus", ignoreCase = true)) {
+                        opusPayloadTypes.add(payloadType)
+                    }
+                }
+            }
+            if (opusPayloadTypes.isEmpty()) {
+                return sdp
+            }
+
+            // 2 パス目: Opus の fmtp 行にステレオ受信パラメータを追記する
+            inAudioSection = false
+            for (index in lines.indices) {
+                val line = lines[index]
+                if (line.startsWith("m=")) {
+                    inAudioSection = line.startsWith("m=audio ")
+                } else if (inAudioSection && line.startsWith("a=fmtp:")) {
+                    val rest = line.removePrefix("a=fmtp:")
+                    val payloadType = rest.substringBefore(" ")
+                    if (payloadType in opusPayloadTypes) {
+                        lines[index] = appendStereoParamsToFmtpLine(line)
+                    }
+                }
+            }
+            return lines.joinToString(lineBreak)
+        }
+
+        // 単一の a=fmtp 行に不足しているステレオ受信パラメータのみを追記する.
+        // 既に付与されているパラメータは重複して追記しない.
+        // 値が 0 のパラメータ (stereo=0 など) も付与済みとして扱い、置換は行わない.
+        // 追記のみが本処理の責務であり、既存値の書き換えは対象外とする.
+        private fun appendStereoParamsToFmtpLine(fmtpLine: String): String {
+            val rest = fmtpLine.removePrefix("a=fmtp:")
+            val payloadType = rest.substringBefore(" ")
+            val params = rest.substringAfter(" ", "").trimEnd(';', ' ', '\t')
+            val paramNames =
+                params
+                    .split(";")
+                    .map { it.trim().substringBefore("=").trim() }
+                    .filter { it.isNotEmpty() }
+            val missing = mutableListOf<String>()
+            if (paramNames.none { it.equals("stereo", ignoreCase = true) }) {
+                missing.add("stereo=1")
+            }
+            if (paramNames.none { it.equals("sprop-stereo", ignoreCase = true) }) {
+                missing.add("sprop-stereo=1")
+            }
+            if (missing.isEmpty()) {
+                return fmtpLine
+            }
+            return if (params.isEmpty()) {
+                "a=fmtp:$payloadType ${missing.joinToString(";")}"
+            } else {
+                "a=fmtp:$payloadType $params;${missing.joinToString(";")}"
+            }
+        }
     }
 
     private val componentFactory =
@@ -555,7 +660,7 @@ class PeerChannelImpl(
                 }
                 return@flatMap createAnswer()
             }.flatMap { answer ->
-                return@flatMap setLocalDescription(answer)
+                return@flatMap setLocalDescription(applyStereoRewriteIfNeeded(answer))
             }
     }
 
@@ -618,7 +723,7 @@ class PeerChannelImpl(
                 return@flatMap createAnswer()
             }.flatMap { answer ->
                 SoraLogger.d(TAG, "setLocalDescription")
-                return@flatMap setLocalDescription(answer)
+                return@flatMap setLocalDescription(applyStereoRewriteIfNeeded(answer))
             }
     }
 
@@ -932,6 +1037,27 @@ class PeerChannelImpl(
             }
         val byteBuffer = inStream.use { stream -> ByteBuffer.wrap(stream.readBytes()) }
         return DataChannel.Buffer(byteBuffer, true)
+    }
+
+    // useStereoOutput が有効な場合に answer SDP の Opus fmtp へステレオ受信パラメータを追記する.
+    // クライアント offer 経路では answer SDP を組み立てないため本処理の対象外である.
+    private fun applyStereoRewriteIfNeeded(answer: SessionDescription): SessionDescription {
+        if (!mediaOption.audioOption.useStereoOutput) {
+            return answer
+        }
+        return try {
+            val rewritten = appendStereoParamsToOpusFmtp(answer, enabled = true)
+            if (rewritten.description != answer.description) {
+                SoraLogger.d(TAG, "applied stereo params to Opus fmtp in answer SDP")
+            } else {
+                SoraLogger.d(TAG, "stereo params not applied to answer SDP")
+            }
+            rewritten
+        } catch (e: Exception) {
+            // 書き換えは best-effort のため、失敗時は元の answer で接続を継続する
+            SoraLogger.w(TAG, "failed to apply stereo params, using original answer: ${e.message}", e)
+            answer
+        }
     }
 
     private fun createAnswer(): Single<SessionDescription> =

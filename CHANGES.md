@@ -43,6 +43,10 @@
   - 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` では Android の AudioPolicy 側でステレオ音声がモノラルへダウンミックスされる場合があるため、`USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` などを指定できるようにする
   - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
   - @voluntas
+- [ADD] ステレオ音声受信のため answer SDP の Opus fmtp に `stereo=1` / `sprop-stereo=1` を追記する処理を組み込む
+  - `useStereoOutput = true` の接続で answer SDP の Opus fmtp に追記する
+  - `useStereoOutput = false` (既定) では書き換えを行わず、 Opus 以外の fmtp は変更しない
+  - @voluntas
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya

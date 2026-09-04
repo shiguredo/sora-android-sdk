@@ -1,7 +1,7 @@
 # answer SDP の Opus fmtp に stereo=1 / sprop-stereo=1 を追記する処理を組み込む
 
 - Created: 2026-09-03
-- Completed:
+- Completed: 2026-09-03
 - Branch: feature/add-android-stereo-audio-receive-sdp
 - Polished: 2026-09-03
 
@@ -47,3 +47,26 @@ Android のステレオ音声受信を実機で成立させるための対応の
 ## 変更履歴案
 
 - [ADD] answer SDP の Opus fmtp に stereo=1 / sprop-stereo=1 を追記する処理を組み込む
+
+## 解決方法
+
+### 実装
+
+- `PeerChannelImpl` の companion に `appendStereoParamsToOpusFmtp` を追加した
+  - audio の m= 行以下の Opus fmtp に不足分のみ追記し、Opus 以外は変更しない
+  - 書き換え例外時は元の answer で接続を継続する best-effort とした
+- `handleInitialRemoteOffer` と `handleUpdatedRemoteOffer` の両経路で適用する
+  - `useStereoOutput = true` の場合のみ書き換える
+- `SoraMediaChannel` の設定サマリログに書き換えの有効状態を追加した
+
+### テスト
+
+- `PeerChannelSdpRewriteTest` を新規追加し、12 件で検証する
+  - issue 列挙の 6 ケースに加え、冪等性・複数 PT・LF 改行・末尾形状を検証する
+- 配線 (2 経路への適用) は目視で確認した
+- ローカル実行は Android SDK 不足のため未実施とし、CI での検証に委ねる
+- 実機検証は 0081 との併用で行う (スタック構成のため併用可能)
+
+### 変更履歴
+
+- `CHANGES.md` の `## develop` に `[ADD]` エントリを追加した
