@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-09-09
 - Polished: 2026-06-03
 - Model: Opus 4.8
 - Branch:
@@ -60,3 +60,15 @@ Sora Android SDK でステレオ音声を受信できない事象の原因を調
 - ステレオ受信を実現するために必要な対応（SDK 本体の修正か利用者側の設定か）を結論づけること。
 
 ## 解決方法
+
+原因は 2 つに分かれた。
+
+1. libwebrtc の WebRTC API には受信側 Opus の `fmtp` へ `stereo` を付与する手段がないため、answer SDP を直接書き換える必要があった。
+2. answer SDP に `stereo=1` / `sprop-stereo=1` を付与して `channels=2` になっても、既定の `AudioAttributes` (`USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH`) では Android の AudioPolicy 側でモノラルへダウンミックスされていた。
+
+対応は以下の 2 issue で SDK 本体へ組み込んだ。
+
+- 0081: `SoraAudioOption.audioAttributes` を追加し、`JavaAudioDeviceModule.Builder#setAudioAttributes` へ渡せるようにした。
+- 0082: `useStereoOutput = true` の接続で answer SDP の Opus `fmtp` へ `stereo=1;sprop-stereo=1` を追記する処理を組み込んだ。
+
+両者を併用し、実機イヤホンで左右が分離したステレオ受信を確認済みである。
