@@ -236,8 +236,8 @@ SoraMediaChannel(
 |---|---|---|
 | `audioSource` | `VOICE_COMMUNICATION` | `MediaRecorder.AudioSource` |
 | `useStereoInput` | `false` | ステレオ入力 (送信) |
-| `useStereoOutput` | `false` | ステレオ出力 (受信) |
-| `audioAttributes` | `null` | 出力用 `AudioAttributes`。`useStereoOutput` と併用する (既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` ではステレオがモノラルへダウンミックスされる場合がある) |
+| `useStereoOutput` | `false` | ステレオ出力 (受信)。true で answer SDP の Opus fmtp に `stereo=1;sprop-stereo=1` を自動追記する |
+| `audioAttributes` | `null` | 出力用 `AudioAttributes`。`useStereoOutput` と併用する (既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` ではステレオがモノラルへダウンミックスされる場合がある)。`USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` を指定する |
 | `audioDeviceModule` | `null` | カスタム ADM。非 null の場合、SDK 内部で ADM を生成しないため `audioSource` / `useStereoInput` / `useStereoOutput` / `audioAttributes` / `useHardware*` / `initialAudioHardMute` は無視される |
 | `useHardwareAcousticEchoCanceler` / `useHardwareNoiseSuppressor` | `true` | 端末組み込み AEC / NS |
 | `audioProcessingEchoCancellation` / `audioProcessingAutoGainControl` / `audioProcessingHighpassFilter` / `audioProcessingNoiseSuppression` | `true` | MediaConstraints 経由の音声処理 |
@@ -348,10 +348,37 @@ val peerConnectionOption = PeerConnectionOption().apply {
 
 ## ステレオ音声の送受信
 
-- 送信: `SoraAudioOption.useStereoInput = true` で AudioRecord を 2ch にしてステレオ送信
-- 受信: `SoraAudioOption.useStereoOutput = true` + `audioAttributes` 指定 (例: `USAGE_MEDIA` + `CONTENT_TYPE_MUSIC`)
-  - `useStereoOutput = true` の場合、answer SDP の Opus fmtp に `stereo=1;sprop-stereo=1` を自動追記する
-  - **この SDP 書き換えはクライアント側が answer を組み立てる経路 (Sora が offer を生成する構成) でのみ機能する**。通常のクライアント offer 経路 (Sora が answer を生成) では SDK 側の書き換えは行われないため、Sora サーバ側の設定に依存する
+### 送信 (ステレオ入力)
+
+- `SoraAudioOption.useStereoInput = true` を指定すると、標準 `JavaAudioDeviceModule` に `setUseStereoInput(true)` が渡され、AudioRecord を 2ch で取得してステレオ送信する
+- 既定は `false` (モノラル) で、既存のモノラル送信は維持される
+
+### 受信 (ステレオ出力)
+
+`useStereoOutput = true` と `audioAttributes` の両方を指定する。
+
+```kotlin
+import android.media.AudioAttributes
+
+val mediaOption =
+    SoraMediaOption().apply {
+        enableAudioDownstream()
+        audioOption.useStereoOutput = true
+        audioOption.audioAttributes =
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+    }
+```
+
+- `useStereoOutput = true` の場合、SDK は answer SDP の Opus fmtp に `stereo=1;sprop-stereo=1` を自動追記する。libwebrtc の API では受信側 Opus fmtp に stereo を付与できないため、SDK が answer SDP を直接書き換える
+- Sora の WebSocket シグナリングでは Sora が常に offer を生成し、SDK が answer を組み立てる。connect メッセージの `sdp` は Sora 側のログ記録用でネゴシエーションには使われないため、この書き換えは通常接続で適用される
+- `audioAttributes` は `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡される。未指定 (null) では libwebrtc 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われ、Android の AudioPolicy 側でステレオがモノラルへダウンミックスされる場合がある。`USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` を指定するとステレオ再生が期待できる
+- `useStereoOutput = false` (既定) では answer SDP を書き換えず、Opus 以外の fmtp も変更しない
+- 実機でのステレオ受信を確認済み
+- `audioDeviceModule` にカスタム ADM を指定した場合、SDK は内部で ADM を生成しないため `useStereoOutput` / `audioAttributes` は反映されない。利用側でステレオ設定を行う必要がある
+- Bluetooth SCO や通話ルーティングとの相互作用は利用側で確認する
 
 ## エラー・イベント
 
@@ -419,11 +446,11 @@ TEST_CHANNEL_ID_SUFFIX=... \
 ## 既知の制限事項・注意点
 
 - **カスタム ADM 指定時は音声オプションが無視される**: `audioDeviceModule` が非 null の場合、`audioSource` / `useStereoInput` / `useStereoOutput` / `audioAttributes` / `useHardware*` は SDK 内部の ADM 生成に使われない
-- **ステレオ受信の SDP 書き換えはサーバ offer 経路のみ**: クライアント offer 経路 (通常接続) では answer SDP を組み立てないため書き換えが動作しない
+- **ステレオ受信には `useStereoOutput` と `audioAttributes` の両方が必要**: `audioAttributes` を指定しないと既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` によりモノラルへダウンミックスされる場合がある。Bluetooth SCO や通話ルーティングとの相互作用は利用側で確認する
 - **映像ハードミュートは SDK 内部生成カメラのみ**: `setVideoHardMute` は `enableVideoUpstream(eglContext, cameraConfig)` で `SoraCameraConfig` を指定した場合のみ利用可能
 - **`signalingMetadata` 未指定時は metadata を送信しない**: 従来 (空文字送信) と挙動が異なるため、空文字を明示指定するか確認が必要 (`[CHANGE]`)
 - **エミュレーターでは動作保証しない**: カメラ・音声デバイスの制約による
-- **Sora 側設定が必要な機能**: messaging_only 接続、RPC、DataChannel シグナリング、ステレオ受信 (クライアント offer 経路)、H.265 などは Sora サーバ側の設定に依存する
+- **Sora 側設定が必要な機能**: messaging_only 接続、RPC、DataChannel シグナリング、H.265 などは Sora サーバ側の設定に依存する
 
 ## クイックリファレンス
 
