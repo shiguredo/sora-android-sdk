@@ -5,7 +5,7 @@ description: 時雨堂の WebRTC SFU Sora 向け Android クライアント SDK 
 
 # Sora Android SDK (sora-android-sdk)
 
-- **バージョン**: [SDKInfo.kt](sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt) の `VERSION` を参照 (develop は 2026.3.0-canary.0)
+- **バージョン**: [SDKInfo.kt](sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt) の `VERSION` を参照 (最新リリースは 2026.3.0、develop は 2026.3.0-canary.0)
 - **リポジトリ**: https://github.com/shiguredo/sora-android-sdk
 - **ドキュメント**: https://sora-android-sdk.shiguredo.jp/
 - **サンプル集**: https://github.com/shiguredo/sora-android-sdk-samples
