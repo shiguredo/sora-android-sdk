@@ -6,6 +6,12 @@
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-e2e-stereo-audio
 
+## pending 理由
+
+ステレオ音声の送受信を検証するにはダミー音声 ADM が必要だが、その前提である 0059（ダミー音声入力の追加）が未完了であり、実装には webrtc-build へのパッチ追加と shiguredo-webrtc-android AAR の更新が必要になるため pending とする。
+
+`org.webrtc.audio.AudioDeviceModule` は `getNative(long webrtcEnvRef)` でネイティブ ADM のポインタを返すインターフェースであり、純粋な Kotlin/Java のダミー実装は作成できない。受信側の answer SDP に `stereo=1` / `sprop-stereo=1` が追記されることだけを確認する recvonly の e2e テストはダミー音声を要さず実装可能であるため、送受信の検証は 0059 の完了後に着手する。
+
 ## 目的
 
 ステレオ音声の送受信が行えることを e2e で検証する。sora-js-sdk の `e2e-tests/tests/stereo_audio.test.ts` および `stereo_audio_sendrecv.test.ts` に相当する。
