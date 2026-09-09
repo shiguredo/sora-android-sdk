@@ -1040,7 +1040,6 @@ class PeerChannelImpl(
     }
 
     // useStereoOutput が有効な場合に answer SDP の Opus fmtp へステレオ受信パラメータを追記する.
-    // クライアント offer 経路では answer SDP を組み立てないため本処理の対象外である.
     private fun applyStereoRewriteIfNeeded(answer: SessionDescription): SessionDescription {
         if (!mediaOption.audioOption.useStereoOutput) {
             return answer
