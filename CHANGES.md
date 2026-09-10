@@ -58,6 +58,10 @@
   - `PeerChannelImpl.initializeIfNeeded()` に `@Synchronized` を付与し、チャネルをまたいで初期化処理を直列化する
   - 複数チャネル（マルチストリーム視聴など）を同時に接続するアプリで、タイミングによりプロセスごとクラッシュ（SIGABRT）する問題を解消する
   - @t-miya
+- [FIX] `onDataChannel` 発火直後の `sendDataChannelMessage` が `NOT_READY` になる問題を修正する
+  - メッセージング用 DataChannel の送信可否を、DataChannel シグナリングへの切替完了ではなく、メッセージング用 DataChannel がすべて OPEN になったかどうかで判定するようにする
+  - `onDataChannel` がサーバからの `switched` 受信より先に発火する場合でも、発火直後の送信が成功する
+  - @voluntas
 
 ### misc
 

@@ -268,7 +268,7 @@ H.264 / H.265 はハードウェアデコーダー / エンコーダー対応、
 ## DataChannel メッセージング
 
 - connect 時に `dataChannels` でラベルを定義する。**label は `#` で始まる必要がある**
-- DataChannel シグナリングへ切り替わった後 (`onDataChannel` 発火後) に送信できる
+- メッセージング用 DataChannel がすべて OPEN になり `onDataChannel` が発火した後に送信できる
 - 送信: `sendDataChannelMessage(label, data)`。エラーは `SoraMessagingError` で返る (`NOT_READY` / `INVALID_LABEL` / `LABEL_NOT_FOUND` / `INVALID_STATE` / `SEND_FAILED` / `PEER_CHANNEL_UNAVAILABLE`)
 - 受信: `onDataChannelMessage(mediaChannel, label, data)`
 
@@ -291,7 +291,7 @@ val mediaChannel =
         listener = listener,
     )
 
-// 送信 (switched 後)
+// 送信 (onDataChannel 発火後)
 mediaChannel.sendDataChannelMessage("#example", "hello")
 
 // 受信

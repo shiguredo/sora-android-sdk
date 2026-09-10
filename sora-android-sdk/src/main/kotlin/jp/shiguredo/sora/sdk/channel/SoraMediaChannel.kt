@@ -173,8 +173,12 @@ class SoraMediaChannel
         // onDataChannelOpened の重複発火防止に使う
         private val openedDataChannelLabels: MutableSet<String> = mutableSetOf()
 
-        // MediaChannel.Listener.onDataChannel を発火済みかどうか
-        // 全メッセージング用ラベルが OPEN になった時点で一度だけ発火するためのフラグ
+        // SoraMediaChannel.Listener.onDataChannel を発火済みかどうか
+        // 全メッセージング用ラベルが OPEN になった時点で一度だけ発火するためのフラグ。
+        // sendDataChannelMessage の送信準備完了判定にも使う。
+        // onDataChannelOpen (libwebrtc のシグナリングスレッド) で更新し、
+        // アプリ側スレッドから参照するため @Volatile を付ける。
+        @Volatile
         private var onDataChannelNotified: Boolean = false
 
         // RPC 機能が Sora 側で有効化されているかを示すフラグ
@@ -2113,7 +2117,12 @@ class SoraMediaChannel
             label: String,
             data: ByteBuffer,
         ): SoraMessagingError {
-            if (!switchedToDataChannel) {
+            // メッセージング用 DataChannel がすべて OPEN になるまでは送信できない。
+            // switchedToDataChannel は DataChannel シグナリングへの切替完了を表すものであり、
+            // メッセージング用 DataChannel の OPEN とは独立している。切替完了より先に
+            // onDataChannel が発火することがあるため、送信可否は onDataChannel の発火条件と
+            // 同じ onDataChannelNotified で判定する。
+            if (!onDataChannelNotified) {
                 return SoraMessagingError.NOT_READY
             }
 
