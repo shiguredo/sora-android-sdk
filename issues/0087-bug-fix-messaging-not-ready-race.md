@@ -1,7 +1,7 @@
 # onDataChannel 発火直後の sendDataChannelMessage が NOT_READY になる問題を修正する
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-10
 - Branch: feature/fix-messaging-not-ready-race
 - Polished: 2026-09-10
 
@@ -43,3 +43,24 @@
 - `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/SoraMediaChannel.kt` の `maybeNotifyDataChannelAvailable` (案 B を採用する場合)
 
 ## 解決方法
+
+### 実装
+
+- `SoraMediaChannel.sendDataChannelMessage` の送信可否判定を `switchedToDataChannel` から `onDataChannelNotified` に変更した
+  - `onDataChannelNotified` は `maybeNotifyDataChannelAvailable()` で全メッセージング用 DataChannel が OPEN になった時点で `true` になる
+  - `listener?.onDataChannel(...)` の直前に設定されるため、`onDataChannel` コールバック内からの送信でも `NOT_READY` にならない
+  - `onDataChannelNotified` に `@Volatile` を付与し、libwebrtc のシグナリングスレッドでの更新をアプリ側スレッドから参照できるようにした
+- `switchedToDataChannel` は `sendDisconnectIfNeeded` などの用途で引き続き利用する
+
+### テスト
+
+- 既存の `SoraMessagingE2ETest` の「onDataChannel 発火後の最初の送信が成功すること」検証が、タイミングに依存せず成功するようになる
+- ローカル環境に Android SDK が無いため E2E テストは CI で確認する
+
+### 変更履歴
+
+- `CHANGES.md` の `develop` セクションに `[FIX]` エントリを追加した
+
+### ドキュメント
+
+- スキルドキュメントの送信条件表記を実装に合わせて修正した
