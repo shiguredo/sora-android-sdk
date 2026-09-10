@@ -3,7 +3,7 @@
 - Priority: Low
 - Created: 2026-06-03
 - Completed:
-- Polished: 2026-06-03
+- Polished: 2026-09-04
 - Model: Opus 4.8
 - Branch: feature/investigate-video-orientation-gpu-rotation
 
@@ -15,24 +15,29 @@ video orientation RTP ヘッダ拡張（`urn:3gpp:video-orientation`）が有効
 
 ### SDK 側の現状
 
-SDK の現行コードでは video orientation RTP ヘッダ拡張を有効化/無効化する制御機構が存在しない。`SimulcastVideoEncoderFactoryWrapper.kt:112` および `HardwareVideoEncoderWrapperFactory.kt:171` では `frame.rotation` をパススルーしているが、この rotation 値が libwebrtc 内部でピクセル回転になるか RTP ヘッダ拡張になるかは、SDP ネゴシエーション時の RTP ヘッダ拡張の登録状態に依存する。
+SDK の現行コードでは video orientation RTP ヘッダ拡張を有効化/無効化する制御機構が存在しない。`SimulcastVideoEncoderFactoryWrapper.kt` の `StreamEncoderWrapper#encode`（スケール時）および `HardwareVideoEncoderWrapperFactory.kt` の `HardwareVideoEncoderWrapper#encode`（クロップ時）では `frame.rotation` をパススルーしているが、この rotation 値が libwebrtc 内部でピクセル回転になるか RTP ヘッダ拡張になるかは、SDP ネゴシエーション時の RTP ヘッダ拡張の登録状態に依存する。
 
 調査のためには、まず video orientation RTP ヘッダ拡張の ON/OFF 制御機構を SDK 側に追加する必要がある。
 
 ### frame.rotation と RTP ヘッダ拡張の分岐
 
-libwebrtc の内部では、orientation 拡張が SDP ネゴシエートされている場合、`frame.rotation` は RTP ヘッダ拡張として送出される（ピクセル回転は行われない）。ネゴシエートされていない場合はピクセルレベルで回転が適用される。この分岐の詳細は chromium ソース `third_party/webrtc/media/base/adapted_video_track_source.cc` で確認する。
+libwebrtc の内部では、orientation 拡張が SDP ネゴシエートされている場合、`frame.rotation` は RTP ヘッダ拡張として送出される（ピクセル回転は行われない）。ネゴシエートされていない場合はピクセルレベルで回転が適用される。この分岐の決定は chromium ソース `third_party/webrtc/video/video_send_stream_impl.cc`（`kVideoRotationUri` の登録有無による `rotation_applied` の決定）、ピクセル回転の実装は `third_party/webrtc/media/base/adapted_video_track_source.cc`（`AdaptedVideoTrackSource::OnFrame`）、RTP ヘッダ拡張への書込みは `third_party/webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc`（`AddRtpHeaderExtensions`）で確認する。
 
 ### カメラキャプチャの初期 rotation
 
-`RTCLocalVideoManager.kt:98` の `startCapture` では幅・高さ・フレームレートのみ設定され、キャプチャの回転はデバイス依存である。縦持ち配信時の `frame.rotation` の初期値（0 / 90 / 270）を事前に確認する必要がある。
+`RTCLocalVideoManager.kt` の `startOwnedCapture`（内部で `capturer.startCapture` を呼ぶ）では幅・高さ・フレームレートのみ設定され、キャプチャの回転はデバイス依存である。縦持ち配信時の `frame.rotation` の初期値（0 / 90 / 270）を事前に確認する必要がある。
+
+### 関連する既存 issue
+
+- `issues/pending/0042-investigate-avoid-i420-conversion-on-rotation.md`: `TextureBuffer` の Matrix 操作で補正し、libwebrtc 内部の I420 変換を避ける調査（PoC は頓挫中）。本調査の GPU 内回転と同じく「回転をピクセルレベルで行わない」方向性であり、`applyTransformMatrix` の扱いや変換結果の課題が記録されているため、調査前に知見を確認すること。
+- `issues/pending/0045-add-rotate-video-to-follow-device-orientation.md`: 端末の向きの変化に追随して送信映像の向きを切り替える機能の検討。本調査が送信映像の向きの扱いを扱うため関係する。
 
 ## 調査すべき不明点
 
 1. **バッファ型の確認**: video orientation ヘッダがない場合、エンコーダーに来るバッファは `I420Buffer` か `TextureBuffer` か。
    - libwebrtc は capturer → encoder 間で I420 変換を行うが、変換処理の分岐条件にバッファ型が `I420` の場合という条件があり、native buffer ではこの分岐を通らない可能性がある。
    - 変換ポイントが native buffer のみであれば、性能への影響は小さい。
-   - **調査方法**: libwebrtc の `adapted_video_track_source.cc` の該当箇所を chromium ソースで読み、バッファ変換の分岐条件を特定する。参照時は chromium の commit hash を記録すること。
+   - **調査方法**: libwebrtc の `adapted_video_track_source.cc` の該当箇所を chromium ソースで読み、バッファ変換の分岐条件を特定する。Android ではキャプチャ直後の変換が `sdk/android/src/jni/android_video_track_source.cc` の `OnFrameCaptured` で行われるため、あわせて確認する。参照時は chromium の commit hash を記録すること。
 
 2. **CPU 使用率計測**: エンコーダーまで `TextureBufferImpl` で来た場合に、向きを変える場合と変えない場合で CPU 使用率にどの程度差が出るかを計測する。
    - ここでいう「向きを変える」とは、`frame.buffer` に対して rotation を適用し、新たな `VideoFrame` としてエンコーダーに入力する実装を指す。
@@ -46,6 +51,6 @@ libwebrtc の内部では、orientation 拡張が SDP ネゴシエートされ�
 - video orientation RTP ヘッダ拡張の ON/OFF を制御する機構の要否と追加方法を結論づけること。
 - video orientation ヘッダの有無でエンコーダーに渡るバッファ型を特定し、回転処理の有無による端末負荷（CPU 使用率）の差を計測すること。
 - GPU 内（エンコーダー入力バッファへの書き込み時）で回転を処理する構成が、端末負荷と録画の正しさの両立に有効かどうかを結論づけること。
-- 参照した chromium ソースの commit hash と行番号を記録すること。
+- 参照した chromium ソースの commit hash と該当シンボル名を記録すること。
 
 ## 解決方法

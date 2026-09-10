@@ -1,12 +1,10 @@
-name: CI
+name: E2E Test
 
 on:
   workflow_dispatch:
   push:
     paths-ignore:
-      - 'README.md'
-      - 'CHANGES.md'
-      - 'CLAUDE.md'
+      - '*.md'
       - 'LICENSE'
       - 'THANKS'
       - '.github/workflows/claude.yml'
@@ -25,7 +23,7 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64, Apple-M1]
     timeout-minutes: 45
     env:
-      SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_SORA_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_CHANNEL_ID_SUFFIX: _${{ github.run_id }}
@@ -34,14 +32,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Add Homebrew to PATH
+        # runner から brew の gpg を利用するためにパスを渡す。
+        run: echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
       - name: Set up JDK
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           # macOS arm64 の self-hosted runner でも利用可能な配布元を明示する。
           # runner ローカルの JDK 状態に依存せず、CI では常に JDK 21 を再現する。
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
       - name: Validate Android SDK
         run: |
           test -n "${ANDROID_SDK_ROOT:-}" || { echo "ANDROID_SDK_ROOT is not set"; exit 1; }
@@ -55,7 +55,7 @@ jobs:
         run: cp gradle.properties.example gradle.properties
       - name: Validate E2E environment
         run: |
-          test -n "${SORA_SIGNALING_URL:-}" || { echo "SORA_SIGNALING_URL is not set"; exit 1; }
+          test -n "${TEST_SORA_SIGNALING_URL:-}" || { echo "TEST_SORA_SIGNALING_URL is not set"; exit 1; }
       - name: Run E2E tests with logcat
         run: |
           set +e

@@ -33,6 +33,8 @@ Please read https://github.com/shiguredo/oss before use.
 - フロント / リアカメラ切り替えとキャプチャフォーマット変更に対応
 - 各種カメラ設定を利用できる
   - 解像度・フレームレート・フロントカメラ優先・初期ハードミュート
+- ステレオ音声の送信・受信に対応
+  - 送信は `SoraAudioOption.useStereoInput`、受信は `SoraAudioOption.useStereoOutput` と `SoraAudioOption.audioAttributes` で指定できる
 - 受信した音声データを PCM 形式で取得できる
 
 ## システム条件

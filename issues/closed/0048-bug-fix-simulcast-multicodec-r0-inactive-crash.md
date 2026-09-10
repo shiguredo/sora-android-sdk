@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-08-05
 - Model: Opus 4.8
 - Branch:
 
@@ -70,3 +70,10 @@ simulcast_codecs:
 - 再現する場合、rid ごとに異なるコーデックを指定し `r0` を `active: false` にした構成でクラッシュしないこと。
 
 ## 解決方法
+
+現行版の libwebrtc (150.7871.3.0) で再現確認を実施し、**クラッシュしないことを確認した**。
+
+- 認証ウェブフックで `simulcast_multicodec: true` と `r0` を `active: false` にした構成を設定し、samples アプリの Simulcast で接続した
+- libwebrtc のログで `simulcast streams: {0: ..., active: false}{1: ..., active: true}{2: ..., active: true}` と `separate_encoders_needed: true` (マルチコーデック構成) を確認し、再現条件が満たされていることを確認した
+- ネイティブクラッシュ (FATAL / SIGSEGV / SIGABRT / tombstone) は発生せず、アプリは正常に動作した
+- 確認環境: Pixel 7a (Android 17) / Sora 2026.2.0-canary.0

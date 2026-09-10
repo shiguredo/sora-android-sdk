@@ -41,7 +41,7 @@ abstract class SoraE2ETestBase {
     @Before
     fun setup() {
         assumeTrue(
-            "SORA_SIGNALING_URL が未設定のためテストをスキップします",
+            "TEST_SORA_SIGNALING_URL が未設定のためテストをスキップします",
             BuildConfig.TEST_SIGNALING_URL.isNotEmpty(),
         )
         Log.d(
@@ -85,18 +85,21 @@ abstract class SoraE2ETestBase {
         onConnect: (SoraMediaChannel) -> Unit,
         onClose: (SoraMediaChannel, SoraCloseEvent) -> Unit,
         onError: (SoraMediaChannel, SoraErrorReason, String) -> Unit,
+        channelId: String = this.channelId,
         dataChannelSignaling: Boolean? = null,
         ignoreDisconnectWebSocket: Boolean? = null,
         dataChannels: List<Map<String, Any>>? = null,
+        signalingMetadataOverride: Map<String, String>? = null,
         onSignalingMessage: ((SoraMediaChannel, SoraSignalingDirection, SoraSignalingTransportType, String) -> Unit)? = null,
         onDataChannel: ((SoraMediaChannel, List<Map<String, Any>>?) -> Unit)? = null,
+        onDataChannelOpened: ((SoraMediaChannel, String) -> Unit)? = null,
         onDataChannelMessage: ((SoraMediaChannel, String, ByteBuffer) -> Unit)? = null,
     ): SoraMediaChannel =
         SoraMediaChannel(
             context = context,
             signalingEndpointCandidates = listOf(BuildConfig.TEST_SIGNALING_URL),
             channelId = channelId,
-            signalingMetadata = signalingMetadata,
+            signalingMetadata = signalingMetadataOverride ?: signalingMetadata,
             mediaOption = mediaOption,
             dataChannelSignaling = dataChannelSignaling,
             ignoreDisconnectWebSocket = ignoreDisconnectWebSocket,
@@ -139,6 +142,13 @@ abstract class SoraE2ETestBase {
                         dataChannels: List<Map<String, Any>>?,
                     ) {
                         onDataChannel?.invoke(mediaChannel, dataChannels)
+                    }
+
+                    override fun onDataChannelOpened(
+                        mediaChannel: SoraMediaChannel,
+                        label: String,
+                    ) {
+                        onDataChannelOpened?.invoke(mediaChannel, label)
                     }
 
                     override fun onDataChannelMessage(

@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-13
-- Completed:
+- Completed: 2026-08-20
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-e2e-simulcast-rid-stats
 
@@ -42,3 +42,22 @@ simulcast 送信時に rid ごとの複数ストリームが正しく生成・�
 - issue 0058 (DummyVideoCapturer, 完了済み)
 
 ## 解決方法
+
+本 issue は調査の結果、issue 0071 の実装により検証内容が実質的に実装済みであることが判明したため close する。
+
+### close 理由
+
+- issue 0071（RPC の e2e テスト、2026-08-20 完了）の実装（`SoraRpcE2ETest.kt`）が、本 issue の検証内容（sendonly + simulcast 有効 + outbound-rtp の rid 別分類で `bytesSent > 0` を確認）をほぼ全て実装済みである。
+  - sendonly + `enableSimulcast()` + `softwareVideoEncoderOnly = true` + `DummyVideoCapturer` という本 issue の設計方針の構成がそのまま実装されている（SoraRpcE2ETest.kt:55-64）。
+  - outbound-rtp を rid 別に分類し、r0 と r2 の両方で `bytesSent > 0` を検証済み（SoraRpcE2ETest.kt:233-275）。
+  - 0071 の実測記録で「3 本 (r0 / r1 / r2) のストリームが出力されることを確認した」とあり、rid 別送信の成立自体は実証済み。
+- 残る差分（`packetsSent` / `scalabilityMode` / r1）はいずれも付加価値が薄い。
+  - `packetsSent`: 単一ストリームでは既に `SoraStatsE2ETest.kt:118,125` で検証済み。`bytesSent > 0` とほぼ冗長。
+  - `scalabilityMode`: 唯一未検証だが、本 issue 自体に期待値の定義がなく、エミュレータ SW エンコーダで期待値が出るか不明。
+  - r1: 0071 の実測で 3 本出力確認済み。r0 / r2 が立ち上がれば中間解像度の r1 も通常立ち上がるため、独立検証の価値は低い。
+- 変更対象ファイル `SoraE2ETest.kt` は存在しない（`SoraE2ETestBase.kt` / `SoraStatsE2ETest.kt` / `SoraRpcE2ETest.kt` 等に分割済み）。
+
+### 後続への影響
+
+- 本 issue に依存していると明記する issue 0073（authz simulcast encodings）は、基盤を 0071 の実装（`SoraRpcE2ETest.kt` の構成）から参照できるため、本 issue が無くても実装可能。0073 の依存関係記述のみ修正すればよい。
+- `scalabilityMode` の検証をやりたい場合は、新規 issue で「期待値の実測確認」を含めて起票し直すのが適切。

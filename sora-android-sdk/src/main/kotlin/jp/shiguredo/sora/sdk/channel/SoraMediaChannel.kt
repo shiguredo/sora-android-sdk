@@ -3,9 +3,11 @@ package jp.shiguredo.sora.sdk.channel
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import jp.shiguredo.sora.sdk.BuildConfig
@@ -84,13 +86,13 @@ import kotlin.coroutines.resume
  * @param context `android.content.Context`
  * @param signalingEndpoint シグナリングの URL
  * @param signalingEndpointCandidates シグナリングの URL (クラスター機能で複数の URL を利用したい場合はこちらを指定する)
- * @param signalingMetadata connect メッセージに含める `metadata`
+ * @param signalingMetadata デフォルト値は `null` であり、`signalingMetadata` は未指定時 (`null`) と `JsonNull` を指定した場合は connect メッセージに `metadata` を含めない。それ以外の値 (空文字を含む) はそのまま送信する
  * @param channelId Sora に接続するためのチャネル ID
  * @param mediaOption 映像、音声に関するオプション
  * @param timeoutSeconds WebSocket の接続タイムアウト (秒)
  * @param listener イベントリスナー
  * @param clientId connect メッセージに含める `client_id`
- * @param signalingNotifyMetadata connect メッセージに含める `signaling_notify_metadata`
+ * @param signalingNotifyMetadata `signalingNotifyMetadata` は、未指定時 (`null`) と `JsonNull` を指定した場合は connect メッセージに `signaling_notify_metadata` を含めない。それ以外の値 (空文字を含む) はそのまま送信する
  * @param dataChannelSignaling connect メッセージに含める `data_channel_signaling`
  * @param ignoreDisconnectWebSocket connect メッセージに含める `ignore_disconnect_websocket`
  * @param dataChannels connect メッセージに含める `data_channels`
@@ -109,7 +111,7 @@ class SoraMediaChannel
         private val signalingEndpoint: String? = null,
         private val signalingEndpointCandidates: List<String> = emptyList(),
         private val channelId: String,
-        private val signalingMetadata: Any? = "",
+        private val signalingMetadata: Any? = null,
         private val mediaOption: SoraMediaOption,
         private val timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
         private var listener: Listener?,
@@ -163,6 +165,22 @@ class SoraMediaChannel
         // offer メッセージに含まれる `data_channels` のうち、 label が # から始まるもの
         private var dataChannelsForMessaging: List<Map<String, Any>>? = null
 
+        // クライアント側で OPEN になったメッセージング用 DataChannel のラベル集合
+        // onDataChannel の発火条件（全メッセージング用ラベルが OPEN になること）の判定に使う
+        private val openedMessagingLabels: MutableSet<String> = mutableSetOf()
+
+        // クライアント側で OPEN になった DataChannel のラベル集合（全ラベル対象）
+        // onDataChannelOpened の重複発火防止に使う
+        private val openedDataChannelLabels: MutableSet<String> = mutableSetOf()
+
+        // SoraMediaChannel.Listener.onDataChannel を発火済みかどうか
+        // 全メッセージング用ラベルが OPEN になった時点で一度だけ発火するためのフラグ。
+        // sendDataChannelMessage の送信準備完了判定にも使う。
+        // onDataChannelOpen (libwebrtc のシグナリングスレッド) で更新し、
+        // アプリ側スレッドから参照するため @Volatile を付ける。
+        @Volatile
+        private var onDataChannelNotified: Boolean = false
+
         // RPC 機能が Sora 側で有効化されているかを示すフラグ
         // true の場合でも、実際に RPC を呼び出せるかは DataChannel の状態に依存する
         // rpc() メソッド内で DataChannel の状態をチェックしている
@@ -205,22 +223,44 @@ class SoraMediaChannel
             when (value) {
                 is Map<*, *> ->
                     value.mapValues { (key, nestedValue) ->
-                        val keyString = key?.toString()?.lowercase().orEmpty()
-                        if (
-                            keyString.contains("token") ||
-                            keyString.contains("secret") ||
-                            keyString.contains("password") ||
-                            keyString.contains("authorization") ||
-                            keyString.contains("credential")
-                        ) {
+                        if (isSensitiveKey(key)) {
                             "***"
                         } else {
                             maskSensitiveLogValue(nestedValue)
                         }
                     }
                 is List<*> -> value.map { maskSensitiveLogValue(it) }
+                is JsonObject -> {
+                    // Map と同様に、キー名が token / secret / password 系の場合は値をマスクする
+                    val masked = JsonObject()
+                    value.entrySet().forEach { (key, nestedValue) ->
+                        if (isSensitiveKey(key)) {
+                            masked.add(key, JsonPrimitive("***"))
+                        } else {
+                            masked.add(key, maskSensitiveLogValue(nestedValue) as JsonElement)
+                        }
+                    }
+                    masked
+                }
+                is JsonArray -> {
+                    val masked = JsonArray()
+                    value.forEach { masked.add(maskSensitiveLogValue(it) as JsonElement) }
+                    masked
+                }
                 else -> value
             }
+
+        // キー名が token / secret / password 系かどうかを判定する
+        private fun isSensitiveKey(key: Any?): Boolean {
+            val keyString = key?.toString()?.lowercase().orEmpty()
+            return (
+                keyString.contains("token") ||
+                    keyString.contains("secret") ||
+                    keyString.contains("password") ||
+                    keyString.contains("authorization") ||
+                    keyString.contains("credential")
+            )
+        }
 
         // PEM 文字列から変換した CA 証明書 (未指定の場合は null)
         // WebSocket と TURN-TLS のサーバー証明書検証に利用する
@@ -523,6 +563,21 @@ class SoraMediaChannel
             fun onDataChannel(
                 mediaChannel: SoraMediaChannel,
                 dataChannels: List<Map<String, Any>>?,
+            ) {}
+
+            /**
+             * DataChannel がラベルごとにクライアント側で OPEN になったときに呼び出されるコールバック
+             *
+             * [onDataChannel] がメッセージング用ラベル（# で始まるラベル）の OPEN をまとめて通知するのに対し、
+             * 本コールバックはラベルを限定せず、受け取ったすべての DataChannel を対象にラベルごとに 1 回ずつ通知する。
+             * C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
+             *
+             * @param mediaChannel イベントが発生したチャネル
+             * @param label OPEN になった DataChannel のラベル
+             */
+            fun onDataChannelOpened(
+                mediaChannel: SoraMediaChannel,
+                label: String,
             ) {}
 
             /**
@@ -921,6 +976,21 @@ class SoraMediaChannel
                     }
                 }
 
+                override fun onError(
+                    reason: SoraErrorReason,
+                    message: String,
+                ) {
+                    SoraLogger.d(TAG, "[channel:$role] @signaling:onError:$reason:$message")
+                    val ignoreError = switchedIgnoreDisconnectWebSocket
+                    if (switchedToDataChannel && ignoreError) {
+                        // なにもしない
+                        SoraLogger.d(TAG, "[channel:$role] @signaling:onError: IGNORE reason=$reason")
+                    } else {
+                        // エラーをリスナーに通知
+                        listener?.onError(this@SoraMediaChannel, reason, message)
+                    }
+                }
+
                 override fun getStats(handler: (RTCStatsReport?) -> Unit) {
                     if (peer != null) {
                         peer!!.getStats(handler)
@@ -1024,6 +1094,41 @@ class SoraMediaChannel
                     dataChannel: DataChannel,
                 ) {
                     this@SoraMediaChannel.dataChannels[label] = dataChannel
+                    // ラベルごとに一度だけ onDataChannelOpened を発火する。
+                    // 対象はメッセージング用ラベル（# で始まるラベル）に限定せず、
+                    // PeerConnection で受け取ったすべての DataChannel とする。
+                    // C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
+                    if (openedDataChannelLabels.add(label)) {
+                        listener?.onDataChannelOpened(this@SoraMediaChannel, label)
+                    }
+                    // メッセージング用ラベル（# で始まるラベル）がすべて OPEN になった時点で
+                    // onDataChannel を発火する。このタイミングが「クライアント側で DataChannel が
+                    // 利用可能になった」瞬間であり、サーバからの switched 受信時とは区別する。
+                    if (label.startsWith("#")) {
+                        openedMessagingLabels.add(label)
+                        maybeNotifyDataChannelAvailable()
+                    }
+                }
+
+                // 全メッセージング用ラベルが OPEN になったら onDataChannel を一度だけ発火する
+                private fun maybeNotifyDataChannelAvailable() {
+                    if (onDataChannelNotified) {
+                        return
+                    }
+                    val expectedLabels =
+                        dataChannelsForMessaging
+                            ?.mapNotNull { it["label"] as? String }
+                            ?: return
+                    // メッセージング用ラベルが存在しない場合は発火しない
+                    if (expectedLabels.isEmpty()) {
+                        return
+                    }
+                    // 未 OPEN のメッセージング用ラベルが残っている場合は発火しない
+                    if (expectedLabels.any { it !in openedMessagingLabels }) {
+                        return
+                    }
+                    onDataChannelNotified = true
+                    listener?.onDataChannel(this@SoraMediaChannel, dataChannelsForMessaging)
                 }
 
                 override fun onDataChannelMessage(
@@ -1072,6 +1177,13 @@ class SoraMediaChannel
                             }
                         } catch (e: Exception) {
                             SoraLogger.e(TAG, "failed to process DataChannel message", e)
+                            // DataChannel 経由のシグナリングでメッセージ処理に失敗した場合、
+                            // 例外情報を message としてリスナーに通知する
+                            listener?.onError(
+                                this@SoraMediaChannel,
+                                SoraErrorReason.SIGNALING_FAILURE,
+                                e.toString(),
+                            )
                         }
                     }
                 }
@@ -1176,6 +1288,8 @@ class SoraMediaChannel
                 SoraLogger.d(TAG, "connect: libwebrtc other than Shiguredo build is used.")
             }
 
+            // ステレオ受信のための answer SDP 書き換えが有効かどうか
+            val stereoAnswerSdpRewrite = if (mediaOption.audioOption.useStereoOutput) "enabled" else "disabled"
             SoraLogger.d(
                 TAG,
                 """connect: SoraMediaOption
@@ -1191,6 +1305,8 @@ class SoraMediaChannel
             |audioSource                = ${mediaOption.audioOption.audioSource}
             |useStereoInput             = ${mediaOption.audioOption.useStereoInput}
             |useStereoOutput            = ${mediaOption.audioOption.useStereoOutput}
+            |audioAttributes            = ${mediaOption.audioOption.audioAttributes}
+            |stereoAnswerSdpRewrite     = $stereoAnswerSdpRewrite
             |videoIsRequired            = ${mediaOption.videoIsRequired}
             |videoUpstreamEnabled       = ${mediaOption.videoUpstreamEnabled}
             |videoUpstreamContext       = ${mediaOption.videoUpstreamContext}
@@ -1387,6 +1503,10 @@ class SoraMediaChannel
                         it.containsKey("label") && (it["label"] as? String)?.startsWith("#") ?: false
                     }
             }
+            // リダイレクト等で offer が再送された場合に備えて状態をリセットする
+            openedMessagingLabels.clear()
+            openedDataChannelLabels.clear()
+            onDataChannelNotified = false
             configureRpc(offerMessage)
 
             if (0 < peerConnectionOption.getStatsIntervalMSec) {
@@ -1440,7 +1560,9 @@ class SoraMediaChannel
                         signaling?.disconnect(null)
                     }
             }
-            listener?.onDataChannel(this, dataChannelsForMessaging)
+            // NOTE: onDataChannel はここでは発火しない。
+            //       メッセージング用 DataChannel がクライアント側で OPEN になったタイミングで
+            //       maybeNotifyDataChannelAvailable() から発火する。
         }
 
         private fun handleUpdateOffer(sdp: String) {
@@ -1733,6 +1855,9 @@ class SoraMediaChannel
             peer = null
             localStream = null
             dataChannels.clear()
+            openedMessagingLabels.clear()
+            openedDataChannelLabels.clear()
+            onDataChannelNotified = false
 
             listener?.onClose(this)
             if (closeEvent != null) {
@@ -1992,7 +2117,12 @@ class SoraMediaChannel
             label: String,
             data: ByteBuffer,
         ): SoraMessagingError {
-            if (!switchedToDataChannel) {
+            // メッセージング用 DataChannel がすべて OPEN になるまでは送信できない。
+            // switchedToDataChannel は DataChannel シグナリングへの切替完了を表すものであり、
+            // メッセージング用 DataChannel の OPEN とは独立している。切替完了より先に
+            // onDataChannel が発火することがあるため、送信可否は onDataChannel の発火条件と
+            // 同じ onDataChannelNotified で判定する。
+            if (!onDataChannelNotified) {
                 return SoraMessagingError.NOT_READY
             }
 
