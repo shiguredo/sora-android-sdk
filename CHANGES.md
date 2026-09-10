@@ -15,14 +15,27 @@
 
 **リリース日**: 2026-09-10
 
-- [UPDATE] `kotlin-reflect` 依存を削除する
-  - コードベースに `kotlin.reflect` API の利用箇所がなく、依存グラフ上でも明示的な `implementation` 宣言によってのみ取り込まれていたため不要
-  - 依存数を削減し、SDK を利用するアプリのビルドサイズを軽減する
-  - @t-miya
 - [CHANGE] `signalingMetadata` を未指定にした場合に connect メッセージの `metadata` を送信しないようにする
   - `signalingMetadata` のデフォルト値を `""` から `null` に変更した。未指定時 (`null`) と `JsonNull` 指定時は `metadata` を送信しない
   - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
   - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
+  - @t-miya
+- [ADD] `SoraMediaChannel.Listener.onDataChannelOpened` を追加する
+  - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
+  - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
+  - @t-miya
+- [ADD] ステレオ音声受信のため、音声出力の `AudioAttributes` を指定する `SoraAudioOption.audioAttributes` を追加する
+  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡される
+  - 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` では Android の AudioPolicy 側でステレオ音声がモノラルへダウンミックスされる場合があるため、`USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` などを指定できるようにする
+  - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
+  - @voluntas
+- [ADD] ステレオ音声受信のため answer SDP の Opus fmtp に `stereo=1` / `sprop-stereo=1` を追記する処理を組み込む
+  - `useStereoOutput = true` の接続で answer SDP の Opus fmtp に追記する
+  - `useStereoOutput = false` (既定) では書き換えを行わず、 Opus 以外の fmtp は変更しない
+  - @voluntas
+- [UPDATE] `kotlin-reflect` 依存を削除する
+  - コードベースに `kotlin.reflect` API の利用箇所がなく、依存グラフ上でも明示的な `implementation` 宣言によってのみ取り込まれていたため不要
+  - 依存数を削減し、SDK を利用するアプリのビルドサイズを軽減する
   - @t-miya
 - [UPDATE] `SoraMediaChannel.Listener.onDataChannel` の発火タイミングを、サーバからの `switched` 受信時からクライアント側でメッセージング用 DataChannel がすべて OPEN になったタイミングに変更する
   - メッセージング用ラベル（`#` で始まるラベル）の DataChannel がクライアント側で OPEN になった時点で発火するため、発火時点で DataChannel は送受信可能な状態になっている
@@ -38,19 +51,6 @@
 - [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
   - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
   - @t-miya
-- [ADD] `SoraMediaChannel.Listener.onDataChannelOpened` を追加する
-  - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
-  - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
-  - @t-miya
-- [ADD] ステレオ音声受信のため、音声出力の `AudioAttributes` を指定する `SoraAudioOption.audioAttributes` を追加する
-  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡される
-  - 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` では Android の AudioPolicy 側でステレオ音声がモノラルへダウンミックスされる場合があるため、`USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` などを指定できるようにする
-  - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
-  - @voluntas
-- [ADD] ステレオ音声受信のため answer SDP の Opus fmtp に `stereo=1` / `sprop-stereo=1` を追記する処理を組み込む
-  - `useStereoOutput = true` の接続で answer SDP の Opus fmtp に追記する
-  - `useStereoOutput = false` (既定) では書き換えを行わず、 Opus 以外の fmtp は変更しない
-  - @voluntas
 - [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
   - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
   - @t-miya
