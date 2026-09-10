@@ -1,16 +1,10 @@
-# スクリーンキャストサンプルでネットワーク切断から再接続するとフリーズする問題を実機で確認する
+# スクリーンキャストサンプルでネットワーク切断から再接続するとフリーズする問題を調査する
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-10
 - Branch: feature/investigate-screencast-network-reconnect-freeze
 - Polished: {YYYY-MM-DD}
 - Reporter: @miosakuma, @enm10k
-
-## pending 理由
-
-直接原因と見られる不具合は `sora-android-sdk-samples` の `sora-android-sdk-2024.3.1` で修正済みであり、現行の `SoraScreencastService.closeChannel()` は `Handler(Looper.getMainLooper())` を使ってメインスレッドで終了処理を行うため、当時と同じスタックトレースは再現しない見込みである。
-
-一方で、フリーズが実際に解消しているかの最終確認には実機で Wi-Fi を切断・再接続する操作が必要であり、当時の検証環境 (Pixel 4a / Android SDK 2021.2 版) も残っていない。現行バージョンでの再現有無を実機で確認できるまで pending とする。
 
 ## 目的
 
@@ -57,3 +51,11 @@
 - Wi-Fi 切断時にネットワークエラーが検知され、サービスが終了すること。
 
 ## 解決方法
+
+ソースコードを確認した結果、原因と見られる不具合はすでに修正済みだったため、修正済みとして closed にする。
+
+- 原因は `SoraScreencastService.closeChannel()` が引数なしの `Handler()` を生成していたこと。`SoraMediaChannel.Listener.onClose()` は OkHttp のスレッドから呼ばれるため、Looper を持たないスレッドで `Handler()` を生成できず `RuntimeException` が発生し、さらにビューを生成したスレッド以外で `ScreencastUIContainer.clear()` が実行されることで `CalledFromWrongThreadException` によりクラッシュしていた。
+- `sora-android-sdk-samples` の commit 8158621「スクリーンキャスト起因で切断した際に落ちないようにする」で `Handler(Looper.getMainLooper())` に修正され、`sora-android-sdk-2024.3.1` に含まれている。現行コードでは当時と同じスタックトレースは発生しない。
+- SDK 側も `SignalingChannel.onFailure` で `SoraErrorReason.SIGNALING_FAILURE` を通知し、`onClose` をアプリへ通知するため、ネットワーク切断の検知は満たされている。
+
+実機での再現確認は当時の検証環境 (Pixel 4a / Android SDK 2021.2 版) が残っていないため実施していない。再現した場合は reopen する。
