@@ -87,7 +87,7 @@ libusb が提供しているのは usbfs の ioctl ラッパーである。Linux
 
 ### 独立モジュールとして実装する
 
-`usb-camera/` モジュールを本リポジトリに追加する。SDK 本体の `sora-android-sdk/` は変更しない。
+`sora-android-sdk-uvc/` モジュールを本リポジトリに追加する。SDK 本体の `sora-android-sdk/` は変更しない。
 
 - SDK 本体に依存させない。WebRTC の型（`VideoCapturer` など）は SDK 本体が `api(libs.shiguredo.webrtc.android)` で公開している `com.github.shiguredo:shiguredo-webrtc-android` から直接取得する。これにより Sora 以外の WebRTC アプリからも利用でき、単体でのテストも容易になる。
 - 別 artifact として公開し、利用したいアプリだけが依存を追加する。SDK 本体の AAR サイズと依存は増やさない。
@@ -119,12 +119,14 @@ UVC ではカメラが 1 台であるため `switchCamera()` は本質的に不�
 
 ## モジュール構成
 
+ディレクトリ名がそのまま Gradle プロジェクト名と公開 artifact 名になる。`sora-android-sdk-` prefix を付けることで、親 artifact との関係が依存記述だけで分かるようにする。
+
 ```
-usb-camera/
+sora-android-sdk-uvc/
   build.gradle.kts
-  src/main/kotlin/jp/shiguredo/sora/sdk/usbcamera/
+  src/main/kotlin/jp/shiguredo/sora/sdk/uvc/
     UvcCameraCapturer.kt       VideoCapturer 実装
-    UsbCameraDevice.kt         USB デバイスの検出と権限取得
+    UvcCameraDevice.kt         USB デバイスの検出と権限取得
   src/main/cpp/
     usbfs.cpp                  usbfs の ioctl ラッパー
     uvc_device.cpp             UVC 記述子のパースと形式ネゴシエーション
@@ -133,12 +135,18 @@ usb-camera/
   src/test/                    ネイティブに依存しないロジックのテスト
 ```
 
-### 追加が必要なビルド設定
+公開名は次のようになる。
+
+```
+com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
+```
+
+## 追加が必要なビルド設定
 
 | 対象 | 内容 |
 |---|---|
-| `settings.gradle.kts` | `include(":usb-camera")` を追加する |
-| `usb-camera/build.gradle.kts` | Android ライブラリとして構成し、`publishing { singleVariant("release") }` を設定する |
+| `settings.gradle.kts` | `include(":sora-android-sdk-uvc")` を追加する |
+| `sora-android-sdk-uvc/build.gradle.kts` | Android ライブラリとして構成し、`publishing { singleVariant("release") }` を設定する |
 | `gradle/libs.versions.toml` | NDK 関連の設定を追加する |
 | `.github/workflows/build.yml` | 既存の `./gradlew build` が新モジュールも対象にするため、変更は不要の見込み |
 
@@ -170,7 +178,7 @@ usb-camera/
 
 ## 完了条件
 
-- `usb-camera/` モジュールが独立してビルドでき、`sora-android-sdk/` に依存していないこと。
+- `sora-android-sdk-uvc/` モジュールが独立してビルドでき、`sora-android-sdk/` に依存していないこと。
 - SDK 本体（`sora-android-sdk/`）のソースコードが変更されていないこと。
 - UVC カメラの映像を Sora に送信でき、`sora-android-sdk-samples` に動作するサンプルがあること。
 - モジュールの README に、導入手順・利用方法・動作確認済みの端末とカメラ・既知の制約が記載されていること。
