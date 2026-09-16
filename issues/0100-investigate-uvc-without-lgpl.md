@@ -137,7 +137,7 @@ sora-android-sdk-uvc/
 ### ネイティブビルドと CI
 
 - ネイティブコードをビルドするため、`gradle/libs.versions.toml` に NDK バージョンを追加してモジュールの `ndkVersion` で固定する。リポジトリには現在 NDK バージョンの指定が無い。
-- `.github/workflows/build.yml` は `./gradlew build` を実行するため、`settings.gradle.kts` に追加したモジュールが自動的にビルド対象になる。
+- `.github/workflows/build.yml` は `./gradlew build` を実行するため、`settings.gradle.kts` に追加したモジュールが自動的にビルド対象になる。ただし runner に NDK が無い場合は NDK の導入が必要になる。実装時に runner の NDK の有無を確認する。
 - `.github/workflows/e2e-test.yml` は push で発火し、`./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest` を self-hosted の macOS runner で実行する。モジュールを `settings.gradle.kts` に追加すると Gradle の構成フェーズで新モジュールも評価されるため、runner に NDK が無い場合は `paths-ignore` の追加または NDK の導入が必要になる。実装時に runner の NDK の有無を確認する。
 
 ### 実装上の注意
