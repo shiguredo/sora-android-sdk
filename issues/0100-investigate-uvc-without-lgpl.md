@@ -83,7 +83,7 @@ else {
 - アプリが USB 権限を取得した状態で、その fd に対して `USBDEVFS_CLAIMINTERFACE` が成功すること
 - `USBDEVFS_GET_CAPABILITIES` など、転送を伴わない ioctl が成功すること
 
-対象ファイル: `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/` には該当実装がない。検証用コードは `sora-android-sdk-samples` に置く。
+対象ファイル: `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/` には該当実装がない。検証用コードは本リポジトリに追加する `usb-camera/` モジュールに置く（モジュール構成は issue 0015 を参照）。
 
 ### 2. カーネルドライバをデタッチできるか
 
@@ -111,8 +111,8 @@ MJPEG は USB 帯域を抑えられるがデコードの CPU 負荷が高い。Y
 
 ## 設計方針
 
-- 検証コードは `sora-android-sdk-samples` に置き、SDK 本体には入れない。実現性が確認できるまで SDK の依存を増やさない。
-- ネイティブコードをビルドする必要があるため、`sora-android-sdk-samples` に NDK ビルドの構成を追加する。追加するネイティブコードは検証用の最小限にとどめる。
+- 検証コードは本リポジトリに追加する `usb-camera/` モジュールに置く。`sora-android-sdk/` には入れず、SDK 本体に依存させない。
+- ネイティブコードをビルドする必要があるため、`usb-camera/` モジュールに NDK ビルドの構成を追加する。追加するネイティブコードは検証用の最小限にとどめる。
 - libusb / libuvc / AndroidUSBCamera / UVCCamera はこの検証では使用しない。LGPL を避けられるかどうかが本 issue の問いであり、使用すると問いに答えられなくなる。
 - 検証は段階ごとに成否を記録し、失敗した段階で打ち切って結果を本 issue の `## 解決方法` に記録する。
 - 検証で得た知見は issue 0015 の方針判断に渡す。
@@ -128,5 +128,6 @@ MJPEG は USB 帯域を抑えられるがデコードの CPU 負荷が高い。Y
 - 成立した場合は、LGPL に依存しない完全自作での UVC 対応が現実的かどうかの判断材料（実装規模の見積もりと実測性能）が示されていること。
 - 成立しなかった場合は、どの段階で何が原因で成立しなかったかが具体的に記録されていること。
 - 検証結果を踏まえ、issue 0015 の進め方（完全自作 / 対応しない）のいずれを選ぶかの判断が示されていること。
+- 検証用のネイティブコードが `usb-camera/` モジュールにあり、`sora-android-sdk/` から参照されていないこと。
 
 ## 解決方法
