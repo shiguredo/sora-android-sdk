@@ -22,16 +22,16 @@ UVC 対応はネイティブコードと端末依存の処理を必要とし、�
 
 ### 第三者ライブラリは採用できない
 
-UVC を扱う既存ライブラリはすべて libusb (LGPL-2.1) に行き着くため採用できない。
+検討した UVC カメラ向けライブラリは、いずれも libusb (LGPL-2.1) に行き着くため採用できない。
 
 | 候補 | トップレベル | 実際の依存 | 判定 |
 |---|---|---|---|
 | `jiangdongguo/AndroidUSBCamera` | Apache-2.0 | `libuvc/src/main/jni/libusb/COPYING` が GNU LGPL Version 2.1。`jniLibs/<abi>/libusb100.so` としてプリビルドを同梱 | 採用不可 |
-| `saki4510t/UVCCamera` | リポジトリにライセンス表記なし | libusb と libuvc を JNI でビルド | 採用不可 |
+| `saki4510t/UVCCamera` | LICENSE ファイルは無いが README に Apache-2.0 の表記あり。JNI 配下は別ライセンス | `libuvccamera/src/main/jni/libusb` を同梱しており LGPL-2.1 | 採用不可 |
 | `libuvc/libuvc` | BSD-3-Clause | libusb (LGPL-2.1) | 採用不可 |
 | libusb のみを同梱して UVC 層を自作する案 | — | libusb (LGPL-2.1) | 採用不可 |
 
-`AndroidUSBCamera` が同梱する libusb は `LIBUSB_API_VERSION 0x01000103` (libusb 1.0.22 系) である。同梱物のうち libjpeg-turbo は BSD-3-Clause、rapidjson は MIT であり、これらは問題にならない。
+`AndroidUSBCamera` が同梱する libusb は `LIBUSB_API_VERSION 0x01000103` で、同梱の `version.h` が `LIBUSB_MICRO 19` であることから **libusb 1.0.19** にあたる。同梱物のうち libjpeg-turbo は IJG / BSD-3-Clause / zlib の 3 ライセンス、rapidjson は MIT であり、これらはいずれも寛容なライセンスで問題にならない。
 
 ### AOSP の libusb はアプリから利用できない
 
@@ -84,6 +84,14 @@ libusb が提供しているのは usbfs の ioctl ラッパーである。Linux
 **この経路があるため、UVC 対応に SDK 本体の変更は不要である。**
 
 ## 設計方針
+
+### 実現性の判定を先に行う
+
+issue 0100 で「LGPL に依存せずに UVC カメラのフレームを取得できるか」を実機で判定する。本 issue の実装は 0100 の結果を前提とする。
+
+- 0100 で成立が確認できた場合にのみ、本 issue の実装に着手する。
+- 0100 で「対応しない」と判断された場合、本 issue は pending にして理由を記載する（この状態遷移は 0100 の完了条件に含める）。
+- 0100 は検証用の最小構成のモジュールを `sora-android-sdk-uvc/` として追加し、検証を打ち切った場合または「対応しない」と判断した場合は削除する。本 issue が定める下記の構成は、0100 の検証コードを土台にするものの、0100 の時点では確定させない。
 
 ### 独立モジュールとして実装する
 
@@ -188,7 +196,7 @@ com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
 
 ## 関連 issue
 
-- 0100: LGPL に依存せずに UVC カメラのフレームを取得できるかの実現性を実機で検証する。本 issue は方式を決めて実装するところまでを扱い、実現性判定は 0100 に分離する。
+- 0100: LGPL に依存せずに UVC カメラのフレームを取得できるかの実現性を実機で検証する。本 issue は 0100 の結果を受けて実装を扱う。0100 で成立しなかった場合、本 issue は 0100 側で pending にされる。
 - 0052: カメラ以外の入力ソース全般（画面共有等）の検討。本 issue は UVC カメラに限定する。
 
 ## 解決方法
