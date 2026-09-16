@@ -3,7 +3,7 @@
 - Priority: Medium
 - Created: 2026-06-03
 - Completed:
-- Polished: 2026-09-04
+- Polished: 2026-09-16
 - Model: Opus 4.8
 - Branch: feature/add-uvc-camera-module
 
@@ -42,7 +42,7 @@ UVC 対応はネイティブコードと端末依存の処理を必要とし、�
 - NDK の公開ライブラリに libusb は含まれない
 - リンカの名前空間分離により、非公開ライブラリはそもそも解決できない
 
-カーネルの `uvcvideo` ドライバも同様に使えない。UVC デバイスを V4L2 の `/dev/video*` として公開するが、SELinux により `untrusted_app` からは開けない。
+カーネルの `uvcvideo` ドライバも同様に使えない。UVC デバイスを V4L2 の `/dev/video*` として公開するが、SELinux が `untrusted_app` からの利用を禁じている。`system/sepolicy/private/app.te` の `neverallow { appdomain -device_as_webcam } video_device:chr_file { read write };` が該当する。
 
 ### Android の公開 USB Host API はアイソクロナス転送をサポートしない
 
@@ -111,7 +111,9 @@ val capturer = UvcCameraCapturer(context, usbDevice)
 option.enableVideoUpstream(capturer, null)
 ```
 
-`cameraConfig` を指定しないため、キャプチャの開始と `dispose()` は利用者の責任になる。この挙動は `DummyVideoCapturer` と同じである。
+利用者提供の `VideoCapturer` は SDK が所有しないため、キャプチャの開始と `dispose()` は利用者の責任になる。`RTCComponentFactory.createVideoManager` は `RTCLocalVideoManager(it, mediaOption.soraCameraConfig)` を生成し、`isOwnedCapturer` は既定値 `false` のままである。`cameraConfig` を渡しても `isOwnedCapturer` は `false` のため、この挙動は変わらない。この点は `issues/closed/0058-add-dummy-capture-for-e2e-test.md` の知見と同じである。
+
+SDK が `startOwnedCapture()` を呼ぶのは `PeerChannel` が `onAddLocalStream` を通知する直前であり、利用者提供の `VideoCapturer` ではこの呼び出しはスキップされる。利用者が `startCapture()` を呼ぶタイミングは README で示す。
 
 ### SDK 本体を変更しない代わりに残る制約
 
@@ -121,7 +123,7 @@ SDK が UVC の存在を知らないため、カメラ制御 API は UVC では�
 |---|---|
 | `SoraMediaChannel.setVideoHardMute()` | `cameraConfig` が `null` の場合 `SoraMediaOption.canVideoCapturerControllable` のガードで弾かれ `false` を返す |
 | `SoraMediaChannel.switchCamera()` | `RTCLocalVideoManager.switchCamera()` の `capturer as? CameraVideoCapturer` のキャストに失敗するため、何も起きない |
-| `SoraMediaChannel.changeCaptureFormat()` | 例外にはならない。SDK 側で管理するカメラ設定の更新がスキップされ、カスタム実装側の `VideoCapturer.changeCaptureFormat()` に委ねられる |
+| `SoraMediaChannel.changeCaptureFormat()` | SDK 側の設定更新経路では例外にならない。`cameraConfig` が `null` の場合は `RTCLocalVideoManager.changeCaptureFormat()` の `cameraConfig?.let` がスキップされ、SDK が管理するカメラ設定は更新されない。一方 `capturer.changeCaptureFormat()` は常に呼ばれるため、カスタム実装側で処理する。カスタム実装が投げた例外は `SoraMediaChannel.changeCaptureFormat()` では捕捉されず伝播する。未接続時は `peer` が `null` のため何も起きない |
 
 UVC ではカメラが 1 台であるため `switchCamera()` は本質的に不要である。ハードミュートは必要になった時点で、モジュール側が提供する独自 API で代替することを検討する。
 
@@ -136,6 +138,7 @@ sora-android-sdk-uvc/
     UvcCameraCapturer.kt       VideoCapturer 実装
     UvcCameraDevice.kt         USB デバイスの検出と権限取得
   src/main/cpp/
+    CMakeLists.txt             ネイティブビルドの定義
     usbfs.cpp                  usbfs の ioctl ラッパー
     uvc_device.cpp             UVC 記述子のパースと形式ネゴシエーション
     uvc_stream.cpp             ISO URB の管理とフレーム再構成
@@ -143,10 +146,10 @@ sora-android-sdk-uvc/
   src/test/                    ネイティブに依存しないロジックのテスト
 ```
 
-公開名は次のようになる。
+公開名は次のようになる。親 artifact と同じ group を使うため、依存記述で関係が分かる。
 
 ```
-com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
+com.github.shiguredo:sora-android-sdk-uvc
 ```
 
 ## 追加が必要なビルド設定
@@ -154,20 +157,31 @@ com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
 | 対象 | 内容 |
 |---|---|
 | `settings.gradle.kts` | `include(":sora-android-sdk-uvc")` を追加する |
-| `sora-android-sdk-uvc/build.gradle.kts` | Android ライブラリとして構成し、`publishing { singleVariant("release") }` を設定する |
-| `gradle/libs.versions.toml` | NDK 関連の設定を追加する |
-| `.github/workflows/build.yml` | 既存の `./gradlew build` が新モジュールも対象にするため、変更は不要の見込み |
+| `sora-android-sdk-uvc/build.gradle.kts` | Android ライブラリとして構成する。ルートの `build.gradle.kts` は `group` を設定していないため `group = "com.github.shiguredo"` をモジュール側で宣言し、`publishing { singleVariant("release") }` と `android { ndkVersion = ... }` と `externalNativeBuild { cmake { path = ... } }` も設定する |
+| `gradle/libs.versions.toml` | NDK バージョンを追加し、モジュール側の `ndkVersion` から参照する |
+| `.github/workflows/build.yml` | `./gradlew build` が新モジュールも対象にするため、ワークフロー自体の変更は不要。ただし runner に NDK が無い場合は NDK の導入が必要になる。要否は 0100 で確認する |
+| `THIRD_PARTY_LICENSES.md` | モジュールが同梱する依存のライセンスを追記する |
 
-## 調査フェーズ
+### モジュールのバージョン
 
-1. **実現性の判定**: 0100 で、LGPL に依存せずに UVC フレームを取得できるかを実機で判定する。
-2. **フレーム取得**: usbfs を直接操作して UVC の MJPEG / YUYV フレームを取得し、I420 へ変換するパイプラインを構築する。
-3. **USB デバイス検出**: `UsbManager` で UVC デバイスを列挙し、権限取得フローを実装する。Android 14 以降は `PendingIntent` の可変性指定が必要になる点に注意する。
-4. **VideoCapturer 実装**: `VideoCapturer` インターフェースを実装し、`SurfaceTexture` に依存しない経路で動作することを検証する。
-5. **モジュール化**: 独立モジュールとして切り出し、SDK 本体に依存していないことを確認する。
-6. **SDK 連携**: `enableVideoUpstream` でカスタム `VideoCapturer` を渡し、Sora サーバーへ映像が送信されることを確認する。
-7. **利用手順の整備**: モジュールの README に導入手順と制約を記載し、`sora-android-sdk-samples` に動作するサンプルを追加する。
-8. **評価**: フレームレート・遅延・CPU 使用率を計測し、実用性を評価する。
+SDK 本体のバージョンの正本は `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt` の `VERSION` で、`canary.py` はこのファイルのみを更新してタグを作る。UVC モジュールには対応するバージョン定数が無い。
+
+**SDK 本体と同じリリースタグで公開する。** 利用者は SDK と UVC モジュールに同じタグを指定でき、両者のバージョンがずれない。この方式では `canary.py` の変更は不要で、タグ `2026.4.0` に対して `com.github.shiguredo:sora-android-sdk:2026.4.0` と `com.github.shiguredo:sora-android-sdk-uvc:2026.4.0` が公開される。
+
+モジュール側に独自のバージョン定数を持つ必要はない。公開時に使うタグはリポジトリのタグであり、ビルドスクリプトにバージョンを埋め込む必要がないためである。ただし JitPack のビルドでモジュール単体のバージョンが必要になった場合は、この方針を見直す。
+
+## 実装フェーズ
+
+1. **USB デバイス検出**: `UsbManager` で UVC デバイスを列挙し、権限取得フローを実装する。
+   - targetSdk 31 (Android 12) 以降では `PendingIntent` の可変性（`FLAG_IMMUTABLE` または `FLAG_MUTABLE`）の指定が必須である。本リポジトリは targetSdk 36 のため Android 12 / 13 の端末でも必要になる。
+   - Android 14 以降では、可変な `PendingIntent` に component / package を指定していない `Intent` を渡すと例外になる。どちらのフラグを選ぶかは `UsbManager.requestPermission()` の要件と併せて確定する。
+   - UVC クラスのデバイスに対する `UsbManager.requestPermission()` は、targetSdk が P 以上のアプリでは `CAMERA` 権限を併せて要求する。
+2. **FrameCapture の実装**: usbfs を直接操作して UVC の MJPEG / YUYV フレームを取得し、I420 へ変換するパイプラインを、0100 の検証コードを土台に実装する。
+3. **VideoCapturer 実装**: `VideoCapturer` インターフェースを実装し、`SurfaceTexture` に依存しない経路で動作することを検証する。`changeCaptureFormat()` は SDK から常に呼ばれるため、実装側で処理する。
+4. **モジュール化**: 独立モジュールとして切り出し、SDK 本体に依存していないことを確認する。
+5. **SDK 連携**: `enableVideoUpstream` でカスタム `VideoCapturer` を渡し、Sora サーバーへ映像が送信されることを確認する。
+6. **利用手順の整備**: モジュールの README に導入手順・制約・`startCapture()` を呼ぶタイミング・遅延の計測方法を記載し、`sora-android-sdk-samples` に動作するサンプルを追加する。
+7. **評価**: 成功基準の性能条件を計測し、実用性を評価する。
 
 ## 検証環境
 
@@ -180,7 +194,8 @@ com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
 以下のすべてを満たすこと。
 
 - USB（UVC）カメラの映像が Sora サーバーに送信され、ブラウザ等で視聴できること。
-- 640x480 で 15fps 以上、遅延 500ms 以内の映像送信が安定して行えること。遅延は受信側で映像が表示されるまでのエンドツーエンドとし、計測方法を README に明記すること。
+- 640x480 で送信できること。性能は issue 0100 の段階 4 と同じ条件で判定する。`CapturerObserver.onFrameCaptured()` への供給フレーム数が連続 30 秒間で平均 15fps 以上、フレームの欠落率が 10% 以下であること。
+- 遅延 500ms 以内であること。遅延は受信側で映像が表示されるまでのエンドツーエンドとし、計測方法を README に明記すること。
 - MJPEG / YUYV から I420 への変換を含めたエンドツーエンドのパイプラインが動作すること。
 - `SurfaceTexture` 経由でないソフトウェアバッファの映像を `CapturerObserver.onFrameCaptured()` に供給する `VideoCapturer` 実装が `RTCLocalVideoManager` 上で動作すること。
 
@@ -188,15 +203,17 @@ com.github.shiguredo.sora-android-sdk:sora-android-sdk-uvc
 
 - `sora-android-sdk-uvc/` モジュールが独立してビルドでき、`sora-android-sdk/` に依存していないこと。
 - SDK 本体（`sora-android-sdk/`）のソースコードが変更されていないこと。
-- UVC カメラの映像を Sora に送信でき、`sora-android-sdk-samples` に動作するサンプルがあること。
-- モジュールの README に、導入手順・利用方法・動作確認済みの端末とカメラ・既知の制約が記載されていること。
+- UVC カメラの映像を Sora に送信でき、`sora-android-sdk-samples` の `samples` モジュールに動作するサンプルがあること。サンプルは公開された UVC モジュールを参照する。
+- モジュールの README に、導入手順・利用方法・`startCapture()` を呼ぶタイミング・動作確認済みの端末とカメラ・既知の制約・遅延の計測方法が記載されていること。
 - 動作確認済みの端末・カメラ機種一覧と既知の制約事項を本 issue の `## 解決方法` セクションに追記すること。
-- ネイティブコードと依存にコピーレフトライセンスが含まれていないことを確認すること。
-- `CHANGES.md` に追加を記載すること。
+- ネイティブコードと依存にコピーレフトライセンスが含まれていないことを確認し、`THIRD_PARTY_LICENSES.md` に反映すること。
+- `sora-android-sdk-uvc` が SDK 本体と同じリリースタグで公開され、利用者が両方に同じタグを指定できること。
+- `CHANGES.md` の `## develop` セクションに `[ADD]` として追記すること。
 
 ## 関連 issue
 
-- 0100: LGPL に依存せずに UVC カメラのフレームを取得できるかの実現性を実機で検証する。本 issue は 0100 の結果を受けて実装を扱う。0100 で成立しなかった場合、本 issue は 0100 側で pending にされる。
+- 0100: LGPL に依存せずに UVC カメラのフレームを取得できるかの実現性を実機で検証する。本 issue は 0100 の結果を受けて実装を扱う。0100 で「対応しない」と判断された場合、本 issue は 0100 側で pending にされる。
 - 0052: カメラ以外の入力ソース全般（画面共有等）の検討。本 issue は UVC カメラに限定する。
+- 0032: サンプル集を本リポジトリへ統合するかの検討。未結論のため、本 issue は現行どおり `sora-android-sdk-samples` にサンプルを追加する。統合された場合は置き場所が変わる。
 
 ## 解決方法
