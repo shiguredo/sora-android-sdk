@@ -66,7 +66,7 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 - SDK 側は `SoraMediaOption` に processor を渡す公開 API を追加し、`PeerChannelImpl` の sender / receiver に適用する。
 - SDK の公開 API は sora-python-sdk / sora-ios-sdk の API 設計を参考に、音声と映像の両方を対象として分離した transformer を提供する。
   - 送信時は `SoraMediaOption` に音声・映像それぞれの transformer（`SoraAudioFrameTransformer` / `SoraVideoFrameTransformer` 相当）を設定する。
-  - 受信時はトラック単位で transformer を設定する API を追加する（`SoraMediaTrack.set_frame_transformer()` 相当）。ただし Android SDK には受信トラックの公開 API が存在しない（`PeerChannel` の `onTrack` は内部処理）ため、公開方法を含めた API 設計は SDK API 追加（iOS 0086 相当）で確定する。
+  - 受信時はトラック単位で transformer を設定する API を追加する（`SoraMediaTrack.set_frame_transformer()` 相当）。受信トラックの通知は `SoraMediaChannel.Listener.onAddRemoteTrack` で公開済みだが、トラックへ `SetFrameTransformer()` を適用する公開 API は存在しない（`PeerConnection.Observer.onTrack` は `PeerChannelImpl` 内部に閉じている）ため、適用経路を含めた API 設計は SDK API 追加（iOS 0086 相当）で確定する。
   - 変換はコールバックでフレームを受け取り、`enqueue()` で戻す方式とする（MDN の TransformStream の pipe に相当）。
   - re-offer / update のたびに再適用し、transform が外れないようにする（sora-ios-sdk 0086 の設計を踏襲）。
   - オーディオにはキーフレームが存在しないため、`GenerateKeyFrame` によるキーフレーム制御は映像のみに適用する。
@@ -79,7 +79,7 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 
 ### 実装上の注意点（案 B を選定した場合）
 
-- バックプレッシャーは持たない。libwebrtc 側の委譲実装（`RTPSenderVideoFrameTransformerDelegate` 等）に任せ、フレームの順序保証・ドロップの判断も libwebrtc の仕様に従う（sora-rust-sdk 0106 と同一の方針）。
+- バックプレッシャーは持たない。libwebrtc 側の委譲実装（`RTPSenderVideoFrameTransformerDelegate` 等）に任せ、フレームの順序保証・ドロップの判断も libwebrtc の仕様に従う（sora-ios-sdk 0085 と同一の方針）。なお sora-rust-sdk 0106 はタスクキューの FIFO 実行とキーフレーム保護付きの独自ドロップポリシーを実装しており、方針が異なる点に注意する。
 - 変換後のフレームは元の順序を保ち、重複なく返すこと（MDN の記事にも明記されている）。
 - ネイティブの `Transform()` は libwebrtc のワーカースレッド（network thread / encoder スレッド）から呼ばれる。コールバックはそのスレッド上で直接呼び出し、アプリ側で必要なディスパッチを行う（doc コメントに明記。sora-ios-sdk 0085 と同一の方針。Java コールバックを native thread から直接呼ぶため、アプリ側のブロックによるデッドロックに注意する）。
 - `GetData` はネイティブ所有バッファのため、Java 側にはコピーして渡すこと（UAF 回避）。加工後は `setData` で入れ替え、`enqueue` 後はフレームの所有権がライブラリに移るため再利用しない。
