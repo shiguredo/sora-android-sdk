@@ -5,6 +5,7 @@
 - Completed:
 - Model: DeepSeek V4 Flash
 - Branch:
+- Polished: 2026-09-17
 
 ## 目的
 
@@ -35,16 +36,16 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
   - 変換はコールバック（`on_transform`）でフレームを受け取り、`enqueue(frame)` で戻す方式である。
   - フレームデータは `SoraTransformableAudioFrame` / `SoraTransformableVideoFrame` の `get_data()` / `set_data()` で取得・置き換えする。
   - 主な用途は音声・映像と同時に何かしらのデータを送ること（例: H.264 SEI の追加）であり、エンドツーエンド暗号化にも利用できる。
-- 関連 SDK の対応状況（2026-08-06 時点）:
-  - sora-ios-sdk は 0085（webrtc-build パッチ + リリース）/ 0086（SDK API 追加）/ 0087（サンプル + E2E テスト）の 3 分割で Encoded Transforms 対応を進行中である。
-  - sora-rust-sdk は 0106 で shiguredo-webrtc（webrtc-rs）への C ラッパーと Rust API の追加、および SDK への設定経路追加を計画中である。
+- 関連 SDK の対応状況（2026-09-17 時点）:
+  - sora-ios-sdk は 0085（webrtc-build パッチ + リリース）/ 0086（SDK API 追加）/ 0087（サンプル + E2E テスト）の 3 分割で Encoded Transforms 対応を起票済みだが、3 件とも open のまま未完了である。調査 issue の 0084 は 2026-08-06 に closed 済みであり、案 B の採用を決定している。
+  - sora-rust-sdk は 0106 で shiguredo-webrtc（webrtc-rs）への C ラッパーと Rust API の追加、および SDK への設定経路追加を実施済みである（2026-08-26 に closed。実装済みの設計を参考にできる）。
   - Android SDK の対応は本 issue のみであり、libwebrtc のパッチは iOS と同じ shiguredo-webrtc-build リポジトリに追加するため、ObjC パッチ（0085）と Java パッチの整合を取る必要がある。
 
 ## 設計方針
 
 ### 案 A: FrameEncryptor / FrameDecryptor ベース（SDK のみで完結）
 
-- 既存の Java API（`FrameEncryptor` / `FrameDecryptor`）を利用し、GenericFrameInjector の JNI 実装を SDK 側に追加する。
+- 既存の Java API（`FrameEncryptor` / `FrameDecryptor`、`RtpSender.setFrameEncryptor()` / `RtpReceiver.setFrameDecryptor()`）を利用し、SDK 側でこれらを指定できる公開 API を追加して sender / receiver に適用する。JNI は libwebrtc に既存のため、libwebrtc の変更は不要である。
 - エンドツーエンド暗号化（フレーム全体の置き換え）のみ実現できる。メタデータ改変とキーフレーム制御はできない。
 - カスタム libwebrtc ビルドは不要であり、次の SDK リリースで出荷できる。
 
@@ -65,7 +66,7 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 - SDK 側は `SoraMediaOption` に processor を渡す公開 API を追加し、`PeerChannelImpl` の sender / receiver に適用する。
 - SDK の公開 API は sora-python-sdk / sora-ios-sdk の API 設計を参考に、音声と映像の両方を対象として分離した transformer を提供する。
   - 送信時は `SoraMediaOption` に音声・映像それぞれの transformer（`SoraAudioFrameTransformer` / `SoraVideoFrameTransformer` 相当）を設定する。
-  - 受信時はトラック単位で transformer を設定する API を追加する（`SoraMediaTrack.set_frame_transformer()` 相当）。
+  - 受信時はトラック単位で transformer を設定する API を追加する（`SoraMediaTrack.set_frame_transformer()` 相当）。ただし Android SDK には受信トラックの公開 API が存在しない（`PeerChannel` の `onTrack` は内部処理）ため、公開方法を含めた API 設計は SDK API 追加（iOS 0086 相当）で確定する。
   - 変換はコールバックでフレームを受け取り、`enqueue()` で戻す方式とする（MDN の TransformStream の pipe に相当）。
   - re-offer / update のたびに再適用し、transform が外れないようにする（sora-ios-sdk 0086 の設計を踏襲）。
   - オーディオにはキーフレームが存在しないため、`GenerateKeyFrame` によるキーフレーム制御は映像のみに適用する。
@@ -74,7 +75,7 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 
 ### 推奨
 
-案 B。時雨堂は自社ビルドの libwebrtc を提供しているため実現可能であり、暗号化だけでなくフレーム改変・キーフレーム制御までカバーできる。ただし最終的な設計判断は本 issue の完了条件として確定する。
+案 B。時雨堂は自社ビルドの libwebrtc を提供しているため実現可能であり、暗号化だけでなくフレーム改変・キーフレーム制御までカバーできる。ただし案 B を採用するか（案 A の機能制限を受け入れるか）の最終判断は、本 issue の完了条件として確定する。
 
 ### 実装上の注意点（案 B を選定した場合）
 
@@ -95,7 +96,7 @@ MDN の "Using WebRTC Encoded Transforms"（`RTCRtpScriptTransform` / `RTCEncode
 - 決定した案の実装 issue が、sora-ios-sdk 0085〜0087 と同様に以下の 3 つに分割起票されていること。
   - webrtc-build パッチ（Java API + JNI。iOS 0085 相当）
   - SDK API 追加（`SoraMediaOption` の送信側設定と受信トラック単位の設定。iOS 0086 相当）
-  - サンプルアプリと E2E テスト（iOS 0087 相当。ビデオ・オーディオ両対応、変換フレームの順序・重複なしの確認を含む）
+  - サンプルアプリと E2E テスト（iOS 0087 相当。ビデオ・オーディオ両対応、変換フレームの順序・重複なしの確認を含む）。サンプルアプリは `sora-android-sdk-samples` リポジトリ、E2E テストは本リポジトリの `sora-android-sdk/src/androidTest` が対象であり、リポジトリが異なる場合はそれぞれのリポジトリに起票する。
 
 ## 解決方法
 
