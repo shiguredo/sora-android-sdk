@@ -146,7 +146,7 @@ interface PeerChannel {
         /**
          * リモートトラックが追加されたときに呼び出されるコールバック.
          *
-         * PeerConnection.Observer.onTrack は PeerChannelImpl 内部に閉じており
+         * PeerConnection.Observer.onAddTrack は PeerChannelImpl 内部に閉じており
          * SDK 利用者が直接アクセスできないため、このコールバックを通じて
          * トラックとストリーム ID を上位レイヤーに通知する.
          *
@@ -425,7 +425,32 @@ class PeerChannelImpl(
                 receiver: RtpReceiver?,
                 ms: Array<out MediaStream>?,
             ) {
+                if (closing) {
+                    return
+                }
                 SoraLogger.d(TAG, "[rtc] @onAddTrack")
+
+                val track =
+                    receiver?.track() ?: run {
+                        SoraLogger.d(TAG, "[rtc] @onAddTrack: track is null")
+                        return
+                    }
+
+                // RtpReceiver から所属ストリームを取得する API は libwebrtc 155 で削除されたため、
+                // onAddTrack の引数から先頭の streamId を取得する。
+                val streamId =
+                    ms?.firstOrNull()?.id ?: run {
+                        SoraLogger.d(TAG, "[rtc] @onAddTrack: stream id not found for trackId=${track.id()}")
+                        return
+                    }
+
+                // ストリーム削除時に onRemoveRemoteTrack を発火するためにマッピングを保持する。
+                trackToStreamId[track.id()] = streamId
+
+                // 既存の onAddRemoteStream は MediaStream 単位の通知であり、
+                // MediaStreamTrack を起点に所属する stream_id を直接参照する経路にはならない。
+                // そのため、track と streamId を対で通知する onAddRemoteTrack を追加している。
+                listener?.onAddRemoteTrack(track, streamId)
             }
 
             override fun onRemoveTrack(receiver: RtpReceiver?) {
@@ -463,23 +488,6 @@ class PeerChannelImpl(
                 SoraLogger.d(TAG, "[rtc] @onTrack currentDirection=${transceiver.currentDirection}")
                 SoraLogger.d(TAG, "[rtc] @onTrack sender.track=${transceiver.sender.track()}")
                 SoraLogger.d(TAG, "[rtc] @onTrack receiver.track=${transceiver.receiver.track()}")
-
-                val track = transceiver.receiver.track() ?: return
-
-                // Sora では 1 ストリーム 1 トラックを前提とするため、先頭の streamId を採用する。
-                val streamId =
-                    transceiver.receiver.getStreams().firstOrNull() ?: run {
-                        SoraLogger.d(TAG, "[rtc] @onTrack: stream id not found for trackId=${track.id()}")
-                        return
-                    }
-
-                // ストリーム削除時に onRemoveRemoteTrack を発火するためにマッピングを保持する。
-                trackToStreamId[track.id()] = streamId
-
-                // 既存の onAddRemoteStream は MediaStream 単位の通知であり、
-                // MediaStreamTrack を起点に所属する stream_id を直接参照する経路にはならない。
-                // そのため、track と streamId を対で通知する onAddRemoteTrack を追加している。
-                listener?.onAddRemoteTrack(track, streamId)
             }
 
             override fun onDataChannel(dataChannel: DataChannel) {
