@@ -11,6 +11,17 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 155.8059.0.0 に上げる
+  - `RtpReceiver.getStreams()` の削除に対応し、`onAddTrack` からストリーム ID を取得する
+  - @zztkm
+- [UPDATE] JDK のバージョンを 25 に上げる
+  - WebRTC M155.8059.0.0 が固定する Chromium build は `third_party/jdk/current/bin/javac` を使用して `--release 25` を指定しており、WebRTC の `DEPS` が固定する `third_party/jdk/current` の CIPD パッケージも JDK 25.0.4.1 に固定されているため
+  - 参照: <https://chromium.googlesource.com/chromium/src/+/e6aa79b579ec7536ac9cbb92b47c1d3c2ecec984/android/gyp/util/build_utils.py#41>、<https://chromium.googlesource.com/chromium/src/+/e6aa79b579ec7536ac9cbb92b47c1d3c2ecec984/android/gyp/compile_java.py#701>、<https://webrtc.googlesource.com/src/+/8d208e76fb1ad2b92d557f752e9d1d7d49059efa/DEPS#589>
+  - @zztkm
+- [FIX] libwebrtc 155 で E2E テストがコンパイルに失敗する問題を修正する
+  - E2E テスト用の `DummyVideoCapturer` に `VideoCapturer.isCapturing()` を実装する
+  - @zztkm
+
 ## 2026.3.0
 
 **リリース日**: 2026-09-10
