@@ -4,7 +4,7 @@
 - Created: 2026-09-24
 - Completed: {YYYY-MM-DD}
 - Branch: feature/update-libwebrtc-android-uaf-fixes
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-24
 
 ## 目的
 
@@ -20,21 +20,24 @@ libwebrtc の Android Java ラッパーで、 JNI 呼び出しと `dispose()` �
 
 ### upstream の修正内容
 
-以下の CL はすべて同じ `b/533453798` の UAF 対策であり、 `refs/heads/main` に連続してマージされている。
+以下の CL はすべて同じ `b/533453798` の UAF 対策であり、 `refs/heads/main` にマージされている。うち `503680`、 `503700`、 `504400` は `main@{#48644}` から `main@{#48646}` へ連続してマージされている。
 
+- [CL 500801](https://webrtc-review.googlesource.com/c/src/+/500801) (`main@{#48530}`): `PeerConnection` の JNI 呼び出しと `dispose()` を `ReentrantReadWriteLock` で排他し、 free と並行した JNI 呼び出しによる Use-After-Free を防ぐ。後続の CL 501480 で `NativeLifecycleLock` に置き換えられる。
+- [CL 501480](https://webrtc-review.googlesource.com/c/src/+/501480) (`main@{#48604}`): 共通の `NativeLifecycleLock` を導入し、 `PeerConnectionFactory` と `PeerConnection` に適用する。 `NativeLifecycleLock` を導入した CL であり、切断時に `PeerConnection.dispose()` と `PeerConnectionFactory.dispose()` を呼ぶ Sora Android SDK の経路に直接関係するため、本 issue の対象に含める。
 - [CL 503680](https://webrtc-review.googlesource.com/c/src/+/503680) (`main@{#48644}`): `DataChannel` のネイティブポインターを `NativeLifecycleLock` で保護し、 JNI 呼び出しと observer 解放を排他する。
 - [CL 503700](https://webrtc-review.googlesource.com/c/src/+/503700) (`main@{#48645}`): `RtpSender`、 `RtpReceiver`、 `RtpTransceiver` の JNI 呼び出し、子オブジェクト解放、 `nativeReleaseRef()` をライフサイクルロックで保護する。
 - [CL 504400](https://webrtc-review.googlesource.com/c/src/+/504400) (`main@{#48646}`): `MediaStreamTrack`、 `AudioTrack`、 `VideoTrack`、 `MediaStream`、 `MediaSource`、 `VideoSource` に同じ保護を適用し、映像 sink の解放競合とキャプチャコールバック中の参照切れも防ぐ。
+- 同じ `b/533453798` の後続として CL 504700 (`main@{#48667}`、 `DtmfSender` / `TimestampAligner`) と CL 504720 (`main@{#48677}`、 `TurnCustomizer` / `CallSessionFileRotatingLogSink`) もマージ済みであるが、 Sora Android SDK はこれらのクラスを利用しないため本 issue では対象外とする。main のスナップショットを採用する場合はこれらも自動的に含まれる。
 
 ### libwebrtc バージョンの確認結果
 
 - `gradle/libs.versions.toml` の `[versions].libwebrtc` は `150.7871.3.0` である。
 - `webrtc-build` の `m150.7871.3.0` は `M150.7871@{#3}`、 upstream commit `1f975dfd761af6e5d76d28333191973b258d82a8` を使用しており、修正対象の Java ラッパーに `NativeLifecycleLock` は含まれていない。
 - `m150.7871.3.5` も同じ upstream commit を使用するため、ビルド番号の末尾だけを `3.0` から `3.5` に変更しても今回の修正は取り込まれない。
-- 更新候補として確認した `m155.8059.0.0` も `M155.8059@{#0}` の修正前スナップショットであり、今回の CL は含まれていない。
-- CL は 2026-09-21 に main へマージされているが、これらを含む `webrtc-build` の Android ビルドバージョンは 2026-09-24 時点で特定できていない。対象バージョンは番号ではなく、少なくとも `main@{#48644}` 以降、または 3 件をバックポートしたソースからビルドされたものとして選定する必要がある。
-- CL の upstream へのマージと配布用 libwebrtc のリリースは別である。CL 自体は `MERGED` だが、 2026-09-24 時点の最新 `webrtc-build` は [m155.8059.1.0](https://github.com/shiguredo-webrtc-build/webrtc-build/releases/tag/m155.8059.1.0)（2026-09-19 公開）であり、 CL のマージ日より前に公開された修正前のビルドである。
-- したがって、今回の修正を含む配布版はまだ公開されていない。次回以降の `webrtc-build` リリース、または 3 件の CL をバックポートしたビルドを待って採用する。
+- 更新候補として確認した `m155.8059.0.0` (`M155.8059@{#0}`) と `m155.8059.1.0` (`M155.8059@{#1}`) では、CL 500801 の `PeerConnection` 保護は含まれているが、CL 501480 以降の修正（ `NativeLifecycleLock` とその適用、 `DataChannel` 以降の 3 件）は含まれていない。
+- CL 503680、 503700、 504400 は 2026-09-21 に main へマージされた（CL 500801 は 2026-09-08、 CL 501480 は 2026-09-15）が、これらを含む `webrtc-build` の Android ビルドバージョンは 2026-09-24 時点で存在しない。対象バージョンは番号ではなく、main 上の位置が `main@{#48646}` 以降のスナップショット（上記 5 件すべてを含む）からビルドされたものとして選定する必要がある。選定時は `webrtc-build` の `VERSION` の `WEBRTC_COMMIT` を確認する。なお `webrtc-build` のこれまでのリリースはすべて upstream main のスナップショット（ `WEBRTC_COMMIT`）からビルドされており、特定 CL だけをバックポートしたビルドは存在しない。3 件だけのバックポートでは `NativeLifecycleLock` を導入した CL 501480 が欠落するため、 `DataChannel` の修正パッチを適用できない。
+- CL の upstream へのマージと配布用 libwebrtc のリリースは別である。CL 自体は `MERGED` だが、 2026-09-24 時点の最新 `webrtc-build` は [m155.8059.1.0](https://github.com/shiguredo-webrtc-build/webrtc-build/releases/tag/m155.8059.1.0)（2026-09-19 公開）であり、 CL 501480 と `DataChannel` 以降の 3 件のマージ日より前に公開された修正前のビルドである。
+- したがって、今回の修正（CL 501480、 503680、 503700、 504400 の 4 件）を含む配布版はまだ公開されていない。次回以降の `webrtc-build` リリースを待って採用する。
 
 ### Sora Android SDK の利用経路
 
@@ -45,16 +48,16 @@ libwebrtc の Android Java ラッパーで、 JNI 呼び出しと `dispose()` �
 
 ## 設計方針
 
-- 3 件すべてを含む `webrtc-build` の Android SDK ビルドを選定し、 Sora Android SDK が参照する `com.github.shiguredo:shiguredo-webrtc-android` のバージョンを更新する。
-- AAR の実体に `DataChannel`、 `RtpSender`、 `RtpReceiver`、 `RtpTransceiver`、 `MediaStreamTrack`、 `MediaStream`、 `MediaSource`、 `VideoSource`、 `VideoTrack` の `NativeLifecycleLock` 対応が含まれることを確認する。ビルド番号の末尾だけが異なる同一 upstream commit は採用しない。
+- 上記 5 件（ `NativeLifecycleLock` の導入と `PeerConnection` / `PeerConnectionFactory` への適用を含む）すべてを含む `webrtc-build` の Android SDK ビルドを選定し、 Sora Android SDK が参照する `com.github.shiguredo:shiguredo-webrtc-android` のバージョンを更新する。
+- AAR の実体に `PeerConnection`、 `PeerConnectionFactory`、 `DataChannel`、 `RtpSender`、 `RtpReceiver`、 `RtpTransceiver`、 `MediaStreamTrack`、 `MediaStream`、 `MediaSource`、 `VideoSource`、 `VideoTrack` の `NativeLifecycleLock` 対応が含まれることを確認する。ビルド番号の末尾だけが異なる同一 upstream commit は採用しない。
 - Sora Android SDK 側で同等のライフサイクルロックを重複実装せず、 upstream の修正を依存更新として取り込む。API 変更やビルドエラーが発生した場合は、その内容を分離して判断する。
-- DataChannel の接続・切断、送受信トラック、カメラキャプチャを含む実機 E2E テストで、通常の切断とコールバックが重なる経路を検証する。モックやスタブは使用しない。
+- DataChannel の接続・切断、送受信トラック、映像キャプチャを、既存の E2E テスト（ `.github/workflows/e2e-test.yml` の `pixelApi35AndroidE2ETest`、Gradle Managed Device (`pixelApi35`) 上で実行）で検証し、通常の切断とコールバックが重なる経路を確認する。映像キャプチャの検証は既存テストが利用する `DummyVideoCapturer`（実カメラではない）を通じて `VideoSource` のキャプチャコールバック経路を確認するものである。UAF 修正そのものに対してモックやスタブを用意しない（実際の AAR と既存の E2E テストを使用する）。
 
 ## 完了条件
 
-- 3 件の CL をすべて含む libwebrtc Android ビルドを採用し、採用した `webrtc-build` バージョンと upstream commit を記録できること。
+- 上記 5 件の CL をすべて含む libwebrtc Android ビルドを採用し、採用した `webrtc-build` バージョンと upstream commit を記録できること。
 - `gradle/libs.versions.toml` の libwebrtc バージョン更新後に、 SDK の通常ビルドと既存テストが成功すること。
-- DataChannel signaling、送受信、映像キャプチャを実機で接続・切断し、 JNI の UAF や二重解放に起因するクラッシュが発生しないこと。
+- 既存の E2E テスト（ `pixelApi35` の Gradle Managed Device）で DataChannel signaling、送受信、映像キャプチャ（ `DummyVideoCapturer` 経由）を含む接続・切断を実行し、 JNI の UAF や二重解放に起因するクラッシュが発生しないこと。実機（実カメラ）での確認を実施できる場合は、その結果も併せて記録すること。
 - `CHANGES.md` の `develop` セクションに libwebrtc 更新内容を記載すること。
 
 ## 変更対象ファイル
@@ -65,7 +68,7 @@ libwebrtc の Android Java ラッパーで、 JNI 呼び出しと `dispose()` �
 
 ## 解決方法
 
-- `webrtc-build` のリリースと `VERSION` を確認し、 3 件の CL を含む Android AAR を `shiguredo-webrtc-android` へ登録する。
+- `webrtc-build` のリリースと `VERSION` を確認し、上記 5 件の CL を含む Android AAR を `shiguredo-webrtc-android` へ登録する。
 - `gradle/libs.versions.toml` の `libwebrtc` を登録済みバージョンへ更新する。
-- `PeerChannelImpl` の DataChannel signaling、送受信トラック、切断処理を既存の実機 E2E テストで検証し、必要な検証結果を記録する。
+- `PeerChannelImpl` の DataChannel signaling、送受信トラック、切断処理を既存の E2E テスト（ `pixelApi35` の Gradle Managed Device）で検証し、必要な検証結果を記録する。
 - `CHANGES.md` を更新する。
