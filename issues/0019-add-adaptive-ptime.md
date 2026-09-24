@@ -33,7 +33,7 @@ libwebrtc の `RtpParameters.Encoding` に以下の API が存在することを
 - 設定先は `RtpParameters.Encoding.adaptiveAudioPacketTime`（libwebrtc 側のフィールド名）。
 - `configureSenderDegradationPreference` と同様の try-catch パターンで、audioSender 向けのパラメータ設定メソッド（例: `configureSenderAdaptivePtime(sender: RtpSender)`）を新設する。`enableAdaptivePtime` が `false` の場合は何もしない。
 - 呼び出し箇所は次の 2 つに限定する:
-  - `setTrack` 内: `track.kind() == "audio"` の場合。これにより `handleInitialRemoteOffer` の初期接続と、音声録音一時停止からの復帰（`PeerChannel.updateAudioSenderTrack` 経由の `setTrack`）の両経路で設定される。
+  - `setTrack` 内: `track.kind() == "audio"` の場合。これにより `handleInitialRemoteOffer` の初期接続と、音声録音一時停止からの復帰の両経路を網羅する。復帰時に sender を再利用する `attachAudioTrackToSender`（`PeerChannel.attachOrUpdateAudioTrack` 経由）では `RtpParameters` の設定が保持されるため再設定は不要で、sender が dispose 済みで `updateAudioSenderTrack` 経由の `setTrack` にフォールバックした場合にのみ再設定される。
   - `handleUpdatedRemoteOffer` 内: `setRemoteDescription` 後の再設定。simulcast 用の `if` / `else` 分岐と無関係に必ず実行される位置に置く（simulcast は映像のみの概念であり、audioSender の設定は分岐の内外どちらにも依存させない）。
 - `handleInitialRemoteOffer` には明示的な呼び出しを追加しない（`setTrack` 経由で設定されるため）。
 
