@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-08-20
-- Completed:
+- Completed: 2026-09-25
 - Model: DeepSeek V4 Flash
 - Branch: feature/fix-initialize-if-needed-thread-safety
 - Polished: 2026-08-20
@@ -75,3 +75,8 @@ libwebrtc 150.7871（branch-heads/7871）の実装に基づく:
 - issue 0071（RPC の e2e テスト）— 本 issue のクラッシュが観測されたテスト。本 issue の修正を先にマージし、その後 0071 側で再実行してクラッシュが発生しないことを確認する。0071 の完了条件には「スキップされない環境でクラッシュ非発生を確認する」旨を追記すること。
 
 ## 解決方法
+
+- `initializeIfNeeded()` に `@Synchronized` を付与し、複数チャネルの初期化処理を直列化した（コミット `9d42c192`。`sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/PeerChannel.kt` の `initializeIfNeeded()`）。companion object のメソッドに付けた `@Synchronized` は `PeerChannelImpl.Companion` インスタンスをロックし、全インスタンスで直列化される。
+- `CHANGES.md` に `[FIX]` エントリ（「複数チャネルを同時に接続した際に `PeerConnectionFactory.initialize()` が 2 回呼ばれてネイティブクラッシュする問題を修正する」、担当者 @t-miya）を追記済み。
+- issue 0071 の e2e テスト（sendonly + recvonly の 2 チャネル接続）で、複数チャネル同時接続によるネイティブクラッシュ（SIGABRT）が発生しないことを確認済み（`issues/closed/0071-add-e2e-rpc-request-simulcast-rid.md` の「検証」参照）。0071 は closed 済みであり、完了条件への「クラッシュ非発生の確認」追記も実施済み。
+- 完了条件のうち「`@Synchronized` 付与（コードレビューで確認）」「`CHANGES.md` への `[FIX]` エントリ追記」「e2e でのクラッシュ非発生確認（0071 側へ委譲）」はすべて満たされるため、対応完了として closed にする。
