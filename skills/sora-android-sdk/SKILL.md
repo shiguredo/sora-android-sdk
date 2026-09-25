@@ -21,7 +21,7 @@ description: 時雨堂の WebRTC SFU Sora 向け Android クライアント SDK 
 
 ## 依存ライブラリ
 
-- `com.github.shiguredo:shiguredo-webrtc-android` (libwebrtc 150.7871.3.0) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
+- `com.github.shiguredo:shiguredo-webrtc-android` (libwebrtc 151.7922.0.0) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
 - Gson (シグナリング JSON)
 - OkHttp (WebSocket)
 - kotlinx.coroutines

@@ -597,7 +597,7 @@ class SoraMediaChannel
             /**
              * リモートトラックが追加されたときに呼び出されるコールバック.
              *
-             * PeerConnection.Observer.onTrack は PeerChannelImpl 内部に閉じており
+             * PeerConnection.Observer.onAddTrack は PeerChannelImpl 内部に閉じており
              * SDK 利用者が直接アクセスできないため、このコールバックを通じて
              * トラックとストリーム ID を通知する.
              *
