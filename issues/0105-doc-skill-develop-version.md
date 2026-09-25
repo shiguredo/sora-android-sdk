@@ -3,8 +3,8 @@
 - Priority: Low
 - Created: 2026-09-25
 - Completed: {YYYY-MM-DD}
-- Branch: feature/fix-skill-develop-version
-- Polished: {YYYY-MM-DD}
+- Branch: feature/update-skill-develop-version
+- Polished: 2026-09-25
 
 ## 目的
 
@@ -18,12 +18,12 @@
 
 ## 設計方針
 
-- `SDKInfo.kt` の `VERSION` を参照する書き方に変更し、develop の具体的なバージョンを記載しない。
-- リリースごとに表記を更新する運用にする場合は、更新手順を明確にする。
+- SDK バージョンのリテラル文字列 (`2026.3.0` や `2026.3.0-canary.0`) を `skills/sora-android-sdk/SKILL.md` に一切記載しない。`SDKInfo.kt` の `VERSION` を正本として参照する書き方に変更し、develop の具体的なバージョンを記載しない。
+- 最新リリースを案内する場合は、固定されたバージョン文字列ではなく GitHub Releases (https://github.com/shiguredo/sora-android-sdk/releases) へのリンクにする。
 
 ## 完了条件
 
-- `skills/sora-android-sdk/SKILL.md` の記述と `SDKInfo.kt` の実際の値が矛盾しないこと。
+- `skills/sora-android-sdk/SKILL.md` に SDK バージョンのリテラル文字列が残っておらず、`SDKInfo.kt` の `VERSION` を正本として参照する記述になっていること。
 
 ## 変更対象ファイル
 
