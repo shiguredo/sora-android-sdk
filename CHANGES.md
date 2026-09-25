@@ -11,6 +11,14 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 154.8037.1.2 に上げる
+  - `RtpReceiver.getStreams()` の削除に対応し、`onAddTrack` の引数からストリーム ID を取得する
+  - `VideoCapturer.isCapturing()` の実装を追加する
+  - @zztkm
+- [UPDATE] JDK のバージョンを 25 に上げる
+  - libwebrtc 154.8037.1.2 の `classes.jar` が Java 25 のクラスファイルを含むため
+  - @zztkm
+
 ## 2026.3.0
 
 **リリース日**: 2026-09-10
