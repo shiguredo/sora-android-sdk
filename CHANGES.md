@@ -12,8 +12,9 @@
 ## develop
 
 - [UPDATE] libwebrtc を 151.7922.0.0 に上げる
-  - libwebrtc 151 で `RtpReceiver.getStreams()` が削除されたため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
-  - libwebrtc 151 で `VideoCapturer.isCapturing()` が必須になったため、`DummyVideoCapturer` に `isCapturing` を実装する
+  - 151.7922.0.0 では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できなくなったため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
+  - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
+  - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
   - @zztkm
 
 ## 2026.3.0

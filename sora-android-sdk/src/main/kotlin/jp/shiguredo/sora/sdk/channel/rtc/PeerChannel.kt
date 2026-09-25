@@ -436,8 +436,9 @@ class PeerChannelImpl(
                         return
                     }
 
-                // RtpReceiver から所属ストリームを取得する API は libwebrtc 151 で削除されたため、
-                // onAddTrack の引数から先頭の streamId を取得する。
+                // RtpReceiver.getStreams() は Shiguredo 独自パッチで追加していた API で、
+                // 151.7922.0.0 ではパッチが適用されなくなったため利用できない。
+                // そのため、onAddTrack の引数から先頭の streamId を取得する。
                 val streamId =
                     ms?.firstOrNull()?.id ?: run {
                         SoraLogger.d(TAG, "[rtc] @onAddTrack: stream id not found for trackId=${track.id()}")
