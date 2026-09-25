@@ -4,7 +4,7 @@
 - Created: 2026-09-25
 - Completed: {YYYY-MM-DD}
 - Branch: feature/refactor-peer-channel-doc-comments
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-25
 
 ## 目的
 
@@ -20,15 +20,15 @@
 
 ## 設計方針
 
-- 挙動は変更せず、KDoc とコメントを実装に合わせる。
-- `closing` ガードのログは、通知を抑止したことを追えるよう対象箇所で方針を揃える。
-- `onTrack` のログは必要な情報に絞る。
+- 挙動は変更せず、KDoc とコメントを実装に合わせる。ログ出力の変更のみを行う。
+- `closing` ガード時、通知を抑止するコールバック (`onAddTrack` / `onRemoveTrack` / `onRemoveStream`) は、現在 `onTrack` が出力している `ignored because closing=true` と同じ書式のログを出力してから `return` する方針に揃える。
+- `onTrack` は通知処理を行わないため、`closing` 判定ログは残さない。ログは状態把握に必要な `direction` / `currentDirection` / `sender.track` / `receiver.track` のみに絞る。`closing` 時の `return` は残す (`closing` 中のログ出力を抑止するため)。
 
 ## 完了条件
 
-- `onRemoveRemoteTrack` の発火経路が KDoc から読み取れること。
+- `onRemoveRemoteTrack` の発火経路 (onRemoveTrack と onRemoveStream) が KDoc から読み取れること。
 - `onAddTrack` の `firstOrNull()` 採用理由と `onAddTrack` の位置づけがコメントから読み取れること。
-- `closing` ガードのログ方針が揃っていること。
+- 通知を抑止する 3 コールバックが共通の `ignored because closing=true` ログを出力し、`onTrack` から `closing` 判定ログがなくなっていること。
 
 ## 変更対象ファイル
 
