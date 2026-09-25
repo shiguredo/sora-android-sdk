@@ -117,6 +117,9 @@ class DummyVideoCapturer : VideoCapturer {
         observer = null
     }
 
+    // startCapture() から stopCapture() または dispose() までをキャプチャ中とする。
+    override fun isCapturing(): Boolean = isRunning.get()
+
     override fun isScreencast(): Boolean = false
 
     private fun generateFrame() {
