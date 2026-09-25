@@ -42,6 +42,8 @@ proguard/
 
 # Log Files
 *.log
+# E2E の失敗調査で取得する logcat とテストレポート
+e2e-logs/
 
 # Android Studio
 /*/build/

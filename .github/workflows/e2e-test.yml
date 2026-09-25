@@ -2,6 +2,17 @@ name: E2E Test
 
 on:
   workflow_dispatch:
+    inputs:
+      # クラッシュは不定期にしか発生しないため、調査時は同じテストを繰り返し実行できるようにする。
+      repeat:
+        description: 'E2E テストの繰り返し回数'
+        required: false
+        default: '1'
+      # 調査対象のテストだけを実行したいときに指定する (例: jp.shiguredo.sora.sdk.SoraMessagingE2ETest)。
+      test_filter:
+        description: '実行するテストクラス (空なら全件)'
+        required: false
+        default: ''
   push:
     paths-ignore:
       - '*.md'
@@ -29,6 +40,9 @@ jobs:
       TEST_CHANNEL_ID_SUFFIX: _${{ github.run_id }}
       ANDROID_SDK_ROOT: /opt/android-sdk
       ADB_PATH: /opt/android-sdk/platform-tools/adb
+      # push では inputs が空になるため、既定値へフォールバックする。
+      E2E_REPEAT: ${{ github.event.inputs.repeat || '1' }}
+      E2E_TEST_FILTER: ${{ github.event.inputs.test_filter || '' }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,20 +74,83 @@ jobs:
         run: |
           set +e
 
-          cleanup() {
-            if [ -n "${LOGCAT_PID:-}" ]; then
-              kill "$LOGCAT_PID" || true
-              wait "$LOGCAT_PID" 2>/dev/null || true
-            fi
-            cat sora-e2e-logcat.txt || true
-          }
-          trap cleanup EXIT
+          LOG_DIR="e2e-logs"
+          LOGCAT_FILE="$LOG_DIR/logcat.txt"
+          ADB_DEVICES_FILE="$LOG_DIR/adb-devices.txt"
+          STOP_FILE="$LOG_DIR/stop-watchers"
+          rm -rf "$LOG_DIR"
+          mkdir -p "$LOG_DIR"
 
-          "$ADB_PATH" logcat -v time Sora*E2ETest:D *:S > sora-e2e-logcat.txt 2>&1 &
+          # デバイスの出現を待って logcat を取得し続ける。
+          # Gradle Managed Device / UTP はテスト実行中に adb サーバを再起動するため、
+          # 単発の adb logcat はデバイスに接続できないまま終了してしまう。
+          # そのためプロセスが終了したら再起動して取得を継続する。
+          # フィルタは指定せず全バッファを取得する。クラッシュのスタックは
+          # crash / main バッファの AndroidRuntime / DEBUG / libc に出る。
+          logcat_watcher() {
+            while [ ! -f "$STOP_FILE" ]; do
+              "$ADB_PATH" devices -l >> "$ADB_DEVICES_FILE" 2>&1
+              local serial
+              serial=$("$ADB_PATH" devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')
+              if [ -z "$serial" ]; then
+                echo "no device yet, retrying" >> "$ADB_DEVICES_FILE"
+                sleep 2
+                continue
+              fi
+              # リングバッファを広げて、クラッシュのスタックが上書きされるのを防ぐ。
+              "$ADB_PATH" -s "$serial" logcat -G 16M >> "$LOGCAT_FILE" 2>&1
+              echo "=== logcat start serial=$serial ===" >> "$LOGCAT_FILE"
+              "$ADB_PATH" -s "$serial" logcat -b all -v threadtime >> "$LOGCAT_FILE" 2>&1
+              echo "=== logcat exit serial=$serial ===" >> "$LOGCAT_FILE"
+              sleep 2
+            done
+          }
+          logcat_watcher &
           LOGCAT_PID=$!
 
-          ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
-          exit $?
+          result=0
+          iteration=1
+          while [ "$iteration" -le "${E2E_REPEAT}" ]; do
+            echo "=== E2E iteration ${iteration}/${E2E_REPEAT} ==="
+            if [ -n "${E2E_TEST_FILTER}" ]; then
+              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace \
+                -Pandroid.testInstrumentationRunnerArguments.class="${E2E_TEST_FILTER}" \
+                -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
+            else
+              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace \
+                -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
+            fi
+            result=$?
+            if [ "$result" -ne 0 ]; then
+              echo "=== E2E iteration ${iteration} failed with exit code ${result} ==="
+              break
+            fi
+            iteration=$((iteration + 1))
+          done
+
+          touch "$STOP_FILE"
+          kill "$LOGCAT_PID" 2>/dev/null || true
+          wait "$LOGCAT_PID" 2>/dev/null || true
+
+          # クラッシュのスタックをジョブログから直接読めるようにする。
+          echo "=== crash related logcat lines ==="
+          grep -a -E "FATAL EXCEPTION|AndroidRuntime|DEBUG|libc|Fatal signal|tombstone|backtrace|SIGSEGV|SIGABRT|SIGILL|lowmemorykiller|Process crashed" "$LOGCAT_FILE" | tail -300 || true
+          echo "=== tail of logcat ==="
+          tail -100 "$LOGCAT_FILE" || true
+
+          exit "$result"
+      - name: Upload E2E diagnostics
+        # 成功時も logcat の取得が機能しているかを確認できるようにする。
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-diagnostics
+          path: |
+            e2e-logs/
+            sora-android-sdk/build/reports/androidTests/
+            sora-android-sdk/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+          retention-days: 7
   slack_notify:
     needs: [e2e]
     runs-on: ubuntu-slim
