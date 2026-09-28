@@ -112,12 +112,14 @@ jobs:
           iteration=1
           while [ "$iteration" -le "${E2E_REPEAT}" ]; do
             echo "=== E2E iteration ${iteration}/${E2E_REPEAT} ==="
+            # 繰り返し実行では Gradle の UP-TO-DATE 判定により 2 回目以降に
+            # テストが実行されないため、--rerun-tasks を付けて実行し直す
             if [ -n "${E2E_TEST_FILTER}" ]; then
-              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace \
+              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace --rerun-tasks \
                 -Pandroid.testInstrumentationRunnerArguments.class="${E2E_TEST_FILTER}" \
                 -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
             else
-              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace \
+              ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace --rerun-tasks \
                 -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true
             fi
             result=$?
