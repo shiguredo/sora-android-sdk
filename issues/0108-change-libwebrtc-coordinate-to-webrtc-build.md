@@ -4,7 +4,7 @@
 - Created: 2026-09-28
 - Completed: {YYYY-MM-DD}
 - Branch: feature/change-libwebrtc-coordinate
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-28
 
 ## 目的
 
@@ -12,7 +12,7 @@ libwebrtc の AAR の配布元を `shiguredo/shiguredo-webrtc-android` の JitPa
 
 webrtc-build の `m155.8059.1.1` (2026-09-28 公開) で Release の成果物に `libwebrtc.aar` が直接追加され、 JitPack でも AAR が公開されるようになった (`jitpack.yml` と `scripts/prepare_aar.sh` は 2026-09-25 に追加)。これにより libwebrtc の更新ごとに AAR を `shiguredo-webrtc-android` へ転載する作業が不要になり、 更新の作業を webrtc-build に一本化できる。`shiguredo/shiguredo-webrtc-android` は移行完了後に archived にする予定である。
 
-webrtc-build 側の対応は [issues/0032-change-sora-android-sdk-libwebrtc-coordinate.md](https://github.com/shiguredo-webrtc-build/webrtc-build/blob/m155.8059.1.1/issues/0032-change-sora-android-sdk-libwebrtc-coordinate.md) で扱われており、 本 issue は Sora Android SDK 側の移行を担当する。
+webrtc-build リポジトリ側にも同じ移行を追跡する [issues/0032-change-sora-android-sdk-libwebrtc-coordinate.md](https://github.com/shiguredo-webrtc-build/webrtc-build/blob/m155.8059.1.1/issues/0032-change-sora-android-sdk-libwebrtc-coordinate.md) が存在する (同 issue の対象も Sora Android SDK 側の変更であり、 実装は本 issue が担当する)。
 
 ## 優先度根拠
 
@@ -45,17 +45,18 @@ webrtc-build 側の対応は [issues/0032-change-sora-android-sdk-libwebrtc-coor
   - `.github/workflows/e2e-test.yml` と `.github/workflows/deploy-api-docs.yml` は JDK 21 でもタスクは成功するが、 ワークフロー間で JDK を揃えるため 25 に更新する。
   - `jitpack.yml` も `openjdk25` に更新する。JitPack が `openjdk25` を解決できない場合は SDKMAN (`sdk install java 25-open`) での導入に切り替える。
 - 利用側アプリの R8 を有効にしたビルドを確認し、 新しい AAR の class file version による影響が利用者に及ぶ場合は `CHANGES.md` に記載する。
-- `README.md` の libwebrtc バッジ (`151.7922` / `branch-heads/7922`) と `skills/sora-android-sdk/SKILL.md` の依存ライブラリの記載を新しい座標とバージョンに合わせる。
+- `README.md` の libwebrtc バッジ (`151.7922` / `branch-heads/7922`) と `skills/sora-android-sdk/SKILL.md` の依存ライブラリの記載を新しい座標とバージョンに合わせる。`skills/sora-android-sdk/SKILL.md` のビルド・テストに関する記述には、 `./gradlew build` に JDK 25 が必要な旨を追記する。
 - `CHANGES.md` の `develop` に依存座標の変更、 libwebrtc の更新、 ビルドに JDK 25 が必要になる点を記載する。
 - issues/0101 が扱う libwebrtc の更新は、 本 issue の完了後に webrtc-build の座標でバージョンを上げる形にし、 `shiguredo-webrtc-android` への AAR の登録は行わない。
 
 ## 完了条件
 
-- `com.github.shiguredo-webrtc-build:webrtc-build:m155.8059.1.1` を参照して `./gradlew build` が成功すること。
+- `com.github.shiguredo-webrtc-build:webrtc-build:m155.8059.1.1` を参照して JDK 25 で `./gradlew build` が成功すること。
 - GitHub Actions の build が JDK 25 で成功すること。
 - E2E テスト (pixelApi35 の Gradle Managed Device) が成功すること。
 - connect メッセージの `libwebrtc` フィールドが先頭の `m` を含まない `Shiguredo-build M155 (155.8059.1.1 c4f21b1)` の形式で送信されること。
 - `./gradlew publishToMavenLocal` で生成される POM が新しい座標を参照し、 リリース時に JitPack で Sora Android SDK の AAR が公開できること。
+- 利用側アプリの R8 を有効にしたビルドを確認し、 新しい AAR の class file version による影響の有無と確認結果を記録していること (影響が利用者に及ぶ場合は `CHANGES.md` に記載すること)。
 - `README.md` と `skills/sora-android-sdk/SKILL.md` の記載が新しい座標とバージョンになっていること。
 - `CHANGES.md` に変更内容が記載されていること。
 
