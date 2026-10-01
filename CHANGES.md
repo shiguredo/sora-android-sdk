@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 151.7922.0.1 に上げる
+- [UPDATE] libwebrtc を 152.7977.0.4 に上げる
   - @zztkm
 - [UPDATE] libwebrtc を 151.7922.0.0 に上げる
   - 151.7922.0.0 では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できなくなったため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
