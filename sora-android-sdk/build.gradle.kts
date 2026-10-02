@@ -188,7 +188,6 @@ dependencies {
     implementation(libs.bundles.reactive)
 
     testImplementation(libs.bundles.testBase)
-    testImplementation(libs.asm)
     testImplementation(libs.robolectric) {
         exclude(group = "com.google.auto.service", module = "auto-service")
     }
