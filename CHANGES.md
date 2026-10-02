@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 153.8010.0.2 に上げる
+  - `classes.jar` が Java 25 class file を含むため、ビルドに JDK 25 以降が必要になる
+  - @zztkm
 - [UPDATE] libwebrtc を 152.7977.0.4 に上げる
   - @zztkm
 - [UPDATE] libwebrtc を 151.7922.0.0 に上げる
