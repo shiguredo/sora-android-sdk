@@ -11,11 +11,9 @@
 
 ## develop
 
-- [UPDATE] JDK のバージョンを 25 に上げる
-  - libwebrtc 153.8010.0.2 の Java API は `--release 25` でコンパイルされているため
-  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
-  - @zztkm
 - [UPDATE] libwebrtc を 153.8010.0.2 に上げる
+  - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 の Java API は `--release 25` でコンパイルされているため
+  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
   - @zztkm
 - [UPDATE] libwebrtc を 152.7977.0.4 に上げる
   - @zztkm
