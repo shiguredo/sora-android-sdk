@@ -11,8 +11,11 @@
 
 ## develop
 
+- [UPDATE] JDK のバージョンを 25 に上げる
+  - libwebrtc 153.8010.0.2 が使う WebRTC M153.8010@{#0} の `DEPS` は Chromium build と JDK を固定しており、その `compile_java.py` は `third_party/jdk/current/bin/javac` で `--release 25` を指定する
+  - 参照: <https://github.com/shiguredo-webrtc-build/webrtc-build/blob/m153.8010.0.2/VERSION#L1-L4>、<https://webrtc.googlesource.com/src/+/9ea5afcad008b940468c2a15aec339592cf5a935/DEPS#L76>、<https://webrtc.googlesource.com/src/+/9ea5afcad008b940468c2a15aec339592cf5a935/DEPS#L589>、<https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/util/build_utils.py#L41>、<https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
+  - @zztkm
 - [UPDATE] libwebrtc を 153.8010.0.2 に上げる
-  - `classes.jar` が Java 25 class file を含むため、ビルドに JDK 25 以降が必要になる
   - @zztkm
 - [UPDATE] libwebrtc を 152.7977.0.4 に上げる
   - @zztkm
