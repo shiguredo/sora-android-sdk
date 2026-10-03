@@ -17,12 +17,12 @@ description: 時雨堂の WebRTC SFU Sora 向け Android クライアント SDK 
 
 - Android 5 以降 (minSdk 21)。エミュレーターでの動作は保証しない
 - Android Studio 2025.3.1 以降
-- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` 153.8010.0.2 の `classes.jar` が Java 25 class file のため)
+- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` 154.8037.3.0 の `classes.jar` が Java 25 class file のため)
 - WebRTC SFU Sora 2025.2.0 以降
 
 ## 依存ライブラリ
 
-- `com.github.shiguredo:shiguredo-webrtc-android` (libwebrtc 153.8010.0.2) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
+- `com.github.shiguredo:shiguredo-webrtc-android` (libwebrtc 154.8037.3.0) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
 - Gson (シグナリング JSON)
 - OkHttp (WebSocket)
 - kotlinx.coroutines
