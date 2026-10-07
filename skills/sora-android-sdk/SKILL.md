@@ -266,6 +266,23 @@ H.264 / H.265 はハードウェアデコーダー / エンコーダー対応、
 - `SoraProxyOption`: `type` (`ProxyType`) / `agent` / `hostname` / `port` / `username` / `password`
 - `PeerConnectionOption.getStatsIntervalMSec`: 定期統計取得の間隔 (0 なら無効)
 
+### SoraLogger
+
+SDK と libwebrtc のログ出力を制御する。
+
+| プロパティ | 説明 |
+|---|---|
+| `SoraLogger.enabled` | SDK 自身のログを logcat に出力するかどうか (デフォルトは `false`) |
+| `SoraLogger.libwebrtcLogEnabled` | libwebrtc のネイティブログを logcat に出力するかどうか (デフォルトは `false`)。logcat のタグは `libjingle` |
+
+`SoraLogger.libwebrtcLogEnabled` は最初の `PeerConnectionFactory` の初期化時にのみ参照されるため、最初の接続前に指定する。
+
+#### 非推奨 API
+
+| 非推奨 | 代替 |
+|---|---|
+| `SoraLogger.libjingleEnabled` | `SoraLogger.libwebrtcLogEnabled` (将来のリリースで削除予定) |
+
 ## DataChannel メッセージング
 
 - connect 時に `dataChannels` でラベルを定義する。**label は `#` で始まる必要がある**
