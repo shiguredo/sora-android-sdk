@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-06-16
-- Completed:
+- Completed: 2026-10-07
 - Model: Opus 4.7
 - Branch: feature/change-rewrite-with-libwebrtc-c
 - Polished: 2026-06-16
@@ -357,6 +357,8 @@ No-Go 判定時:
 - `sora-android-sdk-samples` の対応 PR がマージ済み。
 
 ## 解決方法
+
+本リポジトリでは対応しないことにしたため、Phase 0 (PoC) は実施しない。
 
 ### Phase 0: PoC（本 issue の作業範囲）
 
