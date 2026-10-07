@@ -11,7 +11,29 @@ import android.util.Log
 class SoraLogger {
     companion object {
         var enabled = false
-        var libjingleEnabled = false
+
+        /**
+         * libwebrtc のネイティブログを logcat に出力するかどうか.
+         *
+         * `true` を指定すると libwebrtc の `Logging.enableLogToDebugOutput` が呼ばれ,
+         * `RTC_LOG` マクロの出力が logcat に出力されます.
+         * この値は最初の `PeerConnectionFactory` の初期化時にのみ参照されるため,
+         * 最初の接続前に指定してください.
+         */
+        var libwebrtcLogEnabled = false
+
+        /**
+         * [libwebrtcLogEnabled] の旧名です.
+         */
+        @Deprecated(
+            message = "libjingleEnabled は非推奨です。libwebrtcLogEnabled を利用してください。",
+            replaceWith = ReplaceWith("SoraLogger.libwebrtcLogEnabled"),
+        )
+        var libjingleEnabled: Boolean
+            get() = libwebrtcLogEnabled
+            set(value) {
+                libwebrtcLogEnabled = value
+            }
 
         fun v(
             tag: String?,
