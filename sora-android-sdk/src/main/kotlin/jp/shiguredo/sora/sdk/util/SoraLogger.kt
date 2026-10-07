@@ -15,9 +15,12 @@ class SoraLogger {
         /**
          * libwebrtc のネイティブログを logcat に出力するかどうか.
          *
-         * `true` を指定すると libwebrtc の `Logging.enableLogToDebugOutput` が呼ばれ,
-         * `RTC_LOG` マクロの出力が logcat に出力されます.
-         * この値は最初の `PeerConnectionFactory` の初期化時にのみ参照されるため,
+         * `true` を指定すると libwebrtc の `Logging.enableLogToDebugOutput` が呼ばれ、
+         * `RTC_LOG` マクロの出力が logcat (タグ `libjingle`) に出力されます.
+         * `SoraLogger.enabled` は SDK 自身のログを制御する別のスイッチです.
+         * デフォルト値は false です.
+         *
+         * この値は最初の `PeerConnectionFactory` の初期化時にのみ参照されるため、
          * 最初の接続前に指定してください.
          */
         var libwebrtcLogEnabled = false
@@ -26,8 +29,11 @@ class SoraLogger {
          * [libwebrtcLogEnabled] の旧名です.
          */
         @Deprecated(
-            message = "libjingleEnabled は非推奨です。libwebrtcLogEnabled を利用してください。",
+            message =
+                "libjingleEnabled は非推奨です。libwebrtcLogEnabled を利用してください。" +
+                    "このプロパティは将来のリリースで削除される予定です。",
             replaceWith = ReplaceWith("SoraLogger.libwebrtcLogEnabled"),
+            level = DeprecationLevel.WARNING,
         )
         var libjingleEnabled: Boolean
             get() = libwebrtcLogEnabled

@@ -14,6 +14,7 @@
 - [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名する
   - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
+  - 旧名は将来のリリースで削除する予定である
   - @voluntas
 - [UPDATE] libwebrtc を 154.8037.3.0 に上げる
   - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
