@@ -1,7 +1,7 @@
 # SoraLogger.libjingleEnabled を libwebrtcLogEnabled に改名し、旧名を非推奨にする
 
 - Created: 2026-10-07
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-07
 - Branch: feature/update-rename-libjingle-enabled
 - Polished: 2026-10-07
 
@@ -39,4 +39,8 @@
 
 ## 解決方法
 
-未着手
+- `SoraLogger` に `libwebrtcLogEnabled` を追加し、旧名 `libjingleEnabled` は `@Deprecated` と `ReplaceWith("SoraLogger.libwebrtcLogEnabled")` を付けたエイリアスとして、`libwebrtcLogEnabled` へ読み書きを転送するようにした。
+- `PeerChannelImpl.initializeIfNeeded` の参照を `libwebrtcLogEnabled` に変更した。
+- `SoraLoggerTest` を追加し、旧名と新名の読み書きが相互に転送されることを検証するようにした。
+- `./gradlew :sora-android-sdk:compileDebugKotlin :sora-android-sdk:ktlintCheck :sora-android-sdk:testDebugUnitTest --tests "jp.shiguredo.sora.sdk.util.SoraLoggerTest"` が成功することを確認した。
+- サンプル (`sora-android-sdk-samples`) は SDK のリリース版を参照しているため、新しい名前を含む SDK のリリース後に更新する。
