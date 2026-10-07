@@ -20,6 +20,10 @@ class SoraLoggerTest {
             SoraLogger.libjingleEnabled = true
             assertTrue(SoraLogger.libwebrtcLogEnabled)
 
+            // 新しい名前で true にすると旧名も true になる
+            SoraLogger.libwebrtcLogEnabled = true
+            assertTrue(SoraLogger.libjingleEnabled)
+
             // 新しい名前で false にすると旧名も false になる
             SoraLogger.libwebrtcLogEnabled = false
             assertFalse(SoraLogger.libjingleEnabled)

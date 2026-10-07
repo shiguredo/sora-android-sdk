@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名する
+- [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名し、旧名を非推奨にする
   - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
   - 旧名は将来のリリースで削除する予定である
