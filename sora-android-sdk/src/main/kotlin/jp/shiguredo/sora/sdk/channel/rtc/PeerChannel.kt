@@ -216,7 +216,7 @@ class PeerChannelImpl(
                         .setFieldTrials("")
                         .createInitializationOptions()
                 PeerConnectionFactory.initialize(options)
-                if (SoraLogger.libjingleEnabled) {
+                if (SoraLogger.libwebrtcLogEnabled) {
                     Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO)
                 }
                 isInitialized = true
