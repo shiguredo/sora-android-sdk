@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 156.8078.3.1 に上げる
+  - JitPack の依存座標を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
+  - @zztkm
 - [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名し、旧名を非推奨にする
   - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
