@@ -51,7 +51,7 @@ abstract class SoraE2ETestBase {
                 "suffix=${BuildConfig.TEST_CHANNEL_ID_SUFFIX.isNotEmpty()})",
         )
 
-        // shiguredo-webrtc-android の AAR は arm64-v8a のみ対応。
+        // libwebrtc の AAR は arm64-v8a のみ対応。
         // x86_64 エミュレータではネイティブライブラリが読み込めないためスキップする
         try {
             System.loadLibrary("jingle_peerconnection_so")
