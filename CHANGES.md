@@ -11,22 +11,20 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 156.8078.3.1 に上げる
+  - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
+  - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
+  - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
+  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
+  - libwebrtc 151 以降では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できないため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
+  - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
+  - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
+  - @zztkm
 - [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名し、旧名を非推奨にする
   - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
   - 旧名は将来のリリースで削除する予定である
   - @voluntas
-- [UPDATE] libwebrtc を 154.8037.3.0 に上げる
-  - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
-  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
-  - @zztkm
-- [UPDATE] libwebrtc を 152.7977.0.4 に上げる
-  - @zztkm
-- [UPDATE] libwebrtc を 151.7922.0.0 に上げる
-  - 151.7922.0.0 では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できなくなったため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
-  - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
-  - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
-  - @zztkm
 
 ## 2026.3.0
 
