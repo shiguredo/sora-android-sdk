@@ -12,8 +12,8 @@
 ## develop
 
 - [UPDATE] libwebrtc を 156.8078.3.1 に上げる
-  - JitPack の依存座標を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
-  - アプリで旧座標を直接指定している場合は、その依存を削除するか新座標に変更する。旧座標と新座標を併用すると `org.webrtc.*` のクラスが重複する
+  - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
+  - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
   - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
   - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
   - libwebrtc 151 以降では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できないため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
