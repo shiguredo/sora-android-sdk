@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を 156.8078.5.1 に上げる
+  - @t-miya
 - [UPDATE] libwebrtc を 156.8078.3.1 に上げる
   - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
   - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
@@ -25,6 +27,10 @@
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
   - 旧名は将来のリリースで削除する予定である
   - @voluntas
+- [FIX] 受信した映像を描画中に画面を回転させるとクラッシュすることがある問題を修正する
+  - libwebrtc 156.8078.5.1 にて対応
+    - テクスチャから I420 への変換が失敗する場合に SIGABRT が発生する問題を修正
+  - @t-miya
 
 ## 2026.3.0
 
