@@ -22,9 +22,11 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
 ) : VideoEncoderFactory {
     // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
-    // - スレッドをひとつ起動する
+    // - エンコーダー呼び出しを直列化する Executor を起動する
     // - initEncode の width/height と frame buffer のそれが一致しない場合は事前にスケールする
-    // - 内部のエンコーダーをつねにそのスレッド上で呼び出す
+    // - initEncode / encode / setRateAllocation / getScalingSettings / release は、現在の Executor の
+    //   スレッド上で呼び出す（release 後は、次の initEncode で新しい Executor を生成する）。
+    //   getImplementationName は生成時に一度取得し、Executor の生存に依存しないようキャッシュする。
     private class StreamEncoderWrapper(
         private val encoder: VideoEncoder,
     ) : VideoEncoder {
@@ -46,16 +48,17 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         // Executor は initEncode() 時に再生成できるように nullable にしている。
         private var executor: ExecutorService? = Executors.newSingleThreadExecutor()
 
-        // getImplementationName() は Executor 停止後にも呼ばれるため、生成時にキャッシュする。
+        // VideoEncoder の契約では getImplementationName() は任意のスレッドから呼ばれ得るため、
+        // Executor の生存に依存しないよう、生成時に取得して保持する。
         private val implementationName: String =
             try {
                 encoder.implementationName
             } catch (e: Exception) {
-                SoraLogger.w(TAG, "getImplementationName failed: ${e.message}")
+                SoraLogger.w(TAG, "getImplementationName failed", e)
                 ""
             }
 
-        var streamSettings: VideoEncoder.Settings? = null
+        private var streamSettings: VideoEncoder.Settings? = null
 
         // 現在の Executor を返す。停止済みまたは未生成の場合は null を返す。
         private fun liveExecutor(): ExecutorService? =
@@ -73,6 +76,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         // Executor 上でタスクを実行し、完了するまで待つ。
         // interrupt された場合もタスクの完了を待ち、呼び出し元へ戻る直前に interrupt を復元する。
         // タスクの完了前に戻ると、VideoFrame の解放後にタスクがフレームへ触れるため、待機は必須である。
+        // そのためタイムアウトは設けず、タスクが完了するまで待ち続ける。
         private fun <T> submitAndAwait(
             executor: ExecutorService,
             operation: String,
@@ -143,6 +147,9 @@ internal class SimulcastVideoEncoderFactoryWrapper(
         }
 
         override fun release(): VideoCodecStatus {
+            // libwebrtc は release() と initEncode() を encoder queue 上で直列に呼ぶため、
+            // 先に executor を null にしても、旧 Executor 上の release と新 Executor 上の
+            // initEncode が並行して実行されることはない。
             val currentExecutor =
                 synchronized(this) {
                     val current = executor
