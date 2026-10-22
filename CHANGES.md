@@ -29,6 +29,16 @@
   - libwebrtc 156.8078.5.1 へのバージョンアップにて対応
     - テクスチャから I420 への変換が失敗する場合に SIGABRT が発生する問題を修正
   - @t-miya
+- [FIX] simulcast 有効時の画面回転で SIGABRT する問題を修正する
+  - `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の `release()` 後に `initEncode()` が呼ばれても Executor を再生成する
+  - @zztkm
+
+### misc
+
+- [ADD] simulcast のエンコーダー再構成を検証する e2e テストを追加する
+  - 解像度変更を複数回行い、r0 / r1 の送信継続と `frameWidth` / `frameHeight` の変化を検証する
+  - HW VP9 エンコーダーが使える実機では VP9 / HW、CI の SW エミュレータでは MediaCodec のソフトウェア VP8 エンコーダーで実行する（SW エンコーダーが無い環境ではテストを失敗させる）
+  - @zztkm
 
 ## 2026.3.0
 
