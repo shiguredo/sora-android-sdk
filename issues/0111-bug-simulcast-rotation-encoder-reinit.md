@@ -1,7 +1,7 @@
 # simulcast 回転時に StreamEncoderWrapper の initEncode が SIGABRT する
 
 - Created: 2026-10-22
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-22
 - Branch: feature/fix-simulcast-rotation-encoder-reinit
 - Polished: 2026-10-22
 
@@ -93,4 +93,10 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 
 ## 解決方法
 
-未着手
+- `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の Executor を nullable にし、`release()` で shutdown した後に `initEncode()` が呼ばれた場合は新しい Executor を生成するようにした。
+- `release()` は Executor が null または停止済みなら `VideoCodecStatus.OK` を返して冪等にした。
+- submit/get の `RejectedExecutionException` などの `Exception` を catch し、`VideoCodecStatus.ERROR` などのエラーとして返すようにした。`InterruptedException` はタスクの完了を待ってから interrupt を復元するようにした。
+- `getScalingSettings()` は Executor 停止後や例外時に `VideoEncoder.ScalingSettings.OFF` を返し、`getImplementationName()` は生成時に取得した文字列を返すようにした。
+- `SoraSimulcastReconfigureE2ETest` を追加し、VP9 と HW エンコーダーを明示した上で、解像度変更を複数回行い、rid ごとの `bytesSent` / `framesEncoded` と `frameWidth` / `frameHeight` の変化を確認するようにした。
+- `DummyVideoCapturer` の width / height / fps を 1 つの不変オブジェクトにまとめ、`@Volatile` で可視性を保証するようにした。
+- `CHANGES.md` の `## develop` に `[FIX]` エントリを追加した。
