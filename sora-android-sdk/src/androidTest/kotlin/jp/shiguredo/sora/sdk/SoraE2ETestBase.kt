@@ -68,10 +68,10 @@ abstract class SoraE2ETestBase {
     @After
     fun tearDown() {
         Log.d(tag, "tearDown: 開始")
-        // 解放順序: capturer の stop → dispose → channel disconnect
-        // channel.disconnect() 内部で SurfaceTextureHelper.dispose() が呼ばれるため、
-        // handler.removeCallbacks を行う capturer.dispose() を先に実行する
-        capturer?.stopCapture()
+        // 解放順序: capturer の dispose → channel disconnect
+        // capturer.dispose() はキャプチャ中なら stopCapture() を呼んで停止通知と
+        // handler.removeCallbacks を行う。channel.disconnect() 内部で
+        // SurfaceTextureHelper.dispose() が呼ばれるため、capturer を先に dispose する。
         capturer?.dispose()
         capturer = null
         // disconnect() が二重呼び出しされても安全（内部で AtomicBoolean によりガードされる）

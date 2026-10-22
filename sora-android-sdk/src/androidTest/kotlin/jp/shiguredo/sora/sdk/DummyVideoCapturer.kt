@@ -40,13 +40,18 @@ class DummyVideoCapturer : VideoCapturer {
 
     private val isRunning = AtomicBoolean(false)
 
-    private data class CaptureFormat(
+    private class CaptureFormat(
         val width: Int,
         val height: Int,
         val fps: Int,
     )
 
+    // dispose() はテストスレッドから呼ばれるため、generateFrame() を実行する handler スレッドと
+    // 可視性を保証する。
+    @Volatile
     private var handler: Handler? = null
+
+    @Volatile
     private var observer: CapturerObserver? = null
 
     // changeCaptureFormat() はテストスレッド、generateFrame() は handler スレッドから参照するため、
@@ -86,9 +91,16 @@ class DummyVideoCapturer : VideoCapturer {
         height: Int,
         fps: Int,
     ) {
+        if (isDisposed.get()) {
+            Log.w(TAG, "startCapture: dispose 済みのため開始しません")
+            return
+        }
+        if (!isRunning.compareAndSet(false, true)) {
+            Log.w(TAG, "startCapture: すでにキャプチャ中のためスキップします")
+            return
+        }
         format = CaptureFormat(width, height, fps)
         this.frameIndex.set(0)
-        isRunning.set(true)
         val delayMs = 1000L / format.fps.coerceAtLeast(1)
         Log.d(TAG, "startCapture: ${width}x$height@${fps}fps handler=${handler != null} delayMs=$delayMs")
         handler?.postDelayed(generateFrameRunnable, delayMs)
@@ -96,8 +108,13 @@ class DummyVideoCapturer : VideoCapturer {
     }
 
     override fun stopCapture() {
+        // キャプチャ中でない場合は onCapturerStopped() を送らない。
+        // 二重 stop のケースを区別する。
+        if (!isRunning.getAndSet(false)) {
+            Log.d(TAG, "stopCapture: キャプチャ中ではないためスキップします")
+            return
+        }
         Log.d(TAG, "stopCapture")
-        isRunning.set(false)
         handler?.removeCallbacks(generateFrameRunnable)
         observer?.onCapturerStopped()
     }
@@ -117,8 +134,8 @@ class DummyVideoCapturer : VideoCapturer {
             return
         }
         Log.d(TAG, "dispose: 解放開始 frameIndex=${frameIndex.get()}")
-        isRunning.set(false)
-        handler?.removeCallbacks(generateFrameRunnable)
+        // キャプチャ中なら stopCapture() が停止通知と removeCallbacks を行う。
+        stopCapture()
         handler = null
         observer = null
     }
@@ -174,11 +191,14 @@ class DummyVideoCapturer : VideoCapturer {
 
         val timestampNs = System.nanoTime()
         val videoFrame = VideoFrame(buffer, 0, timestampNs)
-        observer?.onFrameCaptured(videoFrame)
-        // VideoFrame がバッファの所有権を持つ前提の API のため、
-        // onFrameCaptured() の後は必ず release() で参照を解放する。
-        // VideoSource 側で必要な場合は内部で retain() される
-        videoFrame.release()
+        try {
+            observer?.onFrameCaptured(videoFrame)
+        } finally {
+            // VideoFrame がバッファの所有権を持つ前提の API のため、
+            // onFrameCaptured() の後は必ず release() で参照を解放する。
+            // VideoSource 側で必要な場合は内部で retain() される。
+            videoFrame.release()
+        }
 
         if (frameIndex.get() % 10 == 0L) {
             Log.d(TAG, "generateFrame: frameIndex=${frameIndex.get()} ${w}x$h sent")
