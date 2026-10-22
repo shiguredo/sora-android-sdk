@@ -106,4 +106,5 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 ## 検証結果
 
 - Pixel 7a（HW VP9 エンコーダー搭載）で simulcast 有効の映像配信を行い、配信中に端末を回転させても SIGABRT などのエラーが発生しないことを確認した（2026-10-22）。
+- GitHub Actions の E2E テストが成功した（<https://github.com/shiguredo/sora-android-sdk/actions/runs/39768034954>、2026-10-22）。CI の `pixelApi35` は SW エミュレータのため `SoraSimulcastReconfigureE2ETest` は `assumeTrue` でスキップされ、10 テスト中 1 件 skip・失敗 0 件であった。
 - `SoraSimulcastReconfigureE2ETest` の実機実行は未実施である。回転後の `bytesSent` / `framesEncoded` と `frameWidth` / `frameHeight` の変化は、実機で E2E テストを実行して確認する必要がある。
