@@ -29,6 +29,9 @@
   - libwebrtc 156.8078.5.1 へのバージョンアップにて対応
     - テクスチャから I420 への変換が失敗する場合に SIGABRT が発生する問題を修正
   - @t-miya
+- [FIX] simulcast 有効時の画面回転で SIGABRT する問題を修正する
+  - `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の `release()` 後に `initEncode()` が呼ばれても Executor を再生成する
+  - @zztkm
 
 ## 2026.3.0
 
