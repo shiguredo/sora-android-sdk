@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を 156.8078.3.1 に上げる
+- [UPDATE] libwebrtc を 156.8078.5.1 に上げる
   - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
   - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
   - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
@@ -19,12 +19,16 @@
   - libwebrtc 151 以降では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できないため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
   - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
   - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
-  - @zztkm
+  - @zztkm @t-miya
 - [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名し、旧名を非推奨にする
   - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
   - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
   - 旧名は将来のリリースで削除する予定である
   - @voluntas
+- [FIX] 受信した映像を描画中に画面を回転させるとクラッシュすることがある問題を修正する
+  - libwebrtc 156.8078.5.1 へのバージョンアップにて対応
+    - テクスチャから I420 への変換が失敗する場合に SIGABRT が発生する問題を修正
+  - @t-miya
 
 ## 2026.3.0
 
