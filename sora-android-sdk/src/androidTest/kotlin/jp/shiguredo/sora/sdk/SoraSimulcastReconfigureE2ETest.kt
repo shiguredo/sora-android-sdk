@@ -36,8 +36,9 @@ class SoraSimulcastReconfigureE2ETest : SoraE2ETestBase() {
         val encoderImplementation: String?,
     )
 
+    // DEX 040 未満ではメソッド名に空白を使えないため、テスト名には空白を入れない。
     @Test
-    fun `simulcast の再構成後も映像送信が継続すること`(): Unit =
+    fun `simulcastの再構成後も映像送信が継続すること`(): Unit =
         runBlocking {
             Log.d(TAG, "=== テスト開始: simulcast の再構成 ===")
 
