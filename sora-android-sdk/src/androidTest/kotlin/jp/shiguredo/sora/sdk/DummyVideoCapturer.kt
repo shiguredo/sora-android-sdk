@@ -42,8 +42,14 @@ class DummyVideoCapturer : VideoCapturer {
 
     private var handler: Handler? = null
     private var observer: CapturerObserver? = null
+
+    @Volatile
     private var width: Int = 0
+
+    @Volatile
     private var height: Int = 0
+
+    @Volatile
     private var fps: Int = 0
     private val frameIndex = AtomicLong(0)
     val currentFrameIndex: Long get() = frameIndex.get()
