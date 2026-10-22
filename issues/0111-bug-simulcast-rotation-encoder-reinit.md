@@ -1,7 +1,7 @@
 # simulcast 回転時に StreamEncoderWrapper の initEncode が SIGABRT する
 
 - Created: 2026-10-22
-- Completed:
+- Completed: 2026-10-22
 - Branch: feature/fix-simulcast-rotation-encoder-reinit
 - Polished: 2026-10-22
 
@@ -108,15 +108,16 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 - `SoraSimulcastReconfigureE2ETest` を追加し、HW VP9 が使える実機では VP9 / HW、使えない環境では `primaryFactoryOverride` に `SoftwareMediaCodecVideoEncoderFactoryForTest` を渡して VP8 / SW で実行するようにした。Sora の offer の simulcast を確認し、encodings の rid を記録した上で、交渉コーデックを stats から確認する。解像度変更を複数回行い、下位 2 レイヤー（r0 / r1）の `bytesSent` / `framesEncoded` の増加と `frameWidth` / `frameHeight` の変化（増減方向を含む）を確認する。Sora が simulcast を提供しない環境では、HW モードは `assumeTrue` でスキップし、SW モードではテストを失敗させる。SW エンコーダーが見つからない場合は、CI で実行されたことを保証するためテストを失敗させる。
 - `DummyVideoCapturer` の width / height / fps を 1 つの不変オブジェクトにまとめ、`@Volatile` で可視性を保証するようにした。
 - `CHANGES.md` の `## develop` に `[FIX]` エントリと、e2e テスト追加の `### misc` エントリを追加した。
-- 実機での手動確認は Pixel 7a で実施済みである（`## 検証結果` を参照）。`SoraSimulcastReconfigureE2ETest` の実機実行は未実施である。CI の SW エミュレータでは SW エンコーダーが利用できる場合に本テストを実行する（SW エンコーダーが無い場合はテストを失敗させる）。CI での実行結果は未確認のため、push 後の CI で skip されずに成功することを確認する必要がある。
+- 実機での手動確認は Pixel 7a で実施済みである（`## 検証結果` を参照）。CI の SW エミュレータでは SW エンコーダーが利用できる場合に本テストを実行し、skip されずに成功することを確認した（`## 検証結果` を参照）。HW 実機での E2E 実行は未実施である。
 
 ## 検証結果
 
 - Pixel 7a（HW VP9 エンコーダー搭載）で simulcast 有効の映像配信を行い、配信中に端末を回転させても SIGABRT などのエラーが発生しないことを確認した（2026-10-22）。
 - GitHub Actions の E2E テストが成功した（<https://github.com/shiguredo/sora-android-sdk/actions/runs/39768034954>、2026-10-22）。この時点では SW モード対応前のため `SoraSimulcastReconfigureE2ETest` は `assumeTrue` でスキップされ、1 件 skip・失敗 0 件であった。
-- SW モード対応後は CI の SW エミュレータでも `SoraSimulcastReconfigureE2ETest` が実行される（SW エンコーダーが無い場合はテストを失敗させる）。次回 push 後の CI で skip されずに成功することを確認し、結果をここに追記する。
+- CI の E2E テスト（`pixelApi35AndroidE2ETest`）が成功した（<https://github.com/shiguredo/sora-android-sdk/actions/runs/39787566895>、job: <https://github.com/shiguredo/sora-android-sdk/actions/runs/39787566895/job/119854640507>、2026-10-22）。9 テストすべてが実行され、skip 0 件・失敗 0 件であった。
+- CI のログで `SoraSimulcastReconfigureE2ETest` が SW モード（`c2.android.vp8.encoder`）で実行され、1024x768 → 640x480 → 1024x768 の再構成で r0 / r1 の `framesEncoded` と `bytesSent` が増加し、`frameWidth` / `frameHeight` が期待する方向に変化したことを確認した。
 - `SoraSimulcastReconfigureE2ETest` の HW 実機での実行は未実施である。回転後の `bytesSent` / `framesEncoded` と `frameWidth` / `frameHeight` の変化は、HW VP9 実機で E2E テストを実行して確認する必要がある。
 
 ## reopened 理由
 
-SW モード対応後の CI（`pixelApi35AndroidE2ETest`）で `SoraSimulcastReconfigureE2ETest` が skip されずに成功することを確認できていないため reopened にした。完了条件の「CI（SW エミュレータ）と HW VP9 実機の両方で実行可能」を CI の実行結果で満たしたことを確認した後に closed にする。HW 実機での E2E 実行も未実施である。
+SW モード対応後の CI（`pixelApi35AndroidE2ETest`）で `SoraSimulcastReconfigureE2ETest` が skip されずに成功することを確認できていなかったため reopened にした。その後 CI で skip されずに成功することを確認したため closed にした。HW 実機での E2E 実行は未実施である。
