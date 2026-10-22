@@ -35,10 +35,12 @@ jobs:
           cache: 'gradle'
       - name: Copy gradle.properties
         run: cp gradle.properties.example gradle.properties
-      - name: Build with Gradle
-        run: ./gradlew build
       - name: Lint Check
         run: ./gradlew ktlintCheck
+      - name: Build with Gradle
+        run: ./gradlew build
+      - name: Compile androidTest
+        run: ./gradlew :sora-android-sdk:assembleDebugAndroidTest
 
   slack_notify:
     needs: [build]
