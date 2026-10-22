@@ -108,6 +108,7 @@ class DummyVideoCapturer : VideoCapturer {
         fps: Int,
     ) {
         format = CaptureFormat(width, height, fps)
+        Log.d(TAG, "changeCaptureFormat: ${width}x$height@${fps}fps に変更")
     }
 
     override fun dispose() {
