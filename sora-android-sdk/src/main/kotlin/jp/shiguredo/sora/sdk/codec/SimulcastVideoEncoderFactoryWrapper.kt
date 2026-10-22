@@ -20,6 +20,13 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
+    // テスト専用の差し替え口。
+    // HW エンコーダーが使えない環境（エミュレータなど）でも StreamEncoderWrapper を
+    // 通る再構成経路を検証できるよう、primary のエンコーダーファクトリーを差し替える。
+    // 指定しない場合は従来どおり HW エンコーダーを使う。
+    // 指定した場合は sharedContext / enableIntelVp8Encoder / enableH264HighProfile を使用せず、
+    // resolutionAdjustment は NONE でなければならない。
+    primaryFactoryOverride: VideoEncoderFactory? = null,
 ) : VideoEncoderFactory {
     // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
     // - エンコーダー呼び出しを直列化する Executor を起動する
@@ -156,9 +163,6 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                     executor = null
                     current
                 } ?: return VideoCodecStatus.OK
-            if (currentExecutor.isShutdown) {
-                return VideoCodecStatus.OK
-            }
             return try {
                 submitAndAwait(
                     currentExecutor,
@@ -169,6 +173,14 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 }
             } finally {
                 currentExecutor.shutdown()
+                // 次に initEncode() が呼ばれるまでは古い設定を参照しないようにする。
+                // 直列実行の前提が崩れて新しい initEncode() が先に完了した場合に備え、
+                // Executor が再生成されている場合は設定を消さない。
+                synchronized(this) {
+                    if (executor == null) {
+                        streamSettings = null
+                    }
+                }
             }
         }
 
@@ -258,22 +270,33 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     private val native: SimulcastVideoEncoderFactory
 
     init {
-        val hardwareVideoEncoderFactory =
-            HardwareVideoEncoderFactory(
-                sharedContext,
-                enableIntelVp8Encoder,
-                enableH264HighProfile,
-            )
+        // primaryFactoryOverride はテスト専用のため、resolutionAdjustment と同時に指定された場合は
+        // 暗黙に無視せず、呼び出し側の誤りとして検出する。
+        require(
+            primaryFactoryOverride == null ||
+                resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE,
+        ) {
+            "primaryFactoryOverride を指定する場合は resolutionAdjustment に NONE を指定してください"
+        }
 
         val encoderFactory =
-            if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
-                hardwareVideoEncoderFactory
-            } else {
-                HardwareVideoEncoderWrapperFactory(
-                    hardwareVideoEncoderFactory,
-                    resolutionAdjustment.value,
-                )
-            }
+            primaryFactoryOverride
+                ?: run {
+                    val hardwareVideoEncoderFactory =
+                        HardwareVideoEncoderFactory(
+                            sharedContext,
+                            enableIntelVp8Encoder,
+                            enableH264HighProfile,
+                        )
+                    if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+                        hardwareVideoEncoderFactory
+                    } else {
+                        HardwareVideoEncoderWrapperFactory(
+                            hardwareVideoEncoderFactory,
+                            resolutionAdjustment.value,
+                        )
+                    }
+                }
 
         primary = StreamEncoderWrapperFactory(encoderFactory)
         fallback = SoftwareVideoEncoderFactory()
