@@ -3,7 +3,7 @@
 - Created: 2026-10-22
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-simulcast-rotation-encoder-reinit
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-10-22
 
 ## 目的
 
@@ -11,12 +11,14 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 
 ## 現状
 
+- 再現環境: Sora Android SDK 2026.4.0-canary.6（libwebrtc 156.8078.5.1）、Pixel 7 / Android 17 (API 37)、Sora 2026.1.3、VP9 simulcast (r0/r1/r2)、HW encoder `c2.exynos.vp9.encoder`、`softwareVideoEncoderOnly=false`。
+- 再現アプリ: quickstart `feature/2026.4` (2418f17) の `MainActivity` に `enableSimulcast()` を追加したもの。
 - `StreamEncoderWrapper` は単一スレッドの `ExecutorService` を持ち、`release()` の `finally` で `executor.shutdown()` を呼ぶ。この shutdown は issue 0008 で Executor のスレッドリーク対策として追加されたもの。
-- libwebrtc の `SimulcastEncoderAdapter::InitEncode` は、再構成時に `Release()` を呼んだ後、同じエンコーダーへ `InitEncode()` を呼ぶ。`VideoEncoder.release()` は終端ではなく、再初期化される前提になっている。
-- 画面回転で simulcast のレイヤー数が 3 から 1 に変わると、`release()` → `initEncode()` の順に呼ばれ、shutdown 済み Executor への `submit()` が `RejectedExecutionException` を投げる。
+- libwebrtc の `SimulcastEncoderAdapter::InitEncode` は、呼び出しの先頭で `Release()` を呼んだ後、同じエンコーダーへ `InitEncode()` を呼ぶ。そのため `StreamEncoderWrapper.release()` は終端として扱えず、再初期化に耐える必要がある。
+- 画面回転でフレームサイズが変わると `VideoStreamEncoder` が再構成し、`SimulcastEncoderAdapter::InitEncode` が呼ばれる。`InitEncode` は先頭で `Release()` を呼んで既存のエンコーダーを解放した後、同じ `StreamEncoderWrapper` に `InitEncode()` を呼ぶ。そのため shutdown 済み Executor への `submit()` が `RejectedExecutionException` を投げる。3 → 1 のレイヤー数縮小は再構成に付随する現象で、release の原因ではない。
 - その Java 例外が JNI を越え、libwebrtc の `HandleException`（`sdk/android/src/jni/jvm.cc`）が `RTC_CHECK(false)` で abort する。クラッシュスレッドは `VideoEncoderQue`。
 - 2026.4.0-canary.6 の CHANGES にある回転時クラッシュ修正は、受信映像の texture → I420 変換失敗による SIGABRT であり、本件は送信側 simulcast エンコーダーの別経路。受信トラックがない状態でも再現する。
-- 初回接続時も 3 → 1 の縮小は発生するが、`release()` 前なので成功する。
+- 初回接続時も 3 → 1 の縮小は発生するが、その時点では `SimulcastEncoderAdapter` の `stream_contexts_` が空のため `Release()` は no-op で、成功する。
 
 ### 再現ログ
 
@@ -52,22 +54,41 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 
 - `StreamEncoderWrapper` の Executor を `initEncode()` 時に再生成可能にする。`release()` 後に `initEncode()` が呼ばれたら、新しい Executor を作る。
 - `release()` は現在の Executor を shutdown してよいが、`StreamEncoderWrapper` 自体は再利用可能にする。`release()` は冪等にする。
-- `initEncode()` / `encode()` / `setRateAllocation()` / `getScalingSettings()` / `getImplementationName()` で Executor の submit/get の例外を catch し、`VideoCodecStatus.ERROR` などのエラーを返す。Java 例外を JNI に漏らさない。
+- `initEncode()` / `encode()` / `setRateAllocation()` / `release()` は Executor の submit/get の `Exception` を catch して `VideoCodecStatus.ERROR` を返す。`release()` は `executor` が null または停止済みなら submit せず `VideoCodecStatus.OK` を返して冪等にし、submit も try の内側に置く。`getScalingSettings()` は例外時に `VideoEncoder.ScalingSettings.OFF`、`getImplementationName()` はコンストラクタで取得した文字列を返す。Java 例外を JNI に漏らさない。`OutOfMemoryError` などの `Error` は対象外とする。
 - issue 0008 の Executor shutdown 修正（スレッドリーク対策）を維持しつつ、release 後の再初期化を許容する。
-- `release()` → `initEncode()` の回帰テストと、simulcast + 画面回転の E2E を追加する。
+- 回帰テストの方針は `## テスト戦略` に従う。
+
+## テスト戦略
+
+- `SoraE2ETestBase` を継承した instrumentation test を `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraSimulcastReconfigureE2ETest.kt` に追加する。
+- `DummyVideoCapturer` と `enableVideoUpstream(capturer, null)`、`enableSimulcast()` を使い、`softwareVideoEncoderOnly=false` で Sora に接続する。
+- SDK はユーザー提供 capturer の `startCapture()` を呼ばないため、テスト側で `DummyVideoCapturer.startCapture(640, 480, 30)` を呼ぶ。
+- `softwareVideoEncoderOnly=false` だけでは `StreamEncoderWrapper` が生成されない。`HardwareVideoEncoderFactory.createEncoder()` が非 null を返す HW VP9 実機（Pixel 7 など）で実行し、SW エンコーダーのエミュレータでは `assumeTrue` でスキップする。
+- `softwareVideoEncoderOnly=true` だと `SIMULCAST_SOFTWARE` 経路になり、本件の `SimulcastVideoEncoderFactoryWrapper` を通らない。新テストでは `false` にする。
+- 接続後に `DummyVideoCapturer.changeCaptureFormat()` で解像度を変更し、`VideoStreamEncoder` の再構成を発生させる。
+- 解像度は 640x480 から 320x240 のように明確に異なる値へ変更し、`RequiresEncoderReset` が true になるようにする。
+- `DummyVideoCapturer` の `width` / `height` / `fps` は `@Volatile` ではないため、`changeCaptureFormat()` の変更が生成スレッドに反映されるように `@Volatile` 化するか handler へ post する。
+- 再構成後に `outbound-rtp` の `bytesSent` / `framesEncoded` が増加していることを確認する。
+- `changeCaptureFormat()` を複数回実行し、繰り返しの再構成でも SIGABRT しないことを確認する。
+- `changeCaptureFormat()` 後の再構成で `release()` → `initEncode()` が発生しても SIGABRT せず、接続が維持されることを確認する。
+- 実機の画面回転は手動確認とし、E2E では回転時に発生するエンコーダー再構成を解像度変更で再現する。
 
 ## 完了条件
 
 - simulcast 有効時に画面を回転させても SIGABRT しない。
-- `release()` 後の `initEncode()` が成功する、またはエラーを返してプロセスを落とさない。
+- `release()` 後の `initEncode()` が成功し、回転後も simulcast 映像の送信が継続すること。
+- Executor の再生成に失敗した場合でも、`RejectedExecutionException` などの `Exception` を JNI に漏らさず `VideoCodecStatus.ERROR` などのエラーとして扱い、プロセスを落とさないこと。`OutOfMemoryError` などの `Error` は対象外とする。
+- `getScalingSettings()` / `getImplementationName()` が Executor 停止後も例外を投げないこと。
 - `RejectedExecutionException` が JNI を越えない。
-- 回帰テストが追加されている。
+- 回帰テストが追加され、HW VP9 実機で実行されること（CI の SW エミュレータでは skip されるため、実機での実行を回帰確認とする）。
 - issue 0008 の Executor スレッドリーク対策が維持されていること。
-- `CHANGES.md` の `## develop` に `[FIX]` エントリが追加されている。
+- `CHANGES.md` の `## develop` に `[FIX]` エントリと `- @<担当者名>` 行が追加されている。
 
 ## 変更対象ファイル
 
 - `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/codec/SimulcastVideoEncoderFactoryWrapper.kt`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/DummyVideoCapturer.kt`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraSimulcastReconfigureE2ETest.kt`（新規）
 - `CHANGES.md`
 
 ## 解決方法
