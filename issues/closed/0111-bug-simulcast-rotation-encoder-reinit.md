@@ -62,13 +62,13 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 
 - `SoraE2ETestBase` を継承した instrumentation test を `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraSimulcastReconfigureE2ETest.kt` に追加する。
 - `DummyVideoCapturer` と `enableVideoUpstream(capturer, null)`、`enableSimulcast()` を使い、`softwareVideoEncoderOnly=false` で Sora に接続する。
-- SDK はユーザー提供 capturer の `startCapture()` を呼ばないため、テスト側で `DummyVideoCapturer.startCapture(640, 480, 30)` を呼ぶ。
-- `softwareVideoEncoderOnly=false` だけでは `StreamEncoderWrapper` が生成されない。`HardwareVideoEncoderFactory.createEncoder()` が非 null を返す HW VP9 実機（Pixel 7 など）で実行し、SW エンコーダーのエミュレータでは `assumeTrue` でスキップする。
+- SDK はユーザー提供 capturer の `startCapture()` を呼ばないため、テスト側で `DummyVideoCapturer.startCapture(1280, 720, 15)` を呼ぶ。
+- `softwareVideoEncoderOnly=false` だけでは HW エンコーダーが使われる保証がない。`HardwareVideoEncoderFactory.createEncoder()` が非 null を返す HW VP9 実機（Pixel 7 など）で実行し、SW エンコーダーのエミュレータでは `assumeTrue` でスキップする。
 - `softwareVideoEncoderOnly=true` だと `SIMULCAST_SOFTWARE` 経路になり、本件の `SimulcastVideoEncoderFactoryWrapper` を通らない。新テストでは `false` にする。
 - 接続後に `DummyVideoCapturer.changeCaptureFormat()` で解像度を変更し、`VideoStreamEncoder` の再構成を発生させる。
-- 解像度は 640x480 から 320x240 のように明確に異なる値へ変更し、`RequiresEncoderReset` が true になるようにする。
-- `DummyVideoCapturer` の `width` / `height` / `fps` は `@Volatile` ではないため、`changeCaptureFormat()` の変更が生成スレッドに反映されるように `@Volatile` 化するか handler へ post する。
-- 再構成後に `outbound-rtp` の `bytesSent` / `framesEncoded` が増加していることを確認する。
+- 解像度は 1280x720 から 960x540、960x540 から 1280x720 のように、3 レイヤーを維持したまま明確に異なる値へ変更し、`RequiresEncoderReset` が true になるようにする。レイヤー数が減る解像度は HW エンコーダーの最小サイズを下回る可能性があるため使わない。
+- `DummyVideoCapturer` の `width` / `height` / `fps` を 1 つの不変オブジェクトにまとめ、`@Volatile` な参照として保持し、`changeCaptureFormat()` の変更が生成スレッドに反映されるようにする。
+- 再構成後に `outbound-rtp` の `bytesSent` / `framesEncoded` が増加し、`frameWidth` / `frameHeight` が解像度変更の方向に変化していることを確認する。
 - `changeCaptureFormat()` を複数回実行し、繰り返しの再構成でも SIGABRT しないことを確認する。
 - `changeCaptureFormat()` 後の再構成で `release()` → `initEncode()` が発生しても SIGABRT せず、接続が維持されることを確認する。
 - 実機の画面回転は手動確認とし、E2E では回転時に発生するエンコーダー再構成を解像度変更で再現する。
@@ -80,7 +80,7 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 - Executor の再生成に失敗した場合でも、`RejectedExecutionException` などの `Exception` を JNI に漏らさず `VideoCodecStatus.ERROR` などのエラーとして扱い、プロセスを落とさないこと。`OutOfMemoryError` などの `Error` は対象外とする。
 - `getScalingSettings()` / `getImplementationName()` が Executor 停止後も例外を投げないこと。
 - `RejectedExecutionException` が JNI を越えない。
-- 回帰テストが追加され、HW VP9 実機で実行されること（CI の SW エミュレータでは skip されるため、実機での実行を回帰確認とする）。
+- 回帰テストが追加され、HW VP9 エンコーダーを生成できる実機で実行可能であること（CI の SW エミュレータでは skip されるため、実機での実行確認は別途必要）。
 - issue 0008 の Executor スレッドリーク対策が維持されていること。
 - `CHANGES.md` の `## develop` に `[FIX]` エントリと `- @<担当者名>` 行が追加されている。
 
@@ -95,8 +95,15 @@ simulcast 有効時に画面を回転させると、`SimulcastVideoEncoderFactor
 
 - `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の Executor を nullable にし、`release()` で shutdown した後に `initEncode()` が呼ばれた場合は新しい Executor を生成するようにした。
 - `release()` は Executor が null または停止済みなら `VideoCodecStatus.OK` を返して冪等にした。
+- `encode()` のスケール判定で width に加えて height も比較するようにした（width が同じで height だけ異なるフレームが未スケールのまま内部エンコーダーへ渡るのを防ぐ）。
 - submit/get の `RejectedExecutionException` などの `Exception` を catch し、`VideoCodecStatus.ERROR` などのエラーとして返すようにした。`InterruptedException` はタスクの完了を待ってから interrupt を復元するようにした。
-- `getScalingSettings()` は Executor 停止後や例外時に `VideoEncoder.ScalingSettings.OFF` を返し、`getImplementationName()` は生成時に取得した文字列を返すようにした。
-- `SoraSimulcastReconfigureE2ETest` を追加し、VP9 と HW エンコーダーを明示した上で、解像度変更を複数回行い、rid ごとの `bytesSent` / `framesEncoded` と `frameWidth` / `frameHeight` の変化を確認するようにした。
+- `getScalingSettings()` は Executor が無い場合や例外時に `VideoEncoder.ScalingSettings.OFF` を返し、`getImplementationName()` は生成時に取得した文字列を返すようにした。
+- `SoraSimulcastReconfigureE2ETest` を追加し、`HardwareVideoEncoderFactory.createEncoder()` が非 null を返す HW VP9 環境でのみ実行するようにした。Sora の offer の simulcast を確認し、encodings の rid を記録した上で、交渉コーデックが VP9 であることを stats から確認する。解像度変更を複数回行い、下位 2 レイヤー（r0 / r1）の `bytesSent` / `framesEncoded` の増加と `frameWidth` / `frameHeight` の変化（増減方向を含む）を確認する。Sora が simulcast / VP9 を提供しない環境では `assumeTrue` でスキップする。
 - `DummyVideoCapturer` の width / height / fps を 1 つの不変オブジェクトにまとめ、`@Volatile` で可視性を保証するようにした。
-- `CHANGES.md` の `## develop` に `[FIX]` エントリを追加した。
+- `CHANGES.md` の `## develop` に `[FIX]` エントリと、e2e テスト追加の `### misc` エントリを追加した。
+- 実機での手動確認は Pixel 7a で実施済みである（`## 検証結果` を参照）。`SoraSimulcastReconfigureE2ETest` の実機実行は未実施であり、CI の SW エミュレータでは `assumeTrue` でスキップされるため、実機で実行して stats を確認する必要がある。
+
+## 検証結果
+
+- Pixel 7a（HW VP9 エンコーダー搭載）で simulcast 有効の映像配信を行い、配信中に端末を回転させても SIGABRT などのエラーが発生しないことを確認した（2026-10-22）。
+- `SoraSimulcastReconfigureE2ETest` の実機実行は未実施である。回転後の `bytesSent` / `framesEncoded` と `frameWidth` / `frameHeight` の変化は、実機で E2E テストを実行して確認する必要がある。
