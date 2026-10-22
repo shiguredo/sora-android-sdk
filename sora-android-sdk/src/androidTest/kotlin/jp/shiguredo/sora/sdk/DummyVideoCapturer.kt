@@ -40,17 +40,20 @@ class DummyVideoCapturer : VideoCapturer {
 
     private val isRunning = AtomicBoolean(false)
 
+    private data class CaptureFormat(
+        val width: Int,
+        val height: Int,
+        val fps: Int,
+    )
+
     private var handler: Handler? = null
     private var observer: CapturerObserver? = null
 
+    // changeCaptureFormat() はテストスレッド、generateFrame() は handler スレッドから参照するため、
+    // width / height / fps を 1 つの不変オブジェクトにまとめて可視性を保証する。
     @Volatile
-    private var width: Int = 0
+    private var format = CaptureFormat(0, 0, 0)
 
-    @Volatile
-    private var height: Int = 0
-
-    @Volatile
-    private var fps: Int = 0
     private val frameIndex = AtomicLong(0)
     val currentFrameIndex: Long get() = frameIndex.get()
 
@@ -63,7 +66,7 @@ class DummyVideoCapturer : VideoCapturer {
                     return
                 }
                 generateFrame()
-                val delayMs = 1000L / fps.coerceAtLeast(1)
+                val delayMs = 1000L / format.fps.coerceAtLeast(1)
                 handler?.postDelayed(this, delayMs)
             }
         }
@@ -83,12 +86,10 @@ class DummyVideoCapturer : VideoCapturer {
         height: Int,
         fps: Int,
     ) {
-        this.width = width
-        this.height = height
-        this.fps = fps
+        format = CaptureFormat(width, height, fps)
         this.frameIndex.set(0)
         isRunning.set(true)
-        val delayMs = 1000L / fps.coerceAtLeast(1)
+        val delayMs = 1000L / format.fps.coerceAtLeast(1)
         Log.d(TAG, "startCapture: ${width}x$height@${fps}fps handler=${handler != null} delayMs=$delayMs")
         handler?.postDelayed(generateFrameRunnable, delayMs)
         observer?.onCapturerStarted(true)
@@ -106,9 +107,7 @@ class DummyVideoCapturer : VideoCapturer {
         height: Int,
         fps: Int,
     ) {
-        this.width = width
-        this.height = height
-        this.fps = fps
+        format = CaptureFormat(width, height, fps)
     }
 
     override fun dispose() {
@@ -129,8 +128,9 @@ class DummyVideoCapturer : VideoCapturer {
     override fun isScreencast(): Boolean = false
 
     private fun generateFrame() {
-        val w = width
-        val h = height
+        val currentFormat = format
+        val w = currentFormat.width
+        val h = currentFormat.height
         if (w <= 0 || h <= 0) {
             Log.w(TAG, "generateFrame: 無効なサイズ w=$w h=$h")
             return
