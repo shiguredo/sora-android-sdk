@@ -183,7 +183,7 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 VideoCodecStatus.ERROR,
             ) {
                 streamSettings?.let {
-                    if (frame.buffer.width == it.width) {
+                    if (frame.buffer.width == it.width && frame.buffer.height == it.height) {
                         // スケールが不要
                         encoder.encode(frame, encodeInfo)
                     } else {
