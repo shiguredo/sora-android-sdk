@@ -33,6 +33,13 @@
   - `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の `release()` 後に `initEncode()` が呼ばれても Executor を再生成する
   - @zztkm
 
+### misc
+
+- [ADD] simulcast のエンコーダー再構成を検証する e2e テストを追加する
+  - 解像度変更を複数回行い、r0 / r1 の送信継続と `frameWidth` / `frameHeight` の変化を検証する
+  - HW VP9 エンコーダーを生成でき、Sora が simulcast と VP9 をネゴシエートできる環境でのみ実行し、それ以外の環境ではスキップする
+  - @zztkm
+
 ## 2026.3.0
 
 **リリース日**: 2026-09-10
