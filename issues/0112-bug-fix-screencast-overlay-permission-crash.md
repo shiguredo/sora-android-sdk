@@ -3,7 +3,7 @@
 - Created: 2026-10-23
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-screencast-overlay-permission-crash
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-10-23
 
 ## 目的
 
@@ -41,10 +41,10 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 
 ## 設計方針
 
-1. `SoraScreencastServiceStarter` は `REQ_CODE_OVERLAY` から戻ったときに `Settings.canDrawOverlays` を再確認し、許可されていない場合はサービスを起動せず、権限が必要である旨を利用者に表示して中断する。
-2. `SoraScreencastService.onStartCommand` は UI を構築する前に `Settings.canDrawOverlays` を確認し、許可されていない場合は配信を開始せずにサービスを終了する。このとき `SoraScreencastService.running` を false に戻す。
-3. `ScreencastUIContainer` の `addView` で `WindowManager.BadTokenException` を捕捉し、オーバーレイ UI を追加できない場合でもプロセスをクラッシュさせない。捕捉した場合はサービスを終了する (操作 UI を出せない状態で配信だけを続けない)。
-4. 権限が無いことを利用者に伝える手段 (Snackbar など) は、既存のサンプルの実装に合わせる。
+1. `SoraScreencastServiceStarter` は `REQ_CODE_OVERLAY` から戻ったときに `Settings.canDrawOverlays` を再確認し、許可されていない場合はサービスを起動せず、権限が必要である旨を利用者に表示してサービス起動だけを中断する (`ScreencastSetupActivity` は終了せず、利用者が再度開始できる状態を保つ)。
+2. `SoraScreencastService.onStartCommand` は UI を構築する前に `Settings.canDrawOverlays` を確認し、許可されていない場合は `setupUI()` / `startNotification()` / `openChannel()` を呼ばずに `stopSelf()` し、`SoraScreencastService.running` を false に戻す。
+3. `ScreencastUIContainer` の `addView` で `WindowManager.BadTokenException` を捕捉し、オーバーレイ UI を追加できない場合でもプロセスをクラッシュさせない。`ScreencastUIContainer` は `addView` の成否をプロパティ (例: `isAdded`) で公開する。`SoraScreencastService.setupUI()` はその成否を確認し、失敗している場合は `stopSelf()` して `false` を返す。`onStartCommand()` は `setupUI()` が `false` を返したら `startNotification()` / `openChannel()` を呼ばず、`SoraScreencastService.running` を false に戻す (操作 UI を出せない状態で配信だけを続けない)。
+4. 権限が無いことを利用者に伝える。ガード 1 は `ScreencastSetupActivity` 上で Snackbar を表示する (`ScreencastSetupActivity` の既存の「既に起動中です」と同じ Snackbar の使い方に合わせる。`SoraScreencastServiceStarter` は `activity.findViewById(android.R.id.content)` を anchor にしてよい)。ガード 2 とガード 3 は Activity が残っていないため、`SoraScreencastService` から `Toast` を表示する (`MainActivity` の既存の Toast の使い方に合わせる)。表示する文言は「他のアプリの上に重ねて表示する権限が必要です」のような、権限が無いために開始できないことが分かる日本語にする。
 
 ### 各ガードの位置と発火タイミング
 
@@ -62,16 +62,19 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 
 ### 今回のクラッシュを防げるガード
 
-- 今回のクラッシュは、権限画面から戻った時点で権限が有効になっていない場合に起きている。権限が有効でないのにサービスを起動してしまうことが原因なので、ガード 1 でサービス起動を止めれば防げる。ガード 1 を経由しない起動経路が増えた場合も、ガード 2 が同じ役割を果たす。
+- 今回のクラッシュには、権限画面から戻った場合 (15:35) と、権限画面が表示されないままサービスが起動した場合 (11:45) がある。
+- 15:35 のクラッシュは、権限画面から戻った時点で権限が有効になっていないのにサービスを起動してしまうことが原因である。ガード 1 でサービス起動を止めれば防げる。
+- 11:45 のクラッシュは権限画面が表示されていない。`startScreenCaptureService()` の呼び出し元は `handleScreenCaptureResultOverMarshmallow()` (SDK 23 以上で `Settings.canDrawOverlays` が true の場合) と `onActivityResult()` の `REQ_CODE_OVERLAY` 分岐だけである (サンプルの `minSdk` は 26 のため、`handleScreenCaptureResult()` の SDK 23 未満の分岐は到達しない)。権限画面が表示されていないという記録から、前者で `Settings.canDrawOverlays` が true を返してサービスが起動した経路が考えられる。この場合はガード 1 もガード 2 も通過するため、`addView` の `BadTokenException` を捕捉するガード 3 でクラッシュを防ぐ。設定画面が表示されないまま `onActivityResult()` の `REQ_CODE_OVERLAY` 分岐が呼ばれた場合、`Settings.canDrawOverlays` が false ならガード 1 でサービス起動を止めれば防げる。true ならガード 3 で防ぐ。
+- ガード 2 は、ガード 1 を経由しない起動経路で `Settings.canDrawOverlays` が false を返す場合の保険である。
 - ガード 3 は、ガード 1 とガード 2 を通過したのに `addView` が `BadTokenException` を投げた場合の最後の砦である。今回のスタックトレースから、この例外が未捕捉だとプロセスが落ちることが確認できるため、捕捉してサービスを終了する処理は残す。
-- 主対策はガード 1 とガード 2、ガード 3 は保険である。ガード 1 だけでもクラッシュは防げるが、サービス側にも同じ判定を入れておくことで、ほかの経路からサービスが起動されてもクラッシュしない。
-- ガード 1 は設定画面から戻った直後で `ScreencastSetupActivity` が前面にあるため Snackbar で伝えられる。ガード 2 とガード 3 は `startScreenCaptureService()` の `finishAndRemoveTask()` により Activity が残っていないため、伝達手段は 4 で決める。
+- 主対策はガード 1 とガード 2、ガード 3 は `Settings.canDrawOverlays` が true を返す状態不整合に対する保険である。ガード 1 は 15:35 の経路を、ガード 2 はほかの起動経路を防ぐ。ガード 3 は `Settings.canDrawOverlays` が true を返す状態不整合でもクラッシュを防ぐ最後の砦である。
+- ガード 1 は設定画面から戻った直後で `ScreencastSetupActivity` が前面にあるため Snackbar で伝えられる。ガード 2 とガード 3 は `startScreenCaptureService()` の `finishAndRemoveTask()` により Activity が残っていないため、`SoraScreencastService` から Toast で伝える (設計方針 4)。
 
 ## 完了条件
 
 - `SYSTEM_ALERT_WINDOW` を許可していない状態でスクリーンキャストを開始しても、アプリがクラッシュしないこと。
 - 権限画面で許可せずに戻った場合にも、アプリがクラッシュしないこと。
-- 権限が無くて開始できないことが利用者に伝わること。
+- 権限が無くて開始できないことが利用者に伝わること (ガード 1 は `ScreencastSetupActivity` の Snackbar、ガード 2 とガード 3 は `SoraScreencastService` の Toast)。
 - `SYSTEM_ALERT_WINDOW` を許可している状態では、従来どおり操作バーが表示され配信できること。
 - Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で、権限を許可していない状態から開始してクラッシュしないことを確認すること。
 - `sora-android-sdk-samples/CHANGES.md` に修正を記載すること。
@@ -89,5 +92,6 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 - `adb shell cmd appops set jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW deny` で権限を許可していない状態にし、権限画面で許可せずに戻ったときにクラッシュしないことと、開始できない旨が表示されることを確認する。
 - 同じ状態から権限画面で許可した場合は、操作バーの表示、位置の切り替え、ミュート、切断が従来どおり動作することを確認する。
 - Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で確認する。
+- ガード 2 とガード 3 は、`Settings.canDrawOverlays` が true を返す状態不整合や `addView` の失敗を実機で再現するのが難しいため、コードレビューで `Settings.canDrawOverlays` の確認位置、`BadTokenException` の捕捉、`stopSelf()` と Toast の流れを確認する。
 
 ## 解決方法
