@@ -40,7 +40,8 @@ Please read https://github.com/shiguredo/oss before use.
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2025.3.1 以降
+- Android Studio 2025.3.4 以降
+- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` の `classes.jar` が Java 25 class file のため)
 - WebRTC SFU Sora 2025.2.0 以降
 
 ## サンプル

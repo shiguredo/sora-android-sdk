@@ -2,20 +2,22 @@
 
 - CHANGE
   - 下位互換のない変更
-- UPDATE
-  - 下位互換がある変更
 - ADD
   - 下位互換がある追加
+- UPDATE
+  - 下位互換がある変更
 - FIX
   - バグ修正
 
 ## develop
 
+- [CHANGE] システム要件の JDK バージョンを 25 に更新する
+  - libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
+  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
+  - @t-miya
 - [UPDATE] libwebrtc を 156.8078.5.1 に上げる
   - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
   - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
-  - JDK のバージョンも 25 に上げる。libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
-  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
   - libwebrtc 151 以降では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できないため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
   - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
   - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
@@ -39,6 +41,9 @@
   - 解像度変更を複数回行い、r0 / r1 の送信継続と `frameWidth` / `frameHeight` の変化を検証する
   - HW VP9 エンコーダーが使える実機では VP9 / HW、CI の SW エミュレータでは MediaCodec のソフトウェア VP8 エンコーダーで実行する（SW エンコーダーが無い環境ではテストを失敗させる）
   - @zztkm
+- [UPDATE] システム要件を更新する
+  - Android Studio 2025.3.4 以降
+  - @t-miya
 
 ## 2026.3.0
 
