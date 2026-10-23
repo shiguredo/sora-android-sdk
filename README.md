@@ -1,7 +1,7 @@
 # Sora Android SDK
 
 [![Release](https://jitpack.io/v/shiguredo/sora-android-sdk.svg)](https://jitpack.io/#shiguredo/sora-android-sdk)
-[![libwebrtc](https://img.shields.io/badge/libwebrtc-150.7871-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/7871)
+[![libwebrtc](https://img.shields.io/badge/libwebrtc-156.8078-blue.svg)](https://chromium.googlesource.com/external/webrtc/+/branch-heads/8078)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-android-sdk.svg)](https://github.com/shiguredo/sora-android-sdk.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -33,12 +33,15 @@ Please read https://github.com/shiguredo/oss before use.
 - フロント / リアカメラ切り替えとキャプチャフォーマット変更に対応
 - 各種カメラ設定を利用できる
   - 解像度・フレームレート・フロントカメラ優先・初期ハードミュート
+- ステレオ音声の送信・受信に対応
+  - 送信は `SoraAudioOption.useStereoInput`、受信は `SoraAudioOption.useStereoOutput` と `SoraAudioOption.audioAttributes` で指定できる
 - 受信した音声データを PCM 形式で取得できる
 
 ## システム条件
 
 - Android 5 以降 (エミュレーターでの動作は保証しません)
-- Android Studio 2025.3.1 以降
+- Android Studio 2025.3.4 以降
+- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` の `classes.jar` が Java 25 class file のため)
 - WebRTC SFU Sora 2025.2.0 以降
 
 ## サンプル

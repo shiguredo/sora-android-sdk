@@ -1,5 +1,6 @@
 package jp.shiguredo.sora.sdk.channel.option
 
+import android.media.AudioAttributes
 import android.media.MediaRecorder
 import jp.shiguredo.sora.sdk.channel.signaling.message.OpusParams
 import org.webrtc.MediaConstraints
@@ -116,6 +117,23 @@ class SoraAudioOption {
      * デフォルト値は false (モノラル) です.
      */
     var useStereoOutput: Boolean = false
+
+    /**
+     * 音声出力に利用する AudioAttributes の指定.
+     *
+     * AudioDeviceModule 生成時に利用されます.
+     * null でない場合、 `org.webrtc.audio.JavaAudioDeviceModule.Builder#setAudioAttributes` に渡されます.
+     * null の場合、 libwebrtc の従来挙動 (`USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH`) が維持されます.
+     * `audioDeviceModule` が非 null の場合、 AudioDeviceModule を SDK 内部で生成しないため本設定は無視されます.
+     *
+     * ステレオ受信を有効にする際は、 [useStereoOutput] と併せて、
+     * answer SDP の Opus fmtp へ `stereo=1` / `sprop-stereo=1` を追記する SDP 書き換えと併用する必要があります.
+     * `USAGE_MEDIA` + `CONTENT_TYPE_MUSIC` を指定するとステレオ再生が期待できますが、
+     * Bluetooth SCO や通話ルーティングとの相互作用は利用側で確認する必要があります.
+     *
+     * デフォルト値は null です.
+     */
+    var audioAttributes: AudioAttributes? = null
 
     /**
      * opus_params.

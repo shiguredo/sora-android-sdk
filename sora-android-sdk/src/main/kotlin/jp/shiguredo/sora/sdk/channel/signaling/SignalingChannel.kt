@@ -35,6 +35,16 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+// onFailure の Throwable と Response から onError の message を組み立てる。
+// response のヘッダー・本文は機密情報や長大な内容を含みうるため含めない。
+// エンドポイント URL は SoraCloseEvent で取得できるため含めない。
+internal fun buildOnFailureMessage(
+    t: Throwable,
+    response: Response?,
+): String =
+    response?.let { "$t (HTTP ${it.code} ${it.message})" }
+        ?: "$t"
+
 interface SignalingChannel {
     fun connect()
 
@@ -70,6 +80,16 @@ interface SignalingChannel {
         fun onReOffer(sdp: String)
 
         fun onError(reason: SoraErrorReason)
+
+        // ネットワーク切断エラーなどの詳細情報 (message) を伝搬するための追加コールバック。
+        // 既存の onError(reason) と併存させるためのデフォルト実装を提供する。
+        // 詳細情報を受け取りたい実装はこのメソッドをオーバーライドする。
+        fun onError(
+            reason: SoraErrorReason,
+            message: String,
+        ) {
+            onError(reason)
+        }
 
         fun onNotificationMessage(notification: NotificationMessage)
 
@@ -785,7 +805,11 @@ class SignalingChannelImpl
 
                     try {
                         // TODO(zztkm): WebSocketListener.onClose で呼び出す onError とはエラーの性質が異なるため、コールバックを分けることを検討する
-                        listener?.onError(SoraErrorReason.SIGNALING_FAILURE)
+                        // 例外情報と HTTP レスポンス情報を message として伝搬する
+                        listener?.onError(
+                            SoraErrorReason.SIGNALING_FAILURE,
+                            buildOnFailureMessage(t, response),
+                        )
                         disconnect(SoraDisconnectReason.WEBSOCKET_ONERROR)
                     } catch (e: Exception) {
                         SoraLogger.w(TAG, e.toString())

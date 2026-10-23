@@ -20,11 +20,20 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     enableIntelVp8Encoder: Boolean = true,
     enableH264HighProfile: Boolean = false,
     resolutionAdjustment: SoraVideoOption.ResolutionAdjustment,
+    // テスト専用の差し替え口。
+    // HW エンコーダーが使えない環境（エミュレータなど）でも StreamEncoderWrapper を
+    // 通る再構成経路を検証できるよう、primary のエンコーダーファクトリーを差し替える。
+    // 指定しない場合は従来どおり HW エンコーダーを使う。
+    // 指定した場合は sharedContext / enableIntelVp8Encoder / enableH264HighProfile を使用せず、
+    // resolutionAdjustment は NONE でなければならない。
+    primaryFactoryOverride: VideoEncoderFactory? = null,
 ) : VideoEncoderFactory {
     // ストリーム単位のエンコーダーをラップした上で以下を行うクラス。
-    // - スレッドをひとつ起動する
+    // - エンコーダー呼び出しを直列化する Executor を起動する
     // - initEncode の width/height と frame buffer のそれが一致しない場合は事前にスケールする
-    // - 内部のエンコーダーをつねにそのスレッド上で呼び出す
+    // - initEncode / encode / setRateAllocation / getScalingSettings / release は、現在の Executor の
+    //   スレッド上で呼び出す（release 後は、次の initEncode で新しい Executor を生成する）。
+    //   getImplementationName は生成時に一度取得し、Executor の生存に依存しないようキャッシュする。
     private class StreamEncoderWrapper(
         private val encoder: VideoEncoder,
     ) : VideoEncoder {
@@ -40,46 +49,138 @@ internal class SimulcastVideoEncoderFactoryWrapper(
                 Thread.currentThread().id
             }
 
-        // 単一スレッドで実行するための ExecutorService
-        // 中にあるスレッドが終了しない限りは、つねに同じスレッド上で実行されることが保証されている。
-        val executor: ExecutorService = Executors.newSingleThreadExecutor()
-        var streamSettings: VideoEncoder.Settings? = null
+        // エンコーダー呼び出しを単一スレッドに直列化するための ExecutorService。
+        // 同じ Executor の生存期間中は、つねに同じスレッド上で実行されることが保証されている。
+        // release() で shutdown した後に initEncode() が再度呼ばれることがあるため、
+        // Executor は initEncode() 時に再生成できるように nullable にしている。
+        private var executor: ExecutorService? = Executors.newSingleThreadExecutor()
+
+        // VideoEncoder の契約では getImplementationName() は任意のスレッドから呼ばれ得るため、
+        // Executor の生存に依存しないよう、生成時に取得して保持する。
+        private val implementationName: String =
+            try {
+                encoder.implementationName
+            } catch (e: Exception) {
+                SoraLogger.w(TAG, "getImplementationName failed", e)
+                ""
+            }
+
+        private var streamSettings: VideoEncoder.Settings? = null
+
+        // 現在の Executor を返す。停止済みまたは未生成の場合は null を返す。
+        private fun liveExecutor(): ExecutorService? =
+            synchronized(this) {
+                executor?.takeUnless { it.isShutdown }
+            }
+
+        // Executor を返す。停止済みまたは未生成の場合は新しい Executor を作る。
+        private fun ensureExecutor(): ExecutorService =
+            synchronized(this) {
+                executor?.takeUnless { it.isShutdown }
+                    ?: Executors.newSingleThreadExecutor().also { executor = it }
+            }
+
+        // Executor 上でタスクを実行し、完了するまで待つ。
+        // interrupt された場合もタスクの完了を待ち、呼び出し元へ戻る直前に interrupt を復元する。
+        // タスクの完了前に戻ると、VideoFrame の解放後にタスクがフレームへ触れるため、待機は必須である。
+        // そのためタイムアウトは設けず、タスクが完了するまで待ち続ける。
+        private fun <T> submitAndAwait(
+            executor: ExecutorService,
+            operation: String,
+            fallback: T,
+            task: Callable<T>,
+        ): T {
+            val future =
+                try {
+                    executor.submit(task)
+                } catch (e: Exception) {
+                    SoraLogger.e(TAG, "$operation failed to submit", e)
+                    return fallback
+                }
+
+            var interrupted = false
+            try {
+                while (true) {
+                    try {
+                        return future.get()
+                    } catch (e: InterruptedException) {
+                        interrupted = true
+                        SoraLogger.w(TAG, "$operation interrupted; waiting for completion")
+                    } catch (e: Exception) {
+                        SoraLogger.e(TAG, "$operation failed", e.cause ?: e)
+                        return fallback
+                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt()
+                }
+            }
+        }
 
         override fun initEncode(
             settings: VideoEncoder.Settings,
             callback: VideoEncoder.Callback?,
         ): VideoCodecStatus {
-            streamSettings = settings
-            val future =
-                executor.submit(
-                    Callable {
-                        SoraLogger.i(
-                            TAG,
-                            """initEncode() thread=${Thread.currentThread().name} [tid=${currentThreadIdForLog()}]
-                |  encoder=${encoder.implementationName}
-                |  streamSettings:
-                |    numberOfCores=${settings.numberOfCores}
-                |    width=${settings.width}
-                |    height=${settings.height}
-                |    startBitrate=${settings.startBitrate}
-                |    maxFramerate=${settings.maxFramerate}
-                |    automaticResizeOn=${settings.automaticResizeOn}
-                |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
-                |    lossNotification=${settings.capabilities.lossNotification}
-                            """.trimMargin(),
-                        )
-                        return@Callable encoder.initEncode(settings, callback)
-                    },
-                )
-            return future.get()
+            val currentExecutor = ensureExecutor()
+            val status =
+                submitAndAwait(
+                    currentExecutor,
+                    "initEncode",
+                    VideoCodecStatus.ERROR,
+                ) {
+                    SoraLogger.i(
+                        TAG,
+                        """initEncode() thread=${Thread.currentThread().name} [tid=${currentThreadIdForLog()}]
+                    |  encoder=$implementationName
+                    |  streamSettings:
+                    |    numberOfCores=${settings.numberOfCores}
+                    |    width=${settings.width}
+                    |    height=${settings.height}
+                    |    startBitrate=${settings.startBitrate}
+                    |    maxFramerate=${settings.maxFramerate}
+                    |    automaticResizeOn=${settings.automaticResizeOn}
+                    |    numberOfSimulcastStreams=${settings.numberOfSimulcastStreams}
+                    |    lossNotification=${settings.capabilities.lossNotification}
+                        """.trimMargin(),
+                    )
+                    encoder.initEncode(settings, callback)
+                }
+            // initEncode が成功した場合だけ、encode() が参照する設定を更新する。
+            if (status == VideoCodecStatus.OK) {
+                streamSettings = settings
+            }
+            return status
         }
 
         override fun release(): VideoCodecStatus {
-            val future = executor.submit(Callable { return@Callable encoder.release() })
+            // libwebrtc は release() と initEncode() を encoder queue 上で直列に呼ぶため、
+            // 先に executor を null にしても、旧 Executor 上の release と新 Executor 上の
+            // initEncode が並行して実行されることはない。
+            val currentExecutor =
+                synchronized(this) {
+                    val current = executor
+                    executor = null
+                    current
+                } ?: return VideoCodecStatus.OK
             return try {
-                future.get()
+                submitAndAwait(
+                    currentExecutor,
+                    "release",
+                    VideoCodecStatus.ERROR,
+                ) {
+                    encoder.release()
+                }
             } finally {
-                executor.shutdown()
+                currentExecutor.shutdown()
+                // 次に initEncode() が呼ばれるまでは古い設定を参照しないようにする。
+                // 直列実行の前提が崩れて新しい initEncode() が先に完了した場合に備え、
+                // Executor が再生成されている場合は設定を消さない。
+                synchronized(this) {
+                    if (executor == null) {
+                        streamSettings = null
+                    }
+                }
             }
         }
 
@@ -87,60 +188,67 @@ internal class SimulcastVideoEncoderFactoryWrapper(
             frame: VideoFrame,
             encodeInfo: VideoEncoder.EncodeInfo?,
         ): VideoCodecStatus {
-            val future =
-                executor.submit(
-                    Callable {
-                        return@Callable streamSettings?.let {
-                            if (frame.buffer.width == it.width) {
-                                // スケールが不要
-                                encoder.encode(frame, encodeInfo)
-                            } else {
-                                // StreamEncoderWrapper ではスケールだけを行い
-                                // 解像度の調整は HardwareVideoEncoderWrapper に任せる
-                                val originalWidth = frame.buffer.width
-                                val originalHeight = frame.buffer.height
-                                val scaledBuffer =
-                                    frame.buffer.cropAndScale(
-                                        0,
-                                        0,
-                                        originalWidth,
-                                        originalHeight,
-                                        it.width,
-                                        it.height,
-                                    )
-                                try {
-                                    val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
-                                    encoder.encode(scaledFrame, encodeInfo)
-                                } finally {
-                                    scaledBuffer.release()
-                                }
-                            }
-                        } ?: run {
-                            // streamSettings は null にならない想定だが force unwrap を防ぐためにこのように記述する
-                            VideoCodecStatus.ERROR
+            val currentExecutor = liveExecutor() ?: return VideoCodecStatus.ERROR
+            return submitAndAwait(
+                currentExecutor,
+                "encode",
+                VideoCodecStatus.ERROR,
+            ) {
+                streamSettings?.let {
+                    if (frame.buffer.width == it.width && frame.buffer.height == it.height) {
+                        // スケールが不要
+                        encoder.encode(frame, encodeInfo)
+                    } else {
+                        // StreamEncoderWrapper ではスケールだけを行い
+                        // 解像度の調整は HardwareVideoEncoderWrapper に任せる
+                        val originalWidth = frame.buffer.width
+                        val originalHeight = frame.buffer.height
+                        val scaledBuffer =
+                            frame.buffer.cropAndScale(
+                                0,
+                                0,
+                                originalWidth,
+                                originalHeight,
+                                it.width,
+                                it.height,
+                            )
+                        try {
+                            val scaledFrame = VideoFrame(scaledBuffer, frame.rotation, frame.timestampNs)
+                            encoder.encode(scaledFrame, encodeInfo)
+                        } finally {
+                            scaledBuffer.release()
                         }
-                    },
-                )
-            return future.get()
+                    }
+                } ?: VideoCodecStatus.ERROR
+            }
         }
 
         override fun setRateAllocation(
             allocation: VideoEncoder.BitrateAllocation?,
             frameRate: Int,
         ): VideoCodecStatus {
-            val future = executor.submit(Callable { return@Callable encoder.setRateAllocation(allocation, frameRate) })
-            return future.get()
+            val currentExecutor = liveExecutor() ?: return VideoCodecStatus.ERROR
+            return submitAndAwait(
+                currentExecutor,
+                "setRateAllocation",
+                VideoCodecStatus.ERROR,
+            ) {
+                encoder.setRateAllocation(allocation, frameRate)
+            }
         }
 
         override fun getScalingSettings(): VideoEncoder.ScalingSettings {
-            val future = executor.submit(Callable { return@Callable encoder.scalingSettings })
-            return future.get()
+            val currentExecutor = liveExecutor() ?: return VideoEncoder.ScalingSettings.OFF
+            return submitAndAwait(
+                currentExecutor,
+                "getScalingSettings",
+                VideoEncoder.ScalingSettings.OFF,
+            ) {
+                encoder.scalingSettings
+            }
         }
 
-        override fun getImplementationName(): String {
-            val future = executor.submit(Callable { return@Callable encoder.implementationName })
-            return future.get()
-        }
+        override fun getImplementationName(): String = implementationName
     }
 
     private class StreamEncoderWrapperFactory(
@@ -162,22 +270,33 @@ internal class SimulcastVideoEncoderFactoryWrapper(
     private val native: SimulcastVideoEncoderFactory
 
     init {
-        val hardwareVideoEncoderFactory =
-            HardwareVideoEncoderFactory(
-                sharedContext,
-                enableIntelVp8Encoder,
-                enableH264HighProfile,
-            )
+        // primaryFactoryOverride はテスト専用のため、resolutionAdjustment と同時に指定された場合は
+        // 暗黙に無視せず、呼び出し側の誤りとして検出する。
+        require(
+            primaryFactoryOverride == null ||
+                resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE,
+        ) {
+            "primaryFactoryOverride を指定する場合は resolutionAdjustment に NONE を指定してください"
+        }
 
         val encoderFactory =
-            if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
-                hardwareVideoEncoderFactory
-            } else {
-                HardwareVideoEncoderWrapperFactory(
-                    hardwareVideoEncoderFactory,
-                    resolutionAdjustment.value,
-                )
-            }
+            primaryFactoryOverride
+                ?: run {
+                    val hardwareVideoEncoderFactory =
+                        HardwareVideoEncoderFactory(
+                            sharedContext,
+                            enableIntelVp8Encoder,
+                            enableH264HighProfile,
+                        )
+                    if (resolutionAdjustment == SoraVideoOption.ResolutionAdjustment.NONE) {
+                        hardwareVideoEncoderFactory
+                    } else {
+                        HardwareVideoEncoderWrapperFactory(
+                            hardwareVideoEncoderFactory,
+                            resolutionAdjustment.value,
+                        )
+                    }
+                }
 
         primary = StreamEncoderWrapperFactory(encoderFactory)
         fallback = SoftwareVideoEncoderFactory()

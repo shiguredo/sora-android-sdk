@@ -2,14 +2,122 @@
 
 - CHANGE
   - 下位互換のない変更
-- UPDATE
-  - 下位互換がある変更
 - ADD
   - 下位互換がある追加
+- UPDATE
+  - 下位互換がある変更
 - FIX
   - バグ修正
 
 ## develop
+
+## 2026.4.0
+
+**リリース日**: 2026-10-23
+
+- [CHANGE] システム要件の JDK バージョンを 25 に更新する
+  - libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
+  - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
+  - @t-miya
+- [UPDATE] libwebrtc を 156.8078.5.1 に上げる
+  - JitPack の依存先を `com.github.shiguredo:shiguredo-webrtc-android` から `com.github.shiguredo-webrtc-build:webrtc-build` に変更する
+  - アプリで従来の依存先を直接指定している場合は、その依存を削除するか新しい依存先に変更する。両方の依存先を併用すると `org.webrtc.*` のクラスが重複する
+  - libwebrtc 151 以降では Shiguredo 独自パッチで追加していた `RtpReceiver.getStreams()` が利用できないため、`onTrack` で取得していたストリーム ID を `onAddTrack` の `MediaStream` 引数から取得するように変更する
+  - libwebrtc 151 で `VideoCapturer.isCapturing()` が追加されたため、独自に `VideoCapturer` を実装している場合は `isCapturing()` の実装が必要になる
+  - E2E テスト用 `DummyVideoCapturer` に `isCapturing()` を実装する
+  - @zztkm @t-miya
+- [UPDATE] `SoraLogger.libjingleEnabled` を `SoraLogger.libwebrtcLogEnabled` に改名し、旧名を非推奨にする
+  - 旧名は非推奨として残し、`libwebrtcLogEnabled` へ読み書きを転送する
+  - `libjingle` は廃止済みであり、公開 API に名前だけが残っていた
+  - 旧名は将来のリリースで削除する予定である
+  - @voluntas
+- [FIX] 受信した映像を描画中に画面を回転させるとクラッシュすることがある問題を修正する
+  - libwebrtc 156.8078.5.1 へのバージョンアップにて対応
+    - テクスチャから I420 への変換が失敗する場合に SIGABRT が発生する問題を修正
+  - @t-miya
+- [FIX] simulcast 有効時の画面回転で SIGABRT する問題を修正する
+  - `SimulcastVideoEncoderFactoryWrapper.StreamEncoderWrapper` の `release()` 後に `initEncode()` が呼ばれても Executor を再生成する
+  - @zztkm
+
+### misc
+
+- [ADD] simulcast のエンコーダー再構成を検証する e2e テストを追加する
+  - 解像度変更を複数回行い、r0 / r1 の送信継続と `frameWidth` / `frameHeight` の変化を検証する
+  - HW VP9 エンコーダーが使える実機では VP9 / HW、CI の SW エミュレータでは MediaCodec のソフトウェア VP8 エンコーダーで実行する（SW エンコーダーが無い環境ではテストを失敗させる）
+  - @zztkm
+- [UPDATE] システム要件を更新する
+  - Android Studio 2025.3.4 以降
+  - @t-miya
+
+## 2026.3.0
+
+**リリース日**: 2026-09-10
+
+- [CHANGE] `signalingMetadata` を未指定にした場合に connect メッセージの `metadata` を送信しないようにする
+  - `signalingMetadata` のデフォルト値を `""` から `null` に変更した。未指定時 (`null`) と `JsonNull` 指定時は `metadata` を送信しない
+  - 空文字を明示的に指定した場合は従来通り `metadata: ""` を送信する
+  - 従来と同じ挙動 (未指定時 `metadata: ""` の送信) を維持したい場合は、空文字を明示的に指定する必要がある
+  - @t-miya
+- [ADD] `SoraMediaChannel.Listener.onDataChannelOpened` を追加する
+  - クライアント側で DataChannel が OPEN になった時点で、ラベルごとに一度だけ呼び出される
+  - メッセージング用ラベル（`#` で始まるラベル）に限定せず、受け取ったすべての DataChannel を対象とする
+  - @t-miya
+- [ADD] ステレオ音声受信のため、音声出力の `AudioAttributes` を指定する `SoraAudioOption.audioAttributes` を追加する
+  - `JavaAudioDeviceModule.Builder#setAudioAttributes` に渡される
+  - 既定の `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` では Android の AudioPolicy 側でステレオ音声がモノラルへダウンミックスされる場合があるため、`USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` などを指定できるようにする
+  - 未指定 (null) の場合は従来どおり `USAGE_VOICE_COMMUNICATION` + `CONTENT_TYPE_SPEECH` が使われる
+  - @voluntas
+- [ADD] ステレオ音声受信のため answer SDP の Opus fmtp に `stereo=1` / `sprop-stereo=1` を追記する処理を組み込む
+  - `useStereoOutput = true` の接続で answer SDP の Opus fmtp に追記する
+  - `useStereoOutput = false` (既定) では書き換えを行わず、 Opus 以外の fmtp は変更しない
+  - @voluntas
+- [UPDATE] `kotlin-reflect` 依存を削除する
+  - コードベースに `kotlin.reflect` API の利用箇所がなく、依存グラフ上でも明示的な `implementation` 宣言によってのみ取り込まれていたため不要
+  - 依存数を削減し、SDK を利用するアプリのビルドサイズを軽減する
+  - @t-miya
+- [UPDATE] `SoraMediaChannel.Listener.onDataChannel` の発火タイミングを、サーバからの `switched` 受信時からクライアント側でメッセージング用 DataChannel がすべて OPEN になったタイミングに変更する
+  - メッセージング用ラベル（`#` で始まるラベル）の DataChannel がクライアント側で OPEN になった時点で発火するため、発火時点で DataChannel は送受信可能な状態になっている
+  - メッセージング用ラベルが存在しない場合は発火しない
+  - @t-miya
+- [UPDATE] ネットワーク切断エラーの内容が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
+  - WebSocket シグナリング失敗時の詳細なエラー情報が `SoraMediaChannel.Listener.onError` の `message` に含まれるようにする
+    - 内部では `SignalingChannel.Listener` に `onError(reason, message)` を追加し、既存の `onError(reason)` は維持する
+  - WebSocket シグナリングの失敗時 (`onFailure`) に、例外の `toString()` と HTTP ステータスコードや失敗理由を `message` として伝搬する
+  - DataChannel 経由のシグナリングでメッセージ処理に失敗した場合も、例外情報を `message` として伝搬する
+  - `response` のヘッダー・本文は機密情報や長大な内容を含む可能性があるため `message` には含めない
+  - @t-miya
+- [UPDATE] ログ出力時の機密情報マスクを `JsonObject` / `JsonArray` にも適用する
+  - `signalingMetadata` に `JsonElement` を指定した場合でも、token / secret / password 系の値がログにマスクされる
+  - @t-miya
+- [FIX] `signalingNotifyMetadata` を connect メッセージの正しいキー `signaling_notify_metadata` で送信するように修正する
+  - 誤った camelCase キー `signalingNotifyMetadata` での重複送信をやめ、正しいキー `signaling_notify_metadata` のみで送信する
+  - @t-miya
+- [FIX] 複数チャネルを同時に接続した際に `PeerConnectionFactory.initialize()` が 2 回呼ばれてネイティブクラッシュする問題を修正する
+  - `PeerChannelImpl.initializeIfNeeded()` に `@Synchronized` を付与し、チャネルをまたいで初期化処理を直列化する
+  - 複数チャネル（マルチストリーム視聴など）を同時に接続するアプリで、タイミングによりプロセスごとクラッシュ（SIGABRT）する問題を解消する
+  - @t-miya
+- [FIX] `onDataChannel` 発火直後の `sendDataChannelMessage` が `NOT_READY` になる問題を修正する
+  - メッセージング用 DataChannel の送信可否を、DataChannel シグナリングへの切替完了ではなく、メッセージング用 DataChannel がすべて OPEN になったかどうかで判定するようにする
+  - `onDataChannel` がサーバからの `switched` 受信より先に発火する場合でも、発火直後の送信が成功する
+  - @voluntas
+
+### misc
+
+- [ADD] spotlight の接続と映像 RTP 疎通を検証する e2e テストを追加する
+  - sendonly（spotlight 送信）+ recvonly（spotlight 受信）の 2 チャネル構成で、送信側の video outbound-rtp（r0 / r1）と受信側の video inbound-rtp の疎通を検証する
+  - Sora が spotlight 非対応（offer の encodings に r2 active: false が含まれない）環境や、エミュレータ制約で spotlight 用エンコーディングが立ち上がらない環境ではスキップする
+  - @t-miya
+- [ADD] RPC (RequestSimulcastRid) で simulcast の受信 rid を切り替えられることを検証する e2e テストを追加する
+  - sendonly（simulcast 送信）+ recvonly（RPC で rid 切替）の 2 チャネル構成で、RPC 実行前後の受信映像の解像度変化（inbound-rtp の frameWidth / frameHeight）を検証する
+  - Sora が RPC 非対応（offer に rpc ラベル・rpc_methods がない）環境や、エミュレータ制約で送信側の rid が立ち上がらない環境ではスキップする
+  - @t-miya
+- [ADD] `onDataChannel` と `onDataChannelOpened` の発火タイミングを検証する e2e テストを追加する
+  - `onDataChannelOpened` がラベルごとに一度だけ発火すること、全メッセージング用ラベルの `onDataChannelOpened` 発火後に `onDataChannel` が一度だけ発火すること、`#` 以外のラベルでも `onDataChannelOpened` が発火すること、発火後の最初の `sendDataChannelMessage` が成功することを検証する
+  - @t-miya
+- [UPDATE] GitHub Actions の E2E テストワークフロー名を `E2E Test` に変更する
+  - @zztkm
+- [UPDATE] E2E テストのシグナリング URL 環境変数を `SORA_SIGNALING_URL` から `TEST_SORA_SIGNALING_URL` に変更する
+  - @zztkm
 
 ## 2026.2.1
 

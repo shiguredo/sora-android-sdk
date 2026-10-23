@@ -303,20 +303,28 @@ class RTCComponentFactory(
                 }
             }
 
-        return JavaAudioDeviceModule
-            .builder(appContext)
-            .setUseHardwareAcousticEchoCanceler(
-                JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported() &&
-                    mediaOption.audioOption.useHardwareAcousticEchoCanceler,
-            ).setUseHardwareNoiseSuppressor(
-                JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported() &&
-                    mediaOption.audioOption.useHardwareNoiseSuppressor,
-            ).setAudioRecordErrorCallback(audioRecordErrorCallback)
-            .setAudioTrackErrorCallback(audioTrackErrorCallback)
-            .setAudioSource(mediaOption.audioOption.audioSource)
-            .setUseStereoInput(mediaOption.audioOption.useStereoInput)
-            .setUseStereoOutput(mediaOption.audioOption.useStereoOutput)
-            .createAudioDeviceModule()
+        // AudioAttributes が指定されている場合のみ Builder に反映する
+        // 未指定 (null) の場合は libwebrtc の従来挙動を維持するため何もしない
+        val admBuilder =
+            JavaAudioDeviceModule
+                .builder(appContext)
+                .setUseHardwareAcousticEchoCanceler(
+                    JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported() &&
+                        mediaOption.audioOption.useHardwareAcousticEchoCanceler,
+                ).setUseHardwareNoiseSuppressor(
+                    JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported() &&
+                        mediaOption.audioOption.useHardwareNoiseSuppressor,
+                ).setAudioRecordErrorCallback(audioRecordErrorCallback)
+                .setAudioTrackErrorCallback(audioTrackErrorCallback)
+                .setAudioSource(mediaOption.audioOption.audioSource)
+                .setUseStereoInput(mediaOption.audioOption.useStereoInput)
+                .setUseStereoOutput(mediaOption.audioOption.useStereoOutput)
+
+        // setAudioAttributes は同一 Builder を変更するため戻り値の再代入は不要
+        mediaOption.audioOption.audioAttributes?.let {
+            admBuilder.setAudioAttributes(it)
+        }
+        return admBuilder.createAudioDeviceModule()
     }
 
     private fun reportError(

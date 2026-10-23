@@ -36,6 +36,17 @@ libwebrtc で deprecated となっている `PeerConnection.Observer#onAddStream
   - 崩れる場合: `[CHANGE]` として扱い、ブランチ prefix を `feature/change-` に変更する。
 - 自ストリームフィルタリング（`ms.id == connectionId`）の挙動を `onTrack` ベースでも維持する。
 
+## 追加調査
+
+libwebrtc m150 のソースを確認した結果を反映する。
+
+- libwebrtc m150 の Unified Plan 経路 `ApplyRemoteDescriptionUpdateTransceiverState` は `OnTrack` -> `OnAddTrack` -> `OnAddStream` の順で発火する。
+- `onAddTrack` の `ms` は、JNI の `PeerConnectionObserverJni::OnAddTrack` が `receiver->streams()` を `NativeToJavaMediaStreamArray` で渡すため、Unified Plan でも populate される。`0016-add-track-stream-id` が前提とした「Unified Plan では `ms` が常に空」は m150 では正確ではなく、add 側は `onAddTrack` の `ms` からでも stream ID を取得できる。
+- `RtpReceiver.getStreams()` は `android_rtp_receiver_get_streams.patch` で追加した API で、libwebrtc 150.7871.3.0 に適用されている。upstream は m151 で対応したためパッチは削除済みで、SDK が m151 以降へ上がればパッチ依存は消える。m151 移行時に `onAddTrack` の `ms` へ寄せられるか再確認する。
+- `SetAssociatedRemoteStreams` が `receiver->SetStreams(...)` を呼び、`AudioRtpReceiver::SetStreams` / `VideoRtpReceiver::SetStreams` が `stream->AddTrack(...)` するため、Java `MediaStream` の `audioTracks` / `videoTracks` は Unified Plan でも populate される。`JavaMediaStream` の `MediaStreamObserver` が native の増減を同期する。
+- `onAddStream` / `onRemoveStream` は libwebrtc 側で Plan B 廃止マクロに囲まれたレガシー経路から呼ばれており、移行の必要性は変わらない。
+- `0016-add-track-stream-id` で追加した `onAddRemoteTrack` / `onRemoveRemoteTrack` と既存の `onAddRemoteStream` / `onRemoveRemoteStream` を併存させるか、stream ベースを非推奨化するかを本 issue で確定する。
+
 ## 完了条件
 
 - `onAddStream` / `onRemoveStream` への依存を解消し、`onTrack` / `onRemoveTrack` ベースでリモートストリームの追加・削除通知を行えること。

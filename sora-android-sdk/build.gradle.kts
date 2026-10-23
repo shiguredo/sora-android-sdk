@@ -48,8 +48,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "REVISION", "\"$gitRevision\"")
-        buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get()}\"")
-        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("SORA_SIGNALING_URL") ?: ""}\"")
+        // JitPack のタグの接頭辞を除き、接続時のバージョン情報を従来の形式に揃える。
+        buildConfigField("String", "LIBWEBRTC_VERSION", "\"${libs.versions.libwebrtc.get().removePrefix("m")}\"")
+        buildConfigField("String", "TEST_SIGNALING_URL", "\"${System.getenv("TEST_SORA_SIGNALING_URL") ?: ""}\"")
         buildConfigField("String", "TEST_SECRET_KEY", "\"${System.getenv("TEST_SECRET_KEY") ?: ""}\"")
         buildConfigField("String", "TEST_CHANNEL_ID_PREFIX", "\"${System.getenv("TEST_CHANNEL_ID_PREFIX") ?: ""}\"")
         buildConfigField("String", "TEST_CHANNEL_ID_SUFFIX", "\"${System.getenv("TEST_CHANNEL_ID_SUFFIX") ?: ""}\"")
@@ -176,9 +177,7 @@ dependencies {
     // Kotlin BOMで整合性を保証
     implementation(platform(libs.kotlin.bom))
 
-    api(libs.shiguredo.webrtc.android)
-
-    implementation(libs.kotlin.reflect)
+    api(libs.webrtc.build)
 
     // required by "signaling" part
     implementation(libs.gson)
