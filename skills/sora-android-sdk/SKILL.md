@@ -5,7 +5,7 @@ description: 時雨堂の WebRTC SFU Sora 向け Android クライアント SDK 
 
 # Sora Android SDK (sora-android-sdk)
 
-- **バージョン**: [SDKInfo.kt](sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt) の `VERSION` を参照 (最新リリースは 2026.3.0、develop は 2026.3.0-canary.0)
+- **バージョン**: [SDKInfo.kt](sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/util/SDKInfo.kt) の `VERSION` が正本。最新リリースは [GitHub Releases](https://github.com/shiguredo/sora-android-sdk/releases) を参照
 - **リポジトリ**: https://github.com/shiguredo/sora-android-sdk
 - **ドキュメント**: https://sora-android-sdk.shiguredo.jp/
 - **サンプル集**: https://github.com/shiguredo/sora-android-sdk-samples
@@ -16,13 +16,13 @@ description: 時雨堂の WebRTC SFU Sora 向け Android クライアント SDK 
 ## 動作条件
 
 - Android 5 以降 (minSdk 21)。エミュレーターでの動作は保証しない
-- Android Studio 2025.3.1 以降
-- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` 156.8078.3.1 の `classes.jar` が Java 25 class file のため)
+- Android Studio 2025.3.4 以降
+- Gradle ビルドには JDK 25 以降が必要 (`libwebrtc` 156.8078.5.1 の `classes.jar` が Java 25 class file のため)
 - WebRTC SFU Sora 2025.2.0 以降
 
 ## 依存ライブラリ
 
-- `com.github.shiguredo-webrtc-build:webrtc-build:m156.8078.3.1` (libwebrtc 156.8078.3.1) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
+- `com.github.shiguredo-webrtc-build:webrtc-build:m156.8078.5.1` (libwebrtc 156.8078.5.1) — `api` 依存なので利用側の `compileClasspath` に `org.webrtc.*` が公開される
 - Gson (シグナリング JSON)
 - OkHttp (WebSocket)
 - kotlinx.coroutines
@@ -177,7 +177,7 @@ SoraMediaChannel(
 | `suspend fun setAudioRecordingPaused(paused: Boolean)` | `setAudioHardMute(muted)` |
 | コンストラクタ `forwardingFilterOption` | `forwardingFiltersOption` |
 | `mediaOption.enableSimulcast(rid: SimulcastRid?)` | `mediaOption.enableSimulcast(requestRid: SimulcastRequestRid?)` |
-| `mediaOption.enableMultistream()` / `enableLegacyStream()` | レガシーストリーム機能は Sora 2025.6 で廃止 |
+| `mediaOption.enableMultistream()` / `enableLegacyStream()` | レガシーストリーム機能は Sora 2025.1.0 で廃止 |
 | `Listener.onClose(mediaChannel)` | `Listener.onClose(mediaChannel, closeEvent)` |
 
 ### Listener コールバック
