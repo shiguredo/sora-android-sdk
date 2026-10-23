@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2026.4.0
+
+**リリース日**: 2026-10-23
+
 - [CHANGE] システム要件の JDK バージョンを 25 に更新する
   - libwebrtc 153.8010.0.2 以降の Java API は `--release 25` でコンパイルされているため
   - 参照: <https://chromium.googlesource.com/chromium/src/build/+/ebfc64fde3cf560be80ae9180b6784f7399db34e/android/gyp/compile_java.py#L708>
