@@ -13,8 +13,8 @@
 
 ### 報告された事象
 
-- 2026-10-23、Google Pixel Tablet でスクリーンキャストを開始したところ、`jp.shiguredo.sora.sample` が `FATAL EXCEPTION: main` でクラッシュした。Android のバージョンは未確認。Pixel 8 では発生しない。
-- クラッシュ時のスタックトレース (抜粋)
+- 2026-10-23、Google Pixel Tablet (Android 17、SDK 37) でスクリーンキャストを開始したところ、`jp.shiguredo.sora.sample` が `FATAL EXCEPTION: main` でクラッシュした。Pixel 8 (Android 16、SDK 36) では発生しない。
+- クラッシュ時のスタックトレース (抜粋、11:45:16 に発生したもの)
 
 ```
 java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.screencast.SoraScreencastService@619af5a with Intent { cmp=jp.shiguredo.sora.sample/.screencast.SoraScreencastService (has extras) }: android.view.WindowManager$BadTokenException: Unable to add window android.view.ViewRootImpl$W@cfe9e7c -- permission denied for window type 2038
@@ -23,7 +23,9 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 	at jp.shiguredo.sora.sample.screencast.SoraScreencastService.onStartCommand(SoraScreencastService.kt:116)
 ```
 
-- このとき権限確認画面は表示されなかった。
+- 同じ端末で 15:35:46 にも同じスタックでクラッシュしている。このときは「他のアプリの上に重ねて表示」の設定画面 (`com.android.settings.Settings$OverlaySettingsActivity`) が開いた記録が残っている。権限画面は表示されたが、許可しないまま戻ったため、権限が有効になっていない状態でサービスが起動してクラッシュした。
+- 11:45 のクラッシュ時は権限画面が表示されていない。端末の状態によって権限画面が表示されない場合があり、その場合も同じクラッシュになる。
+- 権限が有効な状態では動作する。2026-10-23 11:54 に権限を許可したときは、操作バーが表示された状態で 1 分 12 秒間配信できている。
 
 ### 原因
 
@@ -35,9 +37,7 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 ### 端末差について
 
 - `SYSTEM_ALERT_WINDOW` の状態は端末とユーザー単位で保持される。Pixel 8 では許可済みのため `Settings.canDrawOverlays` が true になり、設定画面を経由せずに開始できていると考えられる。
-- 一方、報告されたタブレットでは権限確認画面が表示されていない。現行コードは `Settings.canDrawOverlays` が false のときだけ設定画面を開くため、この端末ではアプリ側の判定が true だったと推定される。つまりアプリ側の判定と `WindowManagerService` の判定が食い違っていた可能性がある。
-- この食い違いの原因 (別ユーザーや作業用プロファイル、再インストールによる UID の変化、端末ポリシー、app op の状態不整合など) は特定できていない。特定には再現端末での `adb shell appops get jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW` の結果が必要である。
-- このため、権限の事前確認だけでは今回のクラッシュを防げない可能性がある。`addView` の例外を捕捉してクラッシュさせない対応も必要になる。
+- 一方、報告されたタブレットでは権限確認画面が表示されていない。同一端末で権限確認画面が表示されるようになったため、原因 (別ユーザーや作業用プロファイル、再インストールによる UID の変化、端末ポリシー、app op の状態不整合など) は特定できていない。
 
 ## 設計方針
 
@@ -58,21 +58,22 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
   - ガード 1 を通った後の二重チェックであり、ガード 1 を経由しない起動経路に対する保険でもある。
 - ガード 3: `ScreencastUIContainer` の初期化処理の `WindowManager.addView`
   - ガード 2 の直後に `SoraScreencastService.setupUI()` が `ScreencastUIContainer` を生成したときに動く。
-  - `Settings.canDrawOverlays` が true を返しても `addView` が `BadTokenException` を投げる場合にだけ効果がある。
+  - ガード 1 とガード 2 を通過した後に `addView` が `BadTokenException` を投げた場合に効果がある。今回のスタックトレースは、この例外が未捕捉だとプロセスが落ちることを示している。
 
 ### 今回のクラッシュを防げるガード
 
-- 報告されたタブレットでは、「共有」を押した後に権限確認画面が表示されていない。これはガード 1 の判定に使う `Settings.canDrawOverlays` が true を返したことを意味するため、ガード 1 は評価されず、ガード 2 も同じ判定で通過する。
-- したがって、今回のクラッシュを防げるのはガード 3 だけである。ガード 1 とガード 2 は、権限が本当に無い場合に配信を開始しないための対策であり、今回の事象には効かない。
-- 実装ではガード 3 を必須とし、ガード 1 とガード 2 を権限不足時の早期中断として追加する。ガード 3 だけでもクラッシュは防げるが、画面共有の許可まで進んだ後に失敗するため、早い段階で中断できるようにガード 1 とガード 2 も入れる。
+- 今回のクラッシュは、権限画面から戻った時点で権限が有効になっていない場合に起きている。権限が有効でないのにサービスを起動してしまうことが原因なので、ガード 1 でサービス起動を止めれば防げる。ガード 1 を経由しない起動経路が増えた場合も、ガード 2 が同じ役割を果たす。
+- ガード 3 は、ガード 1 とガード 2 を通過したのに `addView` が `BadTokenException` を投げた場合の最後の砦である。今回のスタックトレースから、この例外が未捕捉だとプロセスが落ちることが確認できるため、捕捉してサービスを終了する処理は残す。
+- 主対策はガード 1 とガード 2、ガード 3 は保険である。ガード 1 だけでもクラッシュは防げるが、サービス側にも同じ判定を入れておくことで、ほかの経路からサービスが起動されてもクラッシュしない。
 - ガード 1 は設定画面から戻った直後で `ScreencastSetupActivity` が前面にあるため Snackbar で伝えられる。ガード 2 とガード 3 は `startScreenCaptureService()` の `finishAndRemoveTask()` により Activity が残っていないため、伝達手段は 4 で決める。
 
 ## 完了条件
 
 - `SYSTEM_ALERT_WINDOW` を許可していない状態でスクリーンキャストを開始しても、アプリがクラッシュしないこと。
+- 権限画面で許可せずに戻った場合にも、アプリがクラッシュしないこと。
 - 権限が無くて開始できないことが利用者に伝わること。
 - `SYSTEM_ALERT_WINDOW` を許可している状態では、従来どおり操作バーが表示され配信できること。
-- クラッシュを報告したタブレットで、権限を外した状態から開始してクラッシュしないことを確認すること。
+- Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で、権限を許可していない状態から開始してクラッシュしないことを確認すること。
 - `sora-android-sdk-samples/CHANGES.md` に修正を記載すること。
 
 ## 変更対象ファイル
@@ -85,8 +86,8 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 ## テスト方針
 
 - サンプル集には単体テストの基盤が無いため、実機での確認を主とする。
-- `adb shell cmd appops set jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW default` で権限を外した状態から開始し、クラッシュしないこととメッセージが表示されることを確認する。
-- `adb shell cmd appops set jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW allow` に戻して、操作バーの表示、位置の切り替え、ミュート、切断が従来どおり動作することを確認する。
-- タブレットと Pixel 8 の両方で確認する。
+- `adb shell cmd appops set jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW deny` で権限を許可していない状態にし、権限画面で許可せずに戻ったときにクラッシュしないことと、開始できない旨が表示されることを確認する。
+- 同じ状態から権限画面で許可した場合は、操作バーの表示、位置の切り替え、ミュート、切断が従来どおり動作することを確認する。
+- Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で確認する。
 
 ## 解決方法
