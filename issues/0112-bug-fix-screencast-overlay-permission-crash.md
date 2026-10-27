@@ -81,7 +81,8 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 - 画面共有ダイアログをキャンセルした場合、失敗メッセージを出さず、再試行できる状態に戻ること。
 - `SYSTEM_ALERT_WINDOW` を許可している状態では、従来どおり操作バーが表示され配信できること。
 - API 26 (Android 8.0) でも、権限を許可している状態でオーバーレイが表示され配信できること。
-- Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で、権限を許可していない状態から開始してクラッシュしないことを確認すること。
+- Android 17 の実機 (Pixel 7a で確認済み) で、権限を許可していない状態から開始してクラッシュしないことを確認すること。
+- Android 16 の実機またはエミュレータで、権限を許可していない状態から開始してクラッシュしないことを確認すること。
 - `sora-android-sdk-samples/CHANGES.md` に修正を記載すること。
 
 ## 変更対象ファイル
@@ -99,7 +100,7 @@ java.lang.RuntimeException: Unable to start service jp.shiguredo.sora.sample.scr
 - `adb shell cmd appops set jp.shiguredo.sora.sample SYSTEM_ALERT_WINDOW deny` で権限を許可していない状態にし、権限画面で許可せずに戻ったときにクラッシュせず、接続設定画面に Snackbar が表示され、サービスが起動しないことを確認する。そのまま再度「接続する」を押して再試行できることも確認する。
 - 同じ状態から権限画面で許可した場合は、接続設定画面が終了し、操作バーの表示、位置の切り替え、ミュート、切断が従来どおり動作することを確認する。
 - API 26 (Android 8.0) のエミュレータまたは実機で、権限を許可した状態でオーバーレイが表示され、配信できることを確認する。
-- Google Pixel Tablet (Android 17) と Pixel 8 (Android 16) の両方で確認する。
+- Android 17 の実機 (Pixel 7a) と Android 16 の実機またはエミュレータで確認する。Pixel 8 実機は必須としない。
 - `ACTION_SCREENCAST_START_FAILED` をテスト用に送信し、`permission` / `unknown` / `canceled` の各理由で Snackbar の文言と開始ボタンの復帰が正しいことを確認する。
 - 画面共有ダイアログをキャンセルした場合に、失敗メッセージが出ず、開始ボタンが復帰することを確認する。
 - ガード 2 とガード 3 は、`Settings.canDrawOverlays` が true を返す状態不整合や `addView` の失敗を実機で再現するのが難しいため、コードレビューで `Settings.canDrawOverlays` の確認位置、`BadTokenException` の捕捉、`ACTION_SCREENCAST_START_FAILED` の送信、`stopSelf()`、Snackbar の流れを確認する。Toast を使っていないことも確認する。
