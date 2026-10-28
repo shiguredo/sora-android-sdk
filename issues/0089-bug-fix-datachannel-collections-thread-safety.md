@@ -1,7 +1,7 @@
 # DataChannel の状態コレクションがスレッドセーフでない問題を修正する
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-28
 - Branch: feature/fix-datachannel-collections-thread-safety
 - Polished: 2026-10-28
 
@@ -89,3 +89,44 @@
 - `0101`: libwebrtc の Android UAF 対策を取り込む issue。送信側が `DataChannel` の参照を保持したままリセットと交差する窓は、`0101` の範囲とする。
 
 ## 解決方法
+
+### 実装
+
+- `dataChannels` を `ConcurrentHashMap<String, DataChannel>` に変更した
+- `openedMessagingLabels` と `openedDataChannelLabels` を `Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())` に変更した
+  - `ConcurrentHashMap.newKeySet()` は Android API 24 以降でしか提供されない。`minSdk` は 21 で core library desugaring も導入していないため使えない
+- `dataChannelStateLock` を追加し、次の 3 区間を同じロックで直列化した
+  - `onDataChannelOpen` の `closing` 確認から 3 コレクションの更新、および `onDataChannelNotified` の確認と代入まで
+  - `internalDisconnect` の 3 コレクションの `clear()` と `onDataChannelNotified = false`
+  - `handleInitialOffer` の `openedMessagingLabels` / `openedDataChannelLabels` の `clear()` と `onDataChannelNotified = false`
+- `onDataChannelOpen` の冒頭に `closing` ガードを追加し、切断開始後に届いた OPEN 通知では状態を更新しないようにした
+- `Listener` の通知はロックの外で行い、`onDataChannelOpened` が `onDataChannel` より先という順序は維持した
+- `maybeNotifyDataChannelAvailable` を、ロックを保持した状態で呼ぶ `tryMarkDataChannelNotifiedLocked` に変更した。通知は行わず、通知の要否だけを返す
+- 2 箇所に重複していたリセット処理を `resetDataChannelNotificationStateLocked` に切り出した
+- `closing` の宣言は既に `@Volatile` だったため変更していない
+
+### 挙動の変更
+
+- 切断処理が開始済みの場合は `onDataChannelOpened` と `onDataChannel` を通知しない
+- 最後のメッセージング用 DataChannel の `onDataChannelOpened` を通知する時点で `onDataChannelNotified` が立つため、その時点から `sendDataChannelMessage` が成功する
+
+### テスト
+
+- `sora-android-sdk/src/test/kotlin/jp/shiguredo/sora/sdk/channel/SoraMediaChannelDataChannelStateTest.kt` を追加した
+  - `closing` のときに届いた OPEN 通知は状態を更新しないこと
+  - すべてのメッセージング用ラベルが OPEN になると `onDataChannelOpened` のあとに `onDataChannel` が一度だけ通知されること
+  - メッセージング用でないラベルが OPEN になっても `onDataChannel` を通知しないこと
+  - 切断処理の完了後は DataChannel の状態が残らず、その後に届いた OPEN 通知でも状態が復活しないこと
+- `org.webrtc.DataChannel` の public な `DataChannel(long)` を使うとネイティブ呼び出しを伴わずにインスタンスを生成できるため、`peerListener` をリフレクションで取得して `onDataChannelOpen` を直接呼ぶ形で状態遷移を検証している。モックやスタブは利用していない
+- 並行インターリーブそのものは決定的に再現できないためテストでは検証せず、データ構造とロックの設計で担保する
+
+### 確認
+
+- `./gradlew ktlintCheck build` が成功し、ユニットテスト 89 件が成功した
+- `CHANGES.md` の `develop` セクションに `[FIX]` エントリを追記した
+- E2E テストは Sora サーバとテスト端末が必要なためローカルでは実行していない。CI (`pixelApi35` の Gradle Managed Device) で確認する
+
+### 対象外
+
+- 切断開始後に通知が抑制される範囲は、`onDataChannelOpen` の呼び出しが切断開始後に始まった場合に限る。ロックを解放した後に切断が始まる競合では通知されることがある (公開 KDoc に明記している)
+- `dataChannelsForMessaging` と `rpcEnabled` の可視性、`sendDataChannelMessage` の `peer` 参照競合、送信側が保持した `DataChannel` の解放競合は本 issue の対象外とする
