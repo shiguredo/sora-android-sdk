@@ -11,6 +11,13 @@
 
 ## develop
 
+- [FIX] DataChannel の状態コレクションへの並行アクセスで切断時に状態が壊れる問題を修正する
+  - `dataChannels` と 2 つのラベル集合をスレッドセーフなデータ構造に変更する
+  - 切断処理と `onDataChannelOpen` の間で、状態のリセットと登録をロックで直列化する
+  - 切断開始後に OPEN になった DataChannel については、`onDataChannelOpened` と `onDataChannel` を通知しないようにする
+  - 最後のメッセージング用 DataChannel の `onDataChannelOpened` 通知中でも `sendDataChannelMessage` が成功するようになる
+  - @t-miya
+
 ## 2026.4.0
 
 **リリース日**: 2026-10-23

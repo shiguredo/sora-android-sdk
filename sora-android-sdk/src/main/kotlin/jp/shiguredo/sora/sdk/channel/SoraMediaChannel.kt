@@ -64,8 +64,10 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.security.PrivateKey
 import java.security.cert.X509Certificate
+import java.util.Collections
 import java.util.Timer
 import java.util.TimerTask
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.schedule
 import kotlin.coroutines.resume
@@ -166,18 +168,27 @@ class SoraMediaChannel
         private var dataChannelsForMessaging: List<Map<String, Any>>? = null
 
         // クライアント側で OPEN になったメッセージング用 DataChannel のラベル集合
-        // onDataChannel の発火条件（全メッセージング用ラベルが OPEN になること）の判定に使う
-        private val openedMessagingLabels: MutableSet<String> = mutableSetOf()
+        // onDataChannel の通知条件（全メッセージング用ラベルが OPEN になること）の判定に使う。
+        // ConcurrentHashMap.newKeySet() は Android API 24 以降でしか提供されないため、
+        // minSdk 21 で動作する Collections.newSetFromMap を利用する
+        private val openedMessagingLabels: MutableSet<String> =
+            Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
         // クライアント側で OPEN になった DataChannel のラベル集合（全ラベル対象）
-        // onDataChannelOpened の重複発火防止に使う
-        private val openedDataChannelLabels: MutableSet<String> = mutableSetOf()
+        // onDataChannelOpened の重複通知防止に使う
+        private val openedDataChannelLabels: MutableSet<String> =
+            Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
-        // SoraMediaChannel.Listener.onDataChannel を発火済みかどうか
-        // 全メッセージング用ラベルが OPEN になった時点で一度だけ発火するためのフラグ。
+        // DataChannel の状態を保護するロック
+        // dataChannels と 2 つのラベル集合、 onDataChannelNotified は互いに整合していなければならないため、
+        // 状態の確認から更新までをこのロックで直列化する
+        private val dataChannelStateLock = Any()
+
+        // SoraMediaChannel.Listener.onDataChannel を通知すると決定済みかどうか
+        // 全メッセージング用ラベルが OPEN になった時点で一度だけ通知するためのフラグ。
         // sendDataChannelMessage の送信準備完了判定にも使う。
-        // onDataChannelOpen (libwebrtc のシグナリングスレッド) で更新し、
-        // アプリ側スレッドから参照するため @Volatile を付ける。
+        // 通知の直前に切断が始まった場合は true のまま通知されないことがある (切断処理で false に戻す)。
+        // 送信 API はロックを取らずに参照するため、可視性を保証する目的で @Volatile を付ける
         @Volatile
         private var onDataChannelNotified: Boolean = false
 
@@ -318,7 +329,10 @@ class SoraMediaChannel
         val role = mediaOption.role ?: mediaOption.requiredRole
 
         private var getStatsTimer: Timer? = null
-        private var dataChannels: MutableMap<String, DataChannel> = mutableMapOf()
+
+        // sendDataChannelMessage / rpc / sendDisconnectOverDataChannel は
+        // ロックを取らずに参照するため、スレッドセーフなマップを使う
+        private val dataChannels = ConcurrentHashMap<String, DataChannel>()
 
         /**
          * [SoraMediaChannel] からコールバックイベントを受けるリスナー
@@ -557,6 +571,8 @@ class SoraMediaChannel
             /**
              * データチャネルが利用可能になったときに呼び出されるコールバック
              *
+             * 切断処理が開始済みの場合は呼び出されない。切断処理の開始と競合した場合は呼び出されることがある。
+             *
              * @param mediaChannel イベントが発生したチャネル
              * @param dataChannels Sora の offer メッセージに含まれる data_channels のうち label が # から始まるもの
              */
@@ -571,6 +587,7 @@ class SoraMediaChannel
              * [onDataChannel] がメッセージング用ラベル（# で始まるラベル）の OPEN をまとめて通知するのに対し、
              * 本コールバックはラベルを限定せず、受け取ったすべての DataChannel を対象にラベルごとに 1 回ずつ通知する。
              * C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
+             * 切断処理が開始済みの場合は呼び出されない。切断処理の開始と競合した場合は呼び出されることがある。
              *
              * @param mediaChannel イベントが発生したチャネル
              * @param label OPEN になった DataChannel のラベル
@@ -1093,42 +1110,67 @@ class SoraMediaChannel
                     label: String,
                     dataChannel: DataChannel,
                 ) {
-                    this@SoraMediaChannel.dataChannels[label] = dataChannel
-                    // ラベルごとに一度だけ onDataChannelOpened を発火する。
-                    // 対象はメッセージング用ラベル（# で始まるラベル）に限定せず、
-                    // PeerConnection で受け取ったすべての DataChannel とする。
-                    // C++ SDK の OnDataChannel と同様のタイミング（OPEN 遷移時）・粒度（ラベル個別）で通知する。
-                    if (openedDataChannelLabels.add(label)) {
+                    // 切断開始後に届いた OPEN 通知で旧セッションの DataChannel を登録し直さないよう、
+                    // closing の確認から状態の更新までを同じロックで直列化する。
+                    // Listener の通知はロックを保持したまま呼ばないため、通知の要否だけをここで決める。
+                    // 通知順と一度だけの通知は、この関数が libwebrtc のシグナリングスレッドから
+                    // 直列に呼ばれることを前提にしている
+                    var shouldNotifyDataChannelOpened = false
+                    var shouldNotifyDataChannel = false
+                    synchronized(dataChannelStateLock) {
+                        if (closing) {
+                            SoraLogger.d(
+                                TAG,
+                                "[channel:$role] @peer:onDataChannelOpen ignored because closing=true, label=$label",
+                            )
+                            return@synchronized
+                        }
+                        // SoraMediaChannel のコンストラクタ引数 dataChannels と区別するため修飾する
+                        this@SoraMediaChannel.dataChannels[label] = dataChannel
+                        shouldNotifyDataChannelOpened = openedDataChannelLabels.add(label)
+                        // メッセージング用ラベル（# で始まるラベル）がすべて OPEN になった時点で
+                        // onDataChannel を通知する。このタイミングが「クライアント側で DataChannel が
+                        // 利用可能になった」瞬間であり、サーバからの switched 受信時とは区別する。
+                        if (label.startsWith("#")) {
+                            openedMessagingLabels.add(label)
+                            shouldNotifyDataChannel = tryMarkDataChannelNotifiedLocked()
+                        }
+                    }
+                    // onDataChannelOpened を onDataChannel より先に通知する。
+                    // ロックを解放した後に切断が始まる場合までは防げないため、通知直前に確認する
+                    if (shouldNotifyDataChannelOpened && !closing) {
                         listener?.onDataChannelOpened(this@SoraMediaChannel, label)
                     }
-                    // メッセージング用ラベル（# で始まるラベル）がすべて OPEN になった時点で
-                    // onDataChannel を発火する。このタイミングが「クライアント側で DataChannel が
-                    // 利用可能になった」瞬間であり、サーバからの switched 受信時とは区別する。
-                    if (label.startsWith("#")) {
-                        openedMessagingLabels.add(label)
-                        maybeNotifyDataChannelAvailable()
+                    if (shouldNotifyDataChannel && !closing) {
+                        listener?.onDataChannel(this@SoraMediaChannel, dataChannelsForMessaging)
                     }
                 }
 
-                // 全メッセージング用ラベルが OPEN になったら onDataChannel を一度だけ発火する
-                private fun maybeNotifyDataChannelAvailable() {
+                /**
+                 * 全メッセージング用ラベルが OPEN になった時点で onDataChannelNotified を立てる.
+                 *
+                 * dataChannelStateLock を保持した状態で呼び出すこと.
+                 *
+                 * @return true の場合は onDataChannel を通知する必要がある
+                 */
+                private fun tryMarkDataChannelNotifiedLocked(): Boolean {
                     if (onDataChannelNotified) {
-                        return
+                        return false
                     }
                     val expectedLabels =
                         dataChannelsForMessaging
                             ?.mapNotNull { it["label"] as? String }
-                            ?: return
-                    // メッセージング用ラベルが存在しない場合は発火しない
+                            ?: return false
+                    // メッセージング用ラベルが存在しない場合は通知しない
                     if (expectedLabels.isEmpty()) {
-                        return
+                        return false
                     }
-                    // 未 OPEN のメッセージング用ラベルが残っている場合は発火しない
+                    // 未 OPEN のメッセージング用ラベルが残っている場合は通知しない
                     if (expectedLabels.any { it !in openedMessagingLabels }) {
-                        return
+                        return false
                     }
                     onDataChannelNotified = true
-                    listener?.onDataChannel(this@SoraMediaChannel, dataChannelsForMessaging)
+                    return true
                 }
 
                 override fun onDataChannelMessage(
@@ -1503,10 +1545,12 @@ class SoraMediaChannel
                         it.containsKey("label") && (it["label"] as? String)?.startsWith("#") ?: false
                     }
             }
-            // リダイレクト等で offer が再送された場合に備えて状態をリセットする
-            openedMessagingLabels.clear()
-            openedDataChannelLabels.clear()
-            onDataChannelNotified = false
+            // リダイレクト等で offer が再送された場合に備えて、 onDataChannel 系の通知状態をリセットする。
+            // dataChannels はここではクリアしない。redirect では切断処理を通らないため旧セッションの
+            // DataChannel が残るが、その扱いはこのリセットの対象外とする
+            synchronized(dataChannelStateLock) {
+                resetDataChannelNotificationStateLocked()
+            }
             configureRpc(offerMessage)
 
             if (0 < peerConnectionOption.getStatsIntervalMSec) {
@@ -1560,9 +1604,17 @@ class SoraMediaChannel
                         signaling?.disconnect(null)
                     }
             }
-            // NOTE: onDataChannel はここでは発火しない。
-            //       メッセージング用 DataChannel がクライアント側で OPEN になったタイミングで
-            //       maybeNotifyDataChannelAvailable() から発火する。
+            // NOTE: onDataChannel はここでは通知しない。
+            //       クライアント側ですべてのメッセージング用 DataChannel が OPEN になった時点で
+            //       onDataChannelOpen から通知する。
+        }
+
+        // onDataChannel 系の通知状態を初期状態に戻す.
+        // 3 つの状態は互いに整合していなければならないため、必ず dataChannelStateLock を保持して呼び出す.
+        private fun resetDataChannelNotificationStateLocked() {
+            openedMessagingLabels.clear()
+            openedDataChannelLabels.clear()
+            onDataChannelNotified = false
         }
 
         private fun handleUpdateOffer(sdp: String) {
@@ -1854,10 +1906,12 @@ class SoraMediaChannel
             peer?.disconnect(null)
             peer = null
             localStream = null
-            dataChannels.clear()
-            openedMessagingLabels.clear()
-            openedDataChannelLabels.clear()
-            onDataChannelNotified = false
+            // 切断処理と並行する onDataChannelOpen が旧セッションの状態を登録し直さないよう、
+            // closing を立てた後に同じロックでリセットする
+            synchronized(dataChannelStateLock) {
+                dataChannels.clear()
+                resetDataChannelNotificationStateLocked()
+            }
 
             listener?.onClose(this)
             if (closeEvent != null) {
@@ -2120,7 +2174,7 @@ class SoraMediaChannel
             // メッセージング用 DataChannel がすべて OPEN になるまでは送信できない。
             // switchedToDataChannel は DataChannel シグナリングへの切替完了を表すものであり、
             // メッセージング用 DataChannel の OPEN とは独立している。切替完了より先に
-            // onDataChannel が発火することがあるため、送信可否は onDataChannel の発火条件と
+            // onDataChannel が通知されることがあるため、送信可否は onDataChannel の通知条件と
             // 同じ onDataChannelNotified で判定する。
             if (!onDataChannelNotified) {
                 return SoraMessagingError.NOT_READY
