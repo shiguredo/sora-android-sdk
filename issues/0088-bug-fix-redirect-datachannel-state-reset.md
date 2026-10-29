@@ -1,7 +1,7 @@
 # redirect 時に DataChannel の状態がリセットされず旧セッションの状態が残る問題を修正する
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-29
 - Branch: feature/fix-redirect-datachannel-state-reset
 - Polished: 2026-09-17
 
@@ -44,3 +44,15 @@ Sora の redirect で接続先が切り替わった際に、旧セッション�
 - `PeerChannel` / `PeerChannelImpl` (`PeerChannel.kt`): 旧 `peer` のリスナー解除手段の追加（設計方針のとおりリスナーを解除してから切断する場合のみ）
 
 ## 解決方法
+
+Sora の redirect は `type: connect` への応答として `type: offer` の代わりに送られる。redirect を受信した時点ではまだ offer を受信していないため、`SoraMediaChannel` の `peer`、`dataChannels`、DataChannel 関連の各フラグはすべて初期状態である。本 issue が前提にしている「旧セッションの `peer` と `dataChannels` が残る」状態は発生せず、設計方針に挙げたリセット処理はすべて no-op になる。
+
+根拠:
+
+- Sora Android SDK ドキュメント「クラスター機能利用時のシグナリングのリダイレクト」: <https://sora-android-sdk.shiguredo.jp/signaling>
+- Sora ドキュメント「シグナリングのリダイレクト機能」: <https://sora-doc.shiguredo.jp/CLUSTER>
+- `handleInitialOffer` の呼び出し元は offer 受信時の 1 箇所のみであり、`peer` の設定もその中で行われる
+
+以上から、本 issue が扱うバグは存在しないため closed にする。
+
+補足として、`handleInitialOffer` 付近のコメントと closed 済みの `0089` の関連記述は本 issue と同じ前提に依存しているため、別途見直しが必要である。
