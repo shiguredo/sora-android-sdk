@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-30
 - Branch: feature/fix-e2e-messaging-crash
 - Polished: 2026-10-29
 
@@ -25,7 +25,7 @@ E2E テスト `SoraMessagingE2ETest` の `onDataChannelとonDataChannelOpenedの
 - クラッシュするテストは単一接続で data channel signaling と メッセージング用 DataChannel 2 つを使う構成である。映像下り (`enableVideoDownstream(null)`) を有効にして recvonly で接続するため、Sora の offer には video の m-line が含まれる (配信者がいないため inactive になる)。テストは受信トラックの描画・検証を行わないが、映像下りのトランシーバと受信側オブジェクトは構成されるため、原因候補から除外しない。
 - `.github/workflows/e2e-test.yml` は logcat をテスト用タグの許可リストと `*:S` で取得しており、クラッシュ系のタグ (`AndroidRuntime` / `DEBUG` / `libc`) を含まない。取得した logcat と Gradle Managed Device のテストレポートも artifact として保存していないため、クラッシュのスタックトレースが残っていない。
 - 当時のジョブログは GitHub Actions の保存期間の経過により参照できないため、クラッシュの症状 (`Process crashed`、8 本中 4 本の打ち切り) と 154 / 155 での同症状は、当時のテストレポートの記録に基づく。8 本というテスト数は 46ebfc2d の androidTest で確認できる。
-- 2026-09-25 以降、develop には libwebrtc 156.8078.5.1 (0101 が対象とする 5 件の CL を含む、2026-10-22 マージ) と DataChannel の状態コレクションのスレッドセーフ化 (0089、2026-10-28) が入った。2026-09-30 以降の develop の E2E は 22 回連続で成功しており、E2E ジョブの失敗は記録されていない。
+- 2026-09-25 以降、develop には libwebrtc 156.8078.5.1 (0101 が対象とする 5 件の CL を含む、2026-10-22 マージ) と DataChannel の状態コレクションのスレッドセーフ化 (0089、2026-10-28) が入った。2026-09-30 以降の develop の E2E は 23 回実行され、run の conclusion はすべて success である。2026-10-29 の run 40857070402 では attempt 1 で別テスト (`SoraCloseTypeE2ETest`) の TIMEOUT が発生したが、attempt 2 で成功しており、本 issue のクラッシュは記録されていない。
 - `issues/0101` で追跡している UAF 修正は、150.7871.3.0 / 151.7922.0.0 / 154.8037.1.2 のビルドには含まれず、155.8059.0.0 には CL 500801 の PeerConnection 保護のみが含まれる。現行の 156.8078.5.1 には 0101 が対象とする 5 件の CL がすべて含まれる。libwebrtc の更新による対応は 0101 が担当するため、本 issue ではクラッシュ箇所と発生条件の特定と、SDK 側の修正を扱う。
 
 ## 設計方針
@@ -53,3 +53,12 @@ E2E テスト `SoraMessagingE2ETest` の `onDataChannelとonDataChannelOpenedの
 - `.github/workflows/e2e-test.yml` は 0103、`gradle/libs.versions.toml` の develop への変更は 0101 が担当するため変更しない。マージしない `feature/debug-` の調査用ブランチ内での一時的な変更はこの限りではない。
 
 ## 解決方法
+
+現行 develop で当該クラッシュが再発していないことと、関連する修正が develop へ入ったことを根拠に、解消と判断する。
+
+- 2026-09-30 から 2026-10-29 までの develop の E2E は 23 回実行され、run の conclusion はすべて success である。実行方法は develop への push による CI である。
+- このうち、libwebrtc 156.8078.5.1 (0101 が対象とする UAF 修正を含む) の取り込み後が 19 回、0089 (DataChannel の状態コレクションのスレッドセーフ化) の取り込み後が 3 回である。
+- 2026-10-29 の run 40857070402 では attempt 1 で `SoraCloseTypeE2ETest` の `DataChannelシグナリングのみの切断経路がDataChannelであることを検証すること` が TIMEOUT で失敗したが、attempt 2 で成功している。本 issue が対象とする `SoraMessagingE2ETest` の `onDataChannelとonDataChannelOpenedの発火タイミングが検証できること` の失敗やプロセスクラッシュは記録されていない。
+- 2026-09-28 の run 36376763519 は failure だが、原因はログ保存期間の経過で確認できない。2026-09-30 以降は同じ症状は再発していない。
+- 0101 が対象とする UAF 修正は libwebrtc 156.8078.5.1 に含まれており、クラッシュの仮説 (libwebrtc の Android Java ラッパーの UAF) に対応する。0089 は DataChannel の状態コレクションの並行アクセスを解消しており、当該テストの DataChannel 経路の競合に対応する。
+- 再発防止のコード変更は行っていない。原因は特定できておらず、0089 以降の実行回数は 3 回であるため、再発率が低い場合の証明にはならない。今後再発した場合は、0103 で保存する logcat とテストレポートから原因を特定する。
