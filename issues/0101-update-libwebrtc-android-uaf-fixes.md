@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-09-24
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-30
 - Branch: feature/update-libwebrtc-android-uaf-fixes
 - Polished: 2026-09-24
 
@@ -72,3 +72,22 @@ libwebrtc の Android Java ラッパーで、 JNI 呼び出しと `dispose()` �
 - `gradle/libs.versions.toml` の `libwebrtc` を登録済みバージョンへ更新する。
 - `PeerChannelImpl` の DataChannel signaling、送受信トラック、切断処理を既存の E2E テスト（ `pixelApi35` の Gradle Managed Device）で検証し、必要な検証結果を記録する。
 - `CHANGES.md` を更新する。
+
+上記の方針に従い、 libwebrtc の更新として取り込んだ。
+
+### 実装
+
+- libwebrtc を `m156.8078.5.1` に更新した。更新は `0a533f2a` で、 PR #308 として取り込まれ、 `2026.4.0` に含まれてリリースされている。
+- 依存座標は `com.github.shiguredo-webrtc-build:webrtc-build` に変更されており、 `shiguredo-webrtc-android` へ AAR を登録する作業は不要になった。
+- `gradle/libs.versions.toml` の `[versions].libwebrtc` は `m156.8078.5.1` である。
+- AAR の実体に 5 件の CL が含まれることを確認した。
+  - `org.webrtc.NativeLifecycleLock` が存在し、 `PeerConnection`、 `PeerConnectionFactory`、 `DataChannel`、 `RtpSender`、 `RtpReceiver`、 `RtpTransceiver`、 `MediaStreamTrack`、 `AudioTrack`、 `VideoTrack`、 `MediaStream`、 `MediaSource` が同ロックを参照している。 `VideoSource` は `MediaSource` を継承して保護される。
+  - 後続の CL 504700 / 504720 に相当する `DtmfSender`、 `TimestampAligner`、 `TurnCustomizer`、 `CallSessionFileRotatingLogSink` も保護されており、 `main@{#48677}` 以降相当のスナップショットである。
+- 採用した AAR の `org.webrtc.WebrtcBuildVersion` は `M156` と `2a990ce0ccd00a3ad449f2201a8e5c2dad53177d` を持ち、 upstream commit を特定できる。 `SDKInfo.libwebrtcInfo()` はこの先頭 7 文字を送信する。
+- `CHANGES.md` の `2026.4.0` に libwebrtc の更新内容が記載されている。
+- Sora Android SDK 側に同等のライフサイクルロックの重複実装は行っていない。
+
+### 検証
+
+- `.github/workflows/e2e-test.yml` の `pixelApi35` の Gradle Managed Device で DataChannel signaling、 送受信トラック、 `DummyVideoCapturer` 経由の映像キャプチャを含む E2E テストを実行している。
+- 2026-09-30 以降の develop の E2E は 23 回実行され、 run の conclusion はすべて success である (うち 19 回は libwebrtc `m156.8078.5.1` の取り込み後)。 UAF や二重解放に起因するクラッシュは記録されていない (closed 0102 の解決方法に記録)。
