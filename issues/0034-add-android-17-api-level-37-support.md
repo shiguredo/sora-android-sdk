@@ -51,15 +51,25 @@ Android 17（API レベル 37）のリリースに伴う変更点のうち、Sor
      - `signalingEndpointCandidates` で指定した候補ホストや、シグナリングのリダイレクト先も CT の対象になる。NSC のドメイン設定は接続し得るすべてのホストをカバーする必要がある。
      - CT ログリストを取得できない場合や 70 日以上古い場合は fail-open するため、検証時はログリストが利用可能な状態にする必要がある。
      - 公式ドキュメント: <https://developer.android.com/privacy-and-security/security-config#certificateTransparency> / <https://developer.android.com/about/versions/17/behavior-changes-17> / <https://developer.android.com/privacy-and-security/certificate-transparency-policy>
+  4. 大画面での向き・リサイズ制約の無効化（影響: アプリ側・サンプル / ドキュメント）
+     - Android 16（API レベル 36）以降の大画面（sw>=600dp）では、向き・リサイズ・アスペクト比の制約が無視される。`targetSdk 36` ではオプトアウトできたが、`targetSdk 37` ではオプトアウトできなくなる。
+     - SDK は Activity / View を持たないため、SDK 内の実装対応はない。映像表示のサイズ・カメラプレビューの回転・全画面レイアウトはアプリ側の configuration change 対応に依存する。
+     - サンプル / クイックスタートで固定向き・全画面を前提にしている箇所を確認し、タブレット / フォルダブルでの表示を確認する必要がある。
+     - 公式ドキュメント: <https://developer.android.com/about/versions/17/behavior-changes-17>
 - 参考（本 issue のスコープ外・将来対応の検討材料）:
   - Cleartext 通信の扱いの変更（未発動・将来対応）
     - Android 17 では `usesCleartextTraffic` の非推奨化は「将来のリリースで予定」という計画のみであり、**targetSdk 37 でも未発動**。`usesCleartextTraffic="true"` は引き続き有効。
     - 将来の非推奨化が発動するリリースで Network Security Configuration への移行を検討する。SDK はシグナリング URL をそのまま OkHttp の WebSocket に渡しているため（`SignalingChannel.kt`）、`ws://`（平文）運用のアプリが将来影響を受ける可能性がある。
     - 細部は libwebrtc / `shiguredo-webrtc-android` 側の追従が前提になる可能性がある。
-  - ECH（Encrypted Client Hello）: `targetSdk 37` の TLS 接続でデフォルト有効化。HTTPS シグナリングに影響する可能性があるが、プラットフォーム / HTTP スタック寄りの話題であり SDK 固有の対応は見込まれない。DTLS のメディア面には適用されない。
+  - ECH（Encrypted Client Hello）: `targetSdk 37` の TLS 接続で既定有効化。OkHttp 4.12 は ECH に対応していないため、ECH のネゴシエーションは行われず GREASE のみになる見込み。WSS 接続を API 37 の実機で確認する。DTLS のメディア面には適用されない。
+  - Safer Native DCL—C: `targetSdk 37` では `System.load()` で読み込むネイティブファイルを読み取り専用にする必要がある。SDK のコードと E2E テストは `System.loadLibrary` のみを使用しており、APK 同梱の .so を読み込むため影響はない見込み。利用側アプリが writable な領域の .so を `System.load()` する場合の注意点をドキュメントに含めるか判断する。
   - アプリメモリ制限（App memory limits）: RAM 総量に応じたプロセスメモリ上限が導入され、超過時は強制終了する。WebRTC アプリはメモリ使用が多いため要確認だが、影響は未確認。
+  - 影響なしと判断した項目:
+    - MessageQueue の lock-free 化 / static final の変更禁止: SDK の production code に reflection でこれらを変更する箇所はない。
+    - RemoteViews / ContentCapture / Activity Security: SDK はウィジェット・ContentCapture・Activity を使用しない。
+    - CP2、OTP、パスワード表示、BluetoothSocket、IME アクセシビリティ: SDK の機能と無関係。
 - 補足:
-  - SDK 本体の `AndroidManifest.xml` は空に近く、Activity / Manifest 固有の変更（画面回転・リサイズ制約など）は SDK 直撃ではなくアプリ側の課題になる見込み。
+  - SDK 本体の `AndroidManifest.xml` は空に近く、Activity / Manifest 固有の変更（Activity Security など）は SDK 直撃ではなくアプリ側の課題になる見込み。
 
 ## 設計方針
 
@@ -83,6 +93,8 @@ Android 17（API レベル 37）のリリースに伴う変更点のうち、Sor
   - CT を実行時に切り替える API は提供されていないため、静的な NSC 設定を前提とする。
   - `insecure = true` は CT の対象外だが非推奨であることを明記する。
   - サンプル / クイックスタート（別リポジトリ）の `targetSdk 37` 化と、自己署名 CA を使うサンプルへの NSC 追加を行う。
+- 大画面の向き・リサイズ制約はアプリ側の責務であり、SDK 内の実装対応は行わない。サンプル / クイックスタートで固定向き・全画面を前提にしている箇所を確認し、タブレット / フォルダブルでの表示を確認する。映像表示のアスペクト比やカメラプレビューの回転はアプリ側の configuration change 対応に依存する旨をドキュメントで補足する。
+- Safer Native DCL—C は SDK のコードと E2E テストが `System.loadLibrary` のみを使用していることを確認する。利用側アプリが writable 領域の .so を `System.load()` する場合の注意点をドキュメントに含めるか判断する。
 - Robolectric などテスト依存のバージョン追従が必要であれば併せて更新する。
 
 ## 完了条件
@@ -105,6 +117,9 @@ Android 17（API レベル 37）のリリースに伴う変更点のうち、Sor
 - `caCertificate` を使うアプリ向けに、NSC の設定例と注意点（ドメイン単位の設定、TURN-TLS との関係、`insecure` の非推奨）がドキュメントに記載されていること。
 - サンプル / クイックスタートが `targetSdk 37` でビルドでき、必要な NSC 設定が追加されていること。
 - E2E テストに `pixelApi37` を追加し、CT が有効な環境でシグナリング接続のシナリオ試験が通ること。
+- 大画面について、サンプル / クイックスタートを sw>=600dp のエミュレーター（タブレット / フォルダブル）で回転・リサイズし、レイアウトと映像表示が破綻しないことを確認し、必要な修正とドキュメント更新を行うこと。
+- Safer Native DCL—C について、SDK と E2E テストが `System.load()` を使用していないことを確認し、利用側アプリ向けの注意点をドキュメントに含めるか判断すること。
+- ECH について、API 37 の実機で WSS 接続を確認し、問題があれば別 issue として切り出すこと。
 - 後方互換に影響する変更がある場合は `CHANGES.md` の `develop` セクションに該当エントリを追記すること。
 
 ## 解決方法
