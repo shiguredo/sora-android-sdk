@@ -3,11 +3,11 @@
 - Created: 2026-09-10
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-remote-video-crop
-- Polished: 2026-09-17
+- Polished: 2026-11-09
 
 ## 目的
 
-`sora-android-sdk-samples` のビデオチャット、サイマルキャスト、RPC チャットで、横長のリモート映像を受信するとタイルのアスペクト比に合わせて映像が拡大され、はみ出した部分が切り取られて表示される問題を修正する。マルチストリームで複数のリモート映像を並べるほどタイルのアスペクト比が映像とずれるため、影響が大きい。
+`sora-android-sdk-samples` のビデオチャット、サイマルキャスト、RPC チャットで、横長のリモート映像を受信するとタイルのアスペクト比に合わせて映像が拡大され、はみ出した部分が切り取られて表示される問題を修正する。切り取られる量は、タイルのアスペクト比が映像のアスペクト比から離れるほど大きくなる。縦持ちの画面ではタイルが縦長になりやすいため、横長の映像を受信する場合に切り取りが大きくなる。マルチストリームでは切り取りが発生するタイルの数が増えるため、影響が大きい。
 
 ## 現状
 
@@ -15,30 +15,32 @@
 - `RendererLayoutCalculator` は各 `SurfaceViewRenderer` の `layout_width` / `layout_height` にタイルの実サイズ (px) を設定する。`VideoChatRoomActivity`、`SimulcastActivity`、`RpcChatActivity` はこの計算結果をそのまま適用する。
 - `SurfaceViewRenderer` は与えられたビューのサイズいっぱいに映像を拡大縮小して描画し、はみ出した部分を切り取る。`EglRenderer` は `SurfaceViewRenderer.onLayout` で設定されるビューのアスペクト比 (`layoutAspectRatio`) を基準に描画行列を作るため、ビューのアスペクト比と映像のアスペクト比が一致しないと映像が切り取られる。
 - `SurfaceViewRenderer.setScalingType` が制御するのは「与えられたレイアウト領域の中でビュー自身がどのサイズを取るか」であり、上記のようにサイズを固定されたビューでは切り取りを防げない。
-- そのため、縦持ちの画面で横長 (例: 16:9) の映像を受信すると、左右が切り取られる。マルチストリームでタイルが正方形に近づくほど顕著になる。
+- そのため、縦持ちの画面で横長 (例: 16:9) の映像を受信すると、左右が切り取られる。切り取られる量はタイルのアスペクト比と映像のアスペクト比の差で決まり、タイルが正方形に近いほど小さくなる。縦持ちの画面 (1080 x 2340 px 相当) で `RendererLayoutCalculator` が作るタイルのアスペクト比は、1 タイルで約 0.5、4 列 3 行で約 0.37 であり、16:9 (約 1.78) から大きく離れるため、映像幅の 2 割から 3 割程度しか表示されない。上下 2 分割のときだけはタイルのアスペクト比が約 1.0 となり、切り取りは相対的に小さい。
 - `RpcChatActivity` は `SoraVideoChannel.getRemoteVideoTrack()` で取得したリモート `VideoTrack` に `ResolutionMonitorSink` (`VideoSink`) を追加し、`frame.rotatedWidth` / `frame.rotatedHeight` を解像度表示に利用している。ただしこの解像度は映像矩形の計算には使われておらず、`VideoChatRoomActivity` と `SimulcastActivity` には解像度を取得する経路もない。映像矩形の計算には、レンダラー側で `RendererEvents` を受け取るか、既存の `VideoSink` 経路を映像矩形の計算にも利用する必要がある。
-- 現行の libwebrtc (m150、`shiguredo-webrtc-android` 150.7871.3.0) でもこの描画経路は変わっていない。
+- 現行の libwebrtc (m156.8078.5.1、`com.github.shiguredo-webrtc-build:webrtc-build`) でもこの描画経路は変わっていない。`SurfaceViewRenderer.onLayout` が `SurfaceEglRenderer.setLayoutAspectRatio` を呼び、`EglRenderer` がその値と映像の表示寸法から描画行列を作る構成は同じである。
 
 ## 設計方針
 
 1. タイル (セル) のサイズは維持しつつ、その中に収まる映像の矩形を映像のアスペクト比を保って計算し、`SurfaceViewRenderer` をその矩形に配置する (レターボックス)。映像矩形はタイル内で中央に配置し、タイルの残り領域にはコンテナの背景色がそのまま表示される。
-2. タイル格子全体のサイズは維持する。`VideoChatRoomActivity` と `SimulcastActivity` の `rendererContainer` は `wrap_content` のため、子供のサイズを映像矩形に合わせて変えるだけではコンテナ自体が縮んでしまう。`RendererLayoutCalculator` が算出するタイル格子全体のサイズ (幅・高さ) をコンテナの `LayoutParams` に設定し、コンテナの大きさが変わらないようにする (`RpcChatActivity` の `rendererContainer` は `match_parent` のため設定は不要)。
+2. タイル格子全体のサイズは維持する。`VideoChatRoomActivity` と `SimulcastActivity` の `rendererContainer` は `wrap_content` のため、子供のサイズを映像矩形に合わせて変えるだけではコンテナ自体が縮んでしまう。`RendererLayoutCalculator` が算出するタイル格子全体のサイズ (幅・高さ) をコンテナの `LayoutParams` に設定し、コンテナが縮まないようにする (`RpcChatActivity` の `rendererContainer` は `match_parent` のため設定は不要)。なお現行の `wrap_content` は親から渡される `AT_MOST` の制約で clamp されるため、コンテナの実測高さは `RendererLayoutCalculator` に渡している高さより 50dp 小さい (`channelNameText` の 50dp が引かれていない)。タイル格子全体のサイズを設定すると実測サイズは現行より 50dp 大きくなるが、コンテナの位置と各タイル内の映像矩形は変えない。コンテナの下端は親の下端を 40dp 超え、その分は親の clip により見えなくなる。現行のコンテナ下端は親の下端より下マージン 10dp だけ上にあるため、見えるタイル領域は現行より 10dp 高くなる。この 10dp の差は実機で確認する (完了条件)。
 3. 映像の解像度は `RendererEvents.onFrameResolutionChanged` (videoWidth / videoHeight / rotation) から取得するため、`SurfaceViewRenderer.init` に `RendererEvents` を渡す。アスペクト比の計算は rotation を反映した寸法 (90 / 270 の場合に幅と高さを入れ替えた寸法、つまり表示寸法) で行う。これは既存の `ResolutionMonitorSink` が `frame.rotatedWidth` / `frame.rotatedHeight` を使っている扱いと同じである。最初の `onFrameResolutionChanged` 発火までは事前に解像度が得られないため、それまでは既存の表示 (タイルサイズ) を維持する。
 4. `onFrameResolutionChanged` は libwebrtc のメディアスレッドから発火するため、通知を main thread へポストしてから映像矩形の再計算と `LayoutParams` の更新を行う。
 5. `SoraRemoteRendererSlot` が受け取った解像度変更は `SoraVideoChannel` へ通知し、`SoraVideoChannel.Listener` 経由で各 Activity の UI へ届ける。Activity の UI はレンダラーごとの解像度を保持し、`RendererLayoutCalculator` に映像矩形の再計算を指示する。
 6. タイルのサイズは `RendererLayoutCalculator` が決めるため、タイルのサイズと映像の解像度の両方が変わったときに映像矩形を再計算する。
 7. `RendererLayoutCalculator` はタイルの配置と映像矩形の計算の責務を分け、既存の 1 から 12 のレイアウトの挙動を変えない。
-8. `RpcChatActivity` の解像度表示 (`ResolutionMonitorSink`) は、新しい `RendererEvents` 経路で得た解像度を利用して表示する形に一本化し、別の解像度取得経路を残さない。
-9. ローカル映像のプレビューも同じ経路で切り取られているが、本 issue はリモート映像に限定し、ローカル映像は別 issue とする。
+8. `RpcChatActivity` の解像度表示 (`ResolutionMonitorSink`) は、新しい `RendererEvents` 経路で得た解像度を利用して表示する形に一本化し、別の解像度取得経路を残さない。表示対象は現行と同じく `getRemoteVideoTrack()` (`SoraRemoteRendererSlot.getFirstWorkingTrack()`) が返すストリームとする。ストリームの追加時は表示対象を切り替えず、表示中のストリームが削除されたときは残りのストリームへ切り替わる現行の挙動を維持する。
+9. ローカル映像のプレビューも同じ経路で切り取られているが、本 issue はリモート映像に限定する。ローカル映像のプレビューは本 issue の対象外とし、別 issue として起票する (完了条件に含める)。
 
 ## 完了条件
 
 - 横長のリモート映像がタイル内で全体表示される (レターボックスになり左右が切れない) こと。
 - 複数のリモート映像を受信しているときも、各タイルで同様に全体表示されること。
-- レターボックス化によって `rendererContainer` (タイル領域) のサイズと配置が変わらないこと。
+- レターボックス化によって `rendererContainer` (タイル領域) が縮まず、タイルの配置 (各タイルの位置と外枠のサイズ) が変わらないこと。
 - 受信中に映像の解像度が変化したとき (例: RPC チャットの RequestSimulcastRid による rid 切替) も、タイル内の映像矩形が追従して全体表示されること。
+- `RpcChatActivity` の解像度表示が、ストリーム追加時に表示対象を切り替えず、表示中のストリームが削除されたときは残りのストリームへ切り替わるという従来の挙動のまま動作すること。
 - 実機を縦持ちにして横長の送信元から受信したときに左右が切れないことを確認すること。
 - 既存のタイル配置、映像の追加と削除、接続と切断の挙動が変わらないこと。
+- ローカル映像のプレビューの切り取りを別 issue として起票すること。
 - `sora-android-sdk-samples/CHANGES.md` に修正を記載すること。
 
 ## 変更対象ファイル
