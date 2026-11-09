@@ -161,9 +161,12 @@ interface PeerChannel {
         /**
          * リモートトラックが削除されたときに呼び出されるコールバック.
          *
-         * PeerConnection.Observer.onRemoveTrack は PeerChannelImpl 内部に閉じており
+         * PeerConnection.Observer.onRemoveTrack と onRemoveStream は PeerChannelImpl 内部に閉じており
          * SDK 利用者が直接アクセスできないため、このコールバックを通じて
          * トラック ID とストリーム ID を上位レイヤーに通知する.
+         *
+         * onRemoveTrack ではトラック単位の削除を、onRemoveStream では削除された
+         * ストリームに属する各トラックの削除を通知する.
          *
          * 削除時点で MediaStreamTrack が JNI 側で dispose 済みの可能性があるため、
          * トラックオブジェクトではなく ID とストリーム ID で通知する.
@@ -426,6 +429,7 @@ class PeerChannelImpl(
                 ms: Array<out MediaStream>?,
             ) {
                 if (closing) {
+                    SoraLogger.d(TAG, "[rtc] @onAddTrack ignored because closing=true")
                     return
                 }
                 SoraLogger.d(TAG, "[rtc] @onAddTrack")
@@ -436,9 +440,13 @@ class PeerChannelImpl(
                         return
                     }
 
-                // RtpReceiver.getStreams() は Shiguredo 独自パッチで追加していた API で、
-                // 151.7922.0.0 ではパッチが適用されなくなったため利用できない。
-                // そのため、onAddTrack の引数から先頭の streamId を取得する。
+                // onAddTrack は Plan B と Unified Plan の両方で呼ばれる後方互換用の API であり、
+                // Unified Plan では onTrack が推奨される。
+                // ただし onTrack の RtpTransceiver からはストリーム ID を取得できず、
+                // RtpReceiver.getStreams() も libwebrtc 151 以降は利用できないため、
+                // onAddTrack の MediaStream 引数からストリーム ID を取得する。
+                // Sora の SDP では 1 つの受信トラックが属する MediaStream は 1 つ (配信者の connection ID) のため、
+                // 先頭要素の streamId を採用する。
                 val streamId =
                     ms?.firstOrNull()?.id ?: run {
                         SoraLogger.d(TAG, "[rtc] @onAddTrack: stream id not found for trackId=${track.id()}")
@@ -456,6 +464,7 @@ class PeerChannelImpl(
 
             override fun onRemoveTrack(receiver: RtpReceiver?) {
                 if (closing) {
+                    SoraLogger.d(TAG, "[rtc] @onRemoveTrack ignored because closing=true")
                     return
                 }
                 SoraLogger.d(TAG, "[rtc] @onRemoveTrack")
@@ -481,8 +490,8 @@ class PeerChannelImpl(
             }
 
             override fun onTrack(transceiver: RtpTransceiver) {
+                // onTrack は通知処理を持たないため、closing 中はログを出さずに return する。
                 if (closing) {
-                    SoraLogger.d(TAG, "[rtc] @onTrack ignored because closing=true")
                     return
                 }
                 SoraLogger.d(TAG, "[rtc] @onTrack direction=${transceiver.direction}")
@@ -608,6 +617,7 @@ class PeerChannelImpl(
 
             override fun onRemoveStream(ms: MediaStream?) {
                 if (closing) {
+                    SoraLogger.d(TAG, "[rtc] @onRemoveStream ignored because closing=true")
                     return
                 }
                 SoraLogger.d(TAG, "[rtc] @onRemoveStream")

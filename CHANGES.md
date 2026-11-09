@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] PeerChannel のリモートトラック通知に関する KDoc とコメントを実装に合わせる
+  - `closing` 中に通知を抑止する `onAddTrack` / `onRemoveTrack` / `onRemoveStream` から `ignored because closing=true` をログ出力する
+  - `onRemoveRemoteTrack` が `onRemoveTrack` と `onRemoveStream` の 2 経路から通知されることを KDoc に記載する
+  - @t-miya
 - [FIX] DataChannel の状態コレクションへの並行アクセスで切断時に状態が壊れる問題を修正する
   - `dataChannels` と 2 つのラベル集合をスレッドセーフなデータ構造に変更する
   - 切断処理と `onDataChannelOpen` の間で、状態のリセットと登録をロックで直列化する
