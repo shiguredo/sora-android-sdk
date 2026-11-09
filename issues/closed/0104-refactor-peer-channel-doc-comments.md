@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-09
 - Branch: feature/refactor-peer-channel-doc-comments
 - Polished: 2026-09-25
 
@@ -37,3 +37,12 @@
 - `CHANGES.md`
 
 ## 解決方法
+
+機能の挙動は変更せず、KDoc・コメントと `closing` 中のログ出力のみを実装に合わせた。
+
+- `PeerChannel.Listener.onRemoveRemoteTrack` と `SoraMediaChannel.Listener.onRemoveRemoteTrack` の KDoc に、`PeerConnection.Observer.onRemoveTrack` と `onRemoveStream` の 2 経路から通知されることと、それぞれの通知単位 (トラック単位 / ストリームに属する各トラック) を追記した。
+- `PeerChannelImpl.onAddTrack` のコメントに、`onAddTrack` が Plan B と Unified Plan の両方で呼ばれる後方互換用の API であり、Unified Plan では `onTrack` が推奨されることを追記した。あわせて、`onTrack` の `RtpTransceiver` からはストリーム ID を取得できず、`RtpReceiver.getStreams()` も libwebrtc 151 以降は利用できないため、`onAddTrack` の `MediaStream` 引数からストリーム ID を取得していることを明記した。
+- `ms.firstOrNull()` の採用根拠として、Sora の SDP では 1 つの受信トラックが属する `MediaStream` は 1 つ (配信者の connection ID) であるため先頭要素を採用することをコメントに記載した。
+- `closing` 中は `onAddTrack` / `onRemoveTrack` / `onRemoveStream` から `ignored because closing=true` をログ出力するようにした。`onTrack` は通知処理を持たないため `closing` 中のログを削除し、`closing` 中のログ出力を抑止する `return` のみ残した。
+- `CHANGES.md` の `## develop` に `[UPDATE]` エントリを追加した。
+- `./gradlew :sora-android-sdk:ktlintCheck :sora-android-sdk:testDebugUnitTest` が通ることを確認した。

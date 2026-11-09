@@ -631,9 +631,12 @@ class SoraMediaChannel
             /**
              * リモートトラックが削除されたときに呼び出されるコールバック.
              *
-             * PeerConnection.Observer.onRemoveTrack は PeerChannelImpl 内部に閉じており
+             * PeerConnection.Observer.onRemoveTrack と onRemoveStream は PeerChannelImpl 内部に閉じており
              * SDK 利用者が直接アクセスできないため、このコールバックを通じて
              * トラック ID とストリーム ID を通知する.
+             *
+             * onRemoveTrack ではトラック単位の削除を、onRemoveStream では削除された
+             * ストリームに属する各トラックの削除を通知する.
              *
              * 削除時点で MediaStreamTrack が JNI 側で dispose 済みの可能性があるため、
              * トラックオブジェクトではなく ID とストリーム ID で通知する.
