@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-09
 - Branch: feature/update-skill-develop-version
 - Polished: 2026-09-25
 
@@ -30,3 +30,7 @@
 - `skills/sora-android-sdk/SKILL.md`
 
 ## 解決方法
+
+- `skills/sora-android-sdk/SKILL.md` のバージョン行は、`SDKInfo.kt` の `VERSION` を正本とし、最新リリースは GitHub Releases へのリンクを参照する記述に変更済み。SDK バージョンのリテラル文字列 (`2026.3.0` / `2026.3.0-canary.0`) は残っていない。
+- この修正は 2026-10-23 のコミット `2ee47a10` (システム要件関連の CHANGES, README を更新する) で `develop` に入っている。現在の `SDKInfo.kt` の `VERSION` は `2026.4.0` だが、SKILL.md は固定値を書かないため追従は不要。
+- 完了条件を満たしていることを確認したため closed にする。コード変更を伴わないため、`Branch:` に記載したブランチは作成せず `develop` 上で closed にした。
