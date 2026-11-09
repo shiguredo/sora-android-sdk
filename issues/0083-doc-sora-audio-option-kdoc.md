@@ -1,7 +1,7 @@
 # SoraAudioOption の KDoc を整備する
 
 - Created: 2026-09-03
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-09
 - Branch: feature/update-sora-audio-option-kdoc
 - Polished: 2026-11-09
 
@@ -33,3 +33,24 @@
 - `audioSource` / `useStereoInput` / `useStereoOutput` の KDoc から、カスタム ADM 指定時に ADM へ反映されないことが読み取れること
 - `useStereoOutput` の KDoc から、answer SDP の Opus fmtp 書き換えはカスタム ADM 指定時も有効であることが読み取れること
 - `SoraAudioOption` の KDoc に現れる `org.webrtc.*` の参照が実在するクラスを指していること (誤記 3 か所が解消されていること)
+
+## 解決方法
+
+### 実装
+
+- `SoraAudioOption` の KDoc のパッケージ参照の誤記 3 か所を修正した
+  - `useHardwareAcousticEchoCanceler` / `useHardwareNoiseSuppressor` の `org.webrtc.JavaAudioDeviceModule` を `org.webrtc.audio.JavaAudioDeviceModule` に修正した
+  - `audioDeviceModule` の `org.webrtc.AudioDeviceModule` を `org.webrtc.audio.AudioDeviceModule` に修正した
+- `audioSource` / `useStereoInput` の KDoc に、`audioDeviceModule` が非 null の場合、 SDK は AudioDeviceModule を内部生成しないため本設定が無視される旨を追記した
+- `useStereoOutput` の KDoc に、ADM の `setUseStereoOutput` には反映されないが、answer SDP の Opus fmtp への `stereo=1` / `sprop-stereo=1` の追記は本設定のみで制御され、カスタム ADM 指定時も行われる旨を追記した
+- `audioAttributes` は 0081 で同旨が追記済みのため変更していない
+
+### テスト
+
+- KDoc のみの変更でロジックに影響しないため、テストの追加・変更は行っていない
+- `./gradlew :sora-android-sdk:ktlintCheck` が通ることを確認した
+- `./gradlew :sora-android-sdk:testDebugUnitTest` が通ることを確認した (89 テスト、スキップ 2、失敗 0)
+
+### 変更履歴
+
+- KDoc のみの変更で挙動に影響しないため、 `CHANGES.md` は更新していない
