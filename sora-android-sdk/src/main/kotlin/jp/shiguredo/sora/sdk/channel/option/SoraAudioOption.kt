@@ -33,14 +33,14 @@ class SoraAudioOption {
     /**
      * 端末組み込みの acoustic echo canceler を使うかどうかの設定.
      *
-     * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareAcousticEchoCanceler()`
+     * cf. `org.webrtc.audio.JavaAudioDeviceModule.Builder#setUseHardwareAcousticEchoCanceler()`
      */
     var useHardwareAcousticEchoCanceler: Boolean = true
 
     /**
      * 端末組み込みの noise suppressor を使うかどうかの設定.
      *
-     * cf. `org.webrtc.JavaAudioDeviceModule.Builder#setUseHardwareNoiseSuppressor()`
+     * cf. `org.webrtc.audio.JavaAudioDeviceModule.Builder#setUseHardwareNoiseSuppressor()`
      */
     var useHardwareNoiseSuppressor: Boolean = true
 
@@ -50,7 +50,7 @@ class SoraAudioOption {
      * null でない場合、 [useHardwareAcousticEchoCanceler] と [useHardwareNoiseSuppressor] の
      * 設定は無視されます.
      *
-     * cf `org.webrtc.AudioDeviceModule`
+     * cf `org.webrtc.audio.AudioDeviceModule`
      */
     var audioDeviceModule: AudioDeviceModule? = null
 
@@ -98,6 +98,8 @@ class SoraAudioOption {
      * 音声ソースの指定.
      *
      * AudioDeviceModule 生成時に利用されます.
+     * `audioDeviceModule` が非 null の場合、 AudioDeviceModule を SDK 内部で生成しないため
+     * 本設定は無視されます.
      * デフォルト値は `android.media.MediaRecorder.AudioSource.VOICE_COMMUNICATION です.
      */
     var audioSource: Int = MediaRecorder.AudioSource.VOICE_COMMUNICATION
@@ -106,6 +108,8 @@ class SoraAudioOption {
      * 入力をステレオにするかどうかのフラグ.
      *
      * AudioDeviceModule 生成時に利用されます.
+     * `audioDeviceModule` が非 null の場合、 AudioDeviceModule を SDK 内部で生成しないため
+     * 本設定は無視されます.
      * デフォルト値は false (モノラル) です.
      */
     var useStereoInput: Boolean = false
@@ -114,6 +118,10 @@ class SoraAudioOption {
      * 出力をステレオにするかどうかのフラグ.
      *
      * AudioDeviceModule 生成時に利用されます.
+     * `audioDeviceModule` が非 null の場合、 AudioDeviceModule を SDK 内部で生成しないため
+     * `org.webrtc.audio.JavaAudioDeviceModule.Builder#setUseStereoOutput` には反映されません.
+     * ただし answer SDP の Opus fmtp への `stereo=1` / `sprop-stereo=1` の追記は本設定のみで
+     * 制御され、カスタム ADM 指定時も行われます.
      * デフォルト値は false (モノラル) です.
      */
     var useStereoOutput: Boolean = false
