@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] `forwardingFilterOption` と `ConnectMessage.forwardingFilter` の非推奨メッセージを Sora の廃止状況に合わせる
+  - Sora 2025 年 12 月リリースで `forwarding_filter` が廃止されたことを反映し、廃止済みである旨と移行先を案内する文言に変更する
+  - `SoraMediaChannel` と `SignalingChannelImpl` は `forwardingFiltersOption`、`ConnectMessage` は `forwardingFilters` を案内する
+  - @t-miya
 - [UPDATE] PeerChannel のリモートトラック通知に関する KDoc とコメントを実装に合わせる
   - `closing` 中に通知を抑止する `onAddTrack` / `onRemoveTrack` / `onRemoveStream` から `ignored because closing=true` をログ出力する
   - `onRemoveRemoteTrack` が `onRemoveTrack` と `onRemoveStream` の 2 経路から通知されることを KDoc に記載する

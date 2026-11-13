@@ -130,7 +130,7 @@ class SignalingChannelImpl
         private val connectDataChannels: List<Map<String, Any>>? = null,
         private val redirect: Boolean = false,
         @Deprecated(
-            "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
+            "この項目は 2025 年 12 月リリースの Sora にて廃止されました。forwardingFiltersOption を利用してください",
             ReplaceWith("forwardingFiltersOption"),
             DeprecationLevel.WARNING,
         )
@@ -486,6 +486,8 @@ class SignalingChannelImpl
             listener = null
         }
 
+        // 旧 API の設定値を MessageConverter.buildConnectMessage へ引き渡すため、非推奨警告を抑制する
+        @Suppress("DEPRECATION")
         private fun sendConnectMessage() {
             if (closing.get()) {
                 SoraLogger.i(TAG, "signaling is closing")

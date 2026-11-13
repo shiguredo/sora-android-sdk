@@ -55,7 +55,7 @@ data class ConnectMessage(
     val audioStreamingLanguageCode: String? = null,
     @SerializedName("redirect") var redirect: Boolean? = null,
     @Deprecated(
-        "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
+        "この項目は 2025 年 12 月リリースの Sora にて廃止されました。forwardingFilters を利用してください",
         ReplaceWith("forwardingFilters"),
         DeprecationLevel.WARNING,
     )

@@ -125,7 +125,7 @@ class SoraMediaChannel
         dataChannels: List<Map<String, Any>>? = null,
         private var bundleId: String? = null,
         @Deprecated(
-            "この項目は 2025 年 12 月リリース予定の Sora にて廃止されます",
+            "この項目は 2025 年 12 月リリースの Sora にて廃止されました。forwardingFiltersOption を利用してください",
             ReplaceWith("forwardingFiltersOption"),
             DeprecationLevel.WARNING,
         )
@@ -1318,6 +1318,7 @@ class SoraMediaChannel
          *
          * アプリケーションで接続後の処理が必要な場合は [Listener.onConnect] で行います.
          */
+        @Suppress("DEPRECATION")
         fun connect() {
             try {
                 val kClass = Class.forName("org.webrtc.WebrtcBuildVersion")
@@ -1335,6 +1336,7 @@ class SoraMediaChannel
 
             // ステレオ受信のための answer SDP 書き換えが有効かどうか
             val stereoAnswerSdpRewrite = if (mediaOption.audioOption.useStereoOutput) "enabled" else "disabled"
+            // 旧 API の設定値をログへ出力するため、この参照の非推奨警告は connect() に付与した @Suppress で抑制している
             SoraLogger.d(
                 TAG,
                 """connect: SoraMediaOption
@@ -1477,6 +1479,8 @@ class SoraMediaChannel
             }
         }
 
+        // 旧 API の設定値を SignalingChannelImpl へ引き渡すため、非推奨警告を抑制する
+        @Suppress("DEPRECATION")
         private fun connectSignalingChannel(
             clientOfferSdp: SessionDescription?,
             redirectLocation: String? = null,
