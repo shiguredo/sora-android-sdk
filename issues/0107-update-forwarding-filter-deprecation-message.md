@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-13
 - Branch: feature/update-forwarding-filter-deprecation-message
 - Polished: 2026-11-13
 
@@ -51,3 +51,19 @@ Sora は 2025 年 12 月リリースで `forwarding_filter` を廃止し、`forw
 - `CHANGES.md`
 
 ## 解決方法
+
+- `SoraMediaChannel` と `SignalingChannelImpl` の `forwardingFilterOption`、および `ConnectMessage` の `forwardingFilter` の `@Deprecated` メッセージを、廃止済みであることと宣言ごとの移行先を案内する文言に変更した。
+  - `SoraMediaChannel` と `SignalingChannelImpl`: 「この項目は 2025 年 12 月リリースの Sora にて廃止されました。forwardingFiltersOption を利用してください」
+  - `ConnectMessage`: 「この項目は 2025 年 12 月リリースの Sora にて廃止されました。forwardingFilters を利用してください」
+  - `ReplaceWith` は変更していない。
+- SDK 内部で非推奨プロパティを読み取っている 3 箇所に `@Suppress("DEPRECATION")` と理由コメントを追加し、SDK 自身のビルド警告を抑制した。`@file:Suppress` は使っていない。
+  - `SoraMediaChannel.connect()`: ログ出力内の読み取り
+  - `SoraMediaChannel.connectSignalingChannel()`: `SignalingChannelImpl` 構築時の読み取り
+  - `SignalingChannelImpl.sendConnectMessage()`: `MessageConverter.buildConnectMessage` への引数渡し時の読み取り
+- `CHANGES.md` の `## develop` セクションに `[UPDATE]` エントリを追加した。
+- 非推奨 API の削除は行っていない。
+
+### 検証
+
+- `./gradlew clean :sora-android-sdk:compileDebugKotlin` が成功し、出力に `forwardingFilterOption` / `forwardingFilter` の非推奨警告が含まれないことを確認した。残る警告は `Listener.onClose` の非推奨呼び出し、冗長な `else`、`PeerChannel` の libwebrtc 側の 3 件で、いずれも本変更と無関係である。
+- `./gradlew :sora-android-sdk:testDebugUnitTest` と `./gradlew :sora-android-sdk:ktlintCheck` が成功することを確認した。
