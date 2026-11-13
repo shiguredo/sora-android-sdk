@@ -11,6 +11,11 @@
 
 ## develop
 
+- [ADD] `PeerConnection.Observer` に `onIceCandidateError` のログ出力を追加する
+  - `PeerChannelImpl` の `connectionObserver` で `onIceCandidateError` を実装し、ICE candidate のエラー情報（`address` / `port` / `url` / `errorCode` / `errorText`）を debug ログに出力する
+  - `address` は libwebrtc が匿名化したローカルアドレスであり、実際の IP アドレスではない
+  - プロキシ未使用時、ループバックを経由する ICE サーバーへの試行に由来するエラーは、通常の構成では接続に寄与しないため出力しない（ローカルの ICE サーバーを指定する構成は対象外）
+  - @t-miya
 - [UPDATE] `forwardingFilterOption` と `ConnectMessage.forwardingFilter` の非推奨メッセージを Sora の廃止状況に合わせる
   - Sora 2025 年 12 月リリースで `forwarding_filter` が廃止されたことを反映し、廃止済みである旨と移行先を案内する文言に変更する
   - `SoraMediaChannel` と `SignalingChannelImpl` は `forwardingFiltersOption`、`ConnectMessage` は `forwardingFilters` を案内する

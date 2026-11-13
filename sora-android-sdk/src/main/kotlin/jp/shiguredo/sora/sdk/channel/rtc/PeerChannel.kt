@@ -15,6 +15,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.webrtc.DataChannel
 import org.webrtc.IceCandidate
+import org.webrtc.IceCandidateErrorEvent
 import org.webrtc.Logging
 import org.webrtc.MediaStream
 import org.webrtc.MediaStreamTrack
@@ -336,6 +337,62 @@ class PeerChannelImpl(
                 "a=fmtp:$payloadType $params;${missing.joinToString(";")}"
             }
         }
+
+        /**
+         * libwebrtc が匿名化したローカルアドレスがループバック由来かどうかを判定する。
+         *
+         * `onIceCandidateError` の `address` は libwebrtc の
+         * `SocketAddress::HostAsSensitiveURIString()` が返す匿名化済みのローカルアドレスであり、
+         * 実際の IP アドレスではない。IPv4 は先頭 3 オクテットを残して最終オクテットを `.x` に置換し
+         * (ループバックは `127.0.0.x`)、IPv6 は先頭 48 bit を残して残りを `x` に置換する
+         * (ループバックは `[0:0:0:x:x:x:x:x]`)。IPv6 はブラケットで囲まれる。
+         * 匿名化された文字列は IP リテラルとして解析できないため、文字列で判定する。
+         *
+         * IPv6 は先頭 48 bit しか残らないため、先頭 48 bit が 0 のアドレス
+         * (`::` や IPv4-mapped など) はループバックと同じ表現になり区別できない。
+         * 本判定はログのノイズ除去のための近似であり、アドレスの同一性判定には使わないこと。
+         * ローカルの ICE サーバーを指定する構成は対象外とする。
+         */
+        internal fun isLoopbackSensitiveAddress(address: String): Boolean {
+            // IPv6 は HostAsSensitiveURIString() がブラケットで囲むため取り除く
+            val host = address.removePrefix("[").removeSuffix("]")
+            // 127.0.0.0/8 は匿名化後も先頭オクテットが残る
+            if (host.startsWith("127.")) {
+                return true
+            }
+            // ::1 の匿名化表現。先頭 48 bit が 0 のアドレスとは区別できない
+            return host == "0:0:0:x:x:x:x:x"
+        }
+
+        /**
+         * `onIceCandidateError` のイベントをログ出力するかどうかを判定する。
+         *
+         * プロキシ未使用時は、匿名化されたループバック表現のイベントを除外する。
+         * プロキシ設定時は TURN/TCP が localhost に束縛されることがあり、
+         * その失敗は診断に必要なので除外しない。
+         */
+        internal fun shouldLogIceCandidateError(
+            proxyType: ProxyType,
+            address: String,
+        ): Boolean = proxyType != ProxyType.NONE || !isLoopbackSensitiveAddress(address)
+
+        /**
+         * `onIceCandidateError` のログ 1 行分を組み立てる。
+         *
+         * `IceCandidateErrorEvent` は `toString()` をオーバーライドしていないため、
+         * フィールドを個別に文字列化する。`errorText` は空白やカンマを含み得るため末尾に置く。
+         * `errorText` はサーバー由来の自由文字列であり、改行を含むと 1 行のログが崩れるため
+         * 空白に置換する。
+         */
+        internal fun formatIceCandidateError(event: IceCandidateErrorEvent): String {
+            val errorText =
+                event.errorText
+                    .replace("\r\n", " ")
+                    .replace('\r', ' ')
+                    .replace('\n', ' ')
+            return "[rtc] @onIceCandidateError address=${event.address}, port=${event.port}," +
+                " url=${event.url}, errorCode=${event.errorCode}, errorText=$errorText"
+        }
     }
 
     private val componentFactory =
@@ -417,6 +474,20 @@ class PeerChannelImpl(
 
             override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {
                 SoraLogger.d(TAG, "[rtc] @onIceCandidatesRemoved")
+            }
+
+            // ICE candidate の収集失敗を通知するコールバック。
+            // 個々の ICE サーバー試行の失敗は正常な接続でも発生するため、診断用の debug ログとして出力する。
+            // address は libwebrtc が匿名化した、ICE サーバーとの通信に使ったローカルアドレスであり、
+            // ループバックを経由する試行は通常の構成では接続に寄与しないため、
+            // プロキシ未使用時に限り除外する。ローカルの ICE サーバーを指定する構成は対象外とする。
+            override fun onIceCandidateError(event: IceCandidateErrorEvent) {
+                // プロキシ経由の TURN/TCP ではローカルソケットが localhost に束縛されることがあり、
+                // プロキシ設定時はループバックの失敗も診断に必要となる
+                if (!shouldLogIceCandidateError(mediaOption.proxy.type, event.address)) {
+                    return
+                }
+                SoraLogger.d(TAG, formatIceCandidateError(event))
             }
 
             override fun onAddStream(ms: MediaStream?) {
