@@ -38,7 +38,7 @@ ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバ�
   - `errorText` はサーバー由来の自由文字列であり、改行を含み得るため `\r\n` / `\r` / `\n` を空白に置換して 1 行にする。
 - `address` は libwebrtc の `SocketAddress::HostAsSensitiveURIString()` が返す匿名化済みのローカルアドレスである。IPv4 は先頭 3 オクテットを残して最終オクテットを `.x` に置換し（ループバックは `127.0.0.x`）、IPv6 は先頭 48 bit を残して残りを `x` に置換する（ループバックは `[0:0:0:x:x:x:x:x]`）。実際の IP アドレスではないため `InetAddress` では判定できない。
 - `PeerChannelImpl` の `companion object` に `internal fun isLoopbackSensitiveAddress(address: String): Boolean` を追加し、匿名化された文字列をそのまま判定する。
-- 匿名化されたループバック表現（`127.*` または `[0:0:0:x:x:x:x:x]`）のイベントは、プロキシ未使用時に限りログ出力しない。ループバックを経由する ICE サーバーへの試行は通常の構成では接続に寄与しないため、トラブルシュートのノイズになる。プロキシ経由の TURN/TCP ではローカルソケットが localhost に束縛されることがあり、その失敗は診断に必要なので除外しない。
+- 匿名化されたループバック表現（`127.*` または `[0:0:0:x:x:x:x:x]`）のイベントは、プロキシ未使用時に限りログ出力しない。ループバックを経由する ICE サーバーへの試行は通常の構成では接続に寄与しないため、トラブルシュートのノイズになる。プロキシ設定時は TURN/TCP のローカルソケットが localhost に束縛されることがあり、その失敗は診断に必要なので除外しない。
 - IPv6 は先頭 48 bit しか残らないため、先頭 48 bit が 0 のアドレス（IPv4-mapped など）はループバックと同じ表現になり区別できない。本判定はログのノイズ除去のための近似であり、アドレスの同一性判定には使わない。ローカルの ICE サーバー（`turn:127.0.0.1:3478` など）を指定する構成は対象外とする。
 - ログレベルは `SoraLogger.d`（debug）とする。個々の ICE サーバー試行の失敗は正常な接続でも発生するため、warning ではなく診断用のログとして扱う。
 - `url` は libwebrtc が ICE サーバーのアドレスから再構成した URL（`turn:<host>:<port>?transport=<proto>` など）であり、設定された URL と完全には一致しない。`username` / `credential` は Sora の `config.iceServers` で別フィールドとして渡しているため、`url` に資格情報は含まれない。
@@ -60,6 +60,7 @@ ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバ�
     - `PeerChannelImpl` の `connectionObserver` で `onIceCandidateError` を実装し、ICE candidate のエラー情報（`address` / `port` / `url` / `errorCode` / `errorText`）を debug ログに出力する
     - `address` は libwebrtc が匿名化したローカルアドレスであり、実際の IP アドレスではない
     - プロキシ未使用時、ループバックを経由する ICE サーバーへの試行に由来するエラーは、通常の構成では接続に寄与しないため出力しない（ローカルの ICE サーバーを指定する構成は対象外）
+    - プロキシ設定時は TURN/TCP のローカルソケットが localhost に束縛されることがあるため、ループバックのエラーも出力する
     - @担当者
   ```
 
