@@ -79,4 +79,5 @@ ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバ�
 
 - `./gradlew :sora-android-sdk:ktlintCheck` が成功することを確認した。
 - `./gradlew :sora-android-sdk:testDebugUnitTest` が成功し、`PeerChannelIceCandidateErrorTest` の 12 件を含むテストがすべて成功することを確認した。
-- 実機での logcat 確認は未実施。`SoraLogger.enabled = true` にして `PeerChannelImpl` タグに 5 フィールドが 1 行で出力されることを確認する必要がある。
+- 実機で `SoraLogger.enabled = true` にして確認し、`PeerChannelImpl` タグに 5 フィールドが 1 行の debug ログとして出力されることを確認した。
+  - TURN/TLS のソケット生成失敗時は `address=, port=0, url=turns:<host>:443?transport=tcp, errorCode=701, errorText=Failed to create TURN client socket.` のように出力される。
