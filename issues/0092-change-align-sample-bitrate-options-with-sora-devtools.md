@@ -1,7 +1,7 @@
 # Sora Android SDK サンプルのビットレート選択肢を Sora DevTools と揃える
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-16
 - Branch: feature/change-align-sample-bitrate-options-with-sora-devtools
 - Polished: 2026-11-16
 
@@ -44,3 +44,13 @@ Sora DevTools リポジトリ (`sora-devtools`) の `src/constants.ts` の選択
 - `VideoChatRoomSetupActivity` / `SpotlightRoomSetupActivity` / `SimulcastSetupActivity` / `RpcChatSetupActivity` / `VoiceChatRoomSetupActivity` の音声ビットレートの選択肢が Sora DevTools の `AUDIO_BIT_RATES` と一致している (`""` は `未指定` として扱う)。
 - `SpotlightRoomSetupActivity` / `SimulcastSetupActivity` / `RpcChatSetupActivity` の映像ビットレートで `未指定` を選択できる。
 - 初期選択が既存の実効デフォルトのままである (`VideoChatRoomSetupActivity` の映像は `未指定`、`SpotlightRoomSetupActivity` の映像は `500`、`SimulcastSetupActivity` の映像は `5000`、`RpcChatSetupActivity` の映像は `500`、音声は全画面 `未指定`)。
+
+## 解決方法
+
+`sora-android-sdk-samples` の `feature/change-align-sample-bitrate-options-with-sora-devtools` ブランチで対応した (7a6b0f6)。
+
+- `sora-android-sdk-samples/samples/src/main/kotlin/jp/shiguredo/sora/sample/option/SoraBitRateOptions.kt` を追加し、映像 19 種類と音声 10 種類のビットレート選択肢を共通定数にまとめた。
+- `VideoChatRoomSetupActivity` / `SpotlightRoomSetupActivity` / `SimulcastSetupActivity` / `RpcChatSetupActivity` の `videoBitRateOptions` と、これら 4 画面および `VoiceChatRoomSetupActivity` の `audioBitRateOptions` を `SoraBitRateOptions` に置き換えた。
+- 映像ビットレートは Sora DevTools と同じ 19 種類になり、既存の `200` / `700` / `1200` / `4000` は選択肢から外れた。音声ビットレートには `384` を追加した。
+- Spotlight / Simulcast / RpcChat の `defaultIndex` は `videoBitRateOptions.indexOf("500")` / `indexOf("5000")` / `indexOf("500")` に変更し、初期選択値を従来の `500` / `5000` / `500` に維持した。VideoChat と音声ビットレートは先頭の `未指定` のままとした。
+- `sora-android-sdk-samples/CHANGES.md` に変更内容を追記した。
