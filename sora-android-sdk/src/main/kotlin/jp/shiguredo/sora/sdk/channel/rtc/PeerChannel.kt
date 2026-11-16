@@ -368,8 +368,10 @@ class PeerChannelImpl(
          * `onIceCandidateError` のイベントをログ出力するかどうかを判定する。
          *
          * プロキシ未使用時は、匿名化されたループバック表現のイベントを除外する。
-         * プロキシ設定時は TURN/TCP が localhost に束縛されることがあり、
-         * その失敗は診断に必要なので除外しない。
+         * プロキシ設定時は TURN/TCP のローカルソケットが localhost に束縛されることがある。
+         * その場合の address は匿名化されたループバック表現（127.0.0.x / [0:0:0:x:x:x:x:x]）になる。
+         * libwebrtc の TurnPort::OnSocketConnect はこのループバック束縛を許容する。
+         * そのため、この失敗は診断に必要なので除外しない。
          */
         internal fun shouldLogIceCandidateError(
             proxyType: ProxyType,
@@ -482,8 +484,8 @@ class PeerChannelImpl(
             // ループバックを経由する試行は通常の構成では接続に寄与しないため、
             // プロキシ未使用時に限り除外する。ローカルの ICE サーバーを指定する構成は対象外とする。
             override fun onIceCandidateError(event: IceCandidateErrorEvent) {
-                // プロキシ経由の TURN/TCP ではローカルソケットが localhost に束縛されることがあり、
-                // プロキシ設定時はループバックの失敗も診断に必要となる
+                // プロキシ設定時は TURN/TCP のローカルソケットが localhost に束縛されることがある。
+                // ループバックの失敗も診断に必要となる。
                 if (!shouldLogIceCandidateError(mediaOption.proxy.type, event.address)) {
                     return
                 }
