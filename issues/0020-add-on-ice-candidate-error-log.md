@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-06-03
-- Completed:
+- Completed: 2026-11-16
 - Polished: 2026-11-13
 - Model: Opus 4.8
 - Branch: feature/add-on-ice-candidate-error-log
@@ -65,3 +65,18 @@ ICE candidate の収集失敗を通知する `onIceCandidateError` はオーバ�
   ```
 
 ## 解決方法
+
+- `PeerChannelImpl` の `connectionObserver` に `onIceCandidateError` を実装し、`address` / `port` / `url` / `errorCode` / `errorText` を `SoraLogger.d` で 1 行の debug ログとして出力するようにした。
+- `onIceCandidateError` の `address` は libwebrtc の `SocketAddress::HostAsSensitiveURIString()` が返す匿名化済みのローカルアドレスであるため、`InetAddress` ではなく文字列で判定する `isLoopbackSensitiveAddress` を追加した。
+  - IPv4 は `127.*`、IPv6 は `[0:0:0:x:x:x:x:x]` をループバックとして扱う。
+  - IPv6 は先頭 48 bit しか残らないため、先頭 48 bit が 0 のアドレスとは区別できない近似判定である。
+- プロキシ未使用時は匿名化されたループバック表現のイベントを除外し、プロキシ設定時は TURN/TCP のローカルソケットが localhost に束縛されるケースを考慮して出力する `shouldLogIceCandidateError` を追加した。
+- `errorText` はサーバー由来の自由文字列で改行を含み得るため、`\r\n` / `\r` / `\n` を空白に置換して 1 行にする `formatIceCandidateError` を追加した。
+- `PeerChannelIceCandidateErrorTest` を追加し、匿名化されたループバック表現、プロキシゲート、ログ書式、空 address / port=0、改行置換を検証した。
+- `CHANGES.md` の `## develop` セクションに `[ADD]` エントリを追加した。
+
+### 検証
+
+- `./gradlew :sora-android-sdk:ktlintCheck` が成功することを確認した。
+- `./gradlew :sora-android-sdk:testDebugUnitTest` が成功し、`PeerChannelIceCandidateErrorTest` の 12 件を含むテストがすべて成功することを確認した。
+- 実機での logcat 確認は未実施。`SoraLogger.enabled = true` にして `PeerChannelImpl` タグに 5 フィールドが 1 行で出力されることを確認する必要がある。
