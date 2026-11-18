@@ -5,10 +5,11 @@
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-e2e-remote-track-callbacks
 - Polished: 2026-09-25
+- Refreshed: 2026-11-18
 
 ## 目的
 
-`SoraMediaChannel.Listener.onAddRemoteTrack` / `onRemoveRemoteTrack` の通知経路が壊れても既存テストでは検出できないため、E2E で検証できるようにする。`develop` (libwebrtc を 151.7922.0.0 へ上げた更新、2026.3.0 リリース後の変更で未リリース) では `onTrack` と独自パッチの `RtpReceiver.getStreams()` から `onAddTrack` の `MediaStream` 引数へストリーム ID の取得元を移行しており、この経路の回帰を検出したい。
+`SoraMediaChannel.Listener.onAddRemoteTrack` / `onRemoveRemoteTrack` の通知経路が壊れても既存テストでは検出できないため、E2E で検証できるようにする。2026.4.0 (2026-10-23 リリース、libwebrtc 156.8078.5.1) には、libwebrtc 151 以降 `RtpReceiver.getStreams()` が利用できなくなったことに伴い、ストリーム ID の取得元を `onTrack` から `onAddTrack` の `MediaStream` 引数へ移行した変更が含まれており (`CHANGES.md` の 2026.4.0 の libwebrtc 更新の項目)、この経路の回帰を検出したい。
 
 ## 現状
 
