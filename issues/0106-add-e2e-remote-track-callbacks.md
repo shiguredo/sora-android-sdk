@@ -4,7 +4,7 @@
 - Created: 2026-09-25
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-e2e-remote-track-callbacks
-- Polished: 2026-09-25
+- Polished: 2026-11-18
 - Refreshed: 2026-11-18
 
 ## 目的
@@ -16,19 +16,23 @@
 - `SoraE2ETestBase.createChannel` は `onConnect` / `onClose` / `onError` / `onSignalingMessage` / `onDataChannel` 系のコールバックしか受け取らず、`onAddRemoteTrack` / `onRemoveRemoteTrack` をテストから観測できない。
 - `sora-android-sdk/src/test` と `sora-android-sdk/src/androidTest` を検索しても `onAddRemoteTrack` / `onRemoveRemoteTrack` への参照がない。
 - 通知処理は `PeerChannelImpl` の `onAddTrack` で `trackToStreamId` に登録し、`onRemoveTrack` / `onRemoveStream` で削除通知を出す。`SoraMediaChannel` 側では `isSelfStreamId` で自身のストリームを除外する。
-- 既存の E2E はフレーム生成や stats を検証しており、受信トラックの通知がなくても成功する。
+- 既存の E2E の一部はフレーム生成や stats を検証しているが、受信トラックの通知を観測しているテストはなく、通知がなくても成功する。
 
 ## 設計方針
 
 - `SoraE2ETestBase.createChannel` に `onAddRemoteTrack` / `onRemoveRemoteTrack` の optional lambda を追加し、リスナーから委譲する。
-- 2 チャネル構成の既存テストと同様の構成で、受信側が相手の connection id と一致する streamId で `onAddRemoteTrack` を受け取ること、送信側の切断で `onRemoveRemoteTrack` が同じ trackId / streamId で 1 回だけ発火することを assert する。受信側に `enableMultistream()` は不要。Sora は connect の `multistream` 未指定でもマルチストリームで動作し、リモートストリームの ID は配信側の connection id と一致する (2023 年 6 月リリースの Sora で `default_multistream` が廃止され、未指定時は常にマルチストリームになる)。
+- テストを実装したら、SDK 側の修正に入る前に、現行実装で `onAddRemoteTrack` / `onRemoveRemoteTrack` が実際に発火するかを GMD 上で確認する。特に `onAddTrack` の `MediaStream` 引数から streamId を取得できることと、削除時に `receiver.track()?.id()` が dispose 済みトラックで例外にならないことを確認する。発火しない場合は SDK 側の不具合として扱い、テストの skip や期待値の緩和で回避せず、`PeerChannel.kt` / `SoraMediaChannel.kt` も変更対象に加えて原因を修正する。
+- 2 チャネル構成の既存テストと同様の構成で、送信側は映像のみを有効にし (`enableVideoUpstream`)、受信側は `enableVideoDownstream` のみを有効にする。音声は送信・受信とも無効とする。期待値は映像トラック 1 件につき `onAddRemoteTrack` と `onRemoveRemoteTrack` が各 1 回である。
+- 受信側が相手の connection id と一致する streamId で `onAddRemoteTrack` を受け取ること、送信側の切断で `onRemoveRemoteTrack` が同じ trackId / streamId で 1 回だけ発火することを assert する。コールバックでは受信した trackId / streamId をスレッドセーフなコレクションや `CompletableDeferred` に記録するだけにし、assert はテストスレッドで行う。通知が来ない場合は `assumeTrue` で skip せず、タイムアウトをテスト失敗として扱う。
+- 受信側に `enableMultistream()` は不要。Sora は connect の `multistream` 未指定でもマルチストリームで動作し、リモートストリームの ID は配信側の connection id と一致する (2023 年 6 月リリースの Sora で `default_multistream` が廃止され、未指定時は常にマルチストリームになる)。
+- `SoraSpotlightE2ETest` から流用するのは 2 チャネルの生成・接続順・待機・`finally` の切断のみとし、spotlight 固有の設定 (`enableSpotlight` / `softwareVideoEncoderOnly` / VP8 / stats ポーリング) は流用しない。channelId は基底クラスの値を使う。
 - `isSelfStreamId` による自身のストリームの除外は、受信側 (recvonly) には自分自身のストリームが Sora から届かないため本構成では検証できない。そのため本 issue では検証対象としない。なお、フィルタが誤って常に通知を抑止する形の回帰は `onAddRemoteTrack` が一度も発火せず本テストがタイムアウトすることで検出される。
 - `AGENTS.md` の「モックやスタブは絶対に利用しないこと」に従い、実 Sora 接続の E2E で検証する。
 
 ## 完了条件
 
 - 当該 E2E テストが CI (pixelApi35 の Gradle Managed Device) で安定して成功すること。
-- 通知経路が壊れた場合にテストが失敗すること。
+- 通知経路が壊れた場合にテストが失敗すること。通知が来ない場合に `assumeTrue` で skip せず、タイムアウトを失敗として扱うこと。
 - 既存の E2E テストが引き続き成功すること (createChannel へのコールバック追加はデフォルト引数のため既存呼び出しに影響しない)。
 
 ## 変更対象ファイル
@@ -37,5 +41,6 @@
   - sendonly + recvonly の 2 チャネル構成は `SoraSpotlightE2ETest` を雛形とする
 - `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraE2ETestBase.kt`
 - `CHANGES.md`
+- 現行実装で通知が発火しない場合は `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/PeerChannel.kt` と `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/SoraMediaChannel.kt`
 
 ## 解決方法
