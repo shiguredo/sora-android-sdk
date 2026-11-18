@@ -1,7 +1,7 @@
 # sora-android-sdk-samples のカメラ・マイクのミュート切替時にポップアップを表示する
 
 - Created: 2026-09-11
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-18
 - Branch: feature/change-sample-camera-mic-mute-popup
 - Polished: {YYYY-MM-DD}
 
@@ -52,3 +52,13 @@
 - `sora-android-sdk-samples/CHANGES.md`
 
 ## 解決方法
+
+`sora-android-sdk-samples` の `feature/change-sample-camera-mic-mute-popup` ブランチで対応し、Pull Request #125 としてマージした (70550fc)。
+
+- `MuteStateMessages` を追加し、カメラ・マイクのミュート状態を伝える文言を集約した。
+- `VideoChatRoomActivity` / `SimulcastActivity` の `onCameraMuteStateChanged` で、状態の確定値が変化したときに Toast を表示するようにした。ハードミュートに失敗してソフトミュートへ戻った場合も、`pendingCameraHardMute` により遷移後の状態を表示する。
+- `MicMuteController` の `showMicOn` / `showMicSoft` / `showMicHard` コールバックで、アイコンの更新と合わせて Toast を表示するようにした。
+- `RpcChatActivity` の `handleToggleCamera` / `handleToggleMute` も、確定した状態に応じて Toast を表示するようにした。
+- `VideoChatRoomActivityUI` / `SimulcastActivityUI` に `showToastOnUI` を追加した。
+- `MuteStateMessagesTest` に文言選択の単体テストを追加した。
+- `sora-android-sdk-samples/CHANGES.md` に変更を記載した。
