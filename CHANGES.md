@@ -32,6 +32,13 @@
   - 最後のメッセージング用 DataChannel の `onDataChannelOpened` 通知中でも `sendDataChannelMessage` が成功するようになる
   - @t-miya
 
+### misc
+
+- [ADD] リモートトラックの追加・削除通知を検証する e2e テストを追加する
+  - `SoraE2ETestBase.createChannel` に `onAddRemoteTrack` / `onRemoveRemoteTrack` のコールバックを追加する
+  - sendonly（映像のみ）+ recvonly（映像のみ）の 2 チャネル構成で、受信側が送信側の `connectionId` と一致する `streamId` で追加通知を 1 回受け取り、送信側の切断で同じ trackId / streamId の削除通知を 1 回受け取ることを検証する
+  - @t-miya
+
 ## 2026.4.0
 
 **リリース日**: 2026-10-23

@@ -12,6 +12,7 @@ import jp.shiguredo.sora.sdk.error.SoraErrorReason
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.webrtc.MediaStreamTrack
 import java.nio.ByteBuffer
 
 // Sora E2E テストの共通基盤クラス。
@@ -94,6 +95,12 @@ abstract class SoraE2ETestBase {
         onDataChannel: ((SoraMediaChannel, List<Map<String, Any>>?) -> Unit)? = null,
         onDataChannelOpened: ((SoraMediaChannel, String) -> Unit)? = null,
         onDataChannelMessage: ((SoraMediaChannel, String, ByteBuffer) -> Unit)? = null,
+        // onAddRemoteTrack は MediaStreamTrack、onRemoveRemoteTrack は trackId を渡す。
+        // これは SoraMediaChannel.Listener と同じ非対称で、削除時点では native の
+        // MediaStreamTrack が dispose 済みの可能性があるため。
+        // 受け取った track はコールバック内でのみ利用し、保持しないこと。
+        onAddRemoteTrack: ((SoraMediaChannel, MediaStreamTrack, String) -> Unit)? = null,
+        onRemoveRemoteTrack: ((SoraMediaChannel, String, String) -> Unit)? = null,
     ): SoraMediaChannel =
         SoraMediaChannel(
             context = context,
@@ -157,6 +164,22 @@ abstract class SoraE2ETestBase {
                         data: ByteBuffer,
                     ) {
                         onDataChannelMessage?.invoke(mediaChannel, label, data)
+                    }
+
+                    override fun onAddRemoteTrack(
+                        mediaChannel: SoraMediaChannel,
+                        track: MediaStreamTrack,
+                        streamId: String,
+                    ) {
+                        onAddRemoteTrack?.invoke(mediaChannel, track, streamId)
+                    }
+
+                    override fun onRemoveRemoteTrack(
+                        mediaChannel: SoraMediaChannel,
+                        trackId: String,
+                        streamId: String,
+                    ) {
+                        onRemoveRemoteTrack?.invoke(mediaChannel, trackId, streamId)
                     }
                 },
         )
