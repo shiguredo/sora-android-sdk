@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-18
 - Branch: feature/add-e2e-remote-track-callbacks
 - Polished: 2026-11-18
 - Refreshed: 2026-11-18
@@ -44,3 +44,10 @@
 - 現行実装で通知が発火しない場合は `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/rtc/PeerChannel.kt` と `sora-android-sdk/src/main/kotlin/jp/shiguredo/sora/sdk/channel/SoraMediaChannel.kt`
 
 ## 解決方法
+
+- `SoraE2ETestBase.createChannel` に `onAddRemoteTrack` / `onRemoveRemoteTrack` の optional lambda を追加し、`SoraMediaChannel.Listener` から委譲するようにした。
+- `SoraRemoteTrackE2ETest` を追加し、sendonly（映像のみ）+ recvonly（映像のみ）の 2 チャネル構成で、テスト専用の channelId を使って検証するようにした。
+- 受信側が送信側の `connectionId` と一致する `streamId` で `onAddRemoteTrack` を 1 回受け取り、送信側の切断で同じ trackId / streamId の `onRemoveRemoteTrack` を 1 回受け取ることを assert する。通知が来ない場合は skip せずにテストを失敗させる。
+- CI (pixelApi35 の Gradle Managed Device) の E2E で成功した (https://github.com/shiguredo/sora-android-sdk/actions/runs/44228079890)。
+- `CHANGES.md` の `## develop` に `### misc` のエントリを追加した。
+- なお、`onRemoveTrack` 単独経路の回帰は `onRemoveStream` のフォールバックで隠れるため、本 E2E では区別しない。経路を分離する単体テストは別途必要。
