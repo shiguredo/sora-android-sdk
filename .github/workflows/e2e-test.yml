@@ -63,6 +63,8 @@ jobs:
           LOG_DIR="e2e-logs"
           LOGCAT_FILE="$LOG_DIR/logcat.txt"
           STOP_FILE="$LOG_DIR/stop-watchers"
+          # テストプロセスのログだけを取得し、システムログに含まれる ICCID や private IP を artifact に含めない。
+          TEST_PACKAGE_NAME="jp.shiguredo.sora.sdk.test"
 
           # 前回の実行が残したログを混ぜないように、毎回作り直す。
           rm -rf "$LOG_DIR"
@@ -83,14 +85,21 @@ jobs:
                 sleep 2
                 continue
               fi
+              # テストプロセスの起動を待つ。プロセス以外のシステムログは PII を含むため取得しない。
+              local test_pid
+              test_pid=$("$ADB_PATH" -s "$serial" shell pidof "$TEST_PACKAGE_NAME" 2>/dev/null | tr -d '\r' | awk '{ print $1 }')
+              if [ -z "$test_pid" ]; then
+                sleep 2
+                continue
+              fi
               # クラッシュのスタックがリングバッファからあふれないように広げる。
               "$ADB_PATH" -s "$serial" logcat -G 16M >> "$LOGCAT_FILE" 2>&1 || true
-              echo "=== logcat start serial=$serial ===" >> "$LOGCAT_FILE"
-              "$ADB_PATH" -s "$serial" logcat -b all -v threadtime >> "$LOGCAT_FILE" 2>&1 &
+              echo "=== logcat start serial=$serial pid=$test_pid ===" >> "$LOGCAT_FILE"
+              "$ADB_PATH" -s "$serial" logcat --pid="$test_pid" -b all -v threadtime >> "$LOGCAT_FILE" 2>&1 &
               child_pid=$!
               wait "$child_pid" || true
               child_pid=""
-              echo "=== logcat exit serial=$serial ===" >> "$LOGCAT_FILE"
+              echo "=== logcat exit serial=$serial pid=$test_pid ===" >> "$LOGCAT_FILE"
               # adb サーバの再起動直後は接続できないため、少し待ってから再試行する。
               sleep 2
             done
