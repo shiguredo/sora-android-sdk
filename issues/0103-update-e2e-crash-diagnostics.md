@@ -25,7 +25,7 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 - `-G` でリングバッファを拡張し、テストプロセス (`jp.shiguredo.sora.sdk.test`) の PID に限定して `-b all -v threadtime` で取得する。システムログに含まれる ICCID や private IP などの PII を artifact に含めない。テストプロセスのログに残る private IP も保存前に `<IP>` に置換する。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
 - 現行の `cleanup()` による全量 `cat` を廃止し、テスト step が非 0 で終了したときだけ、クラッシュ関連の行 (`FATAL EXCEPTION` / `AndroidRuntime` / `DEBUG` / `libc` / `tombstone` / `Fatal signal` / `backtrace`) を最大 300 行、および logcat の末尾 100 行をジョブログへ出力する。終了コードは `cleanup()` の先頭で保存する。
 - 診断ログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイント、個人情報 (ICCID、private IP、絶対パス) を含めない。テストの生 signaling メッセージはログに出力しない。
-- `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。per-test logcat と `test-result.pb` / `test-result.textproto` は保存しない（資格情報と絶対パスを含むため）。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
+- `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/logcat.txt`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。`e2e-logs/stop-watchers` は保存しない。per-test logcat と `test-result.pb` / `test-result.textproto` は保存しない（資格情報と絶対パスを含むため）。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
 
 ## 完了条件
 

@@ -40,7 +40,7 @@
   - @t-miya
 - [UPDATE] E2E 失敗時にクラッシュ調査用の logcat とテストレポートを保存する
   - `Run E2E tests with logcat` を、デバイスの出現待ちと再起動を含む logcat 取得ループに変更する
-  - 失敗時はクラッシュ関連行と末尾をジョブログへ出力し、`e2e-logs/` と Gradle Managed Device のレポート・テスト結果を artifact `e2e-diagnostics-<run_attempt>` として保存する
+  - 失敗時はクラッシュ関連行と末尾をジョブログへ出力し、`e2e-logs/logcat.txt` と Gradle Managed Device のレポート・テスト結果を artifact `e2e-diagnostics-<run_attempt>` として保存する
   - 診断ログに機密情報・個人情報を含めない
   - @t-miya
 
