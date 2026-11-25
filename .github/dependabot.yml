@@ -7,6 +7,7 @@ updates:
     allow:
       - dependency-name: "actions/checkout"
       - dependency-name: "actions/setup-java"
+      - dependency-name: "actions/upload-artifact"
       - dependency-name: "actions/configure-pages"
       - dependency-name: "actions/upload-pages-artifact"
       - dependency-name: "actions/deploy-pages"

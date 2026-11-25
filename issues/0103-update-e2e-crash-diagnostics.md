@@ -24,18 +24,25 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 - `adb devices` で `device` 状態の serial を選んで `-s` で対象デバイスを固定し、デバイスの出現を待ってから取得を開始する。`adb logcat` が終了したら再起動し、テスト終了時にループと子プロセスを停止する。
 - `-G` でリングバッファを拡張し、フィルタを付けずに `-b all -v threadtime` で取得する。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
 - 現行の `cleanup()` による全量 `cat` を廃止し、テスト step が非 0 で終了したときだけ、クラッシュ関連の行 (`FATAL EXCEPTION` / `AndroidRuntime` / `DEBUG` / `libc` / `tombstone` / `Fatal signal` / `backtrace`) を最大 300 行、および logcat の末尾 100 行をジョブログへ出力する。終了コードは `cleanup()` の先頭で保存する。
-- `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
+- 診断ログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイントを含めない。テストの生 signaling メッセージはログに出力しない。
+- `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。per-test logcat と `test-result.pb` / `test-result.textproto` は保存しない（資格情報と絶対パスを含むため）。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
 
 ## 完了条件
 
-- テスト step が非 0 で終了した run で、artifact `e2e-diagnostics-<run_attempt>` から `e2e-logs/logcat.txt`、テストレポート、テスト結果を取得できること。
+- テスト step が非 0 で終了した run で、artifact `e2e-diagnostics-<run_attempt>` から `e2e-logs/logcat.txt`、テストレポート (`reports/androidTests/`)、テスト結果 (`TEST-*.xml`) を取得できること。
 - クラッシュを再現した run で、`e2e-logs/logcat.txt` に Java スタック (`FATAL EXCEPTION`) またはネイティブスタック (`Fatal signal` / `backtrace`) が含まれること。
 - テスト step が成功した run で、logcat の全量がジョブログへ出力されないこと。
+- artifact とジョブログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイントが含まれないこと。
 
 ## 変更対象ファイル
 
 - `.github/workflows/e2e-test.yml`
+- `.github/dependabot.yml`
 - `.gitignore`
 - `CHANGES.md`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraE2ETestBase.kt`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraSignalingE2ETest.kt`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraCloseTypeE2ETest.kt`
+- `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraRpcE2ETest.kt`
 
 ## 解決方法

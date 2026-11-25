@@ -115,7 +115,7 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                         }
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "sendonly onError: $reason $message")
+                        Log.e(TAG, "送信側エラー: reason=$reason message=$message")
                         if (!sendonlyConnected.isCompleted) {
                             sendonlyConnected.completeExceptionally(RuntimeException("sendonly: $reason: $message"))
                         }
@@ -139,7 +139,7 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                         }
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "recvonly onError: $reason $message")
+                        Log.e(TAG, "受信側エラー: reason=$reason message=$message")
                         val error = RuntimeException("recvonly: $reason: $message")
                         if (!recvonlyConnected.isCompleted) recvonlyConnected.completeExceptionally(error)
                         if (!recvonlySwitched.isCompleted) recvonlySwitched.completeExceptionally(error)
@@ -325,10 +325,10 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                         )
                     }
                 assertTrue(
-                    "RequestSimulcastRid が成功すること (result=$switchResult)",
+                    "RequestSimulcastRid が成功すること",
                     switchResult is SoraRpcResult.Success,
                 )
-                Log.d(TAG, "RPC 成功: $switchResult")
+                Log.d(TAG, "RPC 成功")
 
                 // 解像度変化をポーリングする
                 var switchedWidth = 0
@@ -383,10 +383,10 @@ class SoraRpcE2ETest : SoraE2ETestBase() {
                         )
                     }
                 assertTrue(
-                    "RequestSimulcastRid の r2 復帰が成功すること (result=$restoreResult)",
+                    "RequestSimulcastRid の r2 復帰が成功すること",
                     restoreResult is SoraRpcResult.Success,
                 )
-                Log.d(TAG, "RPC (r2 復帰) 成功: $restoreResult")
+                Log.d(TAG, "RPC (r2 復帰) 成功")
 
                 // 解像度の復帰をポーリングする
                 var restoredWidth = 0
