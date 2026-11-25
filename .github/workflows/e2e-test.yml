@@ -143,7 +143,7 @@ jobs:
           # 再実行の attempt ごとに名前を分け、前 attempt の artifact と衝突させない。
           name: e2e-diagnostics-${{ github.run_attempt }}
           path: |
-            e2e-logs/
+            e2e-logs/logcat.txt
             sora-android-sdk/build/reports/androidTests/
             sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml
           if-no-files-found: ignore
