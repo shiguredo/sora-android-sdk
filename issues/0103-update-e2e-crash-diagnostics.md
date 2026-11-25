@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-09-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-25
 - Branch: feature/update-e2e-crash-diagnostics
 - Polished: 2026-11-25
 - Refreshed: 2026-11-25
@@ -22,7 +22,7 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 
 - logcat の取得を単発起動からループに変え、テスト開始前からテスト終了後まで取得を継続する。テスト実行中に adb サーバが再起動されると単発の `adb logcat` は終了するため、取得プロセスを再起動できるようにする。
 - `adb devices` で `device` 状態の serial を選んで `-s` で対象デバイスを固定し、デバイスとテストプロセスの出現を待ってから取得を開始する。`adb logcat` が終了したら再起動し、テスト終了時にループと子プロセスを停止する。
-- `-G` でリングバッファを拡張し、テストプロセス (`jp.shiguredo.sora.sdk.test`) の PID に限定して `-b all -v threadtime` で取得する。システムログに含まれる ICCID や private IP などの PII を artifact に含めない。テストプロセスのログに残る private IP も保存前に `<IP>` に置換する。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
+- `-G` でリングバッファを拡張し、テストプロセス (`jp.shiguredo.sora.sdk.test`) の PID に限定して `-b all -v threadtime` で取得する。システムログに含まれる ICCID や private IP などの PII を artifact に含めない。テストプロセスのログに残る private IP も保存前に `<IP>` に置換する。調査に不要な WebRTC のネットワーク監視ログ (`NetworkMonitorAutoDetect`) は削除する。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
 - 現行の `cleanup()` による全量 `cat` を廃止し、テスト step が非 0 で終了したときだけ、クラッシュ関連の行 (`FATAL EXCEPTION` / `AndroidRuntime` / `DEBUG` / `libc` / `tombstone` / `Fatal signal` / `backtrace`) を最大 300 行、および logcat の末尾 100 行をジョブログへ出力する。終了コードは `cleanup()` の先頭で保存する。
 - 診断ログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイント、個人情報 (ICCID、private IP、絶対パス) を含めない。テストの生 signaling メッセージはログに出力しない。
 - `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/logcat.txt`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。`e2e-logs/stop-watchers` は保存しない。per-test logcat と `test-result.pb` / `test-result.textproto` は保存しない（資格情報と絶対パスを含むため）。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
@@ -46,3 +46,9 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 - `sora-android-sdk/src/androidTest/kotlin/jp/shiguredo/sora/sdk/SoraRpcE2ETest.kt`
 
 ## 解決方法
+
+- `.github/workflows/e2e-test.yml` の `Run E2E tests with logcat` を、デバイスとテストプロセスの出現を待つ logcat 取得ループに変更した。`logcat --pid` でテストプロセス (`jp.shiguredo.sora.sdk.test`) に限定し、`-G 16M` / `-b all -v threadtime` で取得する。adb サーバ再起動時は取得を再起動する。
+- `cleanup` で終了コードを保存し、取得ループを停止してからクラッシュ関連行と末尾をジョブログへ出力する。保存前に `iccId`、private IP、絶対パスを `<masked>` / `<IP>` / `<PATH>` に置換する。調査に不要な WebRTC のネットワーク監視ログ (`NetworkMonitorAutoDetect`) は削除する。
+- 失敗時 (`if: failure()`) に `e2e-logs/logcat.txt`、`reports/androidTests/`、`TEST-*.xml` を artifact `e2e-diagnostics-<run_attempt>` として保存する。`e2e-logs/stop-watchers`、per-test logcat、`test-result.pb`、`test-result.textproto` は保存しない。
+- `SoraE2ETestBase` に `maskErrorMessage` を追加し、`onError` の URL・ホスト名・IP を伏せる。`SoraSignalingE2ETest` / `SoraCloseTypeE2ETest` の `rawMessage` 全量ログと、`SoraRpcE2ETest` の RPC 結果ログ・assertion メッセージを除去した。
+- 成功 run (`45562670999`) ではテスト 10 件成功・artifact upload は skip。assertion 失敗 run (`45565678945`) とクラッシュ run (`45568267879`) で artifact を取得し、`FATAL EXCEPTION` とスタックを確認した。PII マスク後 (`45571919821`) と `stop-watchers` 除外後 (`45578781912`) の artifact で、全体の PII 0 件・資格情報 0 件、`e2e-logs/logcat.txt` のみを確認した。
