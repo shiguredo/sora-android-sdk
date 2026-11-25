@@ -114,6 +114,8 @@ jobs:
               kill "$LOGCAT_PID" 2>/dev/null || true
               wait "$LOGCAT_PID" 2>/dev/null || true
             fi
+            # 調査に不要な WebRTC のネットワーク監視ログは削除する。
+            sed -i '' -E '/org\.webrtc\.Logging: NetworkMonitorAutoDetect/d' "$LOGCAT_FILE" 2>/dev/null || true
             # テストプロセスのログにも PII が残るため、保存前に伏せる。
             sed -i '' -E \
               's/iccId=[0-9]+/iccId=<masked>/g; s/10\.0\.2\.[0-9]+/<IP>/g; s#/Users/[^ ]*#<PATH>#g' \
