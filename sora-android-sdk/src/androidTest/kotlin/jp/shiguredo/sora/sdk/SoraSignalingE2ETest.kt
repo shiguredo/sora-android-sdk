@@ -70,7 +70,7 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                         }
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "onError: reason=$reason message=$message")
+                        Log.e(TAG, "エラー: reason=$reason message=$message")
                         val error = RuntimeException("$reason: $message")
                         if (!connected.isCompleted) {
                             connected.completeExceptionally(error)
@@ -83,7 +83,7 @@ class SoraSignalingE2ETest : SoraE2ETestBase() {
                     onSignalingMessage = { _, direction, transportType, rawMessage ->
                         Log.d(
                             TAG,
-                            "onSignalingMessage: direction=$direction transportType=$transportType rawMessage=$rawMessage",
+                            "シグナリングメッセージ: direction=$direction transportType=$transportType",
                         )
                         val json = JSONObject(rawMessage)
                         val type = json.optString("type")

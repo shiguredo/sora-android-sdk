@@ -38,6 +38,11 @@
   - `SoraE2ETestBase.createChannel` に `onAddRemoteTrack` / `onRemoveRemoteTrack` のコールバックを追加する
   - sendonly（映像のみ）+ recvonly（映像のみ）の 2 チャネル構成で、受信側が送信側の `connectionId` と一致する `streamId` で追加通知を 1 回受け取り、送信側の切断で同じ trackId / streamId の削除通知を 1 回受け取ることを検証する
   - @t-miya
+- [UPDATE] E2E 失敗時にクラッシュ調査用の logcat とテストレポートを保存する
+  - `Run E2E tests with logcat` を、デバイスの出現待ちと再起動を含む logcat 取得ループに変更する
+  - 失敗時はクラッシュ関連行と末尾をジョブログへ出力し、`e2e-logs/logcat.txt` と Gradle Managed Device のレポート・テスト結果を artifact `e2e-diagnostics-<run_attempt>` として保存する
+  - 診断ログに機密情報・個人情報を含めない
+  - @t-miya
 
 ## 2026.4.0
 

@@ -75,7 +75,7 @@ class SoraCloseTypeE2ETest : SoraE2ETestBase() {
                         closeReceived.complete(closeEvent)
                     },
                     onError = { _, reason, message ->
-                        Log.e(TAG, "onError: reason=$reason message=$message")
+                        Log.e(TAG, "エラー: reason=$reason message=$message")
                         val error = RuntimeException("$reason: $message")
                         if (!connected.isCompleted) {
                             connected.completeExceptionally(error)
@@ -93,7 +93,7 @@ class SoraCloseTypeE2ETest : SoraE2ETestBase() {
                         val json = JSONObject(rawMessage)
                         Log.d(
                             TAG,
-                            "onSignalingMessage: direction=$direction transportType=$transportType rawMessage=$rawMessage",
+                            "シグナリングメッセージ: direction=$direction transportType=$transportType",
                         )
                         capturedMessages.add(CapturedMessage(direction, transportType, json))
 

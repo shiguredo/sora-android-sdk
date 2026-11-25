@@ -81,6 +81,17 @@ abstract class SoraE2ETestBase {
         Log.d(tag, "tearDown: 完了")
     }
 
+    // エラーメッセージに含まれる URL / ホスト名 / IP アドレスを伏せる。
+    // テスト結果と logcat は公開 artifact に保存されるため、内部エンドポイントを残さない。
+    protected fun maskErrorMessage(message: String): String =
+        message
+            .replace(Regex("""(?:wss?|https?)://\S+"""), "<URL>")
+            .replace(Regex("""\b\d{1,3}(?:\.\d{1,3}){3}\b"""), "<IP>")
+            .replace(
+                Regex("""\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)*\.[a-z]{2,}\b"""),
+                "<HOST>",
+            )
+
     protected fun createChannel(
         mediaOption: SoraMediaOption,
         onConnect: (SoraMediaChannel) -> Unit,
@@ -131,8 +142,9 @@ abstract class SoraE2ETestBase {
                         reason: SoraErrorReason,
                         message: String,
                     ) {
-                        Log.e(tag, "Listener.onError: reason=$reason message=$message")
-                        onError(mediaChannel, reason, message)
+                        val maskedMessage = maskErrorMessage(message)
+                        Log.e(tag, "エラー: reason=$reason message=$maskedMessage")
+                        onError(mediaChannel, reason, maskedMessage)
                     }
 
                     override fun onSignalingMessage(

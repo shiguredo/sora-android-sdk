@@ -60,20 +60,96 @@ jobs:
         run: |
           set +e
 
+          LOG_DIR="e2e-logs"
+          LOGCAT_FILE="$LOG_DIR/logcat.txt"
+          STOP_FILE="$LOG_DIR/stop-watchers"
+          # テストプロセスのログだけを取得し、システムログに含まれる ICCID や private IP を artifact に含めない。
+          TEST_PACKAGE_NAME="jp.shiguredo.sora.sdk.test"
+
+          # 前回の実行が残したログを混ぜないように、毎回作り直す。
+          rm -rf "$LOG_DIR"
+          mkdir -p "$LOG_DIR"
+
+          # Gradle Managed Device / UTP はテスト実行中に adb サーバを再起動することがある。
+          # 単発の adb logcat では取得が途切れるため、デバイスの出現を待ち、
+          # 取得プロセスが終了するたびに再起動する。
+          logcat_watcher() {
+            local child_pid=""
+            # 停止要求を受けたら、取得中の adb logcat も止めて終了する。
+            trap 'if [ -n "$child_pid" ]; then kill "$child_pid" 2>/dev/null || true; fi; exit 0' TERM INT
+            while [ ! -f "$STOP_FILE" ]; do
+              local serial
+              serial=$("$ADB_PATH" devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')
+              if [ -z "$serial" ]; then
+                # エミュレータの起動を待つ。
+                sleep 2
+                continue
+              fi
+              # テストプロセスの起動を待つ。プロセス以外のシステムログは PII を含むため取得しない。
+              local test_pid
+              test_pid=$("$ADB_PATH" -s "$serial" shell pidof "$TEST_PACKAGE_NAME" 2>/dev/null | tr -d '\r' | awk '{ print $1 }')
+              if [ -z "$test_pid" ]; then
+                sleep 2
+                continue
+              fi
+              # クラッシュのスタックがリングバッファからあふれないように広げる。
+              "$ADB_PATH" -s "$serial" logcat -G 16M >> "$LOGCAT_FILE" 2>&1 || true
+              echo "=== logcat start serial=$serial pid=$test_pid ===" >> "$LOGCAT_FILE"
+              "$ADB_PATH" -s "$serial" logcat --pid="$test_pid" -b all -v threadtime >> "$LOGCAT_FILE" 2>&1 &
+              child_pid=$!
+              wait "$child_pid" || true
+              child_pid=""
+              echo "=== logcat exit serial=$serial pid=$test_pid ===" >> "$LOGCAT_FILE"
+              # adb サーバの再起動直後は接続できないため、少し待ってから再試行する。
+              sleep 2
+            done
+          }
+
           cleanup() {
+            # trap の中では $? が変わるため、先頭で終了コードを保存する。
+            local result=$?
+            # 取得ループを止め、子の adb logcat も終了させる。
+            touch "$STOP_FILE" 2>/dev/null || true
             if [ -n "${LOGCAT_PID:-}" ]; then
-              kill "$LOGCAT_PID" || true
+              kill "$LOGCAT_PID" 2>/dev/null || true
               wait "$LOGCAT_PID" 2>/dev/null || true
             fi
-            cat sora-e2e-logcat.txt || true
+            # 調査に不要な WebRTC のネットワーク監視ログは削除する。
+            sed -i '' -E '/org\.webrtc\.Logging: NetworkMonitorAutoDetect/d' "$LOGCAT_FILE" 2>/dev/null || true
+            # テストプロセスのログにも PII が残るため、保存前に伏せる。
+            sed -i '' -E \
+              's/iccId=[0-9]+/iccId=<masked>/g; s/10\.0\.2\.[0-9]+/<IP>/g; s#/Users/[^ ]*#<PATH>#g' \
+              "$LOGCAT_FILE" 2>/dev/null || true
+            # 失敗時だけクラッシュ関連の行と末尾をジョブログへ出力する。
+            # 成功時に全量を出力するとジョブログの上限で切り捨てられるため出力しない。
+            if [ "$result" -ne 0 ]; then
+              echo "=== crash related logcat lines ==="
+              grep -a -E "FATAL EXCEPTION|AndroidRuntime|DEBUG|libc|Fatal signal|tombstone|backtrace" "$LOGCAT_FILE" 2>/dev/null | tail -n 300 || true
+              echo "=== tail of logcat ==="
+              tail -n 100 "$LOGCAT_FILE" 2>/dev/null || true
+            fi
+            return "$result"
           }
           trap cleanup EXIT
 
-          "$ADB_PATH" logcat -v time Sora*E2ETest:D SoraSimulcastReconfigureE2ETest:D SoftwareMediaCodecVideoEncoderFactoryForTest:D DummyVideoCapturer:D *:S > sora-e2e-logcat.txt 2>&1 &
+          logcat_watcher &
           LOGCAT_PID=$!
 
           ./gradlew :sora-android-sdk:pixelApi35AndroidE2ETest --stacktrace
           exit $?
+      - name: Upload E2E diagnostics
+        # 失敗した run の調査用に logcat とテストレポートを保存する。
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          # 再実行の attempt ごとに名前を分け、前 attempt の artifact と衝突させない。
+          name: e2e-diagnostics-${{ github.run_attempt }}
+          path: |
+            e2e-logs/logcat.txt
+            sora-android-sdk/build/reports/androidTests/
+            sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml
+          if-no-files-found: ignore
+          retention-days: 7
   slack_notify:
     needs: [e2e]
     runs-on: ubuntu-slim
