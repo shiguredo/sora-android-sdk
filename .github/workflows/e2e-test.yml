@@ -114,6 +114,10 @@ jobs:
               kill "$LOGCAT_PID" 2>/dev/null || true
               wait "$LOGCAT_PID" 2>/dev/null || true
             fi
+            # テストプロセスのログにも PII が残るため、保存前に伏せる。
+            sed -i '' -E \
+              's/iccId=[0-9]+/iccId=<masked>/g; s/10\.0\.2\.[0-9]+/<IP>/g; s#/Users/[^ ]*#<PATH>#g' \
+              "$LOGCAT_FILE" 2>/dev/null || true
             # 失敗時だけクラッシュ関連の行と末尾をジョブログへ出力する。
             # 成功時に全量を出力するとジョブログの上限で切り捨てられるため出力しない。
             if [ "$result" -ne 0 ]; then

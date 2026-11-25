@@ -22,7 +22,7 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 
 - logcat の取得を単発起動からループに変え、テスト開始前からテスト終了後まで取得を継続する。テスト実行中に adb サーバが再起動されると単発の `adb logcat` は終了するため、取得プロセスを再起動できるようにする。
 - `adb devices` で `device` 状態の serial を選んで `-s` で対象デバイスを固定し、デバイスとテストプロセスの出現を待ってから取得を開始する。`adb logcat` が終了したら再起動し、テスト終了時にループと子プロセスを停止する。
-- `-G` でリングバッファを拡張し、テストプロセス (`jp.shiguredo.sora.sdk.test`) の PID に限定して `-b all -v threadtime` で取得する。システムログに含まれる ICCID や private IP などの PII を artifact に含めない。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
+- `-G` でリングバッファを拡張し、テストプロセス (`jp.shiguredo.sora.sdk.test`) の PID に限定して `-b all -v threadtime` で取得する。システムログに含まれる ICCID や private IP などの PII を artifact に含めない。テストプロセスのログに残る private IP も保存前に `<IP>` に置換する。取得した logcat は `e2e-logs/logcat.txt` に追記し、step の冒頭で `e2e-logs/` を作り直す。
 - 現行の `cleanup()` による全量 `cat` を廃止し、テスト step が非 0 で終了したときだけ、クラッシュ関連の行 (`FATAL EXCEPTION` / `AndroidRuntime` / `DEBUG` / `libc` / `tombstone` / `Fatal signal` / `backtrace`) を最大 300 行、および logcat の末尾 100 行をジョブログへ出力する。終了コードは `cleanup()` の先頭で保存する。
 - 診断ログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイント、個人情報 (ICCID、private IP、絶対パス) を含めない。テストの生 signaling メッセージはログに出力しない。
 - `actions/upload-artifact` の step を追加し、失敗時 (`if: failure()`) に `e2e-logs/`、`sora-android-sdk/build/reports/androidTests/`、`sora-android-sdk/build/outputs/androidTest-results/**/TEST-*.xml` を artifact 名 `e2e-diagnostics-${{ github.run_attempt }}` として保存する。per-test logcat と `test-result.pb` / `test-result.textproto` は保存しない（資格情報と絶対パスを含むため）。`if-no-files-found: ignore` を指定し、保持期間は 7 日とする。
@@ -32,7 +32,7 @@ E2E テストがプロセスクラッシュで失敗したときに、原因を�
 - テスト step が非 0 で終了した run で、artifact `e2e-diagnostics-<run_attempt>` から `e2e-logs/logcat.txt`、テストレポート (`reports/androidTests/`)、テスト結果 (`TEST-*.xml`) を取得できること。
 - クラッシュを再現した run で、`e2e-logs/logcat.txt` に Java スタック (`FATAL EXCEPTION`) またはネイティブスタック (`Fatal signal` / `backtrace`) が含まれること。
 - テスト step が成功した run で、logcat の全量がジョブログへ出力されないこと。
-- artifact とジョブログに TURN 資格情報、`channel_id`、`access_token`、内部エンドポイント、個人情報 (ICCID、private IP、絶対パス) が含まれないこと。
+- artifact と診断ログ (`e2e-logs/logcat.txt` と `cleanup` の出力) に TURN 資格情報、`channel_id`、`access_token`、内部エンドポイント、個人情報 (ICCID、private IP、絶対パス) が含まれないこと。
 
 ## 変更対象ファイル
 
