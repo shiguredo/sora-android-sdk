@@ -3,7 +3,7 @@
 - Created: 2026-11-26
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-background-call-sample
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-11-26
 
 ## 目的
 
@@ -22,11 +22,11 @@ Sora Android SDK は `SoraMediaChannel` と音声トラックを提供するが�
 
 ## 設計方針
 
-1. 既存のボイスチャットの挙動を変えず、`VoiceChatRoomSetupActivity` に「バックグラウンド通話を有効にする」チェックボックスを追加し、`VoiceChatRoomActivity` へ `BACKGROUND_CALL` extra で渡す。
-2. バックグラウンド通話が有効な場合、`VoiceChatRoomActivity` は `onPause()` で `close()` と AudioManager のモード復元を行わない。通話終了、エラー、Activity の破棄時に `close()` で FGS を停止し、AudioManager のモードを復元する。
-3. 新規 `BackgroundCallService` を追加し、`microphone` タイプの FGS として実装する。通話開始時に可視状態の Activity から開始し、常駐通知、通知チャネル、`PARTIAL_WAKE_LOCK` を管理する。Android 13 以降の `POST_NOTIFICATIONS` は通話を妨げない範囲で要求する。
-4. `AndroidManifest.xml` に `FOREGROUND_SERVICE`、`FOREGROUND_SERVICE_MICROPHONE`、`POST_NOTIFICATIONS`、`WAKE_LOCK` と、`android:foregroundServiceType="microphone"` の Service を追加する。
-5. FGS の開始は Activity が可視状態の通話開始時に行い、Android 14 以降の while-in-use 制約と Android 12 以降のバックグラウンド開始制限を満たす。Activity の `onStop()` では停止せず、`onDestroy()` でのみ停止する。
+1. 既存のボイスチャットの挙動を変えず、`VoiceChatRoomSetupActivity` に「バックグラウンド通話を有効にする」チェックボックス (初期値はオフ) を追加し、`VoiceChatRoomActivity` へ `BACKGROUND_CALL` extra で渡す。
+2. バックグラウンド通話が有効な場合、`VoiceChatRoomActivity` は `onPause()` で `close()` と AudioManager のモード復元を行わない。通話終了、エラー、Activity の破棄時に `close()` で FGS を停止し、AudioManager のモードを復元する。AudioManager の元のモードは通話開始時に一度だけ取得し、`onResume()` で `audioManager.mode` を再取得して上書きしない。バックグラウンドから復帰したときに `MODE_IN_COMMUNICATION` を元のモードとして保存しないためである。モードの復元は `close()` に集約し、`onPause()` からの二重復元を避ける。
+3. 新規 `BackgroundCallService` を追加し、`microphone` タイプの FGS として実装する。通話画面が可視状態になった時点で `VoiceChatRoomActivity` から開始し、常駐通知、通知チャネル、`PARTIAL_WAKE_LOCK` を管理する。通知チャネルは既存の `SoraScreencastService` とは別の ID を使い、通知ドロワーに表示される重要度 (例: `IMPORTANCE_LOW`) で作成する。Android 13 以降の `POST_NOTIFICATIONS` は、`VoiceChatRoomSetupActivity` でバックグラウンド通話を有効にして「接続する」を押したとき、チャネル名の検証後に要求し、許可結果を受け取った後に `VoiceChatRoomActivity` を開始する。拒否された場合も通話を開始し、FGS と通話は継続する (通知は通知ドロワーに表示されないことがある)。
+4. `AndroidManifest.xml` の既存の `FOREGROUND_SERVICE` 権限はそのまま利用し、`FOREGROUND_SERVICE_MICROPHONE`、`POST_NOTIFICATIONS`、`WAKE_LOCK` と、`android:foregroundServiceType="microphone"` の Service を追加する。
+5. FGS の開始は `VoiceChatRoomActivity.onResume()` で、バックグラウンド通話が有効かつ FGS が未開始の場合に一度だけ行う。`onResume()` の時点で Activity は可視状態であるため、Android 14 以降の while-in-use 制約と Android 12 以降のバックグラウンド開始制限を満たす。`onCreate()` で接続を開始する既存の流れは変えない。バックグラウンドから復帰したときは FGS を再開始しない。FGS の開始に失敗した場合は、通話を終了してエラーを表示する。Activity の `onStop()` では停止せず、`onDestroy()` でのみ停止する。
 6. 通話の保持主体は `VoiceChatRoomActivity` のままとする。Activity が破棄された場合の通話継続 (Service 側で通話を保持する構成) は本 issue の対象外とし、サンプルの制約として明記する。
 7. audio focus の取得・喪失処理は本 issue の対象外とする。着信や他アプリによる中断を扱う場合は別 issue とする。
 8. `sora-android-sdk-samples/CHANGES.md` に追加を記載する。
@@ -36,11 +36,12 @@ Sora Android SDK は `SoraMediaChannel` と音声トラックを提供するが�
 - `sora-android-sdk-samples` のボイスチャット設定画面でバックグラウンド通話を有効にして通話を開始できること。
 - 通話中にホームへ移動しても音声の送受信が継続し、相手側で音声が途切れないこと。
 - 画面をロックしても音声の送受信が継続すること。
-- 通話中に `microphone` タイプの FGS が動作し、常駐通知が表示されること。
+- 通話中に `microphone` タイプの FGS が動作すること。通知権限が許可されている場合は常駐通知が表示され、拒否されている場合も FGS と通話は継続すること。
 - 通話終了、エラー、Activity の破棄時に FGS と WakeLock が解放され、通知が消えること。
+- FGS の開始に失敗した場合、通話を終了してエラーを表示すること。
 - バックグラウンド通話を無効にした既存のボイスチャットは、これまでどおり `onPause()` で通話が終了すること。
-- Android 14 以降の実機またはエミュレータで、可視状態から FGS を開始して `SecurityException` が発生しないこと。
-- `./gradlew :samples:assembleDebug` と `./gradlew :samples:lintDebug` が成功すること。
+- Android 14 以降の実機またはエミュレータで、`VoiceChatRoomActivity.onResume()` の可視状態から FGS を開始して `SecurityException` や `ForegroundServiceStartNotAllowedException` が発生しないこと。
+- `./gradlew build` と `./gradlew ktlintCheck` が成功すること (`:samples:assembleDebug` と `:samples:lintDebug` を含む)。
 - `sora-android-sdk-samples/CHANGES.md` に追加が記載されていること。
 
 ## 変更対象ファイル
@@ -55,8 +56,9 @@ Sora Android SDK は `SoraMediaChannel` と音声トラックを提供するが�
 
 ## テスト方針
 
-- Android 9 (API 28)、Android 11 (API 30)、Android 14 (API 34)、Android 16 (API 36) の実機またはエミュレータで、バックグラウンド通話を有効にして通話を開始し、ホーム移動と画面ロック後に音声が継続することを確認する。
-- Android 14 以降では、通話開始時に FGS が可視状態から開始され、`SecurityException` や `ForegroundServiceStartNotAllowedException` が発生しないことを確認する。
+- Android 9 (API 28)、Android 11 (API 30)、Android 14 (API 34)、Android 16 (API 36)、Android 17 (API 37) の実機またはエミュレータで、バックグラウンド通話を有効にして通話を開始し、ホーム移動と画面ロック後に音声が継続することを確認する。API 37 の環境が利用できない場合は、その旨を確認結果に記録し、0034 の Background Audio Hardening の検証結果と照合する。
+- Android 14 以降では、通話開始時に `VoiceChatRoomActivity.onResume()` の可視状態から FGS が開始され、`SecurityException` や `ForegroundServiceStartNotAllowedException` が発生しないことを確認する。
+- Android 13 以降で `POST_NOTIFICATIONS` を拒否した場合も、通話と FGS が継続し、クラッシュしないことを確認する。
 - `adb shell dumpsys activity services` で `BackgroundCallService` が foreground であり、`microphone` タイプで動作していることを確認する。
 - 通話終了、`onError`、Activity の破棄の各経路で FGS と WakeLock が解放されることを確認する。
 - バックグラウンド通話を無効にした場合の既存の挙動が変わらないことを確認する。
